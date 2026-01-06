@@ -1,113 +1,176 @@
-# 一键游戏开发平台
+# 🎮 AI游戏工坊
 
-一个可视化游戏开发平台，让用户无需编程即可创建和导出游戏。
+一句话生成 HTML5 游戏的在线平台。使用 AI (DeepSeek/OpenAI) 将您的创意转化为可玩的游戏！
 
-## 功能特性
+## ✨ 功能特点
 
-- 🎮 **多种游戏模板** - 平台跳跃、射击游戏、解谜游戏等
-- ⚡ **可视化编辑** - 直观的界面配置游戏参数
-- 👀 **实时预览** - 随时预览游戏效果
-- 📦 **一键导出** - 生成完整的游戏配置文件
+- 🤖 **AI 生成游戏** - 一句话描述，自动生成完整的 HTML5 游戏
+- 🎯 **多 LLM 支持** - 支持 DeepSeek、OpenAI 及自定义 API
+- 💾 **云端存储** - 游戏自动保存，随时访问
+- 🔗 **分享功能** - 生成链接，分享到微信、微博
+- ✏️ **作者编辑** - 原作者可重新编辑游戏
+- 📱 **移动适配** - 完美支持手机和微信浏览
 
-## 技术栈
+## 🚀 Vercel 一键部署（推荐）
 
-- **前端框架**: React + TypeScript
-- **构建工具**: Vite
-- **样式**: Tailwind CSS
-- **游戏引擎**: Phaser.js
-- **路由**: React Router
+### 第一步：Fork 仓库
 
-## 环境要求
+点击 GitHub 右上角的 Fork 按钮，将仓库 Fork 到你的账号。
 
-- **Node.js**: 18.0 或更高版本
-- **npm**: 9.0 或更高版本（通常随 Node.js 一起安装）
+### 第二步：创建 Vercel KV 数据库
 
-### 首次安装 Node.js
+1. 登录 [Vercel](https://vercel.com)
+2. 进入 Dashboard → Storage → Create Database
+3. 选择 **KV** (Redis)
+4. 创建一个免费的数据库
+5. 记录下数据库的连接信息
 
-如果您的系统尚未安装 Node.js，请按照以下步骤：
+### 第三步：导入项目到 Vercel
 
-#### Windows 系统
+1. 在 Vercel Dashboard 点击 **Add New → Project**
+2. 选择你 Fork 的仓库
+3. 配置环境变量（见下方）
+4. 点击 **Deploy**
 
-1. **方式一：直接下载安装（推荐）**
-   - 访问 [Node.js 官网](https://nodejs.org/)
-   - 下载 LTS（长期支持）版本
-   - 运行安装程序，按提示完成安装
-   - **重要**：安装时确保勾选"自动添加到 PATH"选项
+### 第四步：配置环境变量
 
-2. **方式二：使用包管理器**
-   ```powershell
-   # 如果已安装 winget
-   winget install OpenJS.NodeJS.LTS
-   
-   # 或使用 Chocolatey
-   choco install nodejs
-   ```
+在 Vercel 项目设置中添加以下环境变量：
 
-3. **验证安装**
-   - 安装完成后，**重启终端/命令提示符**
-   - 运行以下命令验证：
-   ```bash
-   node --version
-   npm --version
-   ```
+| 变量名 | 说明 | 必填 |
+|--------|------|------|
+| `KV_URL` | Vercel KV 连接 URL | ✅ 是 |
+| `KV_REST_API_URL` | Vercel KV REST API URL | ✅ 是 |
+| `KV_REST_API_TOKEN` | Vercel KV REST API Token | ✅ 是 |
+| `KV_REST_API_READ_ONLY_TOKEN` | Vercel KV 只读 Token | ✅ 是 |
+| `DEEPSEEK_API_KEY` | DeepSeek API Key（可选，用户也可自己配置）| ❌ 否 |
 
-#### 快速环境检测
+> 💡 **提示**: Vercel KV 的连接信息可以在 Storage → 你的数据库 → Settings 中找到。
 
-运行项目根目录下的 `setup.bat` 脚本，它会自动检测环境并指导安装：
+### 完成！
 
-```bash
-.\setup.bat
-```
+部署成功后，你会获得一个 `https://your-project.vercel.app` 的地址。
 
-## 开始使用
+---
 
-### 安装依赖
+## �️ 本地开发
+
+### 环境要求
+
+- Node.js >= 18.0.0
+- npm >= 8.0.0
+
+### 安装步骤
 
 ```bash
+# 1. 克隆仓库
+git clone https://github.com/your-username/ai-game-workshop.git
+cd ai-game-workshop
+
+# 2. 安装依赖
 npm install
+
+# 3. 配置环境变量
+cp .env.example .env
+# 编辑 .env 文件，填入你的 API Key
+
+# 4. 启动服务器
+npm start
 ```
 
-### 启动开发服务器
+### Windows 用户
 
-```bash
-npm run dev
+直接双击运行：
+1. `install.bat` - 安装依赖
+2. `start.bat` - 启动服务器
+
+---
+
+## 🔧 环境变量说明
+
+### 本地开发 (.env 文件)
+
+```env
+# DeepSeek API 配置（推荐）
+DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxx
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+
+# 服务器端口（可选）
+PORT=3000
 ```
 
-应用将在 http://localhost:3000 启动
+### Vercel 部署
 
-### 构建生产版本
+除了上述变量外，还需要配置 Vercel KV 相关变量（自动生成）。
 
-```bash
-npm run build
-```
+---
 
-## 使用说明
-
-1. **选择模板** - 在编辑页面选择一个游戏模板
-2. **配置参数** - 调整游戏的基础设置、玩家属性等
-3. **预览游戏** - 点击预览按钮查看游戏效果
-4. **导出游戏** - 导出游戏配置文件
-
-## 游戏控制
-
-- **方向键** 或 **WASD** - 移动角色
-- **空格** 或 **W** - 跳跃（平台游戏）
-
-## 项目结构
+## 📁 项目结构
 
 ```
-├── src/
-│   ├── pages/          # 页面组件
-│   │   ├── Home.tsx    # 首页
-│   │   ├── GameEditor.tsx  # 游戏编辑器
-│   │   └── GamePreview.tsx # 游戏预览
-│   ├── types/          # 类型定义
-│   ├── data/           # 数据文件（模板等）
-│   └── main.tsx        # 入口文件
-├── package.json
-└── vite.config.ts
+ai-game-workshop/
+├── api/                    # Vercel Serverless Functions
+│   ├── _lib/              # 共享库
+│   │   └── db.js          # 数据库操作（Vercel KV）
+│   ├── games/             # 游戏相关 API
+│   │   ├── [id]/          # 动态路由
+│   │   │   ├── index.js   # 获取/更新游戏
+│   │   │   ├── like.js    # 点赞
+│   │   │   └── verify.js  # 验证作者
+│   │   ├── search/        # 搜索
+│   │   ├── featured.js    # 推荐游戏
+│   │   ├── recent.js      # 最近游戏
+│   │   └── index.js       # 创建游戏
+│   └── generate.js        # AI 生成游戏
+├── public/                 # 静态文件
+│   ├── css/
+│   ├── js/
+│   └── index.html
+├── server.js              # 本地开发服务器
+├── vercel.json            # Vercel 配置
+└── package.json
 ```
 
-## 许可证
+---
 
-MIT
+## 🎯 API 接口
+
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/generate` | POST | 生成游戏 |
+| `/api/games` | POST | 保存游戏 |
+| `/api/games/recent` | GET | 最近游戏列表 |
+| `/api/games/featured` | GET | 推荐游戏列表 |
+| `/api/games/search/:keyword` | GET | 搜索游戏 |
+| `/api/games/:id` | GET | 获取游戏详情 |
+| `/api/games/:id` | PUT | 更新游戏 |
+| `/api/games/:id/like` | POST | 点赞游戏 |
+| `/api/games/:id/verify` | POST | 验证作者权限 |
+
+---
+
+## 🔒 安全说明
+
+- API Key 存储在环境变量中，不会暴露到前端
+- 用户可以使用自己的 API Key（存储在浏览器本地）
+- 作者令牌用于验证编辑权限
+
+---
+
+## � 使用的技术
+
+- **前端**: 原生 HTML/CSS/JavaScript
+- **后端**: Vercel Serverless Functions
+- **数据库**: Vercel KV (Redis)
+- **AI**: DeepSeek / OpenAI API
+
+---
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+---
+
+## 📄 许可证
+
+MIT License

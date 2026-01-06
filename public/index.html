@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f172a">
+  <!-- 微信分享相关 -->
+  <meta name="description" content="用一句话描述，AI帮你生成可玩的小游戏！">
+  <meta property="og:title" content="一句话生成游戏">
+  <meta property="og:description" content="用一句话描述，AI帮你生成可玩的小游戏！">
+  <meta property="og:type" content="website">
+  <title>一句话生成游戏 - AI Game Generator</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+</head>
+<body>
+  <div id="app">
+    <!-- 导航栏 -->
+    <nav class="navbar">
+      <div class="nav-brand" onclick="showHome()">
+        <span class="logo">🎮</span>
+        <span class="brand-text">游戏开发技术教程</span>
+      </div>
+      <div class="nav-actions">
+        <button class="btn btn-profile" onclick="openProfileModal()" title="个人中心">
+          👤 <span class="nav-text">我的</span>
+          <span class="nav-credits-badge" id="nav-credits-count">0</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- 主页内容 -->
+    <div id="home-page" class="page active">
+      <!-- Hero区域 -->
+      <section class="hero">
+        <div class="hero-content">
+          <h1>🎮 一句话，生成游戏</h1>
+          <p class="hero-subtitle">描述你想玩的游戏，AI帮你实现</p>
+          
+          <!-- 体验模式提示 -->
+          <div class="trial-banner" id="trial-banner" style="display:none;">
+            <span class="trial-icon">🎁</span>
+            <span class="trial-text">免费体验模式：今日剩余 <strong id="trial-remaining">0</strong> 次</span>
+          </div>
+          
+          <div class="generate-form">
+            <div class="input-wrapper">
+              <textarea 
+                id="prompt-input" 
+                placeholder="描述你想要的游戏，如：贪吃蛇、2048、飞机大战..."
+                maxlength="500"
+                rows="1"
+              ></textarea>
+              <button class="btn btn-primary btn-generate" onclick="generateGame()">
+                <span class="btn-text">✨ 生成</span>
+                <span class="btn-loading">
+                  <svg class="spinner" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="60" stroke-dashoffset="20"></circle>
+                  </svg>
+                </span>
+              </button>
+            </div>
+            
+            <!-- 游戏模板快捷选择 -->
+            <div class="quick-prompts" id="template-chips">
+              <button class="chip" onclick="setPrompt('贪吃蛇')">🐍 贪吃蛇</button>
+              <button class="chip" onclick="setPrompt('2048')">🔢 2048</button>
+              <button class="chip" onclick="setPrompt('俄罗斯方块')">🧱 方块</button>
+              <button class="chip" onclick="setPrompt('打砖块')">🎯 打砖块</button>
+              <button class="chip" onclick="setPrompt('飞机大战')">🚀 飞机大战</button>
+              <button class="chip" onclick="setPrompt('翻牌配对')">🃏 翻牌</button>
+              <button class="chip" onclick="setPrompt('Flappy Bird')">🐦 小鸟</button>
+              <button class="chip" onclick="setPrompt('跑酷')">🦘 跑酷</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 游戏列表区域 -->
+      <section class="games-section">
+        <!-- 最新创作 - 卡片网格 -->
+        <div class="games-block">
+          <div class="section-header">
+            <h2>🕐 最新创作</h2>
+            <a href="/games.html" class="view-more-link">查看更多 →</a>
+          </div>
+          <div class="games-grid" id="recent-games">
+            <!-- 动态加载 -->
+          </div>
+        </div>
+
+        <!-- 编辑推荐 - 卡片网格 -->
+        <div class="games-block">
+          <div class="section-header">
+            <h2>⭐ 编辑推荐</h2>
+          </div>
+          <div class="games-grid" id="featured-games">
+            <!-- 动态加载 -->
+          </div>
+        </div>
+
+        <!-- 三榜纵向排列 - 列表样式 -->
+        <div class="leaderboards-vertical">
+          <!-- 热门榜 -->
+          <div class="leaderboard-card">
+            <div class="leaderboard-header">
+              <h3>🔥 热门榜</h3>
+            </div>
+            <div class="leaderboard-list" id="leaderboard-hot">
+              <!-- 动态加载 -->
+            </div>
+          </div>
+          
+          <!-- 点赞榜 -->
+          <div class="leaderboard-card">
+            <div class="leaderboard-header">
+              <h3>❤️ 点赞榜</h3>
+            </div>
+            <div class="leaderboard-list" id="leaderboard-likes">
+              <!-- 动态加载 -->
+            </div>
+          </div>
+          
+          <!-- 收藏榜 -->
+          <div class="leaderboard-card">
+            <div class="leaderboard-header">
+              <h3>⭐ 收藏榜</h3>
+            </div>
+            <div class="leaderboard-list" id="leaderboard-favorites">
+              <!-- 动态加载 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 全部游戏 - 卡片网格 -->
+        <div class="games-block">
+          <div class="section-header">
+            <h2>🎮 全部游戏</h2>
+            <a href="/games.html?sort=hot" class="view-more-link">查看更多 →</a>
+          </div>
+          <div class="games-grid" id="all-games">
+            <!-- 动态加载 -->
+          </div>
+        </div>
+      </section>
+      
+      <!-- 公众号关注区域 -->
+      <section class="wechat-promo-section">
+        <div class="wechat-promo-card wechat-promo-banner">
+          <img src="/images/wechat-qrcode.png" alt="微信搜一搜：游戏开发技术教程" class="wechat-banner-img">
+          <div class="promo-benefits-row">
+            <span class="benefit-item">✨ 免费获得 <strong>3次</strong> 生成机会</span>
+            <span class="benefit-item">📚 Unity/UE 干货教程</span>
+            <span class="benefit-item">💼 大厂内推</span>
+            <button class="btn btn-primary btn-sm" onclick="openCreditsModal()">已关注？领积分</button>
+          </div>
+        </div>
+      </section>
+      
+      <!-- 页脚 -->
+    </div>
+
+    <!-- 游戏预览/编辑页面 -->
+    <div id="game-page" class="page">
+      <div class="game-container">
+        <!-- 游戏顶部栏：返回 + 标题 + 操作 -->
+        <div class="game-header">
+          <button class="btn btn-back" onclick="showHome()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 12H5M12 19l-7-7 7-7"></path>
+            </svg>
+            <span>返回</span>
+          </button>
+          <div class="game-info">
+            <h2 id="game-title">游戏标题</h2>
+            <span class="game-author" id="game-author">作者：匿名</span>
+          </div>
+          <div class="game-header-actions">
+            <button class="btn btn-action" onclick="viewGameSource()" title="查看源码">📄</button>
+            <button class="btn btn-action" id="edit-btn" onclick="editGame()" title="编辑" style="display:none;">✏️</button>
+          </div>
+        </div>
+        
+        <!-- 社交互动条（合并统计+操作） -->
+        <div class="game-stats-bar" id="game-stats-bar">
+          <div class="stat-item" title="游玩次数">
+            <span class="stat-icon">🎮</span>
+            <span class="stat-value" id="stat-plays">0</span>
+            <span class="stat-label">游玩</span>
+          </div>
+          <div class="stat-item stat-clickable" id="stat-like-btn" title="点击点赞" onclick="likeGame()">
+            <span class="stat-icon" id="stat-like-icon">🤍</span>
+            <span class="stat-value" id="stat-likes">0</span>
+            <span class="stat-label">点赞</span>
+          </div>
+          <div class="stat-item stat-clickable" id="stat-fav-btn" title="点击收藏" onclick="toggleFavorite()">
+            <span class="stat-icon" id="stat-fav-icon">☆</span>
+            <span class="stat-value">收藏</span>
+          </div>
+          <div class="stat-item stat-clickable" title="点击分享" onclick="openSharePanel()">
+            <span class="stat-icon">�</span>
+            <span class="stat-value" id="stat-shares">0</span>
+            <span class="stat-label">分享</span>
+          </div>
+          <div class="stat-item stat-hot" title="热度指数">
+            <span class="stat-icon">🔥</span>
+            <span class="stat-value" id="stat-hot">0</span>
+            <span class="stat-label">热度</span>
+          </div>
+        </div>
+        <div class="game-frame-container">
+          <div class="game-loading" id="game-loading">
+            <div class="loading-spinner"></div>
+            <p>游戏加载中...</p>
+          </div>
+          <div class="game-error" id="game-error" style="display:none;">
+            <p>😢 游戏加载失败</p>
+            <button class="btn btn-primary" onclick="reloadGame()">重新加载</button>
+          </div>
+          <iframe id="game-frame" sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-forms allow-modals allow-popups"></iframe>
+          
+          <!-- 品牌水印浮层 -->
+          <div class="brand-watermark" id="brand-watermark" onclick="showBrandPromo()">
+            <span class="watermark-logo">🎮</span>
+            <span class="watermark-text">游戏开发技术教程</span>
+          </div>
+          
+          <!-- 底部公众号提示条 -->
+          <div class="game-promo-bar" id="game-promo-bar">
+            <button class="btn btn-sm btn-promo" onclick="showBrandPromo()">去关注</button>
+            <button class="btn-close-promo" onclick="closePromoBar()" title="关闭">×</button>
+            <span class="promo-text">这个游戏由AI生成！关注公众号「<strong>游戏开发技术教程</strong>」你也能创作</span>
+          </div>
+        </div>
+        <!-- 调试面板 -->
+        <div class="debug-panel" id="debug-panel" style="display:none;">
+          <div class="debug-header">
+            <span>🔧 调试信息</span>
+            <button onclick="toggleDebugPanel()">收起</button>
+          </div>
+          <div class="debug-content" id="debug-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 生成中的遮罩 -->
+    <div id="generating-overlay" class="overlay">
+      <div class="overlay-content">
+        <div class="generating-animation">
+          <div class="pulse-ring"></div>
+          <div class="emoji-center">🎮</div>
+        </div>
+        <h3>AI 正在创作游戏...</h3>
+        <p class="generating-tip" id="generating-status">正在连接 AI 服务</p>
+        <p class="generating-time" id="generating-time">已用时: 0秒</p>
+        <div class="generating-log" id="generating-log">
+          <div class="log-item">⏳ 等待生成...</div>
+        </div>
+        <div class="generating-actions">
+          <button class="btn btn-secondary btn-minimize" onclick="minimizeGenerating()" title="最小化，继续浏览">
+            <span>📥</span> 最小化
+          </button>
+          <button class="btn btn-secondary btn-cancel" onclick="cancelGeneration()">
+            <span>✕</span> 取消
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 浮动生成状态条（最小化后显示） -->
+    <div id="generating-float" class="generating-float">
+      <div class="float-content" onclick="restoreGenerating()">
+        <div class="float-spinner"></div>
+        <span class="float-text">AI生成中...</span>
+        <span class="float-time" id="float-time">0s</span>
+      </div>
+      <button class="float-restore" onclick="restoreGenerating()" title="展开">📤</button>
+      <button class="float-cancel" onclick="cancelGeneration()" title="取消">✕</button>
+    </div>
+    
+    <!-- 生成完成通知（取消/最小化后生成成功时显示） -->
+    <div id="generation-notify" class="generation-notify">
+      <div class="notify-content">
+        <span class="notify-icon">✅</span>
+        <span class="notify-text">游戏生成完成！</span>
+        <button class="btn btn-primary btn-sm" onclick="viewGeneratedGame()">查看游戏</button>
+        <button class="notify-close" onclick="closeGenerationNotify()">×</button>
+      </div>
+    </div>
+
+    <!-- 设置弹窗 -->
+    <div id="settings-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>⚙️ 设置</h3>
+          <button class="btn btn-icon btn-close" onclick="closeSettings()">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="settings-section">
+            <h4>🤖 AI 模型</h4>
+            <div class="form-group">
+              <label>选择模型</label>
+              <select id="llm-model-select" onchange="onModelSelectChange()">
+                <optgroup label="🔥 推荐 - 性价比之王">
+                  <option value="deepseek-v3">DeepSeek V3 ⭐推荐</option>
+                  <option value="deepseek-r1">DeepSeek R1 (推理增强)</option>
+                </optgroup>
+                <optgroup label="🇨🇳 国产模型">
+                  <option value="glm-4.7">GLM 4.7 🆕</option>
+                  <option value="glm-4.6">GLM 4.6</option>
+                  <option value="glm-4.5">GLM 4.5</option>
+                  <option value="kimi-k2">Kimi K2</option>
+                  <option value="qwen3-coder-plus">Qwen3 Coder Plus</option>
+                </optgroup>
+                <optgroup label="🌐 OpenAI">
+                  <option value="gpt-4o-mini">GPT-4o Mini</option>
+                  <option value="gpt-4o">GPT-4o</option>
+                  <option value="gpt-5">GPT 5</option>
+                  <option value="gpt-5.1">GPT 5.1</option>
+                  <option value="gpt-5.1-codex">GPT 5.1 Codex</option>
+                </optgroup>
+                <optgroup label="🎭 Claude">
+                  <option value="claude-3.7-sonnet">Claude 3.7 Sonnet</option>
+                  <option value="claude-4-sonnet">Claude 4 Sonnet</option>
+                  <option value="claude-4.5-haiku">Claude 4.5 Haiku</option>
+                  <option value="claude-4.5-sonnet">Claude 4.5 Sonnet</option>
+                  <option value="claude-4.5-opus">Claude 4.5 Opus 🆕</option>
+                </optgroup>
+                <optgroup label="💎 Google">
+                  <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                  <option value="gemini-3-pro">Gemini 3 Pro 🆕</option>
+                </optgroup>
+                <optgroup label="⚙️ 自定义">
+                  <option value="custom">自定义接口...</option>
+                </optgroup>
+              </select>
+              <p class="form-hint" id="model-hint">DeepSeek V3 性价比最高，推荐使用</p>
+            </div>
+            <div class="form-group">
+              <label>API Key</label>
+              <div class="input-with-toggle">
+                <input type="password" id="llm-api-key" placeholder="输入你的 API Key">
+                <button class="btn-toggle-pwd" onclick="toggleApiKeyVisibility()">👁️</button>
+              </div>
+            </div>
+            <div class="form-group" id="base-url-group" style="display:none;">
+              <label>API 地址</label>
+              <input type="text" id="llm-base-url" placeholder="https://api.example.com/v1">
+            </div>
+            <div class="form-group" id="custom-model-group" style="display:none;">
+              <label>模型名称</label>
+              <input type="text" id="llm-model" placeholder="gpt-4o">
+            </div>
+          </div>
+          <div class="settings-section">
+            <h4>👤 个人信息</h4>
+            <div class="form-group">
+              <label>你的昵称</label>
+              <input type="text" id="author-name" placeholder="创作游戏时显示的名字" maxlength="20">
+            </div>
+          </div>
+          <div class="settings-section">
+            <h4>🔧 开发选项</h4>
+            <div class="form-group form-switch">
+              <label>
+                <input type="checkbox" id="debug-mode" onchange="toggleDebugMode()">
+                <span>显示调试信息</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeSettings()">取消</button>
+          <button class="btn btn-primary" onclick="saveSettings()">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 积分弹窗 -->
+    <div id="credits-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>💎 我的积分</h3>
+          <button class="btn btn-icon btn-close" onclick="closeCreditsModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="credits-display">
+            <div class="credits-number" id="credits-count">0</div>
+            <div class="credits-label">剩余生成次数</div>
+          </div>
+          
+          <div class="credits-ways">
+            <h4>获取更多次数</h4>
+            
+            <div class="credit-way" id="way-wechat">
+              <div class="credit-way-icon">📱</div>
+              <div class="credit-way-info">
+                <div class="credit-way-title">关注公众号</div>
+                <div class="credit-way-desc">关注后输入验证码领取</div>
+              </div>
+              <div class="credit-way-reward">+3次</div>
+            </div>
+            
+            <div class="credit-way" onclick="watchAd()">
+              <div class="credit-way-icon">🎬</div>
+              <div class="credit-way-info">
+                <div class="credit-way-title">观看视频广告</div>
+                <div class="credit-way-desc">今日已观看 <span id="ad-count-today">0</span>/<span id="ad-daily-limit">10</span> 次</div>
+              </div>
+              <div class="credit-way-reward">+1次</div>
+            </div>
+            
+            <div class="credit-way" onclick="shareForCredits()">
+              <div class="credit-way-icon">🔗</div>
+              <div class="credit-way-info">
+                <div class="credit-way-title">分享游戏</div>
+                <div class="credit-way-desc">分享你创作的游戏给朋友</div>
+              </div>
+              <div class="credit-way-reward">+1次</div>
+            </div>
+            
+            <div class="credit-way" onclick="toggleInviteSection()">
+              <div class="credit-way-icon">🎫</div>
+              <div class="credit-way-info">
+                <div class="credit-way-title">邀请好友</div>
+                <div class="credit-way-desc">邀请新用户，双方各得积分</div>
+              </div>
+              <div class="credit-way-reward">+2次</div>
+            </div>
+          </div>
+          
+          <!-- 邀请码区域 -->
+          <div class="invite-section" id="invite-section" style="display:none;">
+            <h4>我的邀请码</h4>
+            <div class="invite-code-display">
+              <code id="my-invite-code">加载中...</code>
+              <button class="btn btn-secondary" onclick="copyInviteCode()">复制</button>
+            </div>
+            <p class="form-hint" style="margin-top:0.5rem;">分享给朋友，对方使用后双方各得 +2 次生成机会</p>
+            
+            <h4 style="margin-top:1rem;">使用邀请码</h4>
+            <div class="invite-input-group">
+              <input type="text" id="invite-code-input" placeholder="输入好友的邀请码" maxlength="12">
+              <button class="btn btn-primary" onclick="submitInviteCode()">领取</button>
+            </div>
+          </div>
+          
+          <div class="wechat-verify" id="wechat-verify-section" style="display:none;">
+            <p>关注公众号【<strong>游戏开发技术教程</strong>】</p>
+            <p>回复"<strong>积分</strong>"获取验证码</p>
+            <div class="verify-input">
+              <input type="text" id="wechat-verify-code" placeholder="输入验证码" maxlength="20">
+              <button class="btn btn-primary" onclick="verifyWechatFollow()">验证</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 保存游戏弹窗 -->
+    <div id="save-modal" class="modal">
+      <div class="modal-content modal-large">
+        <div class="modal-header">
+          <h3>🎮 游戏生成完成！</h3>
+          <button class="btn btn-icon btn-close" onclick="closeSaveModal()">×</button>
+        </div>
+        <div class="modal-body save-modal-body">
+          <!-- 左侧：可玩游戏区域 -->
+          <div class="preview-play-area">
+            <div class="preview-play-header">
+              <span class="preview-badge">🎮 试玩预览</span>
+              <button class="btn btn-sm btn-icon" onclick="toggleFullscreenPreview()" title="全屏">⛶</button>
+            </div>
+            <div class="preview-game-frame">
+              <iframe id="preview-frame" sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-forms allow-modals allow-popups"></iframe>
+            </div>
+            <div class="preview-play-tip">点击游戏区域开始试玩</div>
+          </div>
+          
+          <!-- 右侧：保存表单 -->
+          <div class="save-form-area">
+            <div class="form-group">
+              <label>🏷️ 游戏名称</label>
+              <input type="text" id="save-title" placeholder="给游戏起个名字" maxlength="50">
+            </div>
+            <div class="form-group">
+              <label>👤 作者昵称</label>
+              <input type="text" id="save-author" placeholder="你的名字" maxlength="20">
+            </div>
+            <div class="save-tips">
+              <p>💡 保存后可获得分享链接</p>
+              <p>🔐 只有你可以编辑这个游戏</p>
+            </div>
+            <div class="save-form-actions">
+              <button class="btn btn-secondary" onclick="closeSaveModal()">取消</button>
+              <button class="btn btn-primary btn-save-main" onclick="confirmSaveGame()">
+                <span>💾</span> 保存并分享
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 分享面板弹窗 -->
+    <div id="share-modal" class="modal">
+      <div class="modal-content modal-small">
+        <div class="modal-header">
+          <h3>🎉 分享游戏</h3>
+          <button class="btn btn-icon btn-close" onclick="closeShareModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <!-- 分享统计展示 -->
+          <div class="share-stats-preview">
+            <div class="share-game-title" id="share-game-title">游戏名称</div>
+            <div class="share-mini-stats">
+              <span>🎮 <strong id="share-play-count">0</strong> 人玩过</span>
+              <span>❤️ <strong id="share-like-count">0</strong> 人喜欢</span>
+              <span>🔗 <strong id="share-share-count">0</strong> 次分享</span>
+            </div>
+          </div>
+          
+          <!-- 分享渠道 -->
+          <div class="share-channels">
+            <button class="share-channel-btn" onclick="shareToChannel('wechat')">
+              <span class="channel-icon">💬</span>
+              <span class="channel-name">微信</span>
+            </button>
+            <button class="share-channel-btn" onclick="shareToChannel('weibo')">
+              <span class="channel-icon">📱</span>
+              <span class="channel-name">微博</span>
+            </button>
+            <button class="share-channel-btn" onclick="shareToChannel('qq')">
+              <span class="channel-icon">🐧</span>
+              <span class="channel-name">QQ</span>
+            </button>
+            <button class="share-channel-btn" onclick="shareToChannel('copy')">
+              <span class="channel-icon">🔗</span>
+              <span class="channel-name">复制链接</span>
+            </button>
+          </div>
+          
+          <div class="form-group">
+            <label>游戏链接</label>
+            <div class="copy-field">
+              <input type="text" id="share-url" readonly>
+              <button class="btn btn-primary" onclick="copyShareUrl()">复制</button>
+            </div>
+          </div>
+          
+          <div class="share-tips">
+            <p>📱 分享给朋友一起来玩吧！</p>
+            <p class="share-reward-hint">💡 分享游戏可获得积分奖励</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 个人中心弹窗 -->
+    <div id="profile-modal" class="modal">
+      <div class="modal-content modal-xlarge">
+        <div class="modal-header profile-header">
+          <div class="profile-user-info">
+            <div class="profile-avatar">👤</div>
+            <div class="profile-name-area">
+              <h3 id="profile-username">游戏创作者</h3>
+              <div class="profile-stats-mini">
+                <span>🎮 <strong id="profile-game-count">0</strong> 作品</span>
+                <span>❤️ <strong id="profile-like-count">0</strong> 点赞</span>
+                <span>💎 <strong id="profile-credits">0</strong> 积分</span>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-icon btn-close" onclick="closeProfileModal()">×</button>
+        </div>
+        
+        <!-- 标签页导航 -->
+        <div class="profile-tabs">
+          <button class="profile-tab active" data-tab="my-games" onclick="switchProfileTab('my-games')">
+            🎨 我的作品
+          </button>
+          <button class="profile-tab" data-tab="my-likes" onclick="switchProfileTab('my-likes')">
+            ❤️ 我的点赞
+          </button>
+          <button class="profile-tab" data-tab="my-favorites" onclick="switchProfileTab('my-favorites')">
+            ⭐ 我的收藏
+          </button>
+          <button class="profile-tab" data-tab="my-settings" onclick="switchProfileTab('my-settings')">
+            ⚙️ 账号设置
+          </button>
+        </div>
+        
+        <div class="modal-body profile-body">
+          <!-- 我的作品 -->
+          <div class="profile-tab-content active" id="tab-my-games">
+            <div class="tab-header">
+              <div id="my-games-stats" class="tab-stats"></div>
+              <button class="btn btn-secondary btn-small" onclick="loadMyGames()">🔄 刷新</button>
+            </div>
+            <div id="my-games-list" class="games-list-container">
+              <div class="loading-games">加载中...</div>
+            </div>
+          </div>
+          
+          <!-- 我的点赞 -->
+          <div class="profile-tab-content" id="tab-my-likes">
+            <div class="tab-header">
+              <div id="my-likes-stats" class="tab-stats"></div>
+              <button class="btn btn-secondary btn-small" onclick="loadMyLikes()">🔄 刷新</button>
+            </div>
+            <div id="my-likes-list" class="games-list-container">
+              <div class="loading-games">加载中...</div>
+            </div>
+          </div>
+          
+          <!-- 我的收藏 -->
+          <div class="profile-tab-content" id="tab-my-favorites">
+            <div class="tab-header">
+              <div id="my-favorites-stats" class="tab-stats"></div>
+              <button class="btn btn-secondary btn-small" onclick="loadMyFavorites()">🔄 刷新</button>
+            </div>
+            <div id="my-favorites-list" class="games-list-container">
+              <div class="loading-games">加载中...</div>
+            </div>
+          </div>
+          
+          <!-- 账号设置 -->
+          <div class="profile-tab-content" id="tab-my-settings">
+            <div class="settings-sections">
+              <!-- 个人信息 -->
+              <div class="settings-card">
+                <h4>👤 个人信息</h4>
+                <div class="form-group">
+                  <label>昵称</label>
+                  <input type="text" id="profile-author-name" placeholder="你的昵称" maxlength="20">
+                </div>
+              </div>
+              
+              <!-- AI 模型配置 -->
+              <div class="settings-card">
+                <h4>🤖 AI 模型配置</h4>
+                <div class="form-group">
+                  <label>选择模型</label>
+                  <select id="profile-model-select" onchange="onProfileModelChange()">
+                    <optgroup label="🔥 推荐">
+                      <option value="deepseek-v3">DeepSeek V3 ⭐推荐</option>
+                      <option value="deepseek-r1">DeepSeek R1</option>
+                    </optgroup>
+                    <optgroup label="🇨🇳 国产模型">
+                      <option value="glm-4.7">GLM 4.7</option>
+                      <option value="kimi-k2">Kimi K2</option>
+                      <option value="qwen3-coder-plus">Qwen3 Coder</option>
+                    </optgroup>
+                    <optgroup label="🌐 OpenAI">
+                      <option value="gpt-4o-mini">GPT-4o Mini</option>
+                      <option value="gpt-4o">GPT-4o</option>
+                    </optgroup>
+                    <optgroup label="🎭 Claude">
+                      <option value="claude-4-sonnet">Claude 4 Sonnet</option>
+                      <option value="claude-4.5-sonnet">Claude 4.5 Sonnet</option>
+                    </optgroup>
+                    <optgroup label="⚙️ 自定义">
+                      <option value="custom">自定义接口...</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>API Key</label>
+                  <div class="input-with-toggle">
+                    <input type="password" id="profile-api-key" placeholder="输入 API Key">
+                    <button class="btn-toggle-pwd" onclick="toggleProfileApiKeyVisibility()">👁️</button>
+                  </div>
+                  <p class="form-hint" id="profile-model-hint">DeepSeek 性价比最高</p>
+                </div>
+                <div class="form-group" id="profile-base-url-group" style="display:none;">
+                  <label>API 地址</label>
+                  <input type="text" id="profile-base-url" placeholder="https://api.example.com/v1">
+                </div>
+                <div class="form-group" id="profile-custom-model-group" style="display:none;">
+                  <label>模型名称</label>
+                  <input type="text" id="profile-custom-model" placeholder="model-name">
+                </div>
+              </div>
+              
+              <!-- 积分信息 -->
+              <div class="settings-card">
+                <h4>💎 我的积分</h4>
+                <div class="credits-mini-display">
+                  <div class="credits-value" id="profile-credits-value">0</div>
+                  <div class="credits-label">剩余生成次数</div>
+                </div>
+                <div class="credits-actions">
+                  <button class="btn btn-secondary btn-small" onclick="closeProfileModal();openCreditsModal();">
+                    获取更多积分
+                  </button>
+                </div>
+              </div>
+              
+              <!-- 其他设置 -->
+              <div class="settings-card">
+                <h4>🔧 其他设置</h4>
+                <div class="form-group form-switch">
+                  <label>
+                    <input type="checkbox" id="profile-debug-mode">
+                    <span>显示调试信息</span>
+                  </label>
+                </div>
+              </div>
+              
+              <!-- 保存按钮 -->
+              <div class="settings-actions">
+                <button class="btn btn-primary" onclick="saveProfileSettings()">💾 保存设置</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 全部游戏弹窗 -->
+    <div id="all-games-modal" class="modal">
+      <div class="modal-content modal-xlarge">
+        <div class="modal-header">
+          <h3>🎮 全部游戏</h3>
+          <button class="btn btn-icon btn-close" onclick="closeAllGamesModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="all-games-grid" id="all-games-grid">
+            <div class="loading-spinner">加载中...</div>
+          </div>
+          <div class="load-more-container">
+            <button class="btn btn-secondary" id="load-more-all-games" onclick="loadMoreAllGames()">加载更多</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 公众号推广弹窗 -->
+    <div id="brand-promo-modal" class="modal">
+      <div class="modal-content modal-small">
+        <div class="modal-header">
+          <h3>🎮 关注公众号</h3>
+          <button class="btn btn-icon btn-close" onclick="closeBrandPromo()">×</button>
+        </div>
+        <div class="modal-body brand-promo-body">
+          <div class="promo-qr-large">
+            <img src="/images/wechat-qrcode.png" alt="微信搜一搜：游戏开发技术教程" class="promo-banner-modal">
+          </div>
+          <div class="promo-modal-info">
+            <ul class="promo-list">
+              <li>🎁 关注即送 <strong>3次</strong> 免费生成</li>
+              <li>📚 Unity/UE4/UE5 实战干货</li>
+              <li>💼 大厂内推 & 职业规划</li>
+            </ul>
+          </div>
+          <button class="btn btn-primary btn-block" onclick="closeBrandPromo();openCreditsModal();">
+            已关注，去领积分
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast提示 -->
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

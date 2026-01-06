@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理后台 - AI游戏工坊</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      color: #e2e8f0;
+    }
+    
+    .login-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    
+    .login-box {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 1rem;
+      padding: 2rem;
+      width: 100%;
+      max-width: 400px;
+    }
+    
+    .login-box h1 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      font-size: 1.5rem;
+    }
+    
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #94a3b8;
+      font-size: 0.875rem;
+    }
+    
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 0.5rem;
+      color: white;
+      font-size: 1rem;
+    }
+    
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: #6366f1;
+    }
+    
+    .btn {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border: none;
+      border-radius: 0.5rem;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    }
+    
+    /* 管理面板样式 */
+    .admin-container {
+      display: none;
+      padding: 1.5rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    
+    .admin-header h1 {
+      font-size: 1.5rem;
+    }
+    
+    .header-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .btn-sm {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      width: auto;
+    }
+    
+    .btn-logout {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    
+    .btn-logout:hover {
+      background: rgba(239, 68, 68, 0.3);
+      transform: none;
+      box-shadow: none;
+    }
+    
+    /* 标签页 */
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 0.5rem;
+      overflow-x: auto;
+    }
+    
+    .tab-btn {
+      padding: 0.625rem 1.25rem;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      border-radius: 0.5rem;
+      transition: all 0.2s;
+      white-space: nowrap;
+      font-size: 0.9rem;
+    }
+    
+    .tab-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
+    }
+    
+    .tab-btn.active {
+      background: rgba(99, 102, 241, 0.2);
+      color: #a5b4fc;
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    /* 统计卡片 */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .stat-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+    }
+    
+    .stat-card h3 {
+      color: #94a3b8;
+      font-size: 0.8rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .stat-card .value {
+      font-size: 1.75rem;
+      font-weight: bold;
+      color: #6366f1;
+    }
+    
+    /* 配置面板 */
+    .config-section {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    
+    .config-section h2 {
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+    
+    .config-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+    }
+    
+    .config-item label {
+      color: #94a3b8;
+      font-size: 0.8rem;
+    }
+    
+    .config-item input {
+      padding: 0.5rem 0.75rem;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 0.375rem;
+      color: white;
+      font-size: 0.875rem;
+    }
+    
+    .config-item input:focus {
+      outline: none;
+      border-color: #6366f1;
+    }
+    
+    .btn-save {
+      background: linear-gradient(135deg, #10b981, #059669);
+      border: none;
+      color: white;
+      padding: 0.5rem 1.25rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+      margin-top: 1rem;
+      width: auto;
+    }
+    
+    .btn-save:hover {
+      opacity: 0.9;
+      transform: none;
+    }
+    
+    /* 游戏管理表格 */
+    .table-container {
+      overflow-x: auto;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 0.5rem;
+    }
+    
+    .games-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    
+    .games-table th,
+    .games-table td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .games-table th {
+      background: rgba(0, 0, 0, 0.2);
+      color: #94a3b8;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    
+    .games-table tr:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+    
+    .games-table .title {
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .games-table .prompt {
+      max-width: 250px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #94a3b8;
+      font-size: 0.8rem;
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.7rem;
+      font-weight: 500;
+    }
+    
+    .badge-featured {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+    }
+    
+    .badge-hidden {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+    }
+    
+    .action-btns {
+      display: flex;
+      gap: 0.25rem;
+      flex-wrap: wrap;
+    }
+    
+    .btn-action {
+      padding: 0.25rem 0.5rem;
+      border: none;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      font-size: 0.75rem;
+      transition: opacity 0.2s;
+    }
+    
+    .btn-action:hover {
+      opacity: 0.8;
+    }
+    
+    .btn-feature {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+    }
+    
+    .btn-hide {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+    }
+    
+    .btn-view {
+      background: rgba(99, 102, 241, 0.2);
+      color: #a5b4fc;
+    }
+    
+    .btn-delete {
+      background: rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+    
+    /* 筛选和搜索 */
+    .filter-bar {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .filter-bar input,
+    .filter-bar select {
+      padding: 0.5rem 0.75rem;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 0.375rem;
+      color: white;
+      font-size: 0.875rem;
+    }
+    
+    .filter-bar input {
+      flex: 1;
+      min-width: 200px;
+    }
+    
+    .filter-bar select {
+      min-width: 120px;
+    }
+    
+    .btn-search {
+      background: #6366f1;
+      border: none;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      cursor: pointer;
+    }
+    
+    /* 分页 */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+    
+    .pagination button {
+      padding: 0.5rem 0.75rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #e2e8f0;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    
+    .pagination button:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .pagination button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .pagination button.active {
+      background: #6366f1;
+      border-color: #6366f1;
+    }
+    
+    /* 批量操作 */
+    .batch-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .batch-actions span {
+      color: #94a3b8;
+      font-size: 0.85rem;
+    }
+    
+    /* 用户表格 */
+    .users-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    
+    .users-table th,
+    .users-table td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .users-table th {
+      background: rgba(0, 0, 0, 0.2);
+      color: #94a3b8;
+      font-weight: 500;
+    }
+    
+    .users-table tr:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+    
+    .token-short {
+      font-family: monospace;
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+    
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1e293b;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 1000;
+    }
+    
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    
+    .toast.success {
+      background: #10b981;
+    }
+    
+    .toast.error {
+      background: #ef4444;
+    }
+    
+    /* 复选框 */
+    .checkbox-cell {
+      width: 30px;
+    }
+    
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+    
+    /* 响应式 */
+    @media (max-width: 768px) {
+      .admin-container {
+        padding: 1rem;
+      }
+      
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .config-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 登录界面 -->
+  <div class="login-container" id="login-container">
+    <div class="login-box">
+      <h1>🔐 管理后台</h1>
+      <div class="form-group">
+        <label>管理员密钥</label>
+        <input type="password" id="admin-key-input" placeholder="请输入 ADMIN_KEY">
+      </div>
+      <button class="btn" onclick="login()">登录</button>
+      <p style="margin-top: 1rem; font-size: 0.75rem; color: #64748b; text-align: center;">
+        密钥在 .env 文件中配置 ADMIN_KEY
+      </p>
+    </div>
+  </div>
+
+  <!-- 管理面板 -->
+  <div class="admin-container" id="admin-container">
+    <div class="admin-header">
+      <h1>🎮 AI游戏工坊 - 管理后台</h1>
+      <div class="header-actions">
+        <a href="/" class="btn btn-sm" style="background: rgba(99, 102, 241, 0.2); color: #a5b4fc; text-decoration: none;">🏠 返回首页</a>
+        <button class="btn btn-sm btn-logout" onclick="logout()">退出登录</button>
+      </div>
+    </div>
+
+    <!-- 标签页 -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('dashboard')">📊 仪表盘</button>
+      <button class="tab-btn" onclick="switchTab('config')">⚙️ 系统配置</button>
+      <button class="tab-btn" onclick="switchTab('games')">🎮 游戏管理</button>
+      <button class="tab-btn" onclick="switchTab('users')">👥 用户管理</button>
+    </div>
+
+    <!-- 仪表盘 -->
+    <div class="tab-content active" id="tab-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <h3>📊 游戏总数</h3>
+          <div class="value" id="stat-games">-</div>
+        </div>
+        <div class="stat-card">
+          <h3>👥 用户总数</h3>
+          <div class="value" id="stat-users">-</div>
+        </div>
+        <div class="stat-card">
+          <h3>👁️ 总浏览量</h3>
+          <div class="value" id="stat-views">-</div>
+        </div>
+        <div class="stat-card">
+          <h3>❤️ 总点赞数</h3>
+          <div class="value" id="stat-likes">-</div>
+        </div>
+        <div class="stat-card">
+          <h3>⭐ 推荐游戏</h3>
+          <div class="value" id="stat-featured">-</div>
+        </div>
+        <div class="stat-card">
+          <h3>🙈 隐藏游戏</h3>
+          <div class="value" id="stat-hidden">-</div>
+        </div>
+      </div>
+
+      <!-- 最近游戏 -->
+      <div class="config-section">
+        <h2>🆕 最近创建的游戏</h2>
+        <div id="recent-games" style="max-height: 400px; overflow-y: auto;">
+          <p style="color: #64748b;">加载中...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 系统配置 -->
+    <div class="tab-content" id="tab-config">
+      <div class="config-section">
+        <h2>🔑 微信验证码配置</h2>
+        <div class="config-grid">
+          <div class="config-item">
+            <label>关注验证码</label>
+            <input type="text" id="config-wechat_verify_code" placeholder="AIGAME2025">
+          </div>
+        </div>
+        <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.75rem;">
+          💡 用户关注公众号后，输入此验证码可领取积分。建议在公众号后台设置关键词自动回复。
+        </p>
+      </div>
+
+      <div class="config-section">
+        <h2>💰 积分配置</h2>
+        <div class="config-grid">
+          <div class="config-item">
+            <label>新用户初始积分</label>
+            <input type="number" id="config-credits_initial" placeholder="5">
+          </div>
+          <div class="config-item">
+            <label>关注公众号奖励</label>
+            <input type="number" id="config-credits_follow_wechat" placeholder="3">
+          </div>
+          <div class="config-item">
+            <label>看广告奖励</label>
+            <input type="number" id="config-credits_watch_ad" placeholder="1">
+          </div>
+          <div class="config-item">
+            <label>每日广告上限</label>
+            <input type="number" id="config-credits_daily_ad_limit" placeholder="3">
+          </div>
+          <div class="config-item">
+            <label>分享游戏奖励</label>
+            <input type="number" id="config-credits_share_game" placeholder="1">
+          </div>
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h2>🌐 网站配置</h2>
+        <div class="config-grid">
+          <div class="config-item">
+            <label>网站名称</label>
+            <input type="text" id="config-site_name" placeholder="AI游戏工坊">
+          </div>
+          <div class="config-item">
+            <label>网站公告</label>
+            <input type="text" id="config-site_announcement" placeholder="留空则不显示">
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-save" onclick="saveConfig()">💾 保存配置</button>
+    </div>
+
+    <!-- 游戏管理 -->
+    <div class="tab-content" id="tab-games">
+      <div class="filter-bar">
+        <input type="text" id="game-search" placeholder="搜索游戏标题或描述...">
+        <select id="game-filter">
+          <option value="all">全部游戏</option>
+          <option value="featured">推荐游戏</option>
+          <option value="hidden">隐藏游戏</option>
+        </select>
+        <button class="btn-search" onclick="loadGames(1)">🔍 搜索</button>
+      </div>
+
+      <div class="batch-actions">
+        <span>批量操作：</span>
+        <button class="btn-action btn-feature" onclick="batchAction('feature')">⭐ 设为推荐</button>
+        <button class="btn-action btn-feature" onclick="batchAction('unfeature')">取消推荐</button>
+        <button class="btn-action btn-hide" onclick="batchAction('hide')">🙈 隐藏</button>
+        <button class="btn-action btn-hide" onclick="batchAction('show')">👁️ 显示</button>
+        <button class="btn-action btn-delete" onclick="batchAction('delete')">🗑️ 删除</button>
+      </div>
+
+      <div class="table-container">
+        <table class="games-table">
+          <thead>
+            <tr>
+              <th class="checkbox-cell"><input type="checkbox" id="select-all-games" onchange="toggleSelectAll()"></th>
+              <th>标题</th>
+              <th>描述</th>
+              <th>作者</th>
+              <th>浏览</th>
+              <th>点赞</th>
+              <th>状态</th>
+              <th>创建时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="games-table-body">
+            <tr><td colspan="9" style="text-align: center; color: #64748b;">加载中...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination" id="games-pagination"></div>
+    </div>
+
+    <!-- 用户管理 -->
+    <div class="tab-content" id="tab-users">
+      <div class="table-container">
+        <table class="users-table">
+          <thead>
+            <tr>
+              <th>用户Token</th>
+              <th>当前积分</th>
+              <th>累计获得</th>
+              <th>累计使用</th>
+              <th>已关注</th>
+              <th>今日广告</th>
+              <th>注册时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="users-table-body">
+            <tr><td colspan="8" style="text-align: center; color: #64748b;">加载中...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination" id="users-pagination"></div>
+
+      <!-- 手动加积分 -->
+      <div class="config-section" style="margin-top: 1.5rem;">
+        <h2>➕ 手动调整积分</h2>
+        <div class="config-grid">
+          <div class="config-item">
+            <label>用户Token</label>
+            <input type="text" id="add-credit-token" placeholder="输入完整的用户Token">
+          </div>
+          <div class="config-item">
+            <label>积分数量</label>
+            <input type="number" id="add-credit-amount" value="10" min="-1000" max="1000">
+          </div>
+          <div class="config-item">
+            <label>原因</label>
+            <input type="text" id="add-credit-reason" placeholder="管理员调整">
+          </div>
+        </div>
+        <button class="btn-save" onclick="addCreditsToUser()" style="background: linear-gradient(135deg, #f59e0b, #d97706);">💰 添加积分</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    let adminKey = '';
+    let currentGamesPage = 1;
+    let currentUsersPage = 1;
+    let selectedGames = new Set();
+
+    // 登录
+    async function login() {
+      const key = document.getElementById('admin-key-input').value.trim();
+      if (!key) {
+        showToast('请输入管理员密钥', 'error');
+        return;
+      }
+
+      adminKey = key;
+      
+      try {
+        const response = await fetch('/api/admin/stats', {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        
+        if (response.ok) {
+          document.getElementById('login-container').style.display = 'none';
+          document.getElementById('admin-container').style.display = 'block';
+          sessionStorage.setItem('adminKey', adminKey);
+          loadDashboard();
+          showToast('登录成功', 'success');
+        } else {
+          showToast('密钥无效', 'error');
+          adminKey = '';
+        }
+      } catch (error) {
+        showToast('连接服务器失败', 'error');
+      }
+    }
+
+    // 退出
+    function logout() {
+      adminKey = '';
+      sessionStorage.removeItem('adminKey');
+      document.getElementById('login-container').style.display = 'flex';
+      document.getElementById('admin-container').style.display = 'none';
+      document.getElementById('admin-key-input').value = '';
+    }
+
+    // 切换标签页
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      
+      event.target.classList.add('active');
+      document.getElementById('tab-' + tabName).classList.add('active');
+      
+      // 加载对应数据
+      switch(tabName) {
+        case 'dashboard':
+          loadDashboard();
+          break;
+        case 'config':
+          loadConfig();
+          break;
+        case 'games':
+          loadGames(1);
+          break;
+        case 'users':
+          loadUsers(1);
+          break;
+      }
+    }
+
+    // 加载仪表盘
+    async function loadDashboard() {
+      await loadStats();
+      await loadRecentGames();
+    }
+
+    // 加载统计
+    async function loadStats() {
+      try {
+        const response = await fetch('/api/admin/stats', {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          document.getElementById('stat-games').textContent = data.overview.totalGames || 0;
+          document.getElementById('stat-users').textContent = data.overview.totalUsers || 0;
+          document.getElementById('stat-views').textContent = data.overview.totalPlays || 0;
+          document.getElementById('stat-likes').textContent = data.overview.totalLikes || 0;
+        }
+
+        // 获取推荐和隐藏数量
+        const gamesRes = await fetch('/api/admin/games?limit=1&filter=featured', {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const gamesData = await gamesRes.json();
+        document.getElementById('stat-featured').textContent = gamesData.pagination?.total || 0;
+
+        const hiddenRes = await fetch('/api/admin/games?limit=1&filter=hidden', {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const hiddenData = await hiddenRes.json();
+        document.getElementById('stat-hidden').textContent = hiddenData.pagination?.total || 0;
+        
+      } catch (error) {
+        console.error('加载统计失败:', error);
+      }
+    }
+
+    // 加载最近游戏
+    async function loadRecentGames() {
+      try {
+        const response = await fetch('/api/admin/games?limit=10', {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+        
+        if (data.success && data.games.length > 0) {
+          const html = data.games.map(game => `
+            <div style="padding: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <strong style="color: #e2e8f0;">${escapeHtml(game.title)}</strong>
+                  ${game.is_featured ? '<span class="badge badge-featured">推荐</span>' : ''}
+                  ${game.is_hidden ? '<span class="badge badge-hidden">隐藏</span>' : ''}
+                </div>
+                <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">
+                  👁️ ${game.play_count || 0} · ❤️ ${game.like_count || 0} · ${formatDate(game.created_at)}
+                </div>
+              </div>
+              <a href="/game.html?id=${game.id}" target="_blank" style="color: #6366f1; font-size: 0.8rem; margin-left: 1rem;">查看</a>
+            </div>
+          `).join('');
+          document.getElementById('recent-games').innerHTML = html;
+        } else {
+          document.getElementById('recent-games').innerHTML = '<p style="color: #64748b; padding: 1rem;">暂无游戏</p>';
+        }
+      } catch (error) {
+        document.getElementById('recent-games').innerHTML = '<p style="color: #ef4444; padding: 1rem;">加载失败</p>';
+      }
+    }
+
+    // 加载配置
+    async function loadConfig() {
+      try {
+        const response = await fetch('/api/admin/config', {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          data.configs.forEach(config => {
+            const input = document.getElementById('config-' + config.key);
+            if (input) {
+              input.value = config.value;
+            }
+          });
+        }
+      } catch (error) {
+        showToast('加载配置失败', 'error');
+      }
+    }
+
+    // 保存配置
+    async function saveConfig() {
+      const configKeys = [
+        'wechat_verify_code',
+        'credits_initial',
+        'credits_follow_wechat',
+        'credits_watch_ad',
+        'credits_daily_ad_limit',
+        'credits_share_game',
+        'site_name',
+        'site_announcement'
+      ];
+      
+      const configs = configKeys.map(key => ({
+        key,
+        value: document.getElementById('config-' + key)?.value || ''
+      }));
+      
+      try {
+        const response = await fetch('/api/admin/config', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ configs })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast('配置已保存', 'success');
+        } else {
+          showToast(data.error || '保存失败', 'error');
+        }
+      } catch (error) {
+        showToast('保存失败', 'error');
+      }
+    }
+
+    // 加载游戏列表
+    async function loadGames(page = 1) {
+      currentGamesPage = page;
+      selectedGames.clear();
+      document.getElementById('select-all-games').checked = false;
+      
+      const search = document.getElementById('game-search').value;
+      const filter = document.getElementById('game-filter').value;
+      
+      try {
+        const response = await fetch(`/api/admin/games?page=${page}&limit=15&search=${encodeURIComponent(search)}&filter=${filter}`, {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          renderGamesTable(data.games);
+          renderPagination('games-pagination', data.pagination, loadGames);
+        }
+      } catch (error) {
+        showToast('加载游戏失败', 'error');
+      }
+    }
+
+    // 渲染游戏表格
+    function renderGamesTable(games) {
+      if (games.length === 0) {
+        document.getElementById('games-table-body').innerHTML = 
+          '<tr><td colspan="9" style="text-align: center; color: #64748b; padding: 2rem;">暂无游戏</td></tr>';
+        return;
+      }
+      
+      const html = games.map(game => `
+        <tr>
+          <td class="checkbox-cell">
+            <input type="checkbox" value="${game.id}" onchange="toggleGameSelect('${game.id}')">
+          </td>
+          <td class="title">${escapeHtml(game.title)}</td>
+          <td class="prompt">${escapeHtml(game.prompt)}</td>
+          <td>${escapeHtml(game.author_name || '匿名')}</td>
+          <td>${game.play_count || 0}</td>
+          <td>${game.like_count || 0}</td>
+          <td>
+            ${game.is_featured ? '<span class="badge badge-featured">推荐</span>' : ''}
+            ${game.is_hidden ? '<span class="badge badge-hidden">隐藏</span>' : ''}
+            ${!game.is_featured && !game.is_hidden ? '<span style="color: #64748b;">正常</span>' : ''}
+          </td>
+          <td style="white-space: nowrap;">${formatDate(game.created_at)}</td>
+          <td>
+            <div class="action-btns">
+              <button class="btn-action btn-view" onclick="window.open('/game.html?id=${game.id}', '_blank')">查看</button>
+              <button class="btn-action btn-feature" onclick="toggleFeature('${game.id}', ${!game.is_featured})">
+                ${game.is_featured ? '取消推荐' : '推荐'}
+              </button>
+              <button class="btn-action btn-hide" onclick="toggleHide('${game.id}', ${!game.is_hidden})">
+                ${game.is_hidden ? '显示' : '隐藏'}
+              </button>
+              <button class="btn-action btn-delete" onclick="deleteGame('${game.id}')">删除</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+      
+      document.getElementById('games-table-body').innerHTML = html;
+    }
+
+    // 切换推荐状态
+    async function toggleFeature(gameId, featured) {
+      try {
+        const response = await fetch(`/api/admin/games/${gameId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ is_featured: featured })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast(featured ? '已设为推荐' : '已取消推荐', 'success');
+          loadGames(currentGamesPage);
+        } else {
+          showToast(data.error || '操作失败', 'error');
+        }
+      } catch (error) {
+        showToast('操作失败', 'error');
+      }
+    }
+
+    // 切换隐藏状态
+    async function toggleHide(gameId, hidden) {
+      try {
+        const response = await fetch(`/api/admin/games/${gameId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ is_hidden: hidden })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast(hidden ? '已隐藏游戏' : '已显示游戏', 'success');
+          loadGames(currentGamesPage);
+        } else {
+          showToast(data.error || '操作失败', 'error');
+        }
+      } catch (error) {
+        showToast('操作失败', 'error');
+      }
+    }
+
+    // 删除游戏
+    async function deleteGame(gameId) {
+      if (!confirm('确定要删除这个游戏吗？此操作不可恢复！')) return;
+      
+      try {
+        const response = await fetch(`/api/admin/games/${gameId}`, {
+          method: 'DELETE',
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast('游戏已删除', 'success');
+          loadGames(currentGamesPage);
+        } else {
+          showToast(data.error || '删除失败', 'error');
+        }
+      } catch (error) {
+        showToast('删除失败', 'error');
+      }
+    }
+
+    // 全选/取消全选
+    function toggleSelectAll() {
+      const checked = document.getElementById('select-all-games').checked;
+      document.querySelectorAll('#games-table-body input[type="checkbox"]').forEach(cb => {
+        cb.checked = checked;
+        if (checked) {
+          selectedGames.add(cb.value);
+        } else {
+          selectedGames.delete(cb.value);
+        }
+      });
+    }
+
+    // 切换单个选择
+    function toggleGameSelect(gameId) {
+      if (selectedGames.has(gameId)) {
+        selectedGames.delete(gameId);
+      } else {
+        selectedGames.add(gameId);
+      }
+    }
+
+    // 批量操作
+    async function batchAction(action) {
+      if (selectedGames.size === 0) {
+        showToast('请先选择游戏', 'error');
+        return;
+      }
+      
+      if (action === 'delete' && !confirm(`确定要删除选中的 ${selectedGames.size} 个游戏吗？`)) {
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/admin/games/batch', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({
+            action,
+            gameIds: Array.from(selectedGames)
+          })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          loadGames(currentGamesPage);
+        } else {
+          showToast(data.error || '操作失败', 'error');
+        }
+      } catch (error) {
+        showToast('操作失败', 'error');
+      }
+    }
+
+    // 加载用户列表
+    async function loadUsers(page = 1) {
+      currentUsersPage = page;
+      
+      try {
+        const response = await fetch(`/api/admin/users?page=${page}&limit=15`, {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          renderUsersTable(data.users);
+          renderPagination('users-pagination', data.pagination, loadUsers);
+        }
+      } catch (error) {
+        showToast('加载用户失败', 'error');
+      }
+    }
+
+    // 渲染用户表格
+    function renderUsersTable(users) {
+      if (users.length === 0) {
+        document.getElementById('users-table-body').innerHTML = 
+          '<tr><td colspan="8" style="text-align: center; color: #64748b; padding: 2rem;">暂无用户</td></tr>';
+        return;
+      }
+      
+      const html = users.map(user => `
+        <tr>
+          <td class="token-short" title="${user.user_token}">${user.user_token.substring(0, 16)}...</td>
+          <td style="color: #6366f1; font-weight: bold;">${user.credits}</td>
+          <td>${user.total_earned}</td>
+          <td>${user.total_used}</td>
+          <td>${user.followed_wechat ? '✅' : '❌'}</td>
+          <td>${user.ad_count_today || 0}</td>
+          <td style="white-space: nowrap;">${formatDate(user.created_at)}</td>
+          <td>
+            <button class="btn-action btn-view" onclick="copyToClipboard('${user.user_token}')">复制Token</button>
+          </td>
+        </tr>
+      `).join('');
+      
+      document.getElementById('users-table-body').innerHTML = html;
+    }
+
+    // 添加积分
+    async function addCreditsToUser() {
+      const userToken = document.getElementById('add-credit-token').value.trim();
+      const amount = parseInt(document.getElementById('add-credit-amount').value);
+      const reason = document.getElementById('add-credit-reason').value.trim() || '管理员调整';
+      
+      if (!userToken) {
+        showToast('请输入用户Token', 'error');
+        return;
+      }
+      
+      if (!amount || isNaN(amount)) {
+        showToast('请输入有效的积分数量', 'error');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/admin/add-credits', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ userToken, amount, reason })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast(`成功${amount > 0 ? '添加' : '扣除'} ${Math.abs(amount)} 积分`, 'success');
+          loadUsers(currentUsersPage);
+          document.getElementById('add-credit-token').value = '';
+        } else {
+          showToast(data.error || '操作失败', 'error');
+        }
+      } catch (error) {
+        showToast('操作失败', 'error');
+      }
+    }
+
+    // 渲染分页
+    function renderPagination(containerId, pagination, loadFunc) {
+      const container = document.getElementById(containerId);
+      if (!pagination || pagination.totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+      }
+      
+      let html = '';
+      
+      // 上一页
+      html += `<button ${pagination.page <= 1 ? 'disabled' : ''} onclick="${loadFunc.name}(${pagination.page - 1})">上一页</button>`;
+      
+      // 页码
+      const start = Math.max(1, pagination.page - 2);
+      const end = Math.min(pagination.totalPages, pagination.page + 2);
+      
+      if (start > 1) {
+        html += `<button onclick="${loadFunc.name}(1)">1</button>`;
+        if (start > 2) html += `<button disabled>...</button>`;
+      }
+      
+      for (let i = start; i <= end; i++) {
+        html += `<button class="${i === pagination.page ? 'active' : ''}" onclick="${loadFunc.name}(${i})">${i}</button>`;
+      }
+      
+      if (end < pagination.totalPages) {
+        if (end < pagination.totalPages - 1) html += `<button disabled>...</button>`;
+        html += `<button onclick="${loadFunc.name}(${pagination.totalPages})">${pagination.totalPages}</button>`;
+      }
+      
+      // 下一页
+      html += `<button ${pagination.page >= pagination.totalPages ? 'disabled' : ''} onclick="${loadFunc.name}(${pagination.page + 1})">下一页</button>`;
+      
+      container.innerHTML = html;
+    }
+
+    // 工具函数
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast ' + type;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      const date = new Date(dateStr);
+      return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('已复制到剪贴板', 'success');
+      }).catch(() => {
+        showToast('复制失败', 'error');
+      });
+    }
+
+    // 回车登录
+    document.getElementById('admin-key-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') login();
+    });
+
+    // 检查已保存的登录状态
+    window.onload = () => {
+      const savedKey = sessionStorage.getItem('adminKey');
+      if (savedKey) {
+        adminKey = savedKey;
+        document.getElementById('admin-key-input').value = savedKey;
+        login();
+      }
+    };
+  </script>
+</body>
+</html>

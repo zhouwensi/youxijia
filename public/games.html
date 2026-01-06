@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="description" content="浏览所有AI生成的小游戏">
+  <title>全部游戏 - AI Game Generator</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+  <style>
+    /* 页面专属样式 */
+    .games-page {
+      min-height: 100vh;
+      padding-top: 60px;
+    }
+    
+    .games-page-header {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+      padding: 2rem 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .games-page-header .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    .games-page-title {
+      font-size: 1.75rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .games-page-title .back-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 1rem;
+      margin-right: 0.5rem;
+    }
+    
+    .games-page-title .back-link:hover {
+      color: var(--primary);
+    }
+    
+    /* 筛选和排序区域 */
+    .filter-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+    
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      flex-wrap: wrap;
+    }
+    
+    .filter-label {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      white-space: nowrap;
+    }
+    
+    .filter-tabs {
+      display: flex;
+      gap: 0.25rem;
+      flex-wrap: wrap;
+    }
+    
+    .filter-tab {
+      padding: 0.5rem 1rem;
+      border-radius: 2rem;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .filter-tab:hover {
+      background: rgba(255,255,255,0.1);
+      color: var(--text-primary);
+    }
+    
+    .filter-tab.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+    
+    /* 游戏网格区域 */
+    .games-page-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+    
+    .games-count {
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+    }
+    
+    .games-grid-large {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+    
+    @media (min-width: 640px) {
+      .games-grid-large {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    
+    @media (min-width: 1024px) {
+      .games-grid-large {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.25rem;
+      }
+    }
+    
+    @media (min-width: 1280px) {
+      .games-grid-large {
+        grid-template-columns: repeat(5, 1fr);
+      }
+    }
+    
+    /* 加载更多区域 */
+    .load-more-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 0;
+      gap: 1rem;
+    }
+    
+    .load-more-btn {
+      padding: 0.75rem 2rem;
+    }
+    
+    .loading-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-secondary);
+    }
+    
+    .loading-indicator .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .no-more-text {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+    
+    /* 空状态 */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-secondary);
+    }
+    
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+    
+    .empty-state-text {
+      font-size: 1.125rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .empty-state-hint {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+    
+    /* 滚动到顶部按钮 */
+    .scroll-top-btn {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 1.25rem;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
+      z-index: 100;
+    }
+    
+    .scroll-top-btn.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .scroll-top-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(99, 102, 241, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- 导航栏 -->
+    <nav class="navbar">
+      <div class="nav-brand" onclick="location.href='/'">
+        <span class="logo">🎮</span>
+        <span class="brand-text">游戏开发技术教程</span>
+      </div>
+      <div class="nav-actions">
+        <button class="btn btn-primary btn-sm" onclick="location.href='/'">
+          ✨ 创建游戏
+        </button>
+      </div>
+    </nav>
+
+    <!-- 页面主体 -->
+    <div class="games-page">
+      <!-- 页头：标题和筛选 -->
+      <div class="games-page-header">
+        <div class="container">
+          <h1 class="games-page-title">
+            <a href="/" class="back-link">← 返回</a>
+            🎮 全部游戏
+          </h1>
+          
+          <div class="filter-bar">
+            <!-- 分类筛选 -->
+            <div class="filter-group">
+              <span class="filter-label">分类：</span>
+              <div class="filter-tabs" id="category-tabs">
+                <button class="filter-tab active" data-category="all">全部</button>
+                <button class="filter-tab" data-category="arcade">🕹️ 街机经典</button>
+                <button class="filter-tab" data-category="puzzle">🧩 益智解谜</button>
+                <button class="filter-tab" data-category="action">💥 动作射击</button>
+                <button class="filter-tab" data-category="casual">🎯 休闲小游戏</button>
+                <button class="filter-tab" data-category="strategy">♟️ 策略</button>
+              </div>
+            </div>
+            
+            <!-- 排序 -->
+            <div class="filter-group">
+              <span class="filter-label">排序：</span>
+              <div class="filter-tabs" id="sort-tabs">
+                <button class="filter-tab active" data-sort="newest">🕐 最新</button>
+                <button class="filter-tab" data-sort="hot">🔥 热门</button>
+                <button class="filter-tab" data-sort="likes">❤️ 点赞</button>
+                <button class="filter-tab" data-sort="favorites">⭐ 收藏</button>
+                <button class="filter-tab" data-sort="plays">👁️ 游玩</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 游戏列表区域 -->
+      <div class="games-page-content">
+        <div class="games-count" id="games-count">加载中...</div>
+        
+        <div class="games-grid-large" id="games-grid">
+          <!-- 动态加载 -->
+        </div>
+        
+        <!-- 加载更多/到底提示 -->
+        <div class="load-more-area" id="load-more-area">
+          <div class="loading-indicator" id="loading-indicator" style="display:none;">
+            <div class="spinner"></div>
+            <span>加载中...</span>
+          </div>
+          <button class="btn btn-secondary load-more-btn" id="load-more-btn" onclick="loadMoreGames()">
+            加载更多
+          </button>
+          <div class="no-more-text" id="no-more-text" style="display:none;">
+            —— 已经到底啦 ——
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 滚动到顶部按钮 -->
+    <button class="scroll-top-btn" id="scroll-top-btn" onclick="scrollToTop()">↑</button>
+    
+    <!-- Toast提示 -->
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <script>
+    // ==================== 状态管理 ====================
+    let currentSort = 'newest';
+    let currentCategory = 'all';
+    let currentOffset = 0;
+    let isLoading = false;
+    let hasMore = true;
+    const PAGE_SIZE = 20;
+    
+    // ==================== 初始化 ====================
+    document.addEventListener('DOMContentLoaded', () => {
+      // 从 URL 参数读取初始状态
+      const urlParams = new URLSearchParams(window.location.search);
+      currentSort = urlParams.get('sort') || 'newest';
+      currentCategory = urlParams.get('category') || 'all';
+      
+      // 设置初始选中状态
+      updateActiveTab('sort-tabs', currentSort);
+      updateActiveTab('category-tabs', currentCategory);
+      
+      // 绑定筛选事件
+      bindFilterEvents();
+      
+      // 加载游戏
+      loadGames(true);
+      
+      // 绑定滚动事件
+      bindScrollEvents();
+    });
+    
+    // ==================== 筛选事件绑定 ====================
+    function bindFilterEvents() {
+      // 排序标签
+      document.querySelectorAll('#sort-tabs .filter-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const sort = tab.dataset.sort;
+          if (sort !== currentSort) {
+            currentSort = sort;
+            updateActiveTab('sort-tabs', sort);
+            updateURL();
+            loadGames(true);
+          }
+        });
+      });
+      
+      // 分类标签
+      document.querySelectorAll('#category-tabs .filter-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const category = tab.dataset.category;
+          if (category !== currentCategory) {
+            currentCategory = category;
+            updateActiveTab('category-tabs', category);
+            updateURL();
+            loadGames(true);
+          }
+        });
+      });
+    }
+    
+    function updateActiveTab(containerId, value) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      
+      container.querySelectorAll('.filter-tab').forEach(tab => {
+        const dataKey = containerId === 'sort-tabs' ? 'sort' : 'category';
+        tab.classList.toggle('active', tab.dataset[dataKey] === value);
+      });
+    }
+    
+    function updateURL() {
+      const url = new URL(window.location);
+      url.searchParams.set('sort', currentSort);
+      url.searchParams.set('category', currentCategory);
+      window.history.replaceState({}, '', url);
+    }
+    
+    // ==================== 加载游戏 ====================
+    async function loadGames(isReset = false) {
+      if (isLoading) return;
+      
+      if (isReset) {
+        currentOffset = 0;
+        hasMore = true;
+        document.getElementById('games-grid').innerHTML = '';
+      }
+      
+      if (!hasMore) return;
+      
+      isLoading = true;
+      updateLoadingUI(true);
+      
+      try {
+        const url = `/api/games?sort=${currentSort}&category=${currentCategory}&limit=${PAGE_SIZE}&offset=${currentOffset}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.success) {
+          const grid = document.getElementById('games-grid');
+          
+          if (data.games.length === 0 && currentOffset === 0) {
+            // 空状态
+            grid.innerHTML = `
+              <div class="empty-state" style="grid-column: 1/-1;">
+                <div class="empty-state-icon">🎮</div>
+                <div class="empty-state-text">暂无游戏</div>
+                <div class="empty-state-hint">快去创建第一个游戏吧！</div>
+              </div>
+            `;
+            hasMore = false;
+          } else {
+            // 渲染游戏卡片
+            data.games.forEach(game => {
+              grid.innerHTML += createGameCard(game);
+            });
+            
+            currentOffset += data.games.length;
+            hasMore = data.pagination ? data.pagination.hasMore : (data.games.length >= PAGE_SIZE);
+          }
+          
+          // 更新计数
+          if (data.pagination) {
+            document.getElementById('games-count').textContent = `共 ${data.pagination.total} 个游戏`;
+          }
+        }
+      } catch (error) {
+        console.error('加载游戏失败:', error);
+        showToast('加载失败，请稍后重试', 'error');
+      } finally {
+        isLoading = false;
+        updateLoadingUI(false);
+      }
+    }
+    
+    function loadMoreGames() {
+      loadGames(false);
+    }
+    
+    function updateLoadingUI(loading) {
+      const loadingIndicator = document.getElementById('loading-indicator');
+      const loadMoreBtn = document.getElementById('load-more-btn');
+      const noMoreText = document.getElementById('no-more-text');
+      
+      if (loading) {
+        loadingIndicator.style.display = 'flex';
+        loadMoreBtn.style.display = 'none';
+        noMoreText.style.display = 'none';
+      } else {
+        loadingIndicator.style.display = 'none';
+        if (hasMore) {
+          loadMoreBtn.style.display = 'inline-flex';
+          noMoreText.style.display = 'none';
+        } else {
+          loadMoreBtn.style.display = 'none';
+          noMoreText.style.display = 'block';
+        }
+      }
+    }
+    
+    // ==================== 滚动事件 ====================
+    function bindScrollEvents() {
+      const scrollTopBtn = document.getElementById('scroll-top-btn');
+      
+      // 滚动检测
+      let ticking = false;
+      window.addEventListener('scroll', () => {
+        if (!ticking) {
+          window.requestAnimationFrame(() => {
+            const scrollY = window.scrollY;
+            
+            // 显示/隐藏滚动到顶部按钮
+            scrollTopBtn.classList.toggle('visible', scrollY > 500);
+            
+            // 无限滚动：接近底部时自动加载
+            if (!isLoading && hasMore) {
+              const scrollHeight = document.documentElement.scrollHeight;
+              const clientHeight = window.innerHeight;
+              if (scrollY + clientHeight >= scrollHeight - 300) {
+                loadGames(false);
+              }
+            }
+            
+            ticking = false;
+          });
+          ticking = true;
+        }
+      });
+    }
+    
+    function scrollToTop() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    // ==================== 游戏卡片 ====================
+    function createGameCard(game) {
+      const date = new Date(game.created_at);
+      const dateStr = `${date.getMonth() + 1}/${date.getDate()}`;
+      const hotScore = game.hot_score || (game.play_count + (game.like_count || 0) * 5 + (game.favorite_count || 0) * 3);
+      
+      return `
+        <div class="game-card" onclick="openGame('${game.id}')">
+          <div class="game-card-preview">
+            <div class="game-card-icon">🎮</div>
+          </div>
+          <div class="game-card-info">
+            <h3 class="game-card-title">${escapeHtml(game.title)}</h3>
+            <p class="game-card-prompt">${escapeHtml(game.prompt || '')}</p>
+            <div class="game-card-meta">
+              <span class="game-card-author">👤 ${escapeHtml(game.author_name || '匿名')}</span>
+              <span class="game-card-date">${dateStr}</span>
+            </div>
+            <div class="game-card-stats">
+              <span title="游玩">👁️ ${game.play_count || 0}</span>
+              <span title="点赞">❤️ ${game.like_count || 0}</span>
+              <span title="收藏">⭐ ${game.favorite_count || 0}</span>
+              <span title="热度">🔥 ${hotScore}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // ==================== 工具函数 ====================
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    function openGame(gameId) {
+      window.location.href = `/?game=${gameId}`;
+    }
+    
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast show ${type}`;
+      setTimeout(() => {
+        toast.className = 'toast';
+      }, 3000);
+    }
+  </script>
+</body>
+</html>

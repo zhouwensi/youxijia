@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>像素魔塔</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0f1525;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            color: #e0e0ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            touch-action: none;
+        }
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 100vh;
+            max-height: 600px;
+            margin: 0 auto;
+            border: 3px solid #2a3b5c;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 100, 255, 0.3);
+            background: #1a2438;
+        }
+        canvas {
+            display: block;
+            background: #111827;
+        }
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(10, 15, 30, 0.95);
+            padding: 20px;
+            text-align: center;
+            z-index: 10;
+        }
+        .hidden {
+            display: none !important;
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: #4cc9f0;
+            text-shadow: 0 0 10px rgba(76, 201, 240, 0.7);
+            letter-spacing: 2px;
+        }
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: #f72585;
+        }
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            line-height: 1.5;
+            max-width: 500px;
+        }
+        .stats {
+            background: rgba(30, 40, 60, 0.8);
+            border: 2px solid #3a506b;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            width: 90%;
+            max-width: 300px;
+            pointer-events: auto;
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 1.1rem;
+        }
+        .stat-value {
+            color: #72efdd;
+            font-weight: bold;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+            width: 200px;
+            height: 200px;
+            pointer-events: auto;
+        }
+        .control-btn {
+            background: #3a506b;
+            border: 2px solid #4cc9f0;
+            border-radius: 8px;
+            color: white;
+            font-size: 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .control-btn:active {
+            background: #4cc9f0;
+            transform: scale(0.95);
+        }
+        .btn {
+            background: linear-gradient(135deg, #4361ee, #3a0ca3);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 1.2rem;
+            padding: 12px 30px;
+            margin: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            pointer-events: auto;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.4);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(67, 97, 238, 0.6);
+        }
+        .btn:active {
+            transform: translateY(1px);
+        }
+        #mobileControls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            height: 200px;
+        }
+        #keyboardHint {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(30, 40, 60, 0.8);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        #message {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(247, 37, 133, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            z-index: 20;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        @media (max-width: 768px) {
+            h1 { font-size: 2.2rem; }
+            h2 { font-size: 1.8rem; }
+            #gameContainer {
+                max-height: 100vh;
+                border: none;
+                border-radius: 0;
+            }
+            #keyboardHint {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="ui">
+            <div id="startScreen" class="screen">
+                <h1>🏰 像素魔塔</h1>
+                <p>勇者啊，深入魔塔，击败怪物，寻找宝藏！</p>
+                <div class="stats">
+                    <div class="stat-row">目标：到达第5层</div>
+                    <div class="stat-row">击败最终Boss</div>
+                    <div class="stat-row">收集所有钥匙和药水</div>
+                </div>
+                <div class="controls">
+                    <div class="control-btn" data-key="ArrowUp">↑</div>
+                    <div class="control-btn" data-key="ArrowLeft">←</div>
+                    <div class="control-btn" data-key="ArrowDown">↓</div>
+                    <div class="control-btn" data-key="ArrowRight">→</div>
+                </div>
+                <p>使用方向键或点击按钮移动</p>
+                <button id="startBtn" class="btn">开始冒险</button>
+            </div>
+            
+            <div id="gameScreen" class="screen hidden">
+                <div class="stats">
+                    <div class="stat-row">楼层: <span id="floor" class="stat-value">1</span></div>
+                    <div class="stat-row">生命: <span id="hp" class="stat-value">100</span></div>
+                    <div class="stat-row">攻击: <span id="attack" class="stat-value">10</span></div>
+                    <div class="stat-row">防御: <span id="defense" class="stat-value">5</span></div>
+                    <div class="stat-row">金币: <span id="gold" class="stat-value">0</span></div>
+                    <div class="stat-row">黄钥匙: <span id="yellowKey" class="stat-value">1</span></div>
+                    <div class="stat-row">蓝钥匙: <span id="blueKey" class="stat-value">0</span></div>
+                </div>
+                <button id="restartBtn" class="btn">重新开始</button>
+            </div>
+            
+            <div id="endScreen" class="screen hidden">
+                <h2 id="endTitle">游戏结束</h2>
+                <p id="endMessage">你未能完成冒险...</p>
+                <div class="stats">
+                    <div class="stat-row">最终楼层: <span id="finalFloor" class="stat-value">1</span></div>
+                    <div class="stat-row">击败怪物: <span id="monstersKilled" class="stat-value">0</span></div>
+                    <div class="stat-row">收集金币: <span id="finalGold" class="stat-value">0</span></div>
+                </div>
+                <button id="playAgainBtn" class="btn">再玩一次</button>
+            </div>
+            
+            <div id="mobileControls" class="hidden">
+                <div class="controls">
+                    <div class="control-btn" data-key="ArrowUp">↑</div>
+                    <div class="control-btn" data-key="ArrowLeft">←</div>
+                    <div class="control-btn" data-key="ArrowDown">↓</div>
+                    <div class="control-btn" data-key="ArrowRight">→</div>
+                </div>
+            </div>
+            
+            <div id="keyboardHint">
+                ←↑↓→ 移动 / R 重新开始
+            </div>
+            
+            <div id="message"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            const startScreen = document.getElementById('startScreen');
+            const gameScreen = document.getElementById('gameScreen');
+            const endScreen = document.getElementById('endScreen');
+            const mobileControls = document.getElementById('mobileControls');
+            const message = document.getElementById('message');
+            
+            // 游戏状态
+            const gameState = {
+                currentScreen: 'start',
+                floor: 1,
+                player: {
+                    x: 1,
+                    y: 1,
+                    hp: 100,
+                    maxHp: 100,
+                    attack: 10,
+                    defense: 5,
+                    gold: 0,
+                    yellowKey: 1,
+                    blueKey: 0
+                },
+                monstersKilled: 0,
+                gameMap: [],
+                tileSize: 40,
+                isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+            };
+            
+            // 地图配置
+            const mapConfigs = {
+                1: [
+                    [3, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                    [1, 0, 0, 0, 2, 0, 0, 0, 0, 1],
+                    [1, 0, 4, 1, 1, 1, 0, 5, 0, 1],
+                    [1, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+                    [1, 1, 1, 0, 6, 0, 0, 1, 0, 1],
+                    [1, 0, 0, 0, 1, 1, 1, 1, 0, 1],
+                    [1, 0, 7, 0, 0, 0, 0, 0, 0, 1],
+                    [1, 0, 1, 1, 1, 0, 8, 0, 0, 1],
+                    [1, 0, 0, 0, 0, 0, 1, 0, 9, 1],
+                    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+                ],
+                2: [
+                    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                    [1, 0, 4, 1, 0, 5, 0, 6, 0, 1],
+                    [1, 0, 1, 1, 0, 1, 1, 1, 0, 1],
+                    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                    [1, 0, 1, 1, 0, 1, 1, 1, 0, 1],
+                    [1, 0, 7, 0, 0, 0, 8, 0, 0, 1],
+                    [1, 0, 1, 1, 0, 1, 1, 1, 0, 1],
+                    [1, 0, 0, 0, 0, 0, 0, 0, 9, 1],
+                    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+                ],
+                3: [
+                    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                    [1, 0, 4, 0, 5, 0, 6, 0, 7, 1],
+                    [1, 0, 1, 1, 1, 1, 1, 1, 0, 1],
+                    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                    [1, 0, 1, 1, 1, 1, 1, 1, 0, 1],
+                    [1, 0, 8, 0, 0, 0, 0, 0, 0, 1],
+                    [1, 0, 1, 1, 1, 1, 1, 1, 0, 1],
+                    [1, 0, 0, 0, 0, 0, 0, 0, 9, 1],
+                    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+                ],
+                4: [
+                    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                    [1, 0, 4, 5, 6, 7, 8, 0, 0, 1],
+                    [1, 0, 1, 1, 1, 1, 1, 1, 0, 1],
+                    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                    [1, 0, 1, 1, 1, 1, 1, 1, 0, 1],
+                    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                    [1, 0, 1, 1, 1, 1, 1, 1, 0, 1],
+                    [1, 0, 0, 0, 0, 0, 0, 0, 9, 1],
+                    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+                ],
+                5: [
+                    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                    [1, 0, 4, 0, 5, 0, 6, 0, 7, 1],
+                    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                    [1, 0, 8, 0, 0, 0, 0, 0, 0, 1],
+                    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                    [1, 0, 0, 0, 0, 0, 0, 0, 10, 1],
+                    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+                ]
+            };
+            
+            // 图块类型
+            const TILES = {
+                0: { type: 'floor', color: '#2a3b5c', walkable: true },
+                1: { type: 'wall', color: '#4a5568', walkable: false },
+                2: { type: 'player', color: '#4cc9f0', walkable: true },
+                3: { type: 'stairsUp', color: '#72efdd', walkable: true },
+                4: { type: 'monster1', color: '#f72585', walkable: false, hp: 30, attack: 8, defense: 2, gold: 5 },
+                5: { type: 'monster2', color: '#b5179e', walkable: false, hp: 50, attack: 12, defense: 4, gold: 10 },
+                6: { type: 'monster3', color: '#7209b7', walkable: false, hp: 80, attack: 15, defense: 6, gold: 20 },
+                7: { type: 'chest', color: '#fca311', walkable: true, gold: 50 },
+                8: { type: 'potion', color: '#06d6a0', walkable: true, heal: 30 },
+                9: { type: 'stairsDown', color: '#118ab2', walkable: true },
+                10: { type: 'boss', color: '#ef233c', walkable: false, hp: 150, attack: 25, defense: 10, gold: 100 }
+            };
+            
+            // 初始化游戏
+            function initGame() {
+                resizeCanvas();
+                loadMap(gameState.floor);
+                updateUI();
+                
+                if (gameState.isMobile) {
+                    mobileControls.classList.remove('hidden');
+                    setupTouchControls();
+                }
+                
+                window.addEventListener('resize', resizeCanvas);
+                document.addEventListener('keydown', handleKeyDown);
+                
+                // 开始游戏循环
+                gameLoop();
+            }
+            
+            // 调整画布大小
+            function resizeCanvas() {
+                const container = document.getElementById('gameContainer');
+                canvas.width = container.clientWidth;
+                canvas.height = container.clientHeight;
+                gameState.tileSize = Math.min(canvas.width, canvas.height) / 12;
+                drawGame();
+            }
+            
+            // 加载地图
+            function loadMap(floor) {
+                gameState.gameMap = JSON.parse(JSON.stringify(mapConfigs[floor]));
+                
+                // 寻找玩家位置
+                for (let y = 0; y < gameState.gameMap.length; y++) {
+                    for (let x = 0; x < gameState.gameMap[y].length; x++) {
+                        if (gameState.gameMap[y][x] === 2) {
+                            gameState.player.x = x;
+                            gameState.player.y = y;
+                        }
+                    }
+                }
+            }
+            
+            // 游戏主循环
+            function gameLoop() {
+                drawGame();
+                requestAnimationFrame(gameLoop);
+            }
+            
+            // 绘制游戏
+            function drawGame() {
+                if (gameState.currentScreen !== 'game') return;
+                
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                const map = gameState.gameMap;
+                const tileSize = gameState.tileSize;
+                const offsetX = (canvas.width - map[0].length * tileSize) / 2;
+                const offsetY = (canvas.height - map.length * tileSize) / 2;
+                
+                // 绘制地图
+                for (let y = 0; y < map.length; y++) {
+                    for (let x = 0; x < map[y].length; x++) {
+                        const tile = TILES[map[y][x]];
+                        ctx.fillStyle = tile.color;
+                        ctx.fillRect(offsetX + x * tileSize, offsetY + y * tileSize, tileSize, tileSize);
+                        
+                        // 绘制边框
+                        ctx.strokeStyle = '#1a2438';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(offsetX + x * tileSize, offsetY + y * tileSize, tileSize, tileSize);
+                        
+                        // 绘制特殊图块图标
+                        if (tile.type === 'player') {
+                            drawPlayer(offsetX + x * tileSize, offsetY + y * tileSize, tileSize);
+                        } else if (tile.type.includes('monster') || tile.type === 'boss') {
+                            drawMonster(offsetX + x * tileSize, offsetY + y * tileSize, tileSize);
+                        } else if (tile.type === 'chest') {
+                            drawChest(offsetX + x * tileSize, offsetY + y * tileSize, tileSize);
+                        } else if (tile.type === 'potion') {
+                            drawPotion(offsetX + x * tileSize, offsetY + y * tileSize, tileSize);
+                        } else if (tile.type.includes('stairs')) {
+                            drawStairs(offsetX + x * tileSize, offsetY + y * tileSize, tileSize);
+                        }
+                    }
+                }
+            }
+            
+            // 绘制玩家
+            function drawPlayer(x, y, size) {
+                ctx.fillStyle = '#4cc9f0';
+                ctx.beginPath();
+                ctx.arc(x + size/2, y + size/2, size/3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 绘制剑
+                ctx.fillStyle = '#e0e0ff';
+                ctx.fillRect(x + size/2, y + size/3, size/4, size/3);
+            }
+            
+            // 绘制怪物
+            function drawMonster(x, y, size) {
+                ctx.fillStyle = '#f72585';
+                ctx.beginPath();
+                ctx.arc(x + size/2, y + size/2, size/3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 绘制眼睛
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(x + size/2 - size/6, y + size/2 - size/8, size/8, 0, Math.PI * 2);
+                ctx.arc(x + size/2 + size/6, y + size/2 - size/8, size/8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // 绘制宝箱
+            function drawChest(x, y, size) {
+                ctx.fillStyle = '#fca311';
+                ctx.fillRect(x + size/4, y + size/3, size/2, size/3);
+                
+                ctx.fillStyle = '#d68c00';
+                ctx.fillRect(x + size/4, y + size/3, size/2, size/6);
+            }
+            
+            // 绘制药水
+            function drawPotion(x, y, size) {
+                ctx.fillStyle = '#06d6a0';
+                ctx.beginPath();
+                ctx.ellipse(x + size/2, y + size/2, size/4, size/3, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#04966c';
+                ctx.fillRect(x + size/2 - size/8, y + size/4, size/4, size/8);
+            }
+            
+            // 绘制楼梯
+            function drawStairs(x, y, size) {
+                ctx.fillStyle = '#72efdd';
+                for (let i = 0; i < 4; i++) {
+                    ctx.fillRect(x + size/4, y + size/4 + i * size/8, size/2, size/12);
+                }
+            }
+            
+            // 处理键盘输入
+            function handleKeyDown(e) {
+                if (gameState.currentScreen === 'game') {
+                    switch(e.key) {
+                        case 'ArrowUp': movePlayer(0, -1); break;
+                        case 'ArrowDown': movePlayer(0, 1); break;
+                        case 'ArrowLeft': movePlayer(-1, 0); break;
+                        case 'ArrowRight': movePlayer(1, 0); break;
+                        case 'r':
+                        case 'R': restartGame(); break;
+                    }
+                } else if (gameState.currentScreen === 'start' && e.key === 'Enter') {
+                    startGame();
+                } else if (gameState.currentScreen === 'end' && e.key === 'Enter') {
+                    restartGame();
+                }
+            }
+            
+            // 设置触摸控制
+            function setupTouchControls() {
+                const controlBtns = document.querySelectorAll('.control-btn');
+                controlBtns.forEach(btn => {
+                    btn.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        const key = btn.getAttribute('data-key');
+                        simulateKeyPress(key);
+                        btn.style.background = '#4cc9f0';
+                    });
+                    
+                    btn.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        btn.style.background = '#3a506b';
+                    });
+                });
+            }
+            
+            // 模拟按键
+            function simulateKeyPress(key) {
+                const event = new KeyboardEvent('keydown', { key: key });
+                document.dispatchEvent(event);
+            }
+            
+            // 移动玩家
+            function movePlayer(dx, dy) {
+                const newX = gameState.player.x + dx;
+                const newY = gameState.player.y + dy;
+                
+                if (newX < 0 || newX >= gameState.gameMap[0].length || 
+                    newY < 0 || newY >= gameState.gameMap.length) {
+                    return;
+                }
+                
+                const targetTile = gameState.gameMap[newY][newX];
+                const tileInfo = TILES[targetTile];
+                
+                if (!tileInfo.walkable) {
+                    // 检查是否是怪物
+                    if (tileInfo.type.includes('monster') || tileInfo.type === 'boss') {
+                        fightMonster(newX, newY, tileInfo);
+                        return;
+                    }
+                    // 检查是否是门
+                    if (targetTile === 11 && gameState.player.yellowKey > 0) {
+                        gameState.player.yellowKey--;
+                        gameState.gameMap[newY][newX] = 0;
+                        moveTo(newX, newY);
+                        showMessage('使用了黄钥匙！');
+                    } else if (targetTile === 12 && gameState.player.blueKey > 0) {
+                        gameState.player.blueKey--;
+                        gameState.gameMap[newY][newX] = 0;
+                        moveTo(newX, newY);
+                        showMessage('使用了蓝钥匙！');
+                    }
+                    return;
+                }
+                
+                // 检查特殊图块
+                switch(targetTile) {
+                    case 3: // 上楼
+                        if (gameState.floor > 1) {
+                            gameState.floor--;
+                            loadMap(gameState.floor);
+                            showMessage(`到达第${gameState.floor}层`);
+                        }
+                        break;
+                    case 7: // 宝箱
+                        gameState.player.gold += tileInfo.gold;
+                        gameState.gameMap[newY][newX] = 0;
+                        moveTo(newX, newY);
+                        showMessage(`获得${tileInfo.gold}金币！`);
+                        break;
+                    case 8: // 药水
+                        gameState.player.hp = Math.min(gameState.player.maxHp, gameState.player.hp + tileInfo.heal);
+                        gameState.gameMap[newY][newX] = 0;
+                        moveTo(newX, newY);
+                        showMessage(`恢复${tileInfo.heal}生命值！`);
+                        break;
+                    case 9: // 下楼
+                        if (gameState.floor < 5) {
+                            gameState.floor++;
+                            loadMap(gameState.floor);
+                            showMessage(`到达第${gameState.floor}层`);
+                        }
+                        break;
+                    default:
+                        moveTo(newX, newY);
+                }
+                
+                updateUI();
+            }
+            
+            // 移动到新位置
+            function moveTo(x, y) {
+                gameState.gameMap[gameState.player.y][gameState.player.x] = 0;
+                gameState.player.x = x;
+                gameState.player.y = y;
+                gameState.gameMap[y][x] = 2;
+            }
+            
+            // 战斗怪物
+            function fightMonster(x, y, monster) {
+                // 计算伤害
+                const playerDamage = Math.max(1, gameState.player.attack - monster.defense);
+                const monsterDamage = Math.max(1, monster.attack - gameState.player.defense);
+                
+                // 计算需要多少回合
+                const rounds = Math.ceil(monster.hp / playerDamage);
+                const damageTaken = monsterDamage * (rounds - 1);
+                
+                if (damageTaken < gameState.player.hp) {
+                    // 胜利
+                    gameState.player.hp -= damageTaken;
+                    gameState.player.gold += monster.gold;
+                    gameState.monstersKilled++;
+                    
+                    // 移除怪物
+                    gameState.gameMap[y][x] = 0;
+                    moveTo(x, y);
+                    
+                    showMessage(`击败怪物！获得${monster.gold}金币，损失${damageTaken}生命值`);
+                    
+                    // 检查是否是Boss
+                    if (monster.type === 'boss') {
+                        endGame(true);
+                    }
+                } else {
+                    // 失败
+                    showMessage('怪物太强了！需要提升属性');
+                }
+                
+                updateUI();
+            }
+            
+            // 显示消息
+            function showMessage(text) {
+                message.textContent = text;
+                message.style.opacity = 1;
+                
+                setTimeout(() => {
+                    message.style.opacity = 0;
+                }, 2000);
+            }
+            
+            // 更新UI
+            function updateUI() {
+                document.getElementById('floor').textContent = gameState.floor;
+                document.getElementById('hp').textContent = gameState.player.hp;
+                document.getElementById('attack').textContent = gameState.player.attack;
+                document.getElementById('defense').textContent = gameState.player.defense;
+                document.getElementById('gold').textContent = gameState.player.gold;
+                document.getElementById('yellowKey').textContent = gameState.player.yellowKey;
+                document.getElementById('blueKey').textContent = gameState.player.blueKey;
+            }
+            
+            // 开始游戏
+            function startGame() {
+                gameState.currentScreen = 'game';
+                startScreen.classList.add('hidden');
+                gameScreen.classList.remove('hidden');
+                endScreen.classList.add('hidden');
+                
+                // 重置游戏状态
+                gameState.floor = 1;
+                gameState.player = {
+                    x: 1,
+                    y: 1,
+                    hp: 100,
+                    maxHp: 100,
+                    attack: 10,
+                    defense: 5,
+                    gold: 0,
+                    yellowKey: 1,
+                    blueKey: 0
+                };
+                gameState.monstersKilled = 0;
+                
+                loadMap(gameState.floor);
+                updateUI();
+                drawGame();
+            }
+            
+            // 结束游戏
+            function endGame(victory) {
+                gameState.currentScreen = 'end';
+                gameScreen.classList.add('hidden');
+                endScreen.classList.remove('hidden');
+                
+                if (victory) {
+                    document.getElementById('endTitle').textContent = '🎉 胜利！';
+                    document.getElementById('endMessage').textContent = '你成功击败了魔塔Boss！';
+                } else {
+                    document.getElementById('endTitle').textContent = '💀 游戏结束';
+                    document.getElementById('endMessage').textContent = '你的冒险在此终结...';
+                }
+                
+                document.getElementById('finalFloor').textContent = gameState.floor;
+                document.getElementById('monstersKilled').textContent = gameState.monstersKilled;
+                document.getElementById('finalGold').textContent = gameState.player.gold;
+            }
+            
+            // 重新开始游戏
+            function restartGame() {
+                startGame();
+            }
+            
+            // 绑定按钮事件
+            document.getElementById('startBtn').addEventListener('click', startGame);
+            document.getElementById('restartBtn').addEventListener('click', restartGame);
+            document.getElementById('playAgainBtn').addEventListener('click', restartGame);
+            
+            // 初始化游戏
+            initGame();
+            
+            // 检查游戏结束
+            setInterval(() => {
+                if (gameState.currentScreen === 'game' && gameState.player.hp <= 0) {
+                    endGame(false);
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
