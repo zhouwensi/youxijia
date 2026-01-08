@@ -205,13 +205,13 @@ function extractHtmlFromResponse(response) {
 
 // ==================== 系统配置 ====================
 
-// 体验模式配置（让用户无需API Key即可体验）
+// 游客模式配置（让用户无需API Key即可体验）
 const TRIAL_CONFIG = {
-  enabled: true,                              // 是否启用体验模式
+  enabled: true,                              // 是否启用游客模式
   dailyQuota: 50,                             // 每日全站免费配额
-  perUserLimit: 2,                            // 每用户每日体验次数 (已废弃，改用积分系统)
-  apiKey: process.env.TRIAL_API_KEY || '',    // 体验模式使用的API Key（可在管理后台配置）
-  model: 'deepseek-chat',                     // 体验模式使用的模型
+  perUserLimit: 2,                            // 每用户每日次数 (已废弃，改用积分系统)
+  apiKey: process.env.TRIAL_API_KEY || '',    // 游客模式使用的API Key（可在管理后台配置）
+  model: 'deepseek-chat',                     // 游客模式使用的模型
   baseUrl: 'https://api.deepseek.com',        // 体验模式API地址
 };
 
@@ -1825,7 +1825,7 @@ function checkTrialQuota(userToken) {
   // 检查是否有可用的API配置
   const apiConfig = getTrialApiConfig();
   if (!TRIAL_CONFIG.enabled || !apiConfig) {
-    return { allowed: false, reason: '体验模式未启用，请在管理后台配置默认LLM API Key' };
+    return { allowed: false, reason: '游客模式未启用，请在管理后台配置默认LLM API Key' };
   }
   
   // 使用积分系统检查配额
@@ -1941,7 +1941,7 @@ app.post('/api/trial/generate', async (req, res) => {
       console.log(`[TRIAL] 匹配到模板: ${templateMatch.name}`);
     }
     
-    console.log(`[TRIAL] 开始体验模式生成: ${prompt}`);
+    console.log(`[TRIAL] 开始游客模式生成: ${prompt}`);
     
     // 【重要】在发送LLM请求前先扣除积分，防止滥用
     recordTrialUse(userToken);
@@ -1973,25 +1973,42 @@ app.post('/api/trial/generate', async (req, res) => {
     // 获取API配置（支持环境变量或管理后台配置）
     const apiConfig = getTrialApiConfig();
     if (!apiConfig) {
-      throw new Error('体验模式未配置API Key');
+      throw new Error('游客模式未配置API Key');
     }
 
-    const response = await fetch(`${apiConfig.baseUrl}/v1/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiConfig.apiKey}`
-      },
-      body: JSON.stringify({
-        model: apiConfig.model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `请生成游戏：${enhancedPrompt}` }
-        ],
-        temperature: 0.7,
-        max_tokens: 8000
-      })
-    });
+    // 设置超时控制器
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120000); // 2分钟超时
+
+    let response;
+    try {
+      response = await fetch(`${apiConfig.baseUrl}/v1/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiConfig.apiKey}`
+        },
+        body: JSON.stringify({
+          model: apiConfig.model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: `请生成游戏：${enhancedPrompt}` }
+          ],
+          temperature: 0.7,
+          max_tokens: 8000
+        }),
+        signal: controller.signal
+      });
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      if (fetchError.name === 'AbortError') {
+        console.error('[TRIAL ERROR] 请求超时');
+        throw new Error('生成超时，请稍后重试');
+      }
+      console.error('[TRIAL ERROR] 网络错误:', fetchError.message);
+      throw new Error('网络连接失败，请检查网络后重试');
+    }
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorData = await response.text();

@@ -161,7 +161,7 @@ const state = {
   credits: DEFAULT_CREDITS,
   creditsConfig: null,
   modelsConfig: null,
-  trialInfo: null,  // 体验模式信息
+  trialInfo: null,  // 游客模式信息
   myInviteCode: null,  // 我的邀请码
   weeklyChallenge: null,  // 本周挑战
   isFirstGeneration: true,  // 是否为首次生成（不消耗积分）
@@ -225,6 +225,63 @@ const backgroundTask = {
   result: null,         // 存储生成结果 {title, code}
   error: null           // 错误信息
 };
+
+// 设置所有生成按钮的loading状态
+function setGenerateButtonLoading(isLoading) {
+  document.querySelectorAll('.btn-generate').forEach(btn => {
+    if (isLoading) {
+      btn.classList.add('loading');
+    } else {
+      btn.classList.remove('loading');
+    }
+  });
+}
+
+// 通用弹窗控制 - 打开弹窗并禁用背景滚动
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.add('active');
+    document.body.classList.add('modal-open');
+    // 阻止弹窗背景点击事件传播
+    modal.addEventListener('click', handleModalBackgroundClick);
+  }
+}
+
+// 通用弹窗控制 - 关闭弹窗并恢复背景滚动
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.remove('active');
+    modal.removeEventListener('click', handleModalBackgroundClick);
+    // 检查是否还有其他弹窗打开
+    const hasOpenModals = document.querySelector('.modal.active');
+    if (!hasOpenModals) {
+      document.body.classList.remove('modal-open');
+    }
+  }
+}
+
+// 处理弹窗背景点击（点击背景关闭弹窗）
+function handleModalBackgroundClick(e) {
+  if (e.target.classList.contains('modal')) {
+    e.target.classList.remove('active');
+    e.target.removeEventListener('click', handleModalBackgroundClick);
+    const hasOpenModals = document.querySelector('.modal.active');
+    if (!hasOpenModals) {
+      document.body.classList.remove('modal-open');
+    }
+  }
+}
+
+// 关闭所有弹窗
+function closeAllModals() {
+  document.querySelectorAll('.modal.active').forEach(modal => {
+    modal.classList.remove('active');
+    modal.removeEventListener('click', handleModalBackgroundClick);
+  });
+  document.body.classList.remove('modal-open');
+}
 
 // 日志函数
 function log(message, type = 'info') {
@@ -352,10 +409,64 @@ async function initAccount() {
         state.settings.authorName = data.nickname;
       }
       log('账号信息加载成功: ' + data.account_id, 'info');
+      
+      // 立即更新所有账号ID显示的地方
+      updateAccountIdDisplay();
+    } else {
+      // API请求失败时，使用本地生成的token作为账号ID
+      state.account = {
+        accountId: userToken.substring(0, 12),
+        nickname: '',
+        hasPassword: false,
+        loaded: true
+      };
+      updateAccountIdDisplay();
     }
   } catch (error) {
     log('加载账号信息失败: ' + error.message, 'error');
+    // 出错时也设置一个默认值
+    const userToken = getUserToken();
+    state.account = {
+      accountId: userToken.substring(0, 12),
+      nickname: '',
+      hasPassword: false,
+      loaded: true
+    };
+    updateAccountIdDisplay();
   }
+}
+
+// 更新所有账号ID显示
+function updateAccountIdDisplay() {
+  const accountId = state.account.accountId || '未知';
+  const hasPassword = state.account.hasPassword;
+  
+  // 更新各处的账号ID显示
+  const elements = [
+    document.getElementById('profile-account-id'),
+    document.getElementById('settings-account-id'),
+    document.getElementById('save-account-id')
+  ];
+  
+  elements.forEach(el => {
+    if (el) el.textContent = accountId;
+  });
+  
+  // 更新账号状态显示
+  const statusElements = [
+    document.getElementById('profile-account-status'),
+    document.getElementById('settings-account-status')
+  ];
+  
+  statusElements.forEach(el => {
+    if (el) {
+      if (hasPassword) {
+        el.innerHTML = '<span class="status-tag protected">🔐 已保护</span>';
+      } else {
+        el.innerHTML = '<span class="status-tag guest">游客模式</span>';
+      }
+    }
+  });
 }
 
 // 复制账号ID
@@ -464,26 +575,31 @@ async function loginWithAccount(accountId, password) {
 
 // 显示登录对话框
 function showLoginDialog() {
+  // 移除旧的对话框（如果有）
+  const oldDialog = document.getElementById('login-dialog');
+  if (oldDialog) oldDialog.remove();
+  
   const dialog = document.createElement('div');
-  dialog.className = 'modal-overlay';
+  dialog.className = 'modal active';
   dialog.id = 'login-dialog';
+  dialog.onclick = (e) => { if (e.target === dialog) closeLoginDialog(); };
   dialog.innerHTML = `
-    <div class="modal" style="max-width: 400px;">
+    <div class="modal-content modal-small">
       <div class="modal-header">
-        <h3><i class="fas fa-sign-in-alt"></i> 账号登录</h3>
-        <button class="modal-close" onclick="closeLoginDialog()">&times;</button>
+        <h3>🔐 账号登录</h3>
+        <button class="btn btn-icon btn-close" onclick="closeLoginDialog()">×</button>
       </div>
       <div class="modal-body">
-        <p style="color: #888; font-size: 12px; margin-bottom: 16px;">
+        <p style="color: var(--text-muted); font-size: 0.8125rem; margin-bottom: 1rem; text-align: center;">
           如果你之前在其他设备上设置了密码，可以在这里登录恢复数据
         </p>
         <div class="form-group">
           <label>账号 ID</label>
-          <input type="text" id="login-account-id" placeholder="例如: player_a3x9k2" />
+          <input type="text" id="login-account-id" placeholder="例如: player_a3x9k2">
         </div>
         <div class="form-group">
           <label>密码</label>
-          <input type="password" id="login-password" placeholder="请输入密码" />
+          <input type="password" id="login-password" placeholder="请输入密码">
         </div>
       </div>
       <div class="modal-footer">
@@ -493,6 +609,12 @@ function showLoginDialog() {
     </div>
   `;
   document.body.appendChild(dialog);
+  document.body.classList.add('modal-open');
+  
+  // 聚焦账号输入框
+  setTimeout(() => {
+    document.getElementById('login-account-id')?.focus();
+  }, 100);
 }
 
 // 关闭登录对话框
@@ -500,6 +622,11 @@ function closeLoginDialog() {
   const dialog = document.getElementById('login-dialog');
   if (dialog) {
     dialog.remove();
+    // 检查是否还有其他弹窗
+    const hasOpenModals = document.querySelector('.modal.active');
+    if (!hasOpenModals) {
+      document.body.classList.remove('modal-open');
+    }
   }
 }
 
@@ -732,49 +859,330 @@ function initMainTabs() {
 // ==================== 底部导航切换 ====================
 
 function switchBottomNav(navName) {
+  // 先关闭所有弹窗
+  closeAllModals();
+  
+  // 同时关闭生成遮罩（如果有）
+  const overlay = document.getElementById('generating-overlay');
+  if (overlay && overlay.classList.contains('active')) {
+    // 不关闭生成遮罩，因为后台可能还在生成
+    // 而是将其最小化
+    minimizeGenerating();
+  }
+  
   // 更新导航样式
   document.querySelectorAll('.bottom-nav .nav-item').forEach(item => {
     item.classList.toggle('active', item.dataset.nav === navName);
   });
   
+  // 隐藏所有页面
+  document.querySelectorAll('.page').forEach(page => {
+    page.classList.remove('active');
+  });
+  
+  // 显示对应页面
   if (navName === 'home') {
-    showHome();
+    document.getElementById('home-page').classList.add('active');
+    history.pushState(null, '', '/');
+  } else if (navName === 'create') {
+    document.getElementById('create-page').classList.add('active');
+    // 更新积分显示
+    const creditsEl = document.getElementById('create-credits-count');
+    if (creditsEl) creditsEl.textContent = state.credits || 0;
   } else if (navName === 'profile') {
-    openProfileModal();
+    document.getElementById('profile-page').classList.add('active');
+    loadProfilePageData();
+  }
+  
+  // 显示底部导航
+  document.getElementById('bottom-nav').style.display = 'flex';
+}
+
+// ==================== 创作页面 ====================
+
+// 设置创作页面的prompt
+function setCreatePrompt(text) {
+  const input = document.getElementById('create-page-input');
+  if (input) {
+    input.value = text;
+    input.focus();
   }
 }
 
-// ==================== 创作面板 ====================
-
-function showCreatePanel() {
-  document.getElementById('create-panel-overlay').classList.add('show');
-  document.getElementById('create-panel').classList.add('show');
-  // 聚焦输入框
-  setTimeout(() => {
-    document.getElementById('prompt-input').focus();
-  }, 300);
-}
-
-function hideCreatePanel() {
-  document.getElementById('create-panel-overlay').classList.remove('show');
-  document.getElementById('create-panel').classList.remove('show');
-}
-
-// 从创作面板生成游戏
-function generateFromPanel() {
-  const panelInput = document.getElementById('panel-prompt-input');
+// 从创作页面生成游戏
+function generateFromCreatePage() {
+  const input = document.getElementById('create-page-input');
   const mainInput = document.getElementById('prompt-input');
   
-  // 把面板里的内容同步到主输入框
-  if (panelInput && mainInput) {
-    mainInput.value = panelInput.value;
+  if (input && mainInput) {
+    mainInput.value = input.value;
   }
   
-  // 关闭面板
-  hideCreatePanel();
-  
-  // 调用生成函数
   generateGame();
+}
+
+// ==================== 我的页面 ====================
+
+// 切换我的页面标签
+function switchProfilePageTab(tabName) {
+  // 切换标签按钮状态
+  document.querySelectorAll('.profile-page-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.tab === tabName);
+  });
+  
+  // 切换内容区域
+  document.querySelectorAll('.profile-page-panel').forEach(panel => {
+    panel.classList.toggle('active', panel.id === `profile-panel-${tabName}`);
+  });
+  
+  // 加载对应数据
+  switch(tabName) {
+    case 'my-games':
+      loadProfilePageGames();
+      break;
+    case 'my-likes':
+      loadProfilePageLikes();
+      break;
+    case 'my-favs':
+      loadProfilePageFavorites();
+      break;
+    case 'my-settings':
+      loadProfilePageSettings();
+      break;
+  }
+}
+
+// 加载我的页面数据
+async function loadProfilePageData() {
+  // 设置用户名
+  const username = state.settings.authorName || state.account.nickname || '游戏创作者';
+  const usernameEl = document.getElementById('profile-page-username');
+  if (usernameEl) usernameEl.textContent = username;
+  
+  // 加载积分
+  const creditsEl = document.getElementById('profile-page-credits');
+  if (creditsEl) creditsEl.textContent = state.credits || 0;
+  
+  // 加载游戏统计
+  try {
+    const response = await fetch('/api/my-games', {
+      headers: { 'X-Author-Token': getAuthorToken() }
+    });
+    const data = await response.json();
+    if (data.success) {
+      const gamesEl = document.getElementById('profile-page-games');
+      const likesEl = document.getElementById('profile-page-likes');
+      if (gamesEl) gamesEl.textContent = data.stats?.count || 0;
+      if (likesEl) likesEl.textContent = data.stats?.likes || 0;
+    }
+  } catch (e) {
+    console.error('加载个人统计失败:', e);
+  }
+  
+  // 默认加载我的作品
+  loadProfilePageGames();
+}
+
+// 加载我的作品列表
+async function loadProfilePageGames() {
+  const container = document.getElementById('profile-games-list');
+  if (!container) return;
+  
+  container.innerHTML = '<div class="loading-games">加载中...</div>';
+  
+  try {
+    const response = await fetch('/api/my-games', {
+      headers: { 'X-Author-Token': getAuthorToken() }
+    });
+    const data = await response.json();
+    
+    if (data.success && data.games && data.games.length > 0) {
+      container.innerHTML = data.games.map(game => `
+        <div class="my-game-item" onclick="openGame('${game.id}')">
+          <div class="my-game-info">
+            <div class="my-game-title">${escapeHtml(game.title)}</div>
+            <div class="my-game-meta">
+              <span>▶️ ${game.play_count || 0}</span>
+              <span>❤️ ${game.like_count || 0}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      container.innerHTML = '<div class="empty-games"><div class="empty-icon">🎮</div><p>还没有作品</p><p class="empty-hint">去创作你的第一个游戏吧！</p></div>';
+    }
+  } catch (e) {
+    container.innerHTML = '<div class="error-games">加载失败</div>';
+  }
+}
+
+// 加载我的点赞
+async function loadProfilePageLikes() {
+  const container = document.getElementById('profile-likes-list');
+  if (!container) return;
+  
+  container.innerHTML = '<div class="loading-games">加载中...</div>';
+  
+  try {
+    const likedIds = JSON.parse(localStorage.getItem('aigame-liked-games') || '[]');
+    if (likedIds.length === 0) {
+      container.innerHTML = '<div class="empty-games"><div class="empty-icon">❤️</div><p>还没有点赞的游戏</p></div>';
+      return;
+    }
+    
+    // 批量获取游戏信息
+    const games = [];
+    for (const id of likedIds.slice(0, 20)) {
+      try {
+        const res = await fetch(`/api/games/${id}`);
+        const data = await res.json();
+        if (data.success && data.game) {
+          games.push(data.game);
+        }
+      } catch (e) {}
+    }
+    
+    if (games.length > 0) {
+      container.innerHTML = games.map(game => `
+        <div class="my-game-item" onclick="openGame('${game.id}')">
+          <div class="my-game-info">
+            <div class="my-game-title">${escapeHtml(game.title)}</div>
+            <div class="my-game-meta">
+              <span>👤 ${escapeHtml(game.author_name || '匿名')}</span>
+              <span>❤️ ${game.like_count || 0}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      container.innerHTML = '<div class="empty-games"><div class="empty-icon">❤️</div><p>还没有点赞的游戏</p></div>';
+    }
+  } catch (e) {
+    container.innerHTML = '<div class="error-games">加载失败</div>';
+  }
+}
+
+// 加载我的收藏
+async function loadProfilePageFavorites() {
+  const container = document.getElementById('profile-favs-list');
+  if (!container) return;
+  
+  container.innerHTML = '<div class="loading-games">加载中...</div>';
+  
+  try {
+    const favIds = JSON.parse(localStorage.getItem('aigame-favorites') || '[]');
+    if (favIds.length === 0) {
+      container.innerHTML = '<div class="empty-games"><div class="empty-icon">⭐</div><p>还没有收藏的游戏</p></div>';
+      return;
+    }
+    
+    const games = [];
+    for (const id of favIds.slice(0, 20)) {
+      try {
+        const res = await fetch(`/api/games/${id}`);
+        const data = await res.json();
+        if (data.success && data.game) {
+          games.push(data.game);
+        }
+      } catch (e) {}
+    }
+    
+    if (games.length > 0) {
+      container.innerHTML = games.map(game => `
+        <div class="my-game-item" onclick="openGame('${game.id}')">
+          <div class="my-game-info">
+            <div class="my-game-title">${escapeHtml(game.title)}</div>
+            <div class="my-game-meta">
+              <span>👤 ${escapeHtml(game.author_name || '匿名')}</span>
+              <span>❤️ ${game.like_count || 0}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      container.innerHTML = '<div class="empty-games"><div class="empty-icon">⭐</div><p>还没有收藏的游戏</p></div>';
+    }
+  } catch (e) {
+    container.innerHTML = '<div class="error-games">加载失败</div>';
+  }
+}
+
+// 加载设置页面数据
+function loadProfilePageSettings() {
+  // 更新账号ID显示（使用统一函数）
+  updateAccountIdDisplay();
+  
+  // 如果账号还没加载完成，稍后再试
+  if (!state.account.loaded) {
+    setTimeout(loadProfilePageSettings, 500);
+    return;
+  }
+  
+  // 个人信息
+  const nicknameEl = document.getElementById('settings-nickname');
+  if (nicknameEl) nicknameEl.value = state.settings.authorName || '';
+  
+  const emailEl = document.getElementById('settings-email');
+  if (emailEl) emailEl.value = state.userEmail || '';
+  
+  // 模型设置
+  const modelEl = document.getElementById('settings-model');
+  if (modelEl) modelEl.value = state.settings.llmModelId || 'deepseek-v3';
+  
+  const apiKeyEl = document.getElementById('settings-api-key');
+  if (apiKeyEl) apiKeyEl.value = state.settings.llmApiKey || '';
+}
+
+// 保存设置页面
+async function savePageSettings() {
+  const nickname = document.getElementById('settings-nickname')?.value?.trim() || '';
+  const email = document.getElementById('settings-email')?.value?.trim() || '';
+  const password = document.getElementById('settings-password')?.value?.trim() || '';
+  const model = document.getElementById('settings-model')?.value || 'deepseek-v3';
+  const apiKey = document.getElementById('settings-api-key')?.value || '';
+  
+  // 更新状态
+  state.settings.authorName = nickname;
+  state.settings.llmModelId = model;
+  state.settings.llmProvider = model;
+  state.settings.llmApiKey = apiKey;
+  
+  localStorage.setItem('aigame-settings', JSON.stringify(state.settings));
+  
+  // 更新昵称到服务器
+  if (nickname && nickname !== state.account.nickname) {
+    await updateNickname(nickname);
+  }
+  
+  // 处理密码设置
+  if (password && !state.account.hasPassword) {
+    if (password.length < 6) {
+      showToast('密码至少需要6位', 'error');
+      return;
+    }
+    await setAccountPassword(password);
+    document.getElementById('settings-password').value = '';
+    loadProfilePageSettings();
+  }
+  
+  // 处理邮箱绑定
+  if (email && email !== state.userEmail && isValidEmail(email)) {
+    if (!state.userEmailVerified) {
+      state.credits += 3;
+      saveCredits();
+      showToast('🎉 邮箱绑定成功！获得3积分奖励', 'success');
+      state.userEmailVerified = true;
+      localStorage.setItem('aigame-email-verified', 'true');
+    }
+    state.userEmail = email;
+    localStorage.setItem('aigame-email', email);
+  }
+  
+  showToast('设置已保存', 'success');
+  
+  // 更新显示
+  const usernameEl = document.getElementById('profile-page-username');
+  if (usernameEl) usernameEl.textContent = nickname || '游戏创作者';
 }
 
 // 显示游戏页面
@@ -1385,7 +1793,7 @@ function cancelGeneration() {
   state.isGenerating = false;
   stopGeneratingTimer();
   
-  document.querySelector('.btn-generate')?.classList.remove('loading');
+  setGenerateButtonLoading(false);
   document.getElementById('generating-overlay').classList.remove('active');
   document.getElementById('generating-float').classList.remove('active');
   
@@ -1475,8 +1883,7 @@ async function generateGame() {
   backgroundTask.prompt = prompt;
   backgroundTask.result = null;
   
-  const btn = document.querySelector('.btn-generate');
-  btn.classList.add('loading');
+  setGenerateButtonLoading(true);
   
   clearGeneratingLog();
   document.getElementById('generating-overlay').classList.add('active');
@@ -1554,7 +1961,7 @@ async function generateGame() {
                            errorMsg.includes('Unauthorized');
       
       if (isApiKeyError && state.settings.llmApiKey) {
-        // 用户配置了自己的 Key 但出错了，提示使用体验模式
+        // 用户配置了自己的 Key 但出错了，提示使用游客模式
         showApiKeyErrorModal(errorMsg);
         throw new Error('API Key 验证失败');
       }
@@ -1629,8 +2036,9 @@ async function generateGame() {
       };
       state.currentGameId = null;
       
-      // 隐藏生成遮罩
+      // 隐藏生成遮罩和浮动提示
       document.getElementById('generating-overlay').classList.remove('active');
+      document.getElementById('generating-float').classList.remove('active');
       
       // 显示保存弹窗并预览
       openSaveModal();
@@ -1650,7 +2058,7 @@ async function generateGame() {
     state.abortController = null;
     backgroundTask.isActive = false;
     stopGeneratingTimer();
-    btn.classList.remove('loading');
+    setGenerateButtonLoading(false);
   }
 }
 
@@ -2215,7 +2623,7 @@ function showApiKeyErrorModal(errorMsg) {
         </p>
         <div style="display: flex; flex-direction: column; gap: 0.75rem;">
           <button class="btn-primary" onclick="useTrialModeInstead()" style="width: 100%; padding: 0.75rem;">
-            🎁 清除 Key，使用免费体验模式
+            🎁 清除 Key，使用游客模式
           </button>
           <button class="btn-secondary" onclick="openSettingsFromError()" style="width: 100%; padding: 0.75rem;">
             ⚙️ 去设置中修改 API Key
@@ -2238,13 +2646,13 @@ function closeApiKeyErrorModal() {
   }
 }
 
-// 清除用户 Key，使用体验模式
+// 清除用户 Key，使用游客模式
 function useTrialModeInstead() {
   state.settings.llmApiKey = '';
   localStorage.setItem('settings', JSON.stringify(state.settings));
   closeApiKeyErrorModal();
-  showToast('已切换到免费体验模式，请重新生成', 'success');
-  loadTrialInfo(); // 刷新体验模式状态
+  showToast('已切换到游客模式，请重新生成', 'success');
+  loadTrialInfo(); // 刷新游客模式状态
 }
 
 // 从错误弹窗打开设置
@@ -2349,7 +2757,18 @@ function closeCreditsModal() {
 // 显示公众号验证
 function showWechatVerify() {
   const section = document.getElementById('wechat-verify-section');
-  section.style.display = section.style.display === 'none' ? 'block' : 'none';
+  const isHidden = section.style.display === 'none';
+  section.style.display = isHidden ? 'block' : 'none';
+  
+  // 展开时滚动到可见位置并高亮
+  if (isHidden) {
+    setTimeout(() => {
+      section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // 添加高亮动画
+      section.classList.add('highlight-animation');
+      setTimeout(() => section.classList.remove('highlight-animation'), 1500);
+    }, 100);
+  }
 }
 
 // 验证公众号关注
@@ -2393,11 +2812,15 @@ async function verifyWechatFollow() {
   }
 }
 
-// 看广告获取积分
+// 看广告获取积分 (暂时关闭)
 async function watchAd() {
+  // 功能暂时关闭
+  showToast('此功能暂时关闭，请通过其他方式获取积分', 'info');
+  return;
+  
   // 这里应该接入真实的广告SDK
   // 目前简单模拟广告观看
-  showToast('正在加载广告...', 'info');
+  // showToast('正在加载广告...', 'info');
   
   // 模拟广告播放
   setTimeout(async () => {
@@ -3219,9 +3642,9 @@ function onModelSelectChange() {
   state.settings.llmModelId = modelId;
 }
 
-// ==================== 体验模式系统 ====================
+// ==================== 游客模式系统 ====================
 
-// 加载体验模式信息
+// 加载游客模式信息
 async function loadTrialInfo() {
   try {
     const response = await fetch('/api/trial/status', {
@@ -3234,18 +3657,18 @@ async function loadTrialInfo() {
       updateTrialBanner();
     }
   } catch (error) {
-    console.error('加载体验模式信息失败:', error);
+    console.error('加载游客模式信息失败:', error);
   }
 }
 
-// 更新体验模式横幅
+// 更新游客模式横幅
 function updateTrialBanner() {
   const banner = document.getElementById('trial-banner');
   const remaining = document.getElementById('trial-remaining');
   
   if (!banner || !state.trialInfo) return;
   
-  // 只有没有API Key的用户才显示体验模式
+  // 只有没有API Key的用户才显示游客模式
   if (!state.settings.llmApiKey && state.trialInfo.enabled) {
     banner.style.display = 'inline-flex';
     remaining.textContent = state.trialInfo.userRemaining || 0;
@@ -3254,7 +3677,7 @@ function updateTrialBanner() {
   }
 }
 
-// 使用体验模式生成
+// 使用游客模式生成
 async function generateWithTrial() {
   const prompt = document.getElementById('prompt-input').value.trim();
   
@@ -3276,7 +3699,7 @@ async function generateWithTrial() {
     const data = await response.json();
     
     if (data.success) {
-      // 更新体验模式剩余次数
+      // 更新游客模式剩余次数
       if (state.trialInfo) {
         state.trialInfo.userRemaining = data.userRemaining;
         state.trialInfo.globalRemaining = data.globalRemaining;
@@ -3284,7 +3707,7 @@ async function generateWithTrial() {
       }
       return data;
     } else {
-      throw new Error(data.error || '体验生成失败');
+      throw new Error(data.error || '游客模式生成失败');
     }
   } catch (error) {
     showToast(error.message, 'error');
@@ -3465,7 +3888,7 @@ async function loadLeaderboard(type = 'games') {
 
 // ==================== 增强版生成游戏 ====================
 
-// 重写生成游戏函数，支持体验模式
+// 重写生成游戏函数，支持游客模式
 const originalGenerateGame = generateGame;
 
 async function generateGame() {
@@ -3480,21 +3903,21 @@ async function generateGame() {
     return;
   }
   
-  // 如果没有API Key，尝试使用体验模式
+  // 如果没有API Key，尝试使用游客模式
   if (!state.settings.llmApiKey) {
-    // 检查体验模式是否可用
+    // 检查游客模式是否可用
     if (state.trialInfo && state.trialInfo.enabled && state.trialInfo.userRemaining > 0) {
       state.isGenerating = true;
       state.abortController = new AbortController();
       
-      const btn = document.querySelector('.btn-generate');
-      btn.classList.add('loading');
+      setGenerateButtonLoading(true);
       
       clearGeneratingLog();
       document.getElementById('generating-overlay').classList.add('active');
+      startGeneratingTimer(); // 启动计时器
       
-      log(`体验模式生成游戏: "${prompt}"`);
-      updateGeneratingStatus('🎁 使用体验模式生成...');
+      log(`游客模式生成游戏: "${prompt}"`);
+      updateGeneratingStatus('🎁 使用游客模式生成...');
       
       try {
         const data = await generateWithTrial();
@@ -3511,24 +3934,30 @@ async function generateGame() {
           state.currentGameId = null;
           
           document.getElementById('generating-overlay').classList.remove('active');
+          document.getElementById('generating-float').classList.remove('active'); // 关闭浮动提示
+          stopGeneratingTimer(); // 停止计时器
           openSaveModal();
         } else {
           document.getElementById('generating-overlay').classList.remove('active');
+          document.getElementById('generating-float').classList.remove('active');
+          stopGeneratingTimer();
         }
       } catch (error) {
-        log('体验模式生成失败: ' + error.message, 'error');
+        log('游客模式生成失败: ' + error.message, 'error');
         document.getElementById('generating-overlay').classList.remove('active');
+        document.getElementById('generating-float').classList.remove('active');
+        stopGeneratingTimer();
       } finally {
         state.isGenerating = false;
         state.abortController = null;
-        btn.classList.remove('loading');
+        setGenerateButtonLoading(false);
       }
       return;
     }
     
-    // 体验模式不可用，提示配置API Key
-    showToast('体验次数已用完，请在设置中配置 API Key', 'error');
-    openSettings();
+    // 游客模式不可用，引导获取积分或配置API Key
+    showToast('生成次数已用完，获取更多积分或配置自己的API Key', 'error');
+    openCreditsModal();
     return;
   }
   
@@ -3536,8 +3965,7 @@ async function generateGame() {
   state.isGenerating = true;
   state.abortController = new AbortController();
   
-  const btn = document.querySelector('.btn-generate');
-  btn.classList.add('loading');
+  setGenerateButtonLoading(true);
   
   clearGeneratingLog();
   document.getElementById('generating-overlay').classList.add('active');
@@ -3610,7 +4038,7 @@ async function generateGame() {
                            errorMsg.toLowerCase().includes('apikey');
       
       if (isApiKeyError && state.settings.llmApiKey) {
-        // 用户配置了自己的 Key 但出错了，提示使用体验模式
+        // 用户配置了自己的 Key 但出错了，提示使用游客模式
         document.getElementById('generating-overlay').classList.remove('active');
         showApiKeyErrorModal(errorMsg);
         throw new Error('API Key 验证失败');
@@ -3641,8 +4069,10 @@ async function generateGame() {
     };
     state.currentGameId = null;
     
-    // 隐藏生成遮罩
+    // 隐藏生成遮罩和浮动提示
     document.getElementById('generating-overlay').classList.remove('active');
+    document.getElementById('generating-float').classList.remove('active');
+    stopGeneratingTimer();
     
     // 显示保存弹窗并预览
     openSaveModal();
@@ -3655,10 +4085,12 @@ async function generateGame() {
       showToast(error.message || '生成失败，请重试', 'error');
     }
     document.getElementById('generating-overlay').classList.remove('active');
+    document.getElementById('generating-float').classList.remove('active');
+    stopGeneratingTimer();
   } finally {
     state.isGenerating = false;
     state.abortController = null;
-    btn.classList.remove('loading');
+    setGenerateButtonLoading(false);
   }
 }
 
@@ -4066,19 +4498,19 @@ function closeBrandPromo() {
   }
 }
 
-// 关闭游戏页推广条
+// 关闭游戏页推广浮动
 function closePromoBar() {
-  const bar = document.getElementById('game-promo-bar');
+  const bar = document.getElementById('game-promo-float');
   if (bar) {
     bar.classList.add('hidden');
-    // 记住用户关闭了推广条，24小时内不再显示
+    // 记住用户关闭了推广，24小时内不再显示
     localStorage.setItem('aigame-promo-closed', Date.now().toString());
   }
 }
 
-// 延迟显示推广条
+// 延迟显示推广浮动
 function showPromoBarDelayed() {
-  const bar = document.getElementById('game-promo-bar');
+  const bar = document.getElementById('game-promo-float');
   if (!bar) return;
   
   // 检查是否在24小时内关闭过
