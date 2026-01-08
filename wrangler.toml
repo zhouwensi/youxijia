@@ -1,0 +1,22 @@
+name = "youxijia"
+main = "src/worker.js"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# 静态资源目录
+[site]
+bucket = "./public"
+
+# D1 数据库绑定
+[[d1_databases]]
+binding = "DB"
+database_name = "youxijia-db"
+database_id = "" # 创建后填入
+
+# 环境变量
+[vars]
+ADMIN_KEY = "your-admin-key-here"
+
+# 生产环境
+[env.production]
+vars = { NODE_ENV = "production" }

@@ -1,0 +1,13 @@
+{
+  "name": "youxijia",
+  "template": "node",
+  "build": {
+    "command": "npm install"
+  },
+  "start": {
+    "command": "node server.js"
+  },
+  "env": {
+    "NODE_ENV": "production"
+  }
+}

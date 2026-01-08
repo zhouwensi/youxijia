@@ -569,6 +569,7 @@
       <button class="tab-btn" onclick="switchTab('config')">⚙️ 系统配置</button>
       <button class="tab-btn" onclick="switchTab('games')">🎮 游戏管理</button>
       <button class="tab-btn" onclick="switchTab('users')">👥 用户管理</button>
+      <button class="tab-btn" onclick="switchTab('tools')">🛠️ 数据工具</button>
     </div>
 
     <!-- 仪表盘 -->
@@ -664,6 +665,59 @@
         </div>
       </div>
 
+      <div class="config-section">
+        <h2>🤖 LLM模型配置</h2>
+        <div class="config-grid">
+          <div class="config-item">
+            <label>启用LLM生成</label>
+            <select id="config-llm_enabled" style="width: 100%; padding: 0.5rem; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 4px;">
+              <option value="true">启用</option>
+              <option value="false">禁用</option>
+            </select>
+          </div>
+          <div class="config-item">
+            <label>默认模型</label>
+            <select id="config-llm_default_model" style="width: 100%; padding: 0.5rem; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 4px;">
+              <optgroup label="DeepSeek">
+                <option value="deepseek-chat">DeepSeek Chat</option>
+                <option value="deepseek-reasoner">DeepSeek R1</option>
+              </optgroup>
+              <optgroup label="Anthropic Claude">
+                <option value="claude-4.5-opus">Claude 4.5 Opus (最强)</option>
+                <option value="claude-4.5-sonnet">Claude 4.5 Sonnet</option>
+                <option value="claude-4.5-haiku">Claude 4.5 Haiku</option>
+                <option value="claude-4-sonnet">Claude 4 Sonnet</option>
+              </optgroup>
+              <optgroup label="OpenAI">
+                <option value="gpt-4.1">GPT-4.1</option>
+                <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
+                <option value="o3">O3</option>
+                <option value="o4-mini">O4 Mini</option>
+              </optgroup>
+              <optgroup label="Google">
+                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+              </optgroup>
+              <optgroup label="阿里通义">
+                <option value="qwen-max">通义千问 Max</option>
+                <option value="qwen-plus">通义千问 Plus</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="config-item" style="grid-column: 1 / -1;">
+            <label>默认API密钥</label>
+            <input type="password" id="config-llm_default_api_key" placeholder="sk-xxxx... (用于没有配置自己Key的用户)">
+            <p style="color: #64748b; font-size: 0.75rem; margin-top: 0.5rem;">
+              ⚠️ 此密钥将用于所有未配置自己API Key的用户，请注意费用控制
+            </p>
+          </div>
+          <div class="config-item" style="grid-column: 1 / -1;">
+            <label>自定义API地址（可选）</label>
+            <input type="text" id="config-llm_default_base_url" placeholder="留空使用官方地址，或填入代理地址">
+          </div>
+        </div>
+      </div>
+
       <button class="btn-save" onclick="saveConfig()">💾 保存配置</button>
     </div>
 
@@ -754,6 +808,95 @@
           </div>
         </div>
         <button class="btn-save" onclick="addCreditsToUser()" style="background: linear-gradient(135deg, #f59e0b, #d97706);">💰 添加积分</button>
+      </div>
+    </div>
+
+    <!-- 数据工具 -->
+    <div class="tab-content" id="tab-tools">
+      <div class="config-section">
+        <h2>🔄 用户数据重置</h2>
+        <div class="config-grid">
+          <div class="config-item">
+            <label>用户Token（可选）</label>
+            <input type="text" id="reset-user-token" placeholder="留空则操作所有用户">
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem;">
+          <button class="btn-save" onclick="resetUserCredits()" style="background: linear-gradient(135deg, #10b981, #059669);">
+            💎 重置积分为初始值
+          </button>
+          <button class="btn-save" onclick="resetDailyAdCount()" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+            🎬 重置今日广告次数
+          </button>
+          <button class="btn-save" onclick="resetFirstGeneration()" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+            ✨ 重置首次生成免费
+          </button>
+        </div>
+        <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.75rem;">
+          💡 留空Token则对所有用户生效。重置积分会将用户积分恢复到系统配置的初始值。
+        </p>
+      </div>
+
+      <div class="config-section">
+        <h2>🧹 数据清理</h2>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <button class="btn-save" onclick="cleanupOldGames()" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+            🗑️ 清理30天前的隐藏游戏
+          </button>
+          <button class="btn-save" onclick="cleanupInactiveUsers()" style="background: linear-gradient(135deg, #ec4899, #db2777);">
+            👤 清理无活动的空用户
+          </button>
+          <button class="btn-save" onclick="cleanupOldLogs()" style="background: linear-gradient(135deg, #6366f1, #4f46e5);">
+            📋 清理旧日志数据
+          </button>
+        </div>
+        <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.75rem;">
+          ⚠️ 清理操作不可恢复，请谨慎操作。
+        </p>
+      </div>
+
+      <div class="config-section">
+        <h2>📊 数据库维护</h2>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <button class="btn-save" onclick="vacuumDatabase()" style="background: linear-gradient(135deg, #14b8a6, #0d9488);">
+            🔧 优化数据库(VACUUM)
+          </button>
+          <button class="btn-save" onclick="reindexDatabase()" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">
+            📑 重建索引
+          </button>
+          <button class="btn-save" onclick="getDatabaseStats()" style="background: linear-gradient(135deg, #64748b, #475569);">
+            📈 查看数据库统计
+          </button>
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h2>⚡ 快捷操作</h2>
+        <div class="config-grid">
+          <div class="config-item">
+            <label>批量添加积分</label>
+            <input type="number" id="batch-credits-amount" value="5" min="1" max="100">
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem;">
+          <button class="btn-save" onclick="batchAddCredits()" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+            💰 给所有用户加积分
+          </button>
+          <button class="btn-save" onclick="resetAllFollowStatus()" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+            📱 重置所有关注状态
+          </button>
+        </div>
+        <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.75rem;">
+          💡 批量添加积分可用于活动奖励或补偿。重置关注状态后用户可重新获得关注奖励。
+        </p>
+      </div>
+
+      <!-- 操作日志 -->
+      <div class="config-section">
+        <h2>📝 最近操作日志</h2>
+        <div id="tools-log" style="max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 0.5rem; padding: 0.75rem; font-family: monospace; font-size: 0.8rem;">
+          <p style="color: #64748b;">等待操作...</p>
+        </div>
       </div>
     </div>
   </div>
@@ -934,7 +1077,12 @@
         'credits_daily_ad_limit',
         'credits_share_game',
         'site_name',
-        'site_announcement'
+        'site_announcement',
+        // LLM配置
+        'llm_enabled',
+        'llm_default_model',
+        'llm_default_api_key',
+        'llm_default_base_url'
       ];
       
       const configs = configKeys.map(key => ({
@@ -1307,6 +1455,338 @@
       }).catch(() => {
         showToast('复制失败', 'error');
       });
+    }
+
+    // ==================== 数据工具函数 ====================
+    
+    // 添加日志
+    function addToolsLog(message, type = 'info') {
+      const logContainer = document.getElementById('tools-log');
+      const time = new Date().toLocaleTimeString();
+      const colors = {
+        info: '#a5b4fc',
+        success: '#10b981',
+        error: '#f87171',
+        warning: '#fbbf24'
+      };
+      logContainer.innerHTML = `<div style="color: ${colors[type]}; margin-bottom: 0.5rem;">[${time}] ${message}</div>` + logContainer.innerHTML;
+    }
+
+    // 重置用户积分
+    async function resetUserCredits() {
+      const userToken = document.getElementById('reset-user-token').value.trim();
+      const target = userToken ? '指定用户' : '所有用户';
+      
+      if (!confirm(`确定要重置${target}的积分为初始值吗？`)) return;
+      
+      try {
+        const response = await fetch('/api/admin/tools/reset-credits', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ userToken })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          addToolsLog(`✅ ${data.message}`, 'success');
+        } else {
+          showToast(data.error || '操作失败', 'error');
+          addToolsLog(`❌ ${data.error || '操作失败'}`, 'error');
+        }
+      } catch (error) {
+        showToast('操作失败', 'error');
+        addToolsLog(`❌ 网络错误: ${error.message}`, 'error');
+      }
+    }
+
+    // 重置今日广告次数
+    async function resetDailyAdCount() {
+      const userToken = document.getElementById('reset-user-token').value.trim();
+      const target = userToken ? '指定用户' : '所有用户';
+      
+      if (!confirm(`确定要重置${target}的今日广告次数吗？`)) return;
+      
+      try {
+        const response = await fetch('/api/admin/tools/reset-ad-count', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ userToken })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          addToolsLog(`✅ ${data.message}`, 'success');
+        } else {
+          showToast(data.error || '操作失败', 'error');
+          addToolsLog(`❌ ${data.error || '操作失败'}`, 'error');
+        }
+      } catch (error) {
+        showToast('操作失败', 'error');
+        addToolsLog(`❌ 网络错误: ${error.message}`, 'error');
+      }
+    }
+
+    // 重置首次生成免费
+    async function resetFirstGeneration() {
+      const userToken = document.getElementById('reset-user-token').value.trim();
+      const target = userToken ? '指定用户' : '所有用户';
+      
+      if (!confirm(`确定要重置${target}的首次生成免费状态吗？`)) return;
+      
+      try {
+        const response = await fetch('/api/admin/tools/reset-first-gen', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ userToken })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          addToolsLog(`✅ ${data.message}`, 'success');
+        } else {
+          showToast(data.error || '操作失败', 'error');
+          addToolsLog(`❌ ${data.error || '操作失败'}`, 'error');
+        }
+      } catch (error) {
+        showToast('操作失败', 'error');
+        addToolsLog(`❌ 网络错误: ${error.message}`, 'error');
+      }
+    }
+
+    // 清理旧隐藏游戏
+    async function cleanupOldGames() {
+      if (!confirm('确定要清理30天前的隐藏游戏吗？此操作不可恢复！')) return;
+      
+      try {
+        const response = await fetch('/api/admin/tools/cleanup-old-games', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          }
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          addToolsLog(`✅ ${data.message}`, 'success');
+        } else {
+          showToast(data.error || '操作失败', 'error');
+          addToolsLog(`❌ ${data.error || '操作失败'}`, 'error');
+        }
+      } catch (error) {
+        showToast('操作失败', 'error');
+        addToolsLog(`❌ 网络错误: ${error.message}`, 'error');
+      }
+    }
+
+    // 清理无活动空用户
+    async function cleanupInactiveUsers() {
+      if (!confirm('确定要清理没有任何活动的空用户吗？')) return;
+      
+      try {
+        const response = await fetch('/api/admin/tools/cleanup-inactive-users', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          }
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          addToolsLog(`✅ ${data.message}`, 'success');
+        } else {
+          showToast(data.error || '操作失败', 'error');
+          addToolsLog(`❌ ${data.error || '操作失败'}`, 'error');
+        }
+      } catch (error) {
+        showToast('操作失败', 'error');
+        addToolsLog(`❌ 网络错误: ${error.message}`, 'error');
+      }
+    }
+
+    // 清理旧日志
+    async function cleanupOldLogs() {
+      if (!confirm('确定要清理30天前的日志数据吗？')) return;
+      
+      try {
+        const response = await fetch('/api/admin/tools/cleanup-logs', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          }
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          addToolsLog(`✅ ${data.message}`, 'success');
+        } else {
+          showToast(data.error || '操作失败', 'error');
+          addToolsLog(`❌ ${data.error || '操作失败'}`, 'error');
+        }
+      } catch (error) {
+        showToast('操作失败', 'error');
+        addToolsLog(`❌ 网络错误: ${error.message}`, 'error');
+      }
+    }
+
+    // 优化数据库
+    async function vacuumDatabase() {
+      addToolsLog('⏳ 正在优化数据库...', 'info');
+      
+      try {
+        const response = await fetch('/api/admin/tools/vacuum', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          }
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          addToolsLog(`✅ ${data.message}`, 'success');
+        } else {
+          showToast(data.error || '操作失败', 'error');
+          addToolsLog(`❌ ${data.error || '操作失败'}`, 'error');
+        }
+      } catch (error) {
+        showToast('操作失败', 'error');
+        addToolsLog(`❌ 网络错误: ${error.message}`, 'error');
+      }
+    }
+
+    // 重建索引
+    async function reindexDatabase() {
+      addToolsLog('⏳ 正在重建索引...', 'info');
+      
+      try {
+        const response = await fetch('/api/admin/tools/reindex', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          }
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          addToolsLog(`✅ ${data.message}`, 'success');
+        } else {
+          showToast(data.error || '操作失败', 'error');
+          addToolsLog(`❌ ${data.error || '操作失败'}`, 'error');
+        }
+      } catch (error) {
+        showToast('操作失败', 'error');
+        addToolsLog(`❌ 网络错误: ${error.message}`, 'error');
+      }
+    }
+
+    // 获取数据库统计
+    async function getDatabaseStats() {
+      try {
+        const response = await fetch('/api/admin/tools/db-stats', {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          const stats = data.stats;
+          addToolsLog(`📊 数据库统计:`, 'info');
+          addToolsLog(`   游戏数: ${stats.games || 0}`, 'info');
+          addToolsLog(`   用户数: ${stats.users || 0}`, 'info');
+          addToolsLog(`   账号数: ${stats.accounts || 0}`, 'info');
+          addToolsLog(`   点赞数: ${stats.likes || 0}`, 'info');
+          addToolsLog(`   收藏数: ${stats.favorites || 0}`, 'info');
+          if (stats.dbSize) {
+            addToolsLog(`   数据库大小: ${stats.dbSize}`, 'info');
+          }
+        } else {
+          addToolsLog(`❌ ${data.error || '获取统计失败'}`, 'error');
+        }
+      } catch (error) {
+        addToolsLog(`❌ 网络错误: ${error.message}`, 'error');
+      }
+    }
+
+    // 批量添加积分
+    async function batchAddCredits() {
+      const amount = parseInt(document.getElementById('batch-credits-amount').value);
+      
+      if (!amount || amount <= 0) {
+        showToast('请输入有效的积分数量', 'error');
+        return;
+      }
+      
+      if (!confirm(`确定要给所有用户添加 ${amount} 积分吗？`)) return;
+      
+      try {
+        const response = await fetch('/api/admin/tools/batch-add-credits', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ amount })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          addToolsLog(`✅ ${data.message}`, 'success');
+        } else {
+          showToast(data.error || '操作失败', 'error');
+          addToolsLog(`❌ ${data.error || '操作失败'}`, 'error');
+        }
+      } catch (error) {
+        showToast('操作失败', 'error');
+        addToolsLog(`❌ 网络错误: ${error.message}`, 'error');
+      }
+    }
+
+    // 重置所有关注状态
+    async function resetAllFollowStatus() {
+      if (!confirm('确定要重置所有用户的公众号关注状态吗？重置后用户可以重新获得关注奖励。')) return;
+      
+      try {
+        const response = await fetch('/api/admin/tools/reset-follow-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          }
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          addToolsLog(`✅ ${data.message}`, 'success');
+        } else {
+          showToast(data.error || '操作失败', 'error');
+          addToolsLog(`❌ ${data.error || '操作失败'}`, 'error');
+        }
+      } catch (error) {
+        showToast('操作失败', 'error');
+        addToolsLog(`❌ 网络错误: ${error.message}`, 'error');
+      }
     }
 
     // 回车登录

@@ -209,11 +209,38 @@ function extractHtmlFromResponse(response) {
 const TRIAL_CONFIG = {
   enabled: true,                              // 是否启用体验模式
   dailyQuota: 50,                             // 每日全站免费配额
-  perUserLimit: 2,                            // 每用户每日体验次数
-  apiKey: process.env.TRIAL_API_KEY || '',    // 体验模式使用的API Key
+  perUserLimit: 2,                            // 每用户每日体验次数 (已废弃，改用积分系统)
+  apiKey: process.env.TRIAL_API_KEY || '',    // 体验模式使用的API Key（可在管理后台配置）
   model: 'deepseek-chat',                     // 体验模式使用的模型
   baseUrl: 'https://api.deepseek.com',        // 体验模式API地址
 };
+
+// 获取体验模式API配置的函数（支持从管理后台配置读取）
+function getTrialApiConfig() {
+  // 优先使用环境变量
+  if (TRIAL_CONFIG.apiKey) {
+    return {
+      apiKey: TRIAL_CONFIG.apiKey,
+      model: TRIAL_CONFIG.model,
+      baseUrl: TRIAL_CONFIG.baseUrl
+    };
+  }
+  
+  // 其次使用管理后台配置的默认LLM
+  const defaultApiKey = getConfig('llm_default_api_key', '');
+  const defaultModel = getConfig('llm_default_model', 'deepseek-chat');
+  const defaultBaseUrl = getConfig('llm_default_base_url', 'https://api.deepseek.com');
+  
+  if (defaultApiKey) {
+    return {
+      apiKey: defaultApiKey,
+      model: defaultModel,
+      baseUrl: defaultBaseUrl || 'https://api.deepseek.com'
+    };
+  }
+  
+  return null;
+}
 
 // 积分系统配置
 const CREDITS_CONFIG = {
@@ -422,6 +449,56 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_games_featured ON games(is_featured DESC, like_count DESC);
 `);
 
+// ==================== 用户账号系统 ====================
+// 创建用户账号表
+db.exec(`
+  CREATE TABLE IF NOT EXISTS user_accounts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    account_id TEXT UNIQUE NOT NULL,
+    nickname TEXT DEFAULT '游戏玩家',
+    password_hash TEXT,
+    email TEXT,
+    user_token TEXT UNIQUE NOT NULL,
+    has_password INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+// 创建账号索引
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_user_accounts_account_id ON user_accounts(account_id);
+  CREATE INDEX IF NOT EXISTS idx_user_accounts_user_token ON user_accounts(user_token);
+`);
+
+// 生成唯一账号ID的函数
+function generateAccountId() {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let suffix = '';
+  for (let i = 0; i < 6; i++) {
+    suffix += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return 'player_' + suffix;
+}
+
+// 确保账号ID唯一
+function getUniqueAccountId() {
+  let accountId;
+  let attempts = 0;
+  do {
+    accountId = generateAccountId();
+    const exists = db.prepare('SELECT 1 FROM user_accounts WHERE account_id = ?').get(accountId);
+    if (!exists) break;
+    attempts++;
+  } while (attempts < 100);
+  return accountId;
+}
+
+// 简单的密码哈希（生产环境建议使用bcrypt）
+function hashPassword(password) {
+  return crypto.createHash('sha256').update(password + 'aigame_salt_2025').digest('hex');
+}
+
 // 创建系统配置表
 db.exec(`
   CREATE TABLE IF NOT EXISTS system_config (
@@ -442,6 +519,11 @@ const defaultConfigs = [
   { key: 'credits_share_game', value: '1', description: '分享游戏奖励' },
   { key: 'site_name', value: 'AI游戏工坊', description: '网站名称' },
   { key: 'site_announcement', value: '', description: '网站公告' },
+  // LLM 默认配置
+  { key: 'llm_default_model', value: 'deepseek-chat', description: '默认LLM模型' },
+  { key: 'llm_default_api_key', value: '', description: '默认LLM API密钥' },
+  { key: 'llm_default_base_url', value: '', description: '默认LLM API地址（可选）' },
+  { key: 'llm_enabled', value: 'true', description: '是否启用LLM生成功能' },
 ];
 
 const insertConfig = db.prepare(`
@@ -469,9 +551,10 @@ function setConfig(key, value) {
 db.exec(`
   CREATE TABLE IF NOT EXISTS user_credits (
     user_token TEXT PRIMARY KEY,
-    credits INTEGER DEFAULT 1,
-    total_earned INTEGER DEFAULT 1,
+    credits INTEGER DEFAULT 5,
+    total_earned INTEGER DEFAULT 5,
     total_used INTEGER DEFAULT 0,
+    first_gen_used INTEGER DEFAULT 0,
     followed_wechat INTEGER DEFAULT 0,
     last_ad_date TEXT,
     ad_count_today INTEGER DEFAULT 0,
@@ -479,6 +562,13 @@ db.exec(`
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);
+
+// 添加 first_gen_used 字段（兼容旧数据库）
+try {
+  db.exec('ALTER TABLE user_credits ADD COLUMN first_gen_used INTEGER DEFAULT 0');
+} catch (e) {
+  // 字段已存在，忽略
+}
 
 // 创建积分记录表
 db.exec(`
@@ -491,6 +581,185 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);
+
+// 确保用户积分记录存在的辅助函数
+function ensureUserCredits(userToken) {
+  let credits = db.prepare('SELECT * FROM user_credits WHERE user_token = ?').get(userToken);
+  
+  if (!credits) {
+    const initialCredits = parseInt(getConfig('credits_initial')) || 5;
+    db.prepare(`
+      INSERT INTO user_credits (user_token, credits, total_earned, first_gen_used) 
+      VALUES (?, ?, ?, 0)
+    `).run(userToken, initialCredits, initialCredits);
+    
+    credits = db.prepare('SELECT * FROM user_credits WHERE user_token = ?').get(userToken);
+  }
+  
+  return credits;
+}
+
+// ==================== 账号系统 API ====================
+
+// 获取或创建用户账号信息
+app.get('/api/account', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    if (!userToken) {
+      return res.status(400).json({ success: false, error: '缺少用户标识' });
+    }
+    
+    let account = db.prepare('SELECT * FROM user_accounts WHERE user_token = ?').get(userToken);
+    
+    // 如果账号不存在，自动创建
+    if (!account) {
+      const accountId = getUniqueAccountId();
+      db.prepare(`
+        INSERT INTO user_accounts (account_id, nickname, user_token)
+        VALUES (?, ?, ?)
+      `).run(accountId, '游戏玩家', userToken);
+      
+      account = db.prepare('SELECT * FROM user_accounts WHERE user_token = ?').get(userToken);
+    }
+    
+    res.json({
+      success: true,
+      account: {
+        accountId: account.account_id,
+        nickname: account.nickname,
+        hasPassword: !!account.has_password,
+        email: account.email,
+        createdAt: account.created_at
+      }
+    });
+  } catch (error) {
+    console.error('[ERROR] 获取账号信息失败:', error);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
+// 更新用户昵称
+app.put('/api/account/nickname', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    const { nickname } = req.body;
+    
+    if (!userToken) {
+      return res.status(400).json({ success: false, error: '缺少用户标识' });
+    }
+    
+    if (!nickname || nickname.trim().length === 0) {
+      return res.status(400).json({ success: false, error: '昵称不能为空' });
+    }
+    
+    if (nickname.length > 20) {
+      return res.status(400).json({ success: false, error: '昵称不能超过20个字符' });
+    }
+    
+    db.prepare('UPDATE user_accounts SET nickname = ?, updated_at = CURRENT_TIMESTAMP WHERE user_token = ?')
+      .run(nickname.trim(), userToken);
+    
+    res.json({ success: true, nickname: nickname.trim() });
+  } catch (error) {
+    console.error('[ERROR] 更新昵称失败:', error);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
+// 设置密码（首次设置或修改）
+app.post('/api/account/password', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    const { password, oldPassword } = req.body;
+    
+    if (!userToken) {
+      return res.status(400).json({ success: false, error: '缺少用户标识' });
+    }
+    
+    if (!password || password.length < 6) {
+      return res.status(400).json({ success: false, error: '密码至少6位' });
+    }
+    
+    const account = db.prepare('SELECT * FROM user_accounts WHERE user_token = ?').get(userToken);
+    if (!account) {
+      return res.status(404).json({ success: false, error: '账号不存在' });
+    }
+    
+    // 如果已有密码，需要验证旧密码
+    if (account.has_password && account.password_hash) {
+      if (!oldPassword) {
+        return res.status(400).json({ success: false, error: '请输入原密码' });
+      }
+      if (hashPassword(oldPassword) !== account.password_hash) {
+        return res.status(400).json({ success: false, error: '原密码错误' });
+      }
+    }
+    
+    const passwordHash = hashPassword(password);
+    db.prepare('UPDATE user_accounts SET password_hash = ?, has_password = 1, updated_at = CURRENT_TIMESTAMP WHERE user_token = ?')
+      .run(passwordHash, userToken);
+    
+    res.json({ success: true, message: '密码设置成功' });
+  } catch (error) {
+    console.error('[ERROR] 设置密码失败:', error);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
+// 账号登录（用账号ID + 密码换取 userToken）
+app.post('/api/account/login', (req, res) => {
+  try {
+    const { accountId, password } = req.body;
+    
+    if (!accountId || !password) {
+      return res.status(400).json({ success: false, error: '请输入账号和密码' });
+    }
+    
+    const account = db.prepare('SELECT * FROM user_accounts WHERE account_id = ?').get(accountId);
+    
+    if (!account) {
+      return res.status(400).json({ success: false, error: '账号不存在' });
+    }
+    
+    if (!account.has_password || !account.password_hash) {
+      return res.status(400).json({ success: false, error: '该账号未设置密码，无法登录' });
+    }
+    
+    if (hashPassword(password) !== account.password_hash) {
+      return res.status(400).json({ success: false, error: '密码错误' });
+    }
+    
+    res.json({
+      success: true,
+      userToken: account.user_token,
+      account: {
+        accountId: account.account_id,
+        nickname: account.nickname,
+        hasPassword: true
+      }
+    });
+  } catch (error) {
+    console.error('[ERROR] 登录失败:', error);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
+// 检查账号是否存在（用于登录时提示）
+app.get('/api/account/check/:accountId', (req, res) => {
+  try {
+    const { accountId } = req.params;
+    const account = db.prepare('SELECT account_id, has_password FROM user_accounts WHERE account_id = ?').get(accountId);
+    
+    res.json({
+      success: true,
+      exists: !!account,
+      hasPassword: account ? !!account.has_password : false
+    });
+  } catch (error) {
+    console.error('[ERROR] 检查账号失败:', error);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
 
 // ==================== 积分系统 API ====================
 
@@ -773,13 +1042,14 @@ app.get('/api/games/recent', (req, res) => {
 app.get('/api/games/featured', (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 12;
+    const offset = parseInt(req.query.offset) || 0;
     const games = db.prepare(`
-      SELECT id, title, prompt, author_name, play_count, like_count, is_featured, created_at 
+      SELECT id, title, prompt, author_name, play_count, like_count, favorite_count, is_featured, created_at 
       FROM games 
       WHERE is_hidden = 0 AND (is_featured = 1 OR like_count >= 5)
       ORDER BY is_featured DESC, like_count DESC, play_count DESC 
-      LIMIT ?
-    `).all(limit);
+      LIMIT ? OFFSET ?
+    `).all(limit, offset);
     res.json({ success: true, games });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -876,12 +1146,48 @@ app.post('/api/generate', async (req, res) => {
       });
     }
 
-    // 默认使用DeepSeek
+    // 检查LLM功能是否启用
+    const llmEnabled = getConfig('llm_enabled', 'true') === 'true';
+    if (!llmEnabled) {
+      console.log('[ERROR] LLM功能已被管理员禁用');
+      return res.status(503).json({ success: false, error: '游戏生成功能暂时不可用，请稍后再试' });
+    }
+
+    // 获取默认LLM配置
+    const defaultModel = getConfig('llm_default_model', 'deepseek-chat');
+    const defaultApiKey = getConfig('llm_default_api_key', '');
+    const defaultBaseUrl = getConfig('llm_default_base_url', '');
+    
+    // 根据模型确定provider
+    const getProviderFromModel = (model) => {
+      if (model.includes('claude')) return 'anthropic';
+      if (model.includes('gpt') || model.includes('o1') || model.includes('o3') || model.includes('o4')) return 'openai';
+      if (model.includes('gemini')) return 'google';
+      if (model.includes('qwen')) return 'qwen';
+      return 'deepseek';
+    };
+
+    // 确定使用的模型和配置 - 用户配置优先，否则使用默认配置
+    const useUserConfig = llmConfig?.apiKey && llmConfig.apiKey.length > 0;
+    const finalModel = useUserConfig ? (llmConfig?.model || defaultModel) : defaultModel;
+    const finalProvider = getProviderFromModel(finalModel);
+    
+    // 根据provider确定默认baseUrl
+    const getDefaultBaseUrl = (provider) => {
+      switch (provider) {
+        case 'anthropic': return 'https://api.anthropic.com';
+        case 'openai': return 'https://api.openai.com';
+        case 'google': return 'https://generativelanguage.googleapis.com';
+        case 'qwen': return 'https://dashscope.aliyuncs.com/compatible-mode';
+        default: return 'https://api.deepseek.com';
+      }
+    };
+
     const config = {
-      provider: llmConfig?.provider || 'deepseek',
-      apiKey: llmConfig?.apiKey || process.env.DEEPSEEK_API_KEY,
-      baseUrl: llmConfig?.baseUrl || process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com',
-      model: llmConfig?.model || 'deepseek-chat'
+      provider: finalProvider,
+      apiKey: useUserConfig ? llmConfig.apiKey : (defaultApiKey || process.env.DEEPSEEK_API_KEY),
+      baseUrl: useUserConfig ? (llmConfig?.baseUrl || getDefaultBaseUrl(finalProvider)) : (defaultBaseUrl || getDefaultBaseUrl(finalProvider)),
+      model: finalModel
     };
     
     // 调试：显示API Key信息（隐藏中间部分）
@@ -1516,53 +1822,61 @@ function getCurrentChallenge() {
 
 // 检查体验模式配额
 function checkTrialQuota(userToken) {
-  if (!TRIAL_CONFIG.enabled || !TRIAL_CONFIG.apiKey) {
-    return { allowed: false, reason: '体验模式未启用' };
+  // 检查是否有可用的API配置
+  const apiConfig = getTrialApiConfig();
+  if (!TRIAL_CONFIG.enabled || !apiConfig) {
+    return { allowed: false, reason: '体验模式未启用，请在管理后台配置默认LLM API Key' };
   }
   
-  const today = new Date().toISOString().split('T')[0];
+  // 使用积分系统检查配额
+  const userCredits = ensureUserCredits(userToken);
   
-  // 检查全站每日配额
-  let dailyStats = db.prepare('SELECT trial_uses FROM stats_daily WHERE date = ?').get(today);
-  if (!dailyStats) {
-    db.prepare('INSERT OR IGNORE INTO stats_daily (date) VALUES (?)').run(today);
-    dailyStats = { trial_uses: 0 };
+  // 首次生成免费检查
+  if (!userCredits.first_gen_used) {
+    return { 
+      allowed: true, 
+      remaining: userCredits.credits + 1, // 加上首次免费的一次
+      globalRemaining: 999,
+      isFreeFirst: true
+    };
   }
   
-  if (dailyStats.trial_uses >= TRIAL_CONFIG.dailyQuota) {
-    return { allowed: false, reason: '今日免费体验次数已用完，请明天再来或配置自己的API Key' };
-  }
-  
-  // 检查用户每日体验次数
-  let userExtra = db.prepare('SELECT * FROM user_extras WHERE user_token = ?').get(userToken);
-  if (!userExtra) {
-    db.prepare('INSERT INTO user_extras (user_token) VALUES (?)').run(userToken);
-    userExtra = { trial_count_today: 0, trial_last_date: null };
-  }
-  
-  if (userExtra.trial_last_date !== today) {
-    db.prepare('UPDATE user_extras SET trial_count_today = 0, trial_last_date = ? WHERE user_token = ?')
-      .run(today, userToken);
-    userExtra.trial_count_today = 0;
-  }
-  
-  if (userExtra.trial_count_today >= TRIAL_CONFIG.perUserLimit) {
-    return { allowed: false, reason: `每人每天最多体验 ${TRIAL_CONFIG.perUserLimit} 次，请配置自己的API Key继续使用` };
+  // 检查积分
+  if (userCredits.credits <= 0) {
+    return { allowed: false, reason: '积分不足，请观看广告获取积分或配置自己的API Key' };
   }
   
   return { 
     allowed: true, 
-    remaining: TRIAL_CONFIG.perUserLimit - userExtra.trial_count_today,
-    globalRemaining: TRIAL_CONFIG.dailyQuota - dailyStats.trial_uses
+    remaining: userCredits.credits,
+    globalRemaining: 999
   };
 }
 
-// 记录体验使用
+// 记录体验使用（消耗积分）
 function recordTrialUse(userToken) {
   const today = new Date().toISOString().split('T')[0];
   
+  // 更新全站统计
   db.prepare('UPDATE stats_daily SET trial_uses = trial_uses + 1 WHERE date = ?').run(today);
-  db.prepare('UPDATE user_extras SET trial_count_today = trial_count_today + 1 WHERE user_token = ?').run(userToken);
+  
+  // 检查是否是首次生成
+  const userCredits = ensureUserCredits(userToken);
+  
+  if (!userCredits.first_gen_used) {
+    // 首次生成免费，只标记已使用
+    db.prepare('UPDATE user_credits SET first_gen_used = 1, updated_at = CURRENT_TIMESTAMP WHERE user_token = ?')
+      .run(userToken);
+    console.log(`[Credits] 用户 ${userToken.substring(0, 8)}... 使用首次免费生成`);
+  } else {
+    // 消耗积分
+    db.prepare(`
+      UPDATE user_credits 
+      SET credits = credits - 1, total_used = total_used + 1, updated_at = CURRENT_TIMESTAMP 
+      WHERE user_token = ?
+    `).run(userToken);
+    console.log(`[Credits] 用户 ${userToken.substring(0, 8)}... 消耗1积分，剩余 ${userCredits.credits - 1}`);
+  }
 }
 
 // ==================== 体验模式 API ====================
@@ -1575,16 +1889,23 @@ app.get('/api/trial/status', (req, res) => {
     return res.json({ success: true, enabled: false });
   }
   
+  const apiConfig = getTrialApiConfig();
   const quota = checkTrialQuota(userToken || 'anonymous');
+  const userCredits = userToken ? ensureUserCredits(userToken) : null;
   
   res.json({
     success: true,
-    enabled: TRIAL_CONFIG.enabled && !!TRIAL_CONFIG.apiKey,
+    enabled: TRIAL_CONFIG.enabled && !!apiConfig,
     allowed: quota.allowed,
     remaining: quota.remaining || 0,
+    userRemaining: quota.remaining || 0, // 兼容前端
     globalRemaining: quota.globalRemaining || 0,
     perUserLimit: TRIAL_CONFIG.perUserLimit,
-    reason: quota.reason
+    reason: quota.reason,
+    // 积分系统信息
+    credits: userCredits?.credits || 0,
+    firstGenUsed: userCredits?.first_gen_used || 0,
+    isFreeFirst: quota.isFreeFirst || false
   });
 });
 
@@ -1622,6 +1943,10 @@ app.post('/api/trial/generate', async (req, res) => {
     
     console.log(`[TRIAL] 开始体验模式生成: ${prompt}`);
     
+    // 【重要】在发送LLM请求前先扣除积分，防止滥用
+    recordTrialUse(userToken);
+    console.log(`[TRIAL] 已扣除积分`);
+    
     const systemPrompt = `你是一个专业的HTML5游戏开发专家。用户会给你一句话描述，你需要生成一个完整的、可直接运行的HTML5游戏。
 
 【重要要求】：
@@ -1645,14 +1970,20 @@ app.post('/api/trial/generate', async (req, res) => {
 
 只返回完整的HTML代码，用\`\`\`html和\`\`\`包裹，不要有任何解释文字。`;
 
-    const response = await fetch(`${TRIAL_CONFIG.baseUrl}/v1/chat/completions`, {
+    // 获取API配置（支持环境变量或管理后台配置）
+    const apiConfig = getTrialApiConfig();
+    if (!apiConfig) {
+      throw new Error('体验模式未配置API Key');
+    }
+
+    const response = await fetch(`${apiConfig.baseUrl}/v1/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${TRIAL_CONFIG.apiKey}`
+        'Authorization': `Bearer ${apiConfig.apiKey}`
       },
       body: JSON.stringify({
-        model: TRIAL_CONFIG.model,
+        model: apiConfig.model,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `请生成游戏：${enhancedPrompt}` }
@@ -1673,9 +2004,6 @@ app.post('/api/trial/generate', async (req, res) => {
     
     // 提取HTML代码 - 使用增强版提取函数
     code = extractHtmlFromResponse(code);
-    
-    // 记录使用
-    recordTrialUse(userToken);
     
     // 生成标题
     const titleMatch = code.match(/<title>(.*?)<\/title>/i);
@@ -2202,15 +2530,16 @@ app.get('/api/leaderboard/featured', (req, res) => {
 app.get('/api/leaderboard/favorites', (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
+    const offset = parseInt(req.query.offset) || 0;
     
     // 直接使用 games 表中的 favorite_count 字段
     const games = db.prepare(`
       SELECT id, title, prompt, author_name, play_count, like_count, favorite_count, created_at
       FROM games
-      WHERE is_hidden = 0 AND favorite_count > 0
+      WHERE is_hidden = 0
       ORDER BY favorite_count DESC, like_count DESC
-      LIMIT ?
-    `).all(limit);
+      LIMIT ? OFFSET ?
+    `).all(limit, offset);
     
     res.json({ success: true, games });
   } catch (error) {
@@ -2310,13 +2639,14 @@ app.get('/api/games', (req, res) => {
 app.get('/api/leaderboard/likes', (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
+    const offset = parseInt(req.query.offset) || 0;
     const games = db.prepare(`
       SELECT id, title, prompt, author_name, play_count, like_count, favorite_count, created_at
       FROM games 
-      WHERE is_hidden = 0 AND like_count > 0
+      WHERE is_hidden = 0
       ORDER BY like_count DESC, play_count DESC
-      LIMIT ?
-    `).all(limit);
+      LIMIT ? OFFSET ?
+    `).all(limit, offset);
     res.json({ success: true, games });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -2327,14 +2657,15 @@ app.get('/api/leaderboard/likes', (req, res) => {
 app.get('/api/leaderboard/hot', (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
+    const offset = parseInt(req.query.offset) || 0;
     const games = db.prepare(`
       SELECT id, title, prompt, author_name, play_count, like_count, favorite_count, created_at,
              (play_count + like_count * 5 + favorite_count * 3) as score
       FROM games 
       WHERE is_hidden = 0
       ORDER BY score DESC
-      LIMIT ?
-    `).all(limit);
+      LIMIT ? OFFSET ?
+    `).all(limit, offset);
     res.json({ success: true, games });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -2635,6 +2966,251 @@ app.post('/api/games/:id/shared', (req, res) => {
     }
     
     res.json({ success: true, shareCount, nextRewardAt: 3 - (shareCount % 3) });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==================== 管理员数据工具 API ====================
+
+// 重置用户积分
+app.post('/api/admin/tools/reset-credits', (req, res) => {
+  if (req.headers['x-admin-key'] !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { userToken } = req.body;
+    const initialCredits = parseInt(getConfig('credits_initial')) || 5;
+    
+    if (userToken) {
+      // 重置指定用户
+      const result = db.prepare('UPDATE user_credits SET credits = ?, total_earned = ?, total_used = 0 WHERE user_token = ?')
+        .run(initialCredits, initialCredits, userToken);
+      if (result.changes === 0) {
+        return res.json({ success: false, error: '用户不存在' });
+      }
+      res.json({ success: true, message: `已重置指定用户积分为 ${initialCredits}` });
+    } else {
+      // 重置所有用户
+      const result = db.prepare('UPDATE user_credits SET credits = ?, total_earned = ?, total_used = 0')
+        .run(initialCredits, initialCredits);
+      res.json({ success: true, message: `已重置 ${result.changes} 个用户的积分为 ${initialCredits}` });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 重置今日广告次数
+app.post('/api/admin/tools/reset-ad-count', (req, res) => {
+  if (req.headers['x-admin-key'] !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { userToken } = req.body;
+    
+    if (userToken) {
+      db.prepare("UPDATE user_credits SET ad_count_today = 0, last_ad_date = NULL WHERE user_token = ?")
+        .run(userToken);
+      res.json({ success: true, message: '已重置指定用户的今日广告次数' });
+    } else {
+      const result = db.prepare("UPDATE user_credits SET ad_count_today = 0, last_ad_date = NULL").run();
+      res.json({ success: true, message: `已重置 ${result.changes} 个用户的今日广告次数` });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 重置首次生成免费状态
+app.post('/api/admin/tools/reset-first-gen', (req, res) => {
+  if (req.headers['x-admin-key'] !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { userToken } = req.body;
+    
+    if (userToken) {
+      db.prepare("UPDATE user_credits SET first_gen_used = 0 WHERE user_token = ?").run(userToken);
+      res.json({ success: true, message: '已重置指定用户的首次生成免费状态' });
+    } else {
+      const result = db.prepare("UPDATE user_credits SET first_gen_used = 0").run();
+      res.json({ success: true, message: `已重置 ${result.changes} 个用户的首次生成免费状态` });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 清理30天前的隐藏游戏
+app.post('/api/admin/tools/cleanup-old-games', (req, res) => {
+  if (req.headers['x-admin-key'] !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const result = db.prepare(`
+      DELETE FROM games 
+      WHERE is_hidden = 1 AND created_at < datetime('now', '-30 days')
+    `).run();
+    res.json({ success: true, message: `已清理 ${result.changes} 个过期隐藏游戏` });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 清理无活动空用户
+app.post('/api/admin/tools/cleanup-inactive-users', (req, res) => {
+  if (req.headers['x-admin-key'] !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    // 清理没有创建过游戏、没有点赞、没有收藏、积分未变动的用户
+    const result = db.prepare(`
+      DELETE FROM user_credits 
+      WHERE user_token NOT IN (SELECT DISTINCT author_token FROM games WHERE author_token IS NOT NULL)
+        AND user_token NOT IN (SELECT DISTINCT user_token FROM user_likes WHERE user_token IS NOT NULL)
+        AND user_token NOT IN (SELECT DISTINCT user_token FROM user_favorites WHERE user_token IS NOT NULL)
+        AND total_used = 0
+        AND followed_wechat = 0
+        AND created_at < datetime('now', '-7 days')
+    `).run();
+    res.json({ success: true, message: `已清理 ${result.changes} 个无活动空用户` });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 清理旧日志
+app.post('/api/admin/tools/cleanup-logs', (req, res) => {
+  if (req.headers['x-admin-key'] !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    let cleaned = 0;
+    // 清理各种可能存在的日志表
+    try {
+      const r1 = db.prepare("DELETE FROM credit_logs WHERE created_at < datetime('now', '-30 days')").run();
+      cleaned += r1.changes;
+    } catch (e) {}
+    
+    try {
+      const r2 = db.prepare("DELETE FROM game_play_logs WHERE created_at < datetime('now', '-30 days')").run();
+      cleaned += r2.changes;
+    } catch (e) {}
+    
+    res.json({ success: true, message: `已清理 ${cleaned} 条旧日志记录` });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 优化数据库
+app.post('/api/admin/tools/vacuum', (req, res) => {
+  if (req.headers['x-admin-key'] !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    db.exec('VACUUM');
+    res.json({ success: true, message: '数据库优化完成' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 重建索引
+app.post('/api/admin/tools/reindex', (req, res) => {
+  if (req.headers['x-admin-key'] !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    db.exec('REINDEX');
+    res.json({ success: true, message: '索引重建完成' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 获取数据库统计
+app.get('/api/admin/tools/db-stats', (req, res) => {
+  if (req.headers['x-admin-key'] !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const stats = {
+      games: db.prepare('SELECT COUNT(*) as count FROM games').get().count,
+      users: db.prepare('SELECT COUNT(*) as count FROM user_credits').get().count,
+      accounts: 0,
+      likes: 0,
+      favorites: 0
+    };
+    
+    try {
+      stats.accounts = db.prepare('SELECT COUNT(*) as count FROM user_accounts').get().count;
+    } catch (e) {}
+    
+    try {
+      stats.likes = db.prepare('SELECT COUNT(*) as count FROM user_likes').get().count;
+    } catch (e) {}
+    
+    try {
+      stats.favorites = db.prepare('SELECT COUNT(*) as count FROM user_favorites').get().count;
+    } catch (e) {}
+    
+    // 获取数据库文件大小
+    try {
+      const fs = require('fs');
+      const dbPath = path.join(__dirname, 'games.db');
+      const dbStats = fs.statSync(dbPath);
+      const sizeMB = (dbStats.size / 1024 / 1024).toFixed(2);
+      stats.dbSize = `${sizeMB} MB`;
+    } catch (e) {
+      stats.dbSize = '未知';
+    }
+    
+    res.json({ success: true, stats });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 批量添加积分
+app.post('/api/admin/tools/batch-add-credits', (req, res) => {
+  if (req.headers['x-admin-key'] !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { amount } = req.body;
+    if (!amount || amount <= 0 || amount > 100) {
+      return res.json({ success: false, error: '积分数量无效 (1-100)' });
+    }
+    
+    const result = db.prepare('UPDATE user_credits SET credits = credits + ?, total_earned = total_earned + ?')
+      .run(amount, amount);
+    res.json({ success: true, message: `已给 ${result.changes} 个用户各添加 ${amount} 积分` });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 重置所有关注状态
+app.post('/api/admin/tools/reset-follow-status', (req, res) => {
+  if (req.headers['x-admin-key'] !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const result = db.prepare('UPDATE user_credits SET followed_wechat = 0').run();
+    res.json({ success: true, message: `已重置 ${result.changes} 个用户的公众号关注状态` });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

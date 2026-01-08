@@ -149,6 +149,8 @@ const MODEL_REGISTRY = {
 };
 
 // ==================== 应用状态 ====================
+const DEFAULT_CREDITS = 5;  // 初始积分
+
 const state = {
   currentGame: null,
   currentGameId: null,
@@ -156,12 +158,32 @@ const state = {
   isGenerating: false,
   abortController: null,
   debugMode: false,
-  credits: 0,
+  credits: DEFAULT_CREDITS,
   creditsConfig: null,
   modelsConfig: null,
   trialInfo: null,  // 体验模式信息
   myInviteCode: null,  // 我的邀请码
   weeklyChallenge: null,  // 本周挑战
+  isFirstGeneration: true,  // 是否为首次生成（不消耗积分）
+  userEmail: '',  // 用户邮箱
+  userEmailVerified: false,  // 邮箱是否已绑定
+  // 主标签页状态
+  mainTab: {
+    current: 'recent',  // 当前选中的标签
+    tabs: ['recent', 'hot', 'likes', 'favorites', 'featured'],
+    offsets: { recent: 0, hot: 0, likes: 0, favorites: 0, featured: 0 },
+    hasMore: { recent: true, hot: true, likes: true, favorites: true, featured: true },
+    isLoading: { recent: false, hot: false, likes: false, favorites: false, featured: false },
+    loaded: { recent: false, hot: false, likes: false, favorites: false, featured: false },
+    pageSize: 20
+  },
+  // 账号系统
+  account: {
+    accountId: '',      // 系统生成的唯一账号
+    nickname: '',       // 用户昵称（可中文）
+    hasPassword: false, // 是否设置了密码
+    loaded: false       // 是否已加载
+  },
   settings: {
     llmModelId: 'deepseek-v3',  // 使用模型ID
     llmApiKey: '',
@@ -235,9 +257,11 @@ function log(message, type = 'info') {
 document.addEventListener('DOMContentLoaded', () => {
   log('页面加载完成，初始化应用...', 'info');
   loadSettings();
-  loadGames();
-  initLeaderboard();
+  initCredits();
+  initAccount();  // 初始化账号
+  initMainTabs();  // 初始化主标签页
   handleRouting();
+  initBetaBanner();
   
   // 监听浏览器前进后退
   window.addEventListener('popstate', handleRouting);
@@ -257,6 +281,272 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// ==================== 内测横幅 ====================
+
+// 初始化内测横幅
+function initBetaBanner() {
+  const betaBanner = document.getElementById('beta-banner');
+  const dismissed = localStorage.getItem('aigame-beta-banner-dismissed');
+  if (betaBanner && !dismissed) {
+    betaBanner.style.display = 'flex';
+  }
+}
+
+// 关闭内测横幅
+function closeBetaBanner() {
+  const betaBanner = document.getElementById('beta-banner');
+  if (betaBanner) {
+    betaBanner.style.display = 'none';
+    localStorage.setItem('aigame-beta-banner-dismissed', 'true');
+  }
+}
+
+// ==================== 积分初始化 ====================
+
+// 初始化积分系统
+function initCredits() {
+  // 从localStorage加载积分
+  const savedCredits = localStorage.getItem('aigame-credits');
+  const isFirstGen = localStorage.getItem('aigame-first-generation');
+  const savedEmail = localStorage.getItem('aigame-email');
+  const emailVerified = localStorage.getItem('aigame-email-verified');
+  
+  if (savedCredits !== null) {
+    state.credits = parseInt(savedCredits) || 0;
+  } else {
+    // 新用户初始积分
+    state.credits = DEFAULT_CREDITS;
+    localStorage.setItem('aigame-credits', state.credits.toString());
+  }
+  
+  state.isFirstGeneration = isFirstGen !== 'false';
+  state.userEmail = savedEmail || '';
+  state.userEmailVerified = emailVerified === 'true';
+  
+  updateCreditsDisplay();
+}
+
+// 保存积分
+function saveCredits() {
+  localStorage.setItem('aigame-credits', state.credits.toString());
+  updateCreditsDisplay();
+}
+
+// ==================== 账号系统 ====================
+
+// 初始化账号
+async function initAccount() {
+  try {
+    const userToken = getUserToken();
+    const response = await fetch(`/api/account?token=${userToken}`);
+    if (response.ok) {
+      const data = await response.json();
+      state.account = {
+        accountId: data.account_id,
+        nickname: data.nickname || '',
+        hasPassword: data.has_password || false,
+        loaded: true
+      };
+      // 同步昵称到设置中的作者名
+      if (data.nickname && !state.settings.authorName) {
+        state.settings.authorName = data.nickname;
+      }
+      log('账号信息加载成功: ' + data.account_id, 'info');
+    }
+  } catch (error) {
+    log('加载账号信息失败: ' + error.message, 'error');
+  }
+}
+
+// 复制账号ID
+function copyAccountId() {
+  const accountId = state.account.accountId;
+  if (accountId) {
+    navigator.clipboard.writeText(accountId).then(() => {
+      showToast('账号已复制到剪贴板');
+    }).catch(() => {
+      // 回退方案
+      const input = document.createElement('input');
+      input.value = accountId;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+      showToast('账号已复制到剪贴板');
+    });
+  }
+}
+
+// 更新昵称
+async function updateNickname(nickname) {
+  try {
+    const userToken = getUserToken();
+    const response = await fetch('/api/account/nickname', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: userToken, nickname })
+    });
+    if (response.ok) {
+      state.account.nickname = nickname;
+      state.settings.authorName = nickname;
+      showToast('昵称更新成功');
+      return true;
+    } else {
+      const data = await response.json();
+      showToast(data.error || '昵称更新失败', 'error');
+      return false;
+    }
+  } catch (error) {
+    showToast('网络错误', 'error');
+    return false;
+  }
+}
+
+// 设置密码
+async function setAccountPassword(password) {
+  try {
+    const userToken = getUserToken();
+    const response = await fetch('/api/account/password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: userToken, password })
+    });
+    if (response.ok) {
+      state.account.hasPassword = true;
+      showToast('密码设置成功');
+      return true;
+    } else {
+      const data = await response.json();
+      showToast(data.error || '密码设置失败', 'error');
+      return false;
+    }
+  } catch (error) {
+    showToast('网络错误', 'error');
+    return false;
+  }
+}
+
+// 账号登录
+async function loginWithAccount(accountId, password) {
+  try {
+    const response = await fetch('/api/account/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ account_id: accountId, password })
+    });
+    if (response.ok) {
+      const data = await response.json();
+      // 更新本地 token
+      localStorage.setItem('aigame-user-token', data.user_token);
+      localStorage.setItem('aigame-author-token', data.user_token);
+      // 更新状态
+      state.account = {
+        accountId: data.account_id,
+        nickname: data.nickname || '',
+        hasPassword: true,
+        loaded: true
+      };
+      showToast('登录成功');
+      // 重新加载数据
+      initCredits();
+      loadGames();
+      return true;
+    } else {
+      const data = await response.json();
+      showToast(data.error || '登录失败', 'error');
+      return false;
+    }
+  } catch (error) {
+    showToast('网络错误', 'error');
+    return false;
+  }
+}
+
+// 显示登录对话框
+function showLoginDialog() {
+  const dialog = document.createElement('div');
+  dialog.className = 'modal-overlay';
+  dialog.id = 'login-dialog';
+  dialog.innerHTML = `
+    <div class="modal" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3><i class="fas fa-sign-in-alt"></i> 账号登录</h3>
+        <button class="modal-close" onclick="closeLoginDialog()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: #888; font-size: 12px; margin-bottom: 16px;">
+          如果你之前在其他设备上设置了密码，可以在这里登录恢复数据
+        </p>
+        <div class="form-group">
+          <label>账号 ID</label>
+          <input type="text" id="login-account-id" placeholder="例如: player_a3x9k2" />
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input type="password" id="login-password" placeholder="请输入密码" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeLoginDialog()">取消</button>
+        <button class="btn btn-primary" onclick="doLogin()">登录</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+}
+
+// 关闭登录对话框
+function closeLoginDialog() {
+  const dialog = document.getElementById('login-dialog');
+  if (dialog) {
+    dialog.remove();
+  }
+}
+
+// 执行登录
+async function doLogin() {
+  const accountId = document.getElementById('login-account-id').value.trim();
+  const password = document.getElementById('login-password').value;
+  
+  if (!accountId) {
+    showToast('请输入账号 ID', 'error');
+    return;
+  }
+  if (!password) {
+    showToast('请输入密码', 'error');
+    return;
+  }
+  
+  const success = await loginWithAccount(accountId, password);
+  if (success) {
+    closeLoginDialog();
+  }
+}
+
+// 检查是否有足够积分或是否为免费操作
+function checkCreditsForGeneration() {
+  // 首次生成和编辑游戏都免费
+  if (state.isFirstGeneration) {
+    return { canGenerate: true, isFree: true, message: '首次生成免费！' };
+  }
+  
+  if (state.currentGame && state.currentGame.isEditing) {
+    return { canGenerate: true, isFree: true, message: '编辑游戏免费！' };
+  }
+  
+  if (state.credits > 0) {
+    return { canGenerate: true, isFree: false, message: `将消耗 1 积分，当前剩余 ${state.credits} 积分` };
+  }
+  
+  return { canGenerate: false, isFree: false, message: '积分不足' };
+}
+
+// 打开无积分提示弹窗
+function openNoCreditsModal() {
+  showToast('积分不足，请获取更多积分', 'error');
+  openCreditsModal();
+}
+
 // 路由处理
 function handleRouting() {
   const path = window.location.pathname;
@@ -275,25 +565,224 @@ function showHome() {
   document.getElementById('home-page').classList.add('active');
   document.getElementById('game-page').classList.remove('active');
   document.body.classList.remove('fullscreen');
+  // 显示底部导航
+  document.getElementById('bottom-nav').style.display = 'flex';
   // 只在当前不是首页时才更新URL
   if (window.location.pathname !== '/') {
     history.pushState(null, '', '/');
   }
-  // 刷新排行榜数据
-  refreshLeaderboards();
 }
 
-// 刷新排行榜数据
-function refreshLeaderboards() {
-  loadLeaderboardData('hot');
-  loadLeaderboardData('likes');
-  loadLeaderboardData('favorites');
+// ==================== 主标签页切换 ====================
+
+// 切换主标签页
+function switchMainTab(tabName) {
+  if (tabName === state.mainTab.current) return;
+  
+  state.mainTab.current = tabName;
+  
+  // 更新标签样式
+  document.querySelectorAll('.tab-item').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.tab === tabName);
+  });
+  
+  // 切换面板
+  document.querySelectorAll('.tab-panel').forEach(panel => {
+    panel.classList.toggle('active', panel.id === `panel-${tabName}`);
+  });
+  
+  // 如果该标签页还没有加载过数据，则加载
+  if (!state.mainTab.loaded[tabName]) {
+    loadTabData(tabName);
+  }
+}
+
+// 加载标签页数据
+async function loadTabData(tabName, append = false) {
+  const list = document.getElementById(`list-${tabName}`);
+  const loading = document.getElementById(`loading-${tabName}`);
+  if (!list) return;
+  
+  // 如果正在加载或没有更多数据，则返回
+  if (state.mainTab.isLoading[tabName]) return;
+  if (append && !state.mainTab.hasMore[tabName]) return;
+  
+  state.mainTab.isLoading[tabName] = true;
+  
+  if (!append) {
+    list.innerHTML = '<div class="list-loading"><div class="loading-spinner-small"></div><span>加载中...</span></div>';
+    state.mainTab.offsets[tabName] = 0;
+    state.mainTab.hasMore[tabName] = true;
+  } else if (loading) {
+    loading.style.display = 'flex';
+  }
+  
+  try {
+    const offset = state.mainTab.offsets[tabName];
+    const limit = state.mainTab.pageSize;
+    
+    // 根据标签类型构建API请求
+    let apiUrl;
+    switch(tabName) {
+      case 'recent':
+        apiUrl = `/api/games?sort=newest&limit=${limit}&offset=${offset}`;
+        break;
+      case 'hot':
+        apiUrl = `/api/leaderboard/hot?limit=${limit}&offset=${offset}`;
+        break;
+      case 'likes':
+        apiUrl = `/api/leaderboard/likes?limit=${limit}&offset=${offset}`;
+        break;
+      case 'favorites':
+        apiUrl = `/api/leaderboard/favorites?limit=${limit}&offset=${offset}`;
+        break;
+      case 'featured':
+        apiUrl = `/api/games/featured?limit=${limit}&offset=${offset}`;
+        break;
+      default:
+        apiUrl = `/api/games?sort=newest&limit=${limit}&offset=${offset}`;
+    }
+    
+    const res = await fetch(apiUrl);
+    const data = await res.json();
+    
+    if (data.success && data.games && data.games.length > 0) {
+      renderGameList(list, data.games, tabName, append, offset);
+      state.mainTab.offsets[tabName] += data.games.length;
+      state.mainTab.loaded[tabName] = true;
+      
+      // 如果返回的数据少于请求的数量，说明没有更多了
+      if (data.games.length < limit) {
+        state.mainTab.hasMore[tabName] = false;
+      }
+    } else {
+      if (!append) {
+        list.innerHTML = '<div class="list-empty"><div class="list-empty-icon">📭</div><p>暂无数据</p></div>';
+      }
+      state.mainTab.hasMore[tabName] = false;
+    }
+  } catch (error) {
+    console.error(`加载${tabName}列表失败:`, error);
+    if (!append) {
+      list.innerHTML = '<div class="list-empty"><div class="list-empty-icon">😢</div><p>加载失败</p></div>';
+    }
+  } finally {
+    state.mainTab.isLoading[tabName] = false;
+    if (loading) {
+      loading.style.display = 'none';
+    }
+  }
+}
+
+// 渲染游戏列表（卡片式）
+function renderGameList(container, games, tabName, append = false, startOffset = 0) {
+  if (!append) {
+    container.innerHTML = '';
+  }
+  
+  games.forEach((game, index) => {
+    const card = document.createElement('div');
+    card.className = 'game-card';
+    card.onclick = () => openGame(game.id);
+    
+    // 提取游戏标题中的 emoji 作为图标
+    const titleEmoji = extractEmoji(game.title) || '🎮';
+    
+    card.innerHTML = `
+      <div class="game-card-preview">${titleEmoji}</div>
+      <div class="game-card-content">
+        <div class="game-card-title">${escapeHtml(game.title)}</div>
+        <div class="game-card-prompt">${escapeHtml(game.prompt || '')}</div>
+        <div class="game-card-meta">
+          <span class="game-card-author">👤 ${escapeHtml(game.author_name || '匿名')}</span>
+          <div class="game-card-stats">
+            <span>🎮 ${game.play_count || 0}</span>
+            <span>❤️ ${game.like_count || 0}</span>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    container.appendChild(card);
+  });
+}
+
+// 从文本中提取第一个emoji
+function extractEmoji(text) {
+  if (!text) return null;
+  const emojiRegex = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]/u;
+  const match = text.match(emojiRegex);
+  return match ? match[0] : null;
+}
+
+// 初始化主标签页
+function initMainTabs() {
+  // 监听页面滚动加载更多
+  window.addEventListener('scroll', () => {
+    // 检查是否滚动到底部附近
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
+      loadTabData(state.mainTab.current, true);
+    }
+  });
+  
+  // 加载第一个标签页（最新）
+  loadTabData('recent');
+}
+
+// ==================== 底部导航切换 ====================
+
+function switchBottomNav(navName) {
+  // 更新导航样式
+  document.querySelectorAll('.bottom-nav .nav-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.nav === navName);
+  });
+  
+  if (navName === 'home') {
+    showHome();
+  } else if (navName === 'profile') {
+    openProfileModal();
+  }
+}
+
+// ==================== 创作面板 ====================
+
+function showCreatePanel() {
+  document.getElementById('create-panel-overlay').classList.add('show');
+  document.getElementById('create-panel').classList.add('show');
+  // 聚焦输入框
+  setTimeout(() => {
+    document.getElementById('prompt-input').focus();
+  }, 300);
+}
+
+function hideCreatePanel() {
+  document.getElementById('create-panel-overlay').classList.remove('show');
+  document.getElementById('create-panel').classList.remove('show');
+}
+
+// 从创作面板生成游戏
+function generateFromPanel() {
+  const panelInput = document.getElementById('panel-prompt-input');
+  const mainInput = document.getElementById('prompt-input');
+  
+  // 把面板里的内容同步到主输入框
+  if (panelInput && mainInput) {
+    mainInput.value = panelInput.value;
+  }
+  
+  // 关闭面板
+  hideCreatePanel();
+  
+  // 调用生成函数
+  generateGame();
 }
 
 // 显示游戏页面
 function showGamePage() {
   document.getElementById('home-page').classList.remove('active');
   document.getElementById('game-page').classList.add('active');
+  // 隐藏底部导航
+  document.getElementById('bottom-nav').style.display = 'none';
 }
 
 // 加载设置
@@ -453,10 +942,10 @@ async function loadGames() {
 function initLeaderboard() {
   // 加载编辑推荐（卡片网格样式）
   loadFeaturedGames();
-  // 加载三个列表榜单
+  // 初始化榜单滑动功能
+  initLeaderboardSwiper();
+  // 只加载第一个榜单（热门榜），其他榜单切换时按需加载
   loadLeaderboardData('hot');
-  loadLeaderboardData('likes');
-  loadLeaderboardData('favorites');
   // 加载全部游戏（卡片网格样式）
   loadAllGamesSection();
 }
@@ -511,34 +1000,67 @@ async function loadFeaturedGames() {
   }
 }
 
-// 加载排行榜数据
-async function loadLeaderboardData(type) {
+// 加载排行榜数据（支持分页）
+async function loadLeaderboardData(type, append = false) {
   const container = document.getElementById(`leaderboard-${type}`);
+  const loadingMore = document.getElementById(`loading-more-${type}`);
   if (!container) return;
   
-  container.innerHTML = '<div class="leaderboard-empty">加载中...</div>';
+  // 如果正在加载或没有更多数据，则返回
+  if (state.leaderboard.isLoading[type]) return;
+  if (append && !state.leaderboard.hasMore[type]) return;
+  
+  state.leaderboard.isLoading[type] = true;
+  
+  if (!append) {
+    container.innerHTML = '<div class="leaderboard-empty">加载中...</div>';
+    state.leaderboard.offsets[type] = 0;
+    state.leaderboard.hasMore[type] = true;
+  } else if (loadingMore) {
+    loadingMore.style.display = 'flex';
+  }
   
   try {
-    const res = await fetch(`/api/leaderboard/${type}?limit=10`);
+    const offset = state.leaderboard.offsets[type];
+    const limit = state.leaderboard.pageSize;
+    const res = await fetch(`/api/leaderboard/${type}?limit=${limit}&offset=${offset}`);
     const data = await res.json();
     
     if (data.success && data.games && data.games.length > 0) {
-      renderLeaderboard(container, data.games, type);
+      renderLeaderboard(container, data.games, type, append, offset);
+      state.leaderboard.offsets[type] += data.games.length;
+      
+      // 如果返回的数据少于请求的数量，说明没有更多了
+      if (data.games.length < limit) {
+        state.leaderboard.hasMore[type] = false;
+      }
     } else {
-      container.innerHTML = '<div class="leaderboard-empty">暂无数据</div>';
+      if (!append) {
+        container.innerHTML = '<div class="leaderboard-empty">暂无数据</div>';
+      }
+      state.leaderboard.hasMore[type] = false;
     }
   } catch (error) {
     console.error(`加载${type}排行榜失败:`, error);
-    container.innerHTML = '<div class="leaderboard-empty">加载失败</div>';
+    if (!append) {
+      container.innerHTML = '<div class="leaderboard-empty">加载失败</div>';
+    }
+  } finally {
+    state.leaderboard.isLoading[type] = false;
+    if (loadingMore) {
+      loadingMore.style.display = 'none';
+    }
   }
 }
 
 // 渲染排行榜
-function renderLeaderboard(container, games, type) {
-  container.innerHTML = '';
+function renderLeaderboard(container, games, type, append = false, startOffset = 0) {
+  if (!append) {
+    container.innerHTML = '';
+  }
   
   games.forEach((game, index) => {
-    const rank = index + 1;
+    const rank = startOffset + index + 1;
     const item = document.createElement('div');
     item.className = 'leaderboard-item';
     item.onclick = () => openGame(game.id);
@@ -577,6 +1099,109 @@ function renderLeaderboard(container, games, type) {
     `;
     
     container.appendChild(item);
+  });
+}
+
+// 切换榜单
+function switchLeaderboard(index) {
+  if (index === state.leaderboard.currentIndex) return;
+  
+  state.leaderboard.currentIndex = index;
+  const wrapper = document.getElementById('leaderboard-swiper-wrapper');
+  if (wrapper) {
+    wrapper.style.transform = `translateX(-${index * 100}%)`;
+  }
+  
+  // 更新标签状态
+  document.querySelectorAll('.leaderboard-tab').forEach((tab, i) => {
+    tab.classList.toggle('active', i === index);
+  });
+  
+  // 如果该榜单还没有加载过数据，则加载
+  const type = state.leaderboard.types[index];
+  const container = document.getElementById(`leaderboard-${type}`);
+  if (container && container.children.length === 0) {
+    loadLeaderboardData(type);
+  }
+}
+
+// 初始化榜单滑动功能
+function initLeaderboardSwiper() {
+  const container = document.getElementById('leaderboard-swiper-container');
+  const wrapper = document.getElementById('leaderboard-swiper-wrapper');
+  if (!container || !wrapper) return;
+  
+  let startX = 0;
+  let startY = 0;
+  let isDragging = false;
+  let currentTranslate = 0;
+  
+  // 触摸开始
+  container.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    isDragging = true;
+    wrapper.style.transition = 'none';
+  }, { passive: true });
+  
+  // 触摸移动
+  container.addEventListener('touchmove', (e) => {
+    if (!isDragging) return;
+    
+    const diffX = e.touches[0].clientX - startX;
+    const diffY = e.touches[0].clientY - startY;
+    
+    // 如果垂直滑动大于水平滑动，不处理（允许页面滚动）
+    if (Math.abs(diffY) > Math.abs(diffX)) {
+      return;
+    }
+    
+    const containerWidth = container.offsetWidth;
+    const baseTranslate = -state.leaderboard.currentIndex * containerWidth;
+    currentTranslate = baseTranslate + diffX;
+    
+    // 限制边界
+    const minTranslate = -(state.leaderboard.types.length - 1) * containerWidth;
+    currentTranslate = Math.max(minTranslate, Math.min(0, currentTranslate));
+    
+    wrapper.style.transform = `translateX(${currentTranslate}px)`;
+  }, { passive: true });
+  
+  // 触摸结束
+  container.addEventListener('touchend', (e) => {
+    if (!isDragging) return;
+    isDragging = false;
+    
+    const endX = e.changedTouches[0].clientX;
+    const diffX = endX - startX;
+    const containerWidth = container.offsetWidth;
+    const threshold = containerWidth * 0.2;
+    
+    wrapper.style.transition = 'transform 0.3s ease';
+    
+    if (diffX > threshold && state.leaderboard.currentIndex > 0) {
+      // 向右滑，切换到上一个
+      switchLeaderboard(state.leaderboard.currentIndex - 1);
+    } else if (diffX < -threshold && state.leaderboard.currentIndex < state.leaderboard.types.length - 1) {
+      // 向左滑，切换到下一个
+      switchLeaderboard(state.leaderboard.currentIndex + 1);
+    } else {
+      // 恢复原位
+      wrapper.style.transform = `translateX(-${state.leaderboard.currentIndex * 100}%)`;
+    }
+  }, { passive: true });
+  
+  // 为每个榜单列表添加滚动加载更多
+  state.leaderboard.types.forEach(type => {
+    const list = document.getElementById(`leaderboard-${type}`);
+    if (list) {
+      list.addEventListener('scroll', () => {
+        // 检查是否滚动到底部
+        if (list.scrollTop + list.clientHeight >= list.scrollHeight - 50) {
+          loadLeaderboardData(type, true);
+        }
+      });
+    }
   });
 }
 
@@ -628,7 +1253,8 @@ function createGameCard(game) {
   card.onclick = () => openGame(game.id);
   
   const icon = gameIcons[Math.abs(hashCode(game.id)) % gameIcons.length];
-  const timeAgo = formatTimeAgo(game.created_at);
+  const timeAgo = formatTimeAgo(game.updated_at || game.created_at);
+  const updateTimeDisplay = game.updated_at ? formatTimeAgo(game.updated_at) : formatTimeAgo(game.created_at);
   
   card.innerHTML = `
     <div class="game-card-preview">${icon}</div>
@@ -637,10 +1263,11 @@ function createGameCard(game) {
       <div class="game-card-prompt">${escapeHtml(game.prompt)}</div>
       <div class="game-card-meta">
         <span class="game-card-author">👤 ${escapeHtml(game.author_name || '匿名')}</span>
-        <div class="game-card-stats">
-          <span>❤️ ${game.like_count || 0}</span>
-          <span>👁️ ${game.play_count || 0}</span>
-        </div>
+        <span class="game-card-time">🕐 ${updateTimeDisplay}</span>
+      </div>
+      <div class="game-card-stats-row">
+        <span>❤️ ${game.like_count || 0}</span>
+        <span>👁️ ${game.play_count || 0}</span>
       </div>
     </div>
   `;
@@ -650,8 +1277,20 @@ function createGameCard(game) {
 
 // 设置提示词
 function setPrompt(prompt) {
-  document.getElementById('prompt-input').value = prompt;
-  document.getElementById('prompt-input').focus();
+  const mainInput = document.getElementById('prompt-input');
+  const panelInput = document.getElementById('panel-prompt-input');
+  
+  // 同时更新两个输入框
+  if (mainInput) mainInput.value = prompt;
+  if (panelInput) panelInput.value = prompt;
+  
+  // 聚焦到可见的输入框
+  const createPanel = document.getElementById('create-panel');
+  if (createPanel && createPanel.classList.contains('show') && panelInput) {
+    panelInput.focus();
+  } else if (mainInput) {
+    mainInput.focus();
+  }
 }
 
 // 清空生成日志
@@ -810,12 +1449,21 @@ async function generateGame() {
     return;
   }
   
-  // 检查API Key
-  if (!state.settings.llmApiKey) {
-    showToast('请先在设置中配置 API Key', 'error');
-    openSettings();
+  // 检查积分（首次生成和编辑免费）
+  const creditCheck = checkCreditsForGeneration();
+  if (!creditCheck.canGenerate) {
+    openNoCreditsModal();
     return;
   }
+  
+  // 显示积分消耗提示
+  if (creditCheck.isFree) {
+    showToast(`💎 ${creditCheck.message} | 当前积分: ${state.credits}`, 'success');
+  } else {
+    showToast(`💎 ${creditCheck.message}`, 'info');
+  }
+  
+  // 不再强制要求API Key，使用服务器默认配置
   
   state.isGenerating = true;
   state.abortController = new AbortController();
@@ -897,10 +1545,36 @@ async function generateGame() {
     const data = await response.json();
     
     if (!data.success) {
-      throw new Error(data.error || '生成失败');
+      // 检查是否是 API Key 相关错误
+      const errorMsg = data.error || '生成失败';
+      const isApiKeyError = errorMsg.includes('401') || 
+                           errorMsg.includes('authentication') || 
+                           errorMsg.includes('invalid') ||
+                           errorMsg.includes('API Key') ||
+                           errorMsg.includes('Unauthorized');
+      
+      if (isApiKeyError && state.settings.llmApiKey) {
+        // 用户配置了自己的 Key 但出错了，提示使用体验模式
+        showApiKeyErrorModal(errorMsg);
+        throw new Error('API Key 验证失败');
+      }
+      
+      throw new Error(errorMsg);
     }
     
     log(`游戏生成成功: ${data.title}`, 'success');
+    
+    // 处理积分消耗
+    if (!creditCheck.isFree) {
+      state.credits--;
+      saveCredits();
+      log(`消耗1积分，剩余: ${state.credits}`, 'info');
+    } else if (state.isFirstGeneration) {
+      // 标记首次生成已使用
+      state.isFirstGeneration = false;
+      localStorage.setItem('aigame-first-generation', 'false');
+      log('首次免费生成已使用', 'info');
+    }
     
     // 显示调试信息
     if (data.debug) {
@@ -986,7 +1660,28 @@ function openSaveModal() {
   modal.classList.add('active');
   
   document.getElementById('save-title').value = state.currentGame?.title || '';
-  document.getElementById('save-author').value = state.settings.authorName || '';
+  document.getElementById('save-author').value = state.settings.authorName || state.account.nickname || '';
+  
+  // 显示账号信息
+  const accountIdEl = document.getElementById('save-account-id');
+  const enablePasswordCheckbox = document.getElementById('enable-password');
+  const passwordField = document.getElementById('save-password-field');
+  
+  if (accountIdEl && state.account.loaded) {
+    accountIdEl.textContent = state.account.accountId;
+  }
+  
+  // 如果已设置密码，隐藏密码设置区域
+  if (enablePasswordCheckbox && passwordField) {
+    if (state.account.hasPassword) {
+      enablePasswordCheckbox.closest('.password-toggle')?.style.setProperty('display', 'none');
+      passwordField.style.display = 'none';
+    } else {
+      enablePasswordCheckbox.closest('.password-toggle')?.style.removeProperty('display');
+      enablePasswordCheckbox.checked = false;
+      passwordField.style.display = 'none';
+    }
+  }
   
   // 停止生成计时器
   stopGeneratingTimer();
@@ -998,6 +1693,15 @@ function openSaveModal() {
     previewFrame.srcdoc = state.currentGame.code;
     // 保存原始代码用于调试
     state.currentGameCode = state.currentGame.code;
+  }
+}
+
+// 切换密码输入框显示
+function togglePasswordField() {
+  const checkbox = document.getElementById('enable-password');
+  const passwordField = document.getElementById('save-password-field');
+  if (checkbox && passwordField) {
+    passwordField.style.display = checkbox.checked ? 'block' : 'none';
   }
 }
 
@@ -1031,7 +1735,22 @@ async function confirmSaveGame() {
   const title = document.getElementById('save-title').value.trim() || state.currentGame?.title;
   const authorName = document.getElementById('save-author').value.trim() || '匿名';
   
+  // 检查密码设置
+  const enablePasswordCheckbox = document.getElementById('enable-password');
+  const passwordInput = document.getElementById('save-password');
+  const shouldSetPassword = enablePasswordCheckbox?.checked && passwordInput?.value;
+  
   try {
+    // 如果用户设置了密码，先保存密码
+    if (shouldSetPassword && !state.account.hasPassword) {
+      await setAccountPassword(passwordInput.value);
+    }
+    
+    // 如果昵称有变化，更新昵称
+    if (authorName && authorName !== state.account.nickname) {
+      await updateNickname(authorName);
+    }
+    
     // 获取或生成作者令牌
     let authorToken = getAuthorToken();
     
@@ -1474,6 +2193,66 @@ function showToast(message, type = '') {
   }, 3000);
 }
 
+// 显示 API Key 错误提示弹窗
+function showApiKeyErrorModal(errorMsg) {
+  // 创建弹窗
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.id = 'api-key-error-modal';
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 420px;">
+      <div class="modal-header">
+        <h2>🔑 API Key 验证失败</h2>
+        <button class="btn-close" onclick="closeApiKeyErrorModal()">×</button>
+      </div>
+      <div class="modal-body" style="text-align: center; padding: 1.5rem;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">😅</div>
+        <p style="color: #f87171; margin-bottom: 1rem; font-size: 0.9rem; word-break: break-all;">
+          ${escapeHtml(errorMsg.substring(0, 200))}
+        </p>
+        <p style="color: #94a3b8; margin-bottom: 1.5rem;">
+          您配置的 API Key 似乎无效或已过期，请检查后重试。
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <button class="btn-primary" onclick="useTrialModeInstead()" style="width: 100%; padding: 0.75rem;">
+            🎁 清除 Key，使用免费体验模式
+          </button>
+          <button class="btn-secondary" onclick="openSettingsFromError()" style="width: 100%; padding: 0.75rem;">
+            ⚙️ 去设置中修改 API Key
+          </button>
+          <button class="btn-ghost" onclick="closeApiKeyErrorModal()" style="width: 100%; padding: 0.5rem; color: #64748b;">
+            取消
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+// 关闭 API Key 错误弹窗
+function closeApiKeyErrorModal() {
+  const modal = document.getElementById('api-key-error-modal');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+// 清除用户 Key，使用体验模式
+function useTrialModeInstead() {
+  state.settings.llmApiKey = '';
+  localStorage.setItem('settings', JSON.stringify(state.settings));
+  closeApiKeyErrorModal();
+  showToast('已切换到免费体验模式，请重新生成', 'success');
+  loadTrialInfo(); // 刷新体验模式状态
+}
+
+// 从错误弹窗打开设置
+function openSettingsFromError() {
+  closeApiKeyErrorModal();
+  openSettings();
+}
+
 // 工具函数：转义HTML
 function escapeHtml(text) {
   const div = document.createElement('div');
@@ -1798,8 +2577,24 @@ function switchProfileTab(tabName) {
 // 加载个人中心数据
 async function loadProfileData() {
   // 设置用户名
-  const username = state.settings.authorName || '游戏创作者';
+  const username = state.settings.authorName || state.account.nickname || '游戏创作者';
   document.getElementById('profile-username').textContent = username;
+  
+  // 显示账号信息
+  const accountIdEl = document.getElementById('profile-account-id');
+  const accountStatusEl = document.getElementById('profile-account-status');
+  
+  if (accountIdEl && state.account.loaded) {
+    accountIdEl.textContent = state.account.accountId;
+  }
+  
+  if (accountStatusEl && state.account.loaded) {
+    if (state.account.hasPassword) {
+      accountStatusEl.innerHTML = '<span class="status-badge status-protected">🔐 已保护</span>';
+    } else {
+      accountStatusEl.innerHTML = '<span class="status-badge status-guest">游客模式</span>';
+    }
+  }
   
   // 加载积分
   await loadCredits();
@@ -1829,6 +2624,7 @@ function loadProfileSettings() {
   const debugMode = document.getElementById('profile-debug-mode');
   const baseUrlInput = document.getElementById('profile-base-url');
   const customModelInput = document.getElementById('profile-custom-model');
+  const emailInput = document.getElementById('profile-email');
   
   if (modelSelect) modelSelect.value = state.settings.llmModelId || 'deepseek-v3';
   if (apiKeyInput) apiKeyInput.value = state.settings.llmApiKey || '';
@@ -1836,6 +2632,22 @@ function loadProfileSettings() {
   if (debugMode) debugMode.checked = state.settings.debugMode || false;
   if (baseUrlInput) baseUrlInput.value = state.settings.llmBaseUrl || '';
   if (customModelInput) customModelInput.value = state.settings.llmModel || '';
+  if (emailInput) emailInput.value = state.userEmail || '';
+  
+  // 更新邮箱和密码状态标签
+  const emailBonusTag = document.getElementById('email-bonus-tag');
+  const passwordBonusTag = document.getElementById('password-bonus-tag');
+  
+  if (emailBonusTag && state.userEmailVerified) {
+    emailBonusTag.textContent = '已绑定';
+    emailBonusTag.classList.add('verified');
+  }
+  
+  // 使用账号系统的密码状态
+  if (passwordBonusTag && state.account.hasPassword) {
+    passwordBonusTag.textContent = '已设置';
+    passwordBonusTag.classList.add('verified');
+  }
   
   // 显示/隐藏自定义字段
   onProfileModelChange();
@@ -1868,13 +2680,15 @@ function toggleProfileApiKeyVisibility() {
 }
 
 // 保存个人中心设置
-function saveProfileSettings() {
+async function saveProfileSettings() {
   const modelSelect = document.getElementById('profile-model-select');
   const apiKeyInput = document.getElementById('profile-api-key');
   const authorNameInput = document.getElementById('profile-author-name');
   const debugMode = document.getElementById('profile-debug-mode');
   const baseUrlInput = document.getElementById('profile-base-url');
   const customModelInput = document.getElementById('profile-custom-model');
+  const emailInput = document.getElementById('profile-email');
+  const passwordInput = document.getElementById('profile-password');
   
   // 更新 state
   state.settings.llmModelId = modelSelect?.value || 'deepseek-v3';
@@ -1888,10 +2702,80 @@ function saveProfileSettings() {
   // 保存到 localStorage
   localStorage.setItem('aigame-settings', JSON.stringify(state.settings));
   
+  // 处理昵称更新（同步到服务器账号系统）
+  const newNickname = authorNameInput?.value?.trim() || '';
+  if (newNickname && newNickname !== state.account.nickname) {
+    await updateNickname(newNickname);
+  }
+  
+  // 处理邮箱绑定（获得积分奖励）
+  const newEmail = emailInput?.value?.trim() || '';
+  if (newEmail && newEmail !== state.userEmail && isValidEmail(newEmail)) {
+    // 新邮箱绑定，奖励3积分
+    if (!state.userEmailVerified) {
+      state.credits += 3;
+      saveCredits();
+      showToast('🎉 邮箱绑定成功！获得3积分奖励', 'success');
+      state.userEmailVerified = true;
+      localStorage.setItem('aigame-email-verified', 'true');
+      
+      // 更新UI标签
+      const bonusTag = document.getElementById('email-bonus-tag');
+      if (bonusTag) {
+        bonusTag.textContent = '已绑定';
+        bonusTag.classList.add('verified');
+      }
+    }
+    state.userEmail = newEmail;
+    localStorage.setItem('aigame-email', newEmail);
+  }
+  
+  // 处理密码设置（使用账号系统API）
+  const newPassword = passwordInput?.value?.trim() || '';
+  if (newPassword && !state.account.hasPassword) {
+    if (newPassword.length < 6) {
+      showToast('密码至少需要6位', 'error');
+      return;
+    }
+    const success = await setAccountPassword(newPassword);
+    if (success) {
+      // 更新UI标签
+      const passwordTag = document.getElementById('password-bonus-tag');
+      if (passwordTag) {
+        passwordTag.textContent = '已设置';
+        passwordTag.classList.add('verified');
+      }
+      // 更新账号状态显示
+      const accountStatusEl = document.getElementById('profile-account-status');
+      if (accountStatusEl) {
+        accountStatusEl.innerHTML = '<span class="status-badge status-protected">🔐 已保护</span>';
+      }
+      // 清空密码输入框
+      if (passwordInput) passwordInput.value = '';
+    }
+  }
+  
   // 更新用户名显示
-  document.getElementById('profile-username').textContent = state.settings.authorName || '游戏创作者';
+  document.getElementById('profile-username').textContent = state.settings.authorName || state.account.nickname || '游戏创作者';
   
   showToast('设置已保存', 'success');
+  
+  // 更新积分显示
+  updateCreditsDisplay();
+}
+
+// 验证邮箱格式
+function isValidEmail(email) {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+}
+
+// 切换密码可见性
+function toggleProfilePasswordVisibility() {
+  const input = document.getElementById('profile-password');
+  if (input) {
+    input.type = input.type === 'password' ? 'text' : 'password';
+  }
 }
 
 // 兼容旧函数名
@@ -2716,7 +3600,23 @@ async function generateGame() {
     const data = await response.json();
     
     if (!data.success) {
-      throw new Error(data.error || '生成失败');
+      // 检查是否是 API Key 相关错误
+      const errorMsg = data.error || '生成失败';
+      const isApiKeyError = errorMsg.toLowerCase().includes('401') || 
+                           errorMsg.toLowerCase().includes('authentication') || 
+                           errorMsg.toLowerCase().includes('invalid') ||
+                           errorMsg.toLowerCase().includes('api key') ||
+                           errorMsg.toLowerCase().includes('unauthorized') ||
+                           errorMsg.toLowerCase().includes('apikey');
+      
+      if (isApiKeyError && state.settings.llmApiKey) {
+        // 用户配置了自己的 Key 但出错了，提示使用体验模式
+        document.getElementById('generating-overlay').classList.remove('active');
+        showApiKeyErrorModal(errorMsg);
+        throw new Error('API Key 验证失败');
+      }
+      
+      throw new Error(errorMsg);
     }
     
     log(`游戏生成成功: ${data.title}`, 'success');
