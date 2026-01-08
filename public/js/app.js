@@ -2735,40 +2735,201 @@ function updateCreditsDisplay() {
   if (modalCount) modalCount.textContent = state.credits;
 }
 
-// 打开积分弹窗
+// 打开积分页面（改为独立页面）
 function openCreditsModal() {
   loadCredits().then(() => {
-    const modal = document.getElementById('credits-modal');
-    modal.classList.add('active');
+    // 隐藏所有页面
+    document.querySelectorAll('.page').forEach(page => {
+      page.classList.remove('active');
+    });
     
-    // 更新广告次数显示
-    if (state.creditsConfig) {
-      const adLimit = document.getElementById('ad-daily-limit');
-      if (adLimit) adLimit.textContent = state.creditsConfig.dailyLimit;
-    }
+    // 显示积分页面
+    const creditsPage = document.getElementById('credits-page');
+    creditsPage.classList.add('active');
+    
+    // 隐藏底部导航
+    document.getElementById('bottom-nav').style.display = 'none';
+    
+    // 重置子区域显示状态
+    document.getElementById('invite-section-page').style.display = 'none';
+    document.getElementById('wechat-verify-section-page').style.display = 'none';
+    
+    // 更新积分显示
+    const creditsCount = document.getElementById('credits-count');
+    if (creditsCount) creditsCount.textContent = state.credits || 0;
   });
 }
 
-// 关闭积分弹窗
-function closeCreditsModal() {
-  document.getElementById('credits-modal').classList.remove('active');
+// 关闭积分页面，返回上一页
+function closeCreditsPage() {
+  // 隐藏积分页面
+  document.getElementById('credits-page').classList.remove('active');
+  
+  // 显示首页
+  document.getElementById('home-page').classList.add('active');
+  
+  // 显示底部导航
+  document.getElementById('bottom-nav').style.display = 'flex';
+  
+  // 更新导航状态
+  document.querySelectorAll('.bottom-nav .nav-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.nav === 'home');
+  });
 }
 
-// 显示公众号验证
-function showWechatVerify() {
-  const section = document.getElementById('wechat-verify-section');
+// 兼容旧函数名
+function closeCreditsModal() {
+  closeCreditsPage();
+}
+
+// 显示公众号验证（页面版）
+function showWechatVerifyPage() {
+  const section = document.getElementById('wechat-verify-section-page');
   const isHidden = section.style.display === 'none';
+  
+  // 先隐藏邀请码区域
+  document.getElementById('invite-section-page').style.display = 'none';
+  
   section.style.display = isHidden ? 'block' : 'none';
   
-  // 展开时滚动到可见位置并高亮
   if (isHidden) {
     setTimeout(() => {
       section.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      // 添加高亮动画
-      section.classList.add('highlight-animation');
-      setTimeout(() => section.classList.remove('highlight-animation'), 1500);
     }, 100);
   }
+}
+
+// 切换邀请码区域（页面版）
+function toggleInviteSectionPage() {
+  const section = document.getElementById('invite-section-page');
+  const isHidden = section.style.display === 'none';
+  
+  // 先隐藏公众号验证区域
+  document.getElementById('wechat-verify-section-page').style.display = 'none';
+  
+  section.style.display = isHidden ? 'block' : 'none';
+  
+  if (isHidden) {
+    // 加载邀请码
+    loadMyInviteCodePage();
+    setTimeout(() => {
+      section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  }
+}
+
+// 加载我的邀请码（页面版）
+async function loadMyInviteCodePage() {
+  try {
+    const response = await fetch('/api/invite/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Token': getUserToken()
+      }
+    });
+    const data = await response.json();
+    
+    if (data.success) {
+      const codeEl = document.getElementById('my-invite-code-page');
+      if (codeEl) codeEl.textContent = data.code;
+    }
+  } catch (error) {
+    console.error('加载邀请码失败:', error);
+  }
+}
+
+// 复制邀请码（页面版）
+function copyInviteCodePage() {
+  const code = document.getElementById('my-invite-code-page').textContent;
+  if (code && code !== '加载中...') {
+    navigator.clipboard.writeText(code).then(() => {
+      showToast('邀请码已复制', 'success');
+    }).catch(() => {
+      showToast('复制失败，请手动复制', 'error');
+    });
+  }
+}
+
+// 提交邀请码（页面版）
+async function submitInviteCodePage() {
+  const input = document.getElementById('invite-code-input-page');
+  const code = input.value.trim().toUpperCase();
+  
+  if (!code) {
+    showToast('请输入邀请码', 'error');
+    return;
+  }
+  
+  try {
+    const response = await fetch('/api/invite/use', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Token': getUserToken()
+      },
+      body: JSON.stringify({ code })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      showToast(data.message || '邀请码使用成功！+2次生成机会', 'success');
+      input.value = '';
+      // 刷新积分
+      loadCredits();
+      loadTrialInfo();
+    } else {
+      showToast(data.error || '邀请码无效', 'error');
+    }
+  } catch (error) {
+    showToast('网络错误，请重试', 'error');
+  }
+}
+
+// 验证公众号关注（页面版）
+async function verifyWechatFollowPage() {
+  const code = document.getElementById('wechat-verify-code-page').value.trim();
+  
+  if (!code) {
+    showToast('请输入验证码', 'error');
+    return;
+  }
+  
+  try {
+    const response = await fetch('/api/credits/follow-wechat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Token': getUserToken()
+      },
+      body: JSON.stringify({ verifyCode: code })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      showToast(data.message || '验证成功！+3次生成机会', 'success');
+      state.credits = data.credits;
+      updateCreditsDisplay();
+      document.getElementById('wechat-verify-code-page').value = '';
+      document.getElementById('wechat-verify-section-page').style.display = 'none';
+      // 更新积分页面显示
+      const creditsCount = document.getElementById('credits-count');
+      if (creditsCount) creditsCount.textContent = state.credits;
+      // 刷新 trial 信息
+      loadTrialInfo();
+    } else {
+      showToast(data.error || '验证失败', 'error');
+    }
+  } catch (error) {
+    showToast('验证失败，请重试', 'error');
+  }
+}
+
+// 显示公众号验证（旧版兼容）
+function showWechatVerify() {
+  showWechatVerifyPage();
 }
 
 // 验证公众号关注
@@ -3705,11 +3866,20 @@ async function generateWithTrial() {
         state.trialInfo.globalRemaining = data.globalRemaining;
         updateTrialBanner();
       }
+      // 同步刷新积分显示
+      loadTrialInfo();
+      loadCredits();
       return data;
     } else {
+      // 生成失败后也要刷新积分状态（因为积分可能已被扣除）
+      loadTrialInfo();
+      loadCredits();
       throw new Error(data.error || '游客模式生成失败');
     }
   } catch (error) {
+    // 确保异常时也刷新积分状态
+    loadTrialInfo();
+    loadCredits();
     showToast(error.message, 'error');
     return null;
   }
@@ -3905,6 +4075,9 @@ async function generateGame() {
   
   // 如果没有API Key，尝试使用游客模式
   if (!state.settings.llmApiKey) {
+    // 生成前先刷新积分状态，确保数据最新
+    await loadTrialInfo();
+    
     // 检查游客模式是否可用
     if (state.trialInfo && state.trialInfo.enabled && state.trialInfo.userRemaining > 0) {
       state.isGenerating = true;

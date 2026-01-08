@@ -2012,12 +2012,32 @@ app.post('/api/trial/generate', async (req, res) => {
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('[TRIAL ERROR]', errorData);
+      console.error('[TRIAL ERROR] HTTP错误:', response.status, errorData);
       throw new Error('AI服务暂时不可用，请稍后重试');
     }
 
     const data = await response.json();
-    let code = data.choices[0].message.content;
+    
+    // 检查返回数据的有效性
+    if (!data.choices || !data.choices[0]) {
+      console.error('[TRIAL ERROR] API返回数据格式异常:', JSON.stringify(data).substring(0, 500));
+      throw new Error('AI服务返回异常，请稍后重试');
+    }
+    
+    const choice = data.choices[0];
+    
+    // 检查是否被中断或其他异常结束
+    if (choice.finish_reason && choice.finish_reason !== 'stop' && choice.finish_reason !== 'length') {
+      console.error('[TRIAL ERROR] 生成被中断:', choice.finish_reason);
+      throw new Error('AI生成被中断，请稍后重试');
+    }
+    
+    if (!choice.message || !choice.message.content) {
+      console.error('[TRIAL ERROR] 返回内容为空:', JSON.stringify(choice).substring(0, 500));
+      throw new Error('AI返回内容为空，请稍后重试');
+    }
+    
+    let code = choice.message.content;
     
     // 提取HTML代码 - 使用增强版提取函数
     code = extractHtmlFromResponse(code);
