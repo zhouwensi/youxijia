@@ -257,10 +257,6 @@
                 <label>邮箱</label>
                 <input type="email" id="settings-email" placeholder="your@email.com">
               </div>
-              <div class="form-group">
-                <label>密码</label>
-                <input type="password" id="settings-password" placeholder="设置密码保护账号">
-              </div>
             </div>
             <!-- AI 模型 -->
             <div class="settings-page-card">
@@ -521,96 +517,83 @@
       </div>
     </div>
 
-    <!-- 积分独立页面 -->
-    <div id="credits-page" class="page credits-page">
-      <div class="credits-page-container">
-        <!-- 页面头部 -->
-        <div class="credits-page-header">
-          <button class="btn btn-back" onclick="closeCreditsPage()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 12H5M12 19l-7-7 7-7"></path>
-            </svg>
-            <span>返回</span>
-          </button>
-          <h2>💎 我的积分</h2>
-          <div style="width: 60px;"></div>
+    <!-- 积分弹窗 -->
+    <div id="credits-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>💎 我的积分</h3>
+          <button class="btn btn-icon btn-close" onclick="closeCreditsModal()">×</button>
         </div>
-        
-        <!-- 页面内容 -->
-        <div class="credits-page-content">
-          <div class="credits-display-large">
-            <div class="credits-number-large" id="credits-count">0</div>
+        <div class="modal-body">
+          <div class="credits-display">
+            <div class="credits-number" id="credits-count">0</div>
             <div class="credits-label">剩余生成次数</div>
           </div>
           
-          <div class="credits-ways-page">
+          <div class="credits-ways">
             <h4>获取更多次数</h4>
             
-            <div class="credit-way-card" onclick="showWechatVerifyPage()">
+            <div class="credit-way" id="way-wechat">
               <div class="credit-way-icon">📱</div>
               <div class="credit-way-info">
                 <div class="credit-way-title">关注公众号</div>
                 <div class="credit-way-desc">关注后输入验证码领取</div>
               </div>
               <div class="credit-way-reward">+3次</div>
-              <div class="credit-way-arrow">›</div>
             </div>
             
-            <div class="credit-way-card" onclick="shareForCredits()">
+            <!-- 视频广告功能暂时隐藏
+            <div class="credit-way disabled" onclick="watchAd()">
+              <div class="credit-way-icon">🎬</div>
+              <div class="credit-way-info">
+                <div class="credit-way-title">观看视频广告</div>
+                <div class="credit-way-desc">功能开发中，敬请期待</div>
+              </div>
+              <div class="credit-way-reward">暂不可用</div>
+            </div>
+            -->
+            
+            <div class="credit-way" onclick="shareForCredits()">
               <div class="credit-way-icon">🔗</div>
               <div class="credit-way-info">
                 <div class="credit-way-title">分享游戏</div>
                 <div class="credit-way-desc">分享你创作的游戏给朋友</div>
               </div>
               <div class="credit-way-reward">+1次</div>
-              <div class="credit-way-arrow">›</div>
             </div>
             
-            <div class="credit-way-card" onclick="toggleInviteSectionPage()">
+            <div class="credit-way" onclick="toggleInviteSection()">
               <div class="credit-way-icon">🎫</div>
               <div class="credit-way-info">
                 <div class="credit-way-title">邀请好友</div>
                 <div class="credit-way-desc">邀请新用户，双方各得积分</div>
               </div>
               <div class="credit-way-reward">+2次</div>
-              <div class="credit-way-arrow">›</div>
             </div>
           </div>
           
           <!-- 邀请码区域 -->
-          <div class="invite-section-page" id="invite-section-page" style="display:none;">
-            <div class="invite-card">
-              <h4>我的邀请码</h4>
-              <div class="invite-code-display">
-                <code id="my-invite-code-page">加载中...</code>
-                <button class="btn btn-secondary" onclick="copyInviteCodePage()">复制</button>
-              </div>
-              <p class="form-hint">分享给朋友，对方使用后双方各得 +2 次生成机会</p>
+          <div class="invite-section" id="invite-section" style="display:none;">
+            <h4>我的邀请码</h4>
+            <div class="invite-code-display">
+              <code id="my-invite-code">加载中...</code>
+              <button class="btn btn-secondary" onclick="copyInviteCode()">复制</button>
             </div>
+            <p class="form-hint" style="margin-top:0.5rem;">分享给朋友，对方使用后双方各得 +2 次生成机会</p>
             
-            <div class="invite-card">
-              <h4>使用邀请码</h4>
-              <div class="invite-input-group">
-                <input type="text" id="invite-code-input-page" placeholder="输入好友的邀请码" maxlength="12">
-                <button class="btn btn-primary" onclick="submitInviteCodePage()">领取</button>
-              </div>
+            <h4 style="margin-top:1rem;">使用邀请码</h4>
+            <div class="invite-input-group">
+              <input type="text" id="invite-code-input" placeholder="输入好友的邀请码" maxlength="12">
+              <button class="btn btn-primary" onclick="submitInviteCode()">领取</button>
             </div>
           </div>
           
-          <!-- 公众号验证区域 -->
-          <div class="wechat-verify-page" id="wechat-verify-section-page" style="display:none;">
-            <div class="wechat-verify-card">
-              <div class="wechat-qr-hint">
-                <img src="/images/wechat-qrcode.png" alt="公众号二维码" class="wechat-qr-small" onerror="this.style.display='none'">
-                <div class="wechat-info">
-                  <p>关注公众号【<strong>游戏开发技术教程</strong>】</p>
-                  <p>回复"<strong>积分</strong>"获取验证码</p>
-                </div>
-              </div>
-              <div class="verify-input-page">
-                <input type="text" id="wechat-verify-code-page" placeholder="输入验证码" maxlength="20">
-                <button class="btn btn-primary" onclick="verifyWechatFollowPage()">验证领取</button>
-              </div>
+          <div class="wechat-verify" id="wechat-verify-section" style="display:none;">
+            <p>关注公众号【<strong>游戏开发技术教程</strong>】</p>
+            <p>回复"<strong>积分</strong>"获取验证码</p>
+            <div class="verify-input">
+              <input type="text" id="wechat-verify-code" placeholder="输入验证码" maxlength="20">
+              <button class="btn btn-primary" onclick="verifyWechatFollow()">验证</button>
             </div>
           </div>
         </div>
@@ -655,21 +638,11 @@
                 <span class="account-id" id="save-account-id">加载中...</span>
                 <button class="btn-copy-account" onclick="copyAccountId()" title="复制账号">📋</button>
               </div>
-              <div class="account-password-section">
-                <label class="checkbox-label">
-                  <input type="checkbox" id="enable-password" onchange="togglePasswordField()">
-                  <span>🔐 设置密码保护（可跨设备登录）</span>
-                </label>
-                <div class="password-input-row" id="save-password-field" style="display: none;">
-                  <input type="password" id="save-password" placeholder="设置密码（至少6位）" maxlength="32">
-                  <span class="password-hint">设置后可用账号+密码登录</span>
-                </div>
-              </div>
+              <p class="account-hint">🔐 账号已绑定设备，换设备时输入账号ID恢复</p>
             </div>
             
             <div class="save-tips">
               <p>💡 保存后可获得分享链接</p>
-              <p>🔐 设置密码后可在其他设备登录编辑</p>
             </div>
             <div class="save-form-actions">
               <button class="btn btn-secondary" onclick="closeSaveModal()">取消</button>
@@ -814,21 +787,21 @@
                   <div class="account-display-row">
                     <span class="account-display-label">账号 ID：</span>
                     <span class="account-display-value" id="profile-account-id">加载中...</span>
-                    <button class="btn-copy-small" onclick="copyAccountId()" title="复制">📋</button>
+                    <button class="btn-copy-small" onclick="copyAccountId()" title="复制账号ID">📋</button>
                   </div>
                   <div class="account-display-row">
                     <span class="account-display-label">账号状态：</span>
                     <span class="account-status" id="profile-account-status">
-                      <span class="status-badge status-guest">游客</span>
+                      <span class="status-badge status-protected">🔐 已绑定设备</span>
                     </span>
                   </div>
                 </div>
                 <div class="account-actions">
                   <button class="btn btn-secondary btn-small" onclick="showLoginDialog()">
-                    🔐 使用账号登录
+                    � 在其他设备恢复
                   </button>
                 </div>
-                <p class="form-hint">设置密码后可在其他设备登录，数据不会丢失</p>
+                <p class="form-hint">💡 保存好账号ID，换设备时输入即可恢复数据</p>
               </div>
               
               <!-- 个人信息 -->
@@ -842,14 +815,6 @@
                   <label>邮箱 <span class="bonus-tag" id="email-bonus-tag">+3积分</span></label>
                   <input type="email" id="profile-email" placeholder="your@email.com">
                   <p class="form-hint" id="email-hint">绑定邮箱可获得3积分奖励</p>
-                </div>
-                <div class="form-group">
-                  <label>密码 <span class="bonus-tag" id="password-bonus-tag">账号保护</span></label>
-                  <div class="input-with-toggle">
-                    <input type="password" id="profile-password" placeholder="设置密码保护你的账号">
-                    <button class="btn-toggle-pwd" onclick="toggleProfilePasswordVisibility()">👁️</button>
-                  </div>
-                  <p class="form-hint">设置密码后可在其他设备登录</p>
                 </div>
               </div>
               

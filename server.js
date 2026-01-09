@@ -460,15 +460,34 @@ db.exec(`
     email TEXT,
     user_token TEXT UNIQUE NOT NULL,
     has_password INTEGER DEFAULT 0,
+    device_fingerprint TEXT,
+    last_ip TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);
 
+// 添加设备指纹字段（如果不存在）
+try {
+  db.exec(`ALTER TABLE user_accounts ADD COLUMN device_fingerprint TEXT`);
+  console.log('[DB] 添加 device_fingerprint 字段成功');
+} catch (e) {
+  // 字段已存在，忽略
+}
+
+// 添加 last_ip 字段（如果不存在）
+try {
+  db.exec(`ALTER TABLE user_accounts ADD COLUMN last_ip TEXT`);
+  console.log('[DB] 添加 last_ip 字段成功');
+} catch (e) {
+  // 字段已存在，忽略
+}
+
 // 创建账号索引
 db.exec(`
   CREATE INDEX IF NOT EXISTS idx_user_accounts_account_id ON user_accounts(account_id);
   CREATE INDEX IF NOT EXISTS idx_user_accounts_user_token ON user_accounts(user_token);
+  CREATE INDEX IF NOT EXISTS idx_user_accounts_device_fingerprint ON user_accounts(device_fingerprint);
 `);
 
 // 生成唯一账号ID的函数
@@ -601,7 +620,115 @@ function ensureUserCredits(userToken) {
 
 // ==================== 账号系统 API ====================
 
-// 获取或创建用户账号信息
+// 获取客户端IP
+function getClientIP(req) {
+  return req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
+         req.headers['x-real-ip'] || 
+         req.connection?.remoteAddress || 
+         req.socket?.remoteAddress ||
+         'unknown';
+}
+
+// 获取或创建用户账号信息（支持设备指纹自动恢复）
+app.post('/api/account/init', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    const { deviceFingerprint } = req.body;
+    const clientIP = getClientIP(req);
+    
+    console.log('[DEBUG] 账号初始化:', { 
+      userToken: userToken ? userToken.substring(0, 10) + '...' : 'null', 
+      deviceFingerprint: deviceFingerprint ? deviceFingerprint.substring(0, 10) + '...' : 'null',
+      clientIP 
+    });
+    
+    let account = null;
+    let isRecovered = false;
+    let newToken = userToken;
+    
+    // 1. 先尝试用 userToken 查找
+    if (userToken) {
+      account = db.prepare('SELECT * FROM user_accounts WHERE user_token = ?').get(userToken);
+      if (account) {
+        console.log('[DEBUG] 通过 token 找到账号:', account.account_id);
+      }
+    }
+    
+    // 2. 如果 token 无效，尝试用设备指纹恢复
+    if (!account && deviceFingerprint) {
+      account = db.prepare('SELECT * FROM user_accounts WHERE device_fingerprint = ?').get(deviceFingerprint);
+      if (account) {
+        console.log('[DEBUG] 通过设备指纹恢复账号:', account.account_id);
+        isRecovered = true;
+        newToken = account.user_token;
+      }
+    }
+    
+    // 3. 如果还是没有，尝试用 IP 查找（24小时内创建的）
+    if (!account && clientIP && clientIP !== 'unknown') {
+      account = db.prepare(`
+        SELECT * FROM user_accounts 
+        WHERE last_ip = ? 
+        AND created_at > datetime('now', '-24 hours')
+        ORDER BY created_at DESC LIMIT 1
+      `).get(clientIP);
+      if (account) {
+        console.log('[DEBUG] 通过 IP 恢复账号:', account.account_id);
+        isRecovered = true;
+        newToken = account.user_token;
+      }
+    }
+    
+    // 4. 都没有，创建新账号
+    if (!account) {
+      const accountId = getUniqueAccountId();
+      newToken = userToken || require('crypto').randomUUID();
+      
+      db.prepare(`
+        INSERT INTO user_accounts (account_id, nickname, user_token, device_fingerprint, last_ip)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(accountId, '游戏玩家', newToken, deviceFingerprint, clientIP);
+      
+      account = db.prepare('SELECT * FROM user_accounts WHERE user_token = ?').get(newToken);
+      console.log('[DEBUG] 创建新账号:', account.account_id);
+      
+      // 给新用户初始积分
+      const initialCredits = parseInt(db.prepare("SELECT value FROM system_config WHERE key = 'credits_initial'").get()?.value || '5');
+      db.prepare(`
+        INSERT OR IGNORE INTO user_credits (user_token, credits)
+        VALUES (?, ?)
+      `).run(newToken, initialCredits);
+    } else {
+      // 更新设备指纹和IP（如果有变化）
+      if (deviceFingerprint || clientIP) {
+        db.prepare(`
+          UPDATE user_accounts 
+          SET device_fingerprint = COALESCE(?, device_fingerprint),
+              last_ip = COALESCE(?, last_ip),
+              updated_at = CURRENT_TIMESTAMP 
+          WHERE user_token = ?
+        `).run(deviceFingerprint, clientIP, account.user_token);
+      }
+    }
+    
+    res.json({
+      success: true,
+      recovered: isRecovered,
+      userToken: newToken,
+      account: {
+        accountId: account.account_id,
+        nickname: account.nickname,
+        hasPassword: !!account.has_password,
+        createdAt: account.created_at
+      }
+    });
+  } catch (error) {
+    console.error('[ERROR] 账号初始化失败:', error);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
+// 获取用户账号信息（兼容旧接口）
 app.get('/api/account', (req, res) => {
   try {
     const userToken = req.headers['x-user-token'];
@@ -609,17 +736,10 @@ app.get('/api/account', (req, res) => {
       return res.status(400).json({ success: false, error: '缺少用户标识' });
     }
     
-    let account = db.prepare('SELECT * FROM user_accounts WHERE user_token = ?').get(userToken);
+    const account = db.prepare('SELECT * FROM user_accounts WHERE user_token = ?').get(userToken);
     
-    // 如果账号不存在，自动创建
     if (!account) {
-      const accountId = getUniqueAccountId();
-      db.prepare(`
-        INSERT INTO user_accounts (account_id, nickname, user_token)
-        VALUES (?, ?, ?)
-      `).run(accountId, '游戏玩家', userToken);
-      
-      account = db.prepare('SELECT * FROM user_accounts WHERE user_token = ?').get(userToken);
+      return res.status(404).json({ success: false, error: '账号不存在，请刷新页面' });
     }
     
     res.json({
@@ -634,6 +754,54 @@ app.get('/api/account', (req, res) => {
     });
   } catch (error) {
     console.error('[ERROR] 获取账号信息失败:', error);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
+// 通过账号ID或昵称恢复账号（换设备时使用）
+app.post('/api/account/recover', (req, res) => {
+  try {
+    const { accountId } = req.body;
+    const { deviceFingerprint } = req.body;
+    const clientIP = getClientIP(req);
+    
+    if (!accountId) {
+      return res.status(400).json({ success: false, error: '请输入账号ID或昵称' });
+    }
+    
+    // 查找账号
+    let account = db.prepare('SELECT * FROM user_accounts WHERE account_id = ?').get(accountId);
+    if (!account) {
+      account = db.prepare('SELECT * FROM user_accounts WHERE nickname = ? COLLATE NOCASE').get(accountId);
+    }
+    
+    if (!account) {
+      return res.status(404).json({ success: false, error: '账号不存在' });
+    }
+    
+    // 更新设备指纹和IP
+    db.prepare(`
+      UPDATE user_accounts 
+      SET device_fingerprint = COALESCE(?, device_fingerprint),
+          last_ip = COALESCE(?, last_ip),
+          updated_at = CURRENT_TIMESTAMP 
+      WHERE user_token = ?
+    `).run(deviceFingerprint, clientIP, account.user_token);
+    
+    console.log('[DEBUG] 账号恢复成功:', account.account_id);
+    
+    res.json({
+      success: true,
+      userToken: account.user_token,
+      account: {
+        accountId: account.account_id,
+        nickname: account.nickname,
+        hasPassword: !!account.has_password,
+        createdAt: account.created_at
+      }
+    });
+  } catch (error) {
+    console.error('[ERROR] 账号恢复失败:', error);
     res.status(500).json({ success: false, error: '服务器错误' });
   }
 });
@@ -672,6 +840,8 @@ app.post('/api/account/password', (req, res) => {
     const userToken = req.headers['x-user-token'];
     const { password, oldPassword } = req.body;
     
+    console.log('[DEBUG] 设置密码请求:', { userToken: userToken ? userToken.substring(0, 10) + '...' : 'null', hasPassword: !!password });
+    
     if (!userToken) {
       return res.status(400).json({ success: false, error: '缺少用户标识' });
     }
@@ -685,11 +855,9 @@ app.post('/api/account/password', (req, res) => {
       return res.status(404).json({ success: false, error: '账号不存在' });
     }
     
-    // 如果已有密码，需要验证旧密码
-    if (account.has_password && account.password_hash) {
-      if (!oldPassword) {
-        return res.status(400).json({ success: false, error: '请输入原密码' });
-      }
+    // 如果提供了旧密码，则验证旧密码（可选）
+    // 既然用户已经通过 token 认证，允许直接修改密码
+    if (oldPassword && account.has_password && account.password_hash) {
       if (hashPassword(oldPassword) !== account.password_hash) {
         return res.status(400).json({ success: false, error: '原密码错误' });
       }
@@ -706,26 +874,64 @@ app.post('/api/account/password', (req, res) => {
   }
 });
 
-// 账号登录（用账号ID + 密码换取 userToken）
+// 账号登录（用账号ID/昵称 + 密码换取 userToken）
 app.post('/api/account/login', (req, res) => {
   try {
     const { accountId, password } = req.body;
+    
+    console.log('[DEBUG] 登录尝试:', { accountId, hasPassword: !!password });
     
     if (!accountId || !password) {
       return res.status(400).json({ success: false, error: '请输入账号和密码' });
     }
     
-    const account = db.prepare('SELECT * FROM user_accounts WHERE account_id = ?').get(accountId);
+    // 支持用账号ID或昵称登录
+    let account = db.prepare('SELECT * FROM user_accounts WHERE account_id = ?').get(accountId);
+    console.log('[DEBUG] 按账号ID查找:', account ? '找到' : '未找到');
     
+    // 如果用账号ID找不到，尝试用昵称查找（不区分大小写）
     if (!account) {
-      return res.status(400).json({ success: false, error: '账号不存在' });
+      account = db.prepare('SELECT * FROM user_accounts WHERE nickname = ? COLLATE NOCASE').get(accountId);
+      console.log('[DEBUG] 按昵称查找:', account ? '找到' : '未找到');
     }
     
+    // 如果还是找不到，尝试用作者名在games表中查找对应的user_token
+    if (!account) {
+      const game = db.prepare('SELECT author_token FROM games WHERE author_name = ? COLLATE NOCASE LIMIT 1').get(accountId);
+      console.log('[DEBUG] 按作者名查找:', game ? '找到游戏' : '未找到');
+      if (game && game.author_token) {
+        account = db.prepare('SELECT * FROM user_accounts WHERE user_token = ?').get(game.author_token);
+        console.log('[DEBUG] 通过游戏作者token查找账号:', account ? '找到' : '未找到');
+      }
+    }
+    
+    if (!account) {
+      // 列出所有账号供调试
+      const allAccounts = db.prepare('SELECT account_id, nickname FROM user_accounts').all();
+      console.log('[DEBUG] 所有账号:', allAccounts);
+      return res.status(400).json({ success: false, error: '账号不存在，请使用账号ID或已设置的昵称登录' });
+    }
+    
+    console.log('[DEBUG] 账号信息:', { 
+      account_id: account.account_id, 
+      nickname: account.nickname,
+      has_password: account.has_password, 
+      password_hash_exists: !!account.password_hash 
+    });
+    
     if (!account.has_password || !account.password_hash) {
+      console.log('[DEBUG] 密码未设置');
       return res.status(400).json({ success: false, error: '该账号未设置密码，无法登录' });
     }
     
-    if (hashPassword(password) !== account.password_hash) {
+    const inputHash = hashPassword(password);
+    console.log('[DEBUG] 密码验证:', { 
+      inputHash: inputHash.substring(0, 10) + '...', 
+      storedHash: account.password_hash.substring(0, 10) + '...',
+      match: inputHash === account.password_hash
+    });
+    
+    if (inputHash !== account.password_hash) {
       return res.status(400).json({ success: false, error: '密码错误' });
     }
     
@@ -740,6 +946,35 @@ app.post('/api/account/login', (req, res) => {
     });
   } catch (error) {
     console.error('[ERROR] 登录失败:', error);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
+// [临时调试] 重置密码接口 - 正式上线时请删除
+app.post('/api/debug/reset-password', (req, res) => {
+  try {
+    const { accountId, newPassword } = req.body;
+    if (!accountId || !newPassword) {
+      return res.status(400).json({ success: false, error: '需要账号ID和新密码' });
+    }
+    
+    let account = db.prepare('SELECT * FROM user_accounts WHERE account_id = ?').get(accountId);
+    if (!account) {
+      account = db.prepare('SELECT * FROM user_accounts WHERE nickname = ? COLLATE NOCASE').get(accountId);
+    }
+    
+    if (!account) {
+      return res.status(404).json({ success: false, error: '账号不存在' });
+    }
+    
+    const passwordHash = hashPassword(newPassword);
+    db.prepare('UPDATE user_accounts SET password_hash = ?, has_password = 1 WHERE user_token = ?')
+      .run(passwordHash, account.user_token);
+    
+    console.log('[DEBUG] 密码已重置:', account.account_id);
+    res.json({ success: true, message: '密码已重置' });
+  } catch (error) {
+    console.error('[ERROR] 重置密码失败:', error);
     res.status(500).json({ success: false, error: '服务器错误' });
   }
 });
@@ -1059,6 +1294,11 @@ app.get('/api/games/featured', (req, res) => {
 // 获取单个游戏详情
 app.get('/api/games/:id', (req, res) => {
   try {
+    // 禁用缓存，确保获取最新数据
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    
     const game = db.prepare(`
       SELECT id, title, prompt, code, author_name, play_count, like_count, created_at 
       FROM games 
@@ -1102,7 +1342,8 @@ app.post('/api/generate', async (req, res) => {
   
   try {
     const { prompt, llmConfig } = req.body;
-    console.log('[INFO] 收到生成请求:', { prompt, provider: llmConfig?.provider });
+    const userToken = req.headers['x-user-token'] || null;
+    console.log('[INFO] 收到生成请求:', { prompt, provider: llmConfig?.provider, user: userToken });
     
     if (!prompt || prompt.trim().length === 0) {
       console.log('[ERROR] 游戏描述为空');
@@ -1976,68 +2217,101 @@ app.post('/api/trial/generate', async (req, res) => {
       throw new Error('游客模式未配置API Key');
     }
 
-    // 设置超时控制器
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 120000); // 2分钟超时
-
+    // 带重试机制的API请求
+    const MAX_RETRIES = 2;
     let response;
-    try {
-      response = await fetch(`${apiConfig.baseUrl}/v1/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiConfig.apiKey}`
-        },
-        body: JSON.stringify({
-          model: apiConfig.model,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: `请生成游戏：${enhancedPrompt}` }
-          ],
-          temperature: 0.7,
-          max_tokens: 8000
-        }),
-        signal: controller.signal
-      });
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      if (fetchError.name === 'AbortError') {
-        console.error('[TRIAL ERROR] 请求超时');
-        throw new Error('生成超时，请稍后重试');
+    let lastError;
+    
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2分钟超时
+      
+      try {
+        console.log(`[TRIAL] 发送API请求 (尝试${attempt}/${MAX_RETRIES}): ${apiConfig.baseUrl}/v1/chat/completions`);
+        response = await fetch(`${apiConfig.baseUrl}/v1/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiConfig.apiKey}`,
+            'Connection': 'keep-alive'
+          },
+          body: JSON.stringify({
+            model: apiConfig.model,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: `请生成游戏：${enhancedPrompt}` }
+            ],
+            temperature: 0.7,
+            max_tokens: 8000
+          }),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        console.log(`[TRIAL] API响应状态: ${response.status}`);
+        
+        // 成功获取响应，跳出重试循环
+        if (response.ok) {
+          break;
+        }
+        
+        // 非重试错误码，直接抛出
+        if (response.status === 400 || response.status === 401 || response.status === 403) {
+          const errorData = await response.text();
+          console.error('[TRIAL ERROR]', errorData);
+          throw new Error('AI服务暂时不可用，请稍后重试');
+        }
+        
+        lastError = new Error(`API响应错误: ${response.status}`);
+        
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        lastError = fetchError;
+        console.error(`[TRIAL ERROR] 请求失败 (尝试${attempt}/${MAX_RETRIES}):`, fetchError.name, fetchError.message);
+        
+        if (fetchError.name === 'AbortError') {
+          console.error('[TRIAL ERROR] 请求超时（2分钟）');
+          lastError = new Error('生成超时，AI服务响应时间过长，请稍后重试');
+          break; // 超时不重试
+        }
+        
+        // 可重试的错误
+        const isRetryableError = (
+          fetchError.message === 'terminated' || 
+          fetchError.message?.includes('terminated') ||
+          fetchError.cause?.code === 'ECONNRESET' ||
+          fetchError.cause?.code === 'ETIMEDOUT' ||
+          fetchError.cause?.code === 'EPIPE'
+        );
+        
+        if (!isRetryableError || attempt === MAX_RETRIES) {
+          // 最后一次尝试或不可重试的错误
+          if (fetchError.message === 'terminated' || fetchError.message?.includes('terminated')) {
+            console.error('[TRIAL ERROR] 连接被终止');
+            lastError = new Error('AI服务连接中断，请稍后重试');
+          } else if (fetchError.cause?.code === 'ECONNRESET') {
+            lastError = new Error('AI服务连接被重置，请稍后重试');
+          } else if (fetchError.cause?.code === 'ECONNREFUSED') {
+            lastError = new Error('AI服务拒绝连接，请检查服务是否可用');
+          } else if (fetchError.cause?.code === 'ETIMEDOUT') {
+            lastError = new Error('AI服务连接超时，请稍后重试');
+          } else {
+            lastError = new Error(`网络错误: ${fetchError.message || '请检查网络后重试'}`);
+          }
+          break;
+        }
+        
+        // 等待后重试
+        console.log(`[TRIAL] 等待2秒后重试...`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
-      console.error('[TRIAL ERROR] 网络错误:', fetchError.message);
-      throw new Error('网络连接失败，请检查网络后重试');
     }
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('[TRIAL ERROR] HTTP错误:', response.status, errorData);
-      throw new Error('AI服务暂时不可用，请稍后重试');
+    
+    if (!response || !response.ok) {
+      throw lastError || new Error('AI服务请求失败');
     }
 
     const data = await response.json();
-    
-    // 检查返回数据的有效性
-    if (!data.choices || !data.choices[0]) {
-      console.error('[TRIAL ERROR] API返回数据格式异常:', JSON.stringify(data).substring(0, 500));
-      throw new Error('AI服务返回异常，请稍后重试');
-    }
-    
-    const choice = data.choices[0];
-    
-    // 检查是否被中断或其他异常结束
-    if (choice.finish_reason && choice.finish_reason !== 'stop' && choice.finish_reason !== 'length') {
-      console.error('[TRIAL ERROR] 生成被中断:', choice.finish_reason);
-      throw new Error('AI生成被中断，请稍后重试');
-    }
-    
-    if (!choice.message || !choice.message.content) {
-      console.error('[TRIAL ERROR] 返回内容为空:', JSON.stringify(choice).substring(0, 500));
-      throw new Error('AI返回内容为空，请稍后重试');
-    }
-    
-    let code = choice.message.content;
+    let code = data.choices[0].message.content;
     
     // 提取HTML代码 - 使用增强版提取函数
     code = extractHtmlFromResponse(code);
@@ -2072,6 +2346,31 @@ app.post('/api/trial/generate', async (req, res) => {
 });
 
 // ==================== 邀请码系统 ====================
+
+// 获取我的邀请码（GET）
+app.get('/api/invite/my-code', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    if (!userToken) {
+      return res.status(400).json({ success: false, error: '缺少用户标识' });
+    }
+    
+    // 检查是否已有邀请码
+    let existing = db.prepare('SELECT code FROM invite_codes WHERE creator_token = ? AND used_by IS NULL').get(userToken);
+    
+    if (existing) {
+      return res.json({ success: true, code: existing.code });
+    }
+    
+    // 自动生成新邀请码
+    const code = generateInviteCode();
+    db.prepare('INSERT INTO invite_codes (code, creator_token) VALUES (?, ?)').run(code, userToken);
+    
+    res.json({ success: true, code });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // 生成我的邀请码
 app.post('/api/invite/generate', (req, res) => {
@@ -2753,6 +3052,11 @@ app.get('/api/games/:id/share-info', (req, res) => {
 // 获取游戏完整统计数据
 app.get('/api/games/:id/stats', (req, res) => {
   try {
+    // 禁用缓存，确保获取最新数据
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    
     const gameId = req.params.id;
     const userToken = req.headers['x-user-token'];
     
@@ -2774,10 +3078,10 @@ app.get('/api/games/:id/stats', (req, res) => {
       stats = { share_count: 0, share_wechat: 0, share_weibo: 0, share_qq: 0, share_link: 0, unique_players: 0 };
     }
     
-    // 检查当前用户是否已点赞
+    // 检查当前用户是否已点赞（统一使用 user_likes 表）
     let hasLiked = false;
     if (userToken) {
-      const like = db.prepare('SELECT 1 FROM game_likes WHERE game_id = ? AND user_token = ?').get(gameId, userToken);
+      const like = db.prepare('SELECT 1 FROM user_likes WHERE game_id = ? AND user_token = ?').get(gameId, userToken);
       hasLiked = !!like;
     }
     
