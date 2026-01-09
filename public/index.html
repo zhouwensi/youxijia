@@ -609,11 +609,6 @@
             <p class="form-hint" style="margin-top:0.5rem;">
               ✨ 新用户通过你的链接访问网站，<strong>你+3积分</strong>，<strong>对方+3积分</strong>！
             </p>
-            <div class="invite-share-buttons" style="margin-top:1rem;">
-              <button class="btn btn-secondary btn-small" onclick="shareInviteLinkTo('wechat')">💬 微信</button>
-              <button class="btn btn-secondary btn-small" onclick="shareInviteLinkTo('qq')">🐧 QQ</button>
-              <button class="btn btn-secondary btn-small" onclick="shareInviteLinkTo('weibo')">📱 微博</button>
-            </div>
           </div>
           
           <div class="wechat-verify" id="wechat-verify-section" style="display:none;">
@@ -701,21 +696,9 @@
             </div>
           </div>
           
-          <!-- 分享渠道 -->
+          <!-- 分享渠道 - 只保留复制链接 -->
           <div class="share-channels">
-            <button class="share-channel-btn" onclick="shareToChannel('wechat')">
-              <span class="channel-icon">💬</span>
-              <span class="channel-name">微信</span>
-            </button>
-            <button class="share-channel-btn" onclick="shareToChannel('weibo')">
-              <span class="channel-icon">📱</span>
-              <span class="channel-name">微博</span>
-            </button>
-            <button class="share-channel-btn" onclick="shareToChannel('qq')">
-              <span class="channel-icon">🐧</span>
-              <span class="channel-name">QQ</span>
-            </button>
-            <button class="share-channel-btn" onclick="shareToChannel('copy')">
+            <button class="share-channel-btn share-channel-primary" onclick="shareToChannel('copy')">
               <span class="channel-icon">🔗</span>
               <span class="channel-name">复制链接</span>
             </button>

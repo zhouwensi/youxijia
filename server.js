@@ -2355,22 +2355,44 @@ app.get('/api/users/:token/follow-status', (req, res) => {
 app.get('/api/users/:token/follow-stats', (req, res) => {
   try {
     const userToken = req.params.token;
-    
+
     // 关注数（我关注了多少人）
     const followingCount = db.prepare('SELECT COUNT(*) as count FROM user_follows WHERE follower_token = ?')
       .get(userToken)?.count || 0;
-    
+
     // 粉丝数（多少人关注我）
     const followerCount = db.prepare('SELECT COUNT(*) as count FROM user_follows WHERE following_token = ?')
       .get(userToken)?.count || 0;
-    
-    res.json({ 
-      success: true, 
-      followingCount, 
-      followerCount 
+
+    res.json({
+      success: true,
+      followingCount,
+      followerCount
     });
   } catch (error) {
     console.error('[ERROR] 获取关注统计失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 获取用户的游戏列表
+app.get('/api/users/:token/games', (req, res) => {
+  try {
+    const userToken = req.params.token;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = parseInt(req.query.offset) || 0;
+
+    const games = db.prepare(`
+      SELECT id, title, author_name, play_count, like_count, share_count, created_at
+      FROM games
+      WHERE author_token = ? AND is_public = 1
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `).all(userToken, limit, offset);
+
+    res.json({ success: true, games, count: games.length });
+  } catch (error) {
+    console.error('[ERROR] 获取用户游戏列表失败:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -2379,20 +2401,33 @@ app.get('/api/users/:token/follow-stats', (req, res) => {
 app.get('/api/users/:token/following', (req, res) => {
   try {
     const userToken = req.params.token;
+    const currentUserToken = req.headers['x-user-token'];
     const limit = parseInt(req.query.limit) || 50;
     const offset = parseInt(req.query.offset) || 0;
-    
+
     const users = db.prepare(`
       SELECT uf.following_token as token, uf.created_at as followed_at,
-             (SELECT author_name FROM games WHERE author_token = uf.following_token LIMIT 1) as name,
-             (SELECT COUNT(*) FROM games WHERE author_token = uf.following_token) as game_count
+             (SELECT author_name FROM games WHERE author_token = uf.following_token LIMIT 1) as nickname,
+             (SELECT COUNT(*) FROM games WHERE author_token = uf.following_token) as games_count,
+             (SELECT COUNT(*) FROM user_follows WHERE following_token = uf.following_token) as followers_count
       FROM user_follows uf
       WHERE uf.follower_token = ?
       ORDER BY uf.created_at DESC
       LIMIT ? OFFSET ?
     `).all(userToken, limit, offset);
-    
-    res.json({ success: true, users, count: users.length });
+
+    // 添加 is_following 字段（当前用户是否关注了这个人）
+    const usersWithFollowStatus = users.map(user => {
+      let is_following = false;
+      if (currentUserToken) {
+        const followCheck = db.prepare('SELECT 1 FROM user_follows WHERE follower_token = ? AND following_token = ?')
+          .get(currentUserToken, user.token);
+        is_following = !!followCheck;
+      }
+      return { ...user, is_following };
+    });
+
+    res.json({ success: true, users: usersWithFollowStatus, count: usersWithFollowStatus.length });
   } catch (error) {
     console.error('[ERROR] 获取关注列表失败:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -2403,20 +2438,33 @@ app.get('/api/users/:token/following', (req, res) => {
 app.get('/api/users/:token/followers', (req, res) => {
   try {
     const userToken = req.params.token;
+    const currentUserToken = req.headers['x-user-token'];
     const limit = parseInt(req.query.limit) || 50;
     const offset = parseInt(req.query.offset) || 0;
-    
+
     const users = db.prepare(`
       SELECT uf.follower_token as token, uf.created_at as followed_at,
-             (SELECT author_name FROM games WHERE author_token = uf.follower_token LIMIT 1) as name,
-             (SELECT COUNT(*) FROM games WHERE author_token = uf.follower_token) as game_count
+             (SELECT author_name FROM games WHERE author_token = uf.follower_token LIMIT 1) as nickname,
+             (SELECT COUNT(*) FROM games WHERE author_token = uf.follower_token) as games_count,
+             (SELECT COUNT(*) FROM user_follows WHERE following_token = uf.follower_token) as followers_count
       FROM user_follows uf
       WHERE uf.following_token = ?
       ORDER BY uf.created_at DESC
       LIMIT ? OFFSET ?
     `).all(userToken, limit, offset);
-    
-    res.json({ success: true, users, count: users.length });
+
+    // 添加 is_following 字段（当前用户是否关注了这个粉丝）
+    const usersWithFollowStatus = users.map(user => {
+      let is_following = false;
+      if (currentUserToken) {
+        const followCheck = db.prepare('SELECT 1 FROM user_follows WHERE follower_token = ? AND following_token = ?')
+          .get(currentUserToken, user.token);
+        is_following = !!followCheck;
+      }
+      return { ...user, is_following };
+    });
+
+    res.json({ success: true, users: usersWithFollowStatus, count: usersWithFollowStatus.length });
   } catch (error) {
     console.error('[ERROR] 获取粉丝列表失败:', error);
     res.status(500).json({ success: false, error: error.message });

@@ -781,16 +781,28 @@ async function loginWithAccount(accountId, password) {
       localStorage.setItem('aigame-author-token', userToken);
       // 更新状态（兼容嵌套和扁平两种格式）
       const account = data.account || data;
+      const nickname = account.nickname || '';
       state.account = {
         accountId: account.accountId || account.account_id || accountId,
-        nickname: account.nickname || '',
+        nickname: nickname,
         hasPassword: true,
         loaded: true
       };
+      // 同步更新 settings 中的昵称
+      state.settings.authorName = nickname;
+      localStorage.setItem('aigame-author-name', nickname);
+      // 更新账号ID显示
+      updateAccountIdDisplay();
+      // 更新我的页面昵称显示
+      const usernameEl = document.getElementById('profile-page-username');
+      if (usernameEl) usernameEl.textContent = nickname || '游戏创作者';
+
       showToast('登录成功');
       // 重新加载数据
       initCredits();
       loadGames();
+      // 重新加载关注统计
+      loadUserFollowStats();
       return true;
     } else {
       const data = await response.json();
@@ -879,7 +891,7 @@ function logoutAccount() {
         <p style="text-align: center; margin-bottom: 1rem;">确定要退出当前账号吗？</p>
         <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 0.75rem; margin-bottom: 1rem;">
           <p style="color: #ef4444; font-size: 0.8125rem; text-align: center; margin: 0;">
-            ⚠️ 请确保已记住账号ID：<strong>${getAccountId() || '未知'}</strong>
+            ⚠️ 请确保已记住账号ID：<strong>${state.account.accountId || '未知'}</strong>
           </p>
         </div>
         <p style="color: var(--text-muted); font-size: 0.75rem; text-align: center;">
@@ -1457,7 +1469,7 @@ async function loadProfilePageGames() {
   const container = document.getElementById('profile-games-list');
   const countEl = document.getElementById('profile-games-count');
   const moreBtn = document.getElementById('profile-games-more');
-  const DISPLAY_LIMIT = 4; // 只显示4个
+  const DISPLAY_LIMIT = 3; // 只显示3个
   if (!container) return;
   
   container.innerHTML = '<div class="loading-games">加载中...</div>';
@@ -1580,7 +1592,7 @@ function formatNumber(num) {
 async function loadProfilePageLikes() {
   const container = document.getElementById('profile-likes-list');
   const moreBtn = document.getElementById('profile-likes-more');
-  const DISPLAY_LIMIT = 4;
+  const DISPLAY_LIMIT = 3;
   if (!container) return;
   
   container.innerHTML = '<div class="loading-games">加载中...</div>';
@@ -1614,7 +1626,7 @@ async function loadProfilePageLikes() {
 async function loadProfilePageFavorites() {
   const container = document.getElementById('profile-favs-list');
   const moreBtn = document.getElementById('profile-favs-more');
-  const DISPLAY_LIMIT = 4;
+  const DISPLAY_LIMIT = 3;
   if (!container) return;
   
   container.innerHTML = '<div class="loading-games">加载中...</div>';
@@ -3107,15 +3119,83 @@ ${processedCode}
   iframe.srcdoc = processedCode;
 }
 
-// 查看游戏源代码（调试用）
+// 查看游戏源代码（改进版 - 支持返回和编辑）
 function viewGameSource() {
-  if (state.currentGameCode) {
-    const newWindow = window.open('', '_blank');
-    newWindow.document.write('<pre style="white-space:pre-wrap;word-wrap:break-word;background:#1a1a2e;color:#eee;padding:20px;margin:0;">' + 
-      escapeHtml(state.currentGameCode) + '</pre>');
-    newWindow.document.close();
-  } else {
+  if (!state.currentGameCode) {
     showToast('没有可查看的代码', 'error');
+    return;
+  }
+
+  // 创建源码查看弹窗
+  const existingModal = document.getElementById('source-code-modal');
+  if (existingModal) existingModal.remove();
+
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.id = 'source-code-modal';
+  modal.onclick = (e) => { if (e.target === modal) closeSourceCodeModal(); };
+
+  modal.innerHTML = `
+    <div class="modal-content modal-xlarge source-code-modal-content">
+      <div class="modal-header">
+        <h3>📄 游戏源代码</h3>
+        <div class="source-code-actions">
+          <button class="btn btn-secondary btn-small" onclick="copySourceCode()">📋 复制代码</button>
+          <button class="btn btn-icon btn-close" onclick="closeSourceCodeModal()">×</button>
+        </div>
+      </div>
+      <div class="modal-body source-code-body">
+        <textarea id="source-code-editor" class="source-code-editor" spellcheck="false">${escapeHtml(state.currentGameCode)}</textarea>
+      </div>
+      <div class="modal-footer source-code-footer">
+        <button class="btn btn-secondary" onclick="closeSourceCodeModal()">返回游戏</button>
+        <button class="btn btn-primary" onclick="applySourceCodeChanges()">💾 应用修改</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+  document.body.classList.add('modal-open');
+}
+
+// 关闭源码弹窗
+function closeSourceCodeModal() {
+  const modal = document.getElementById('source-code-modal');
+  if (modal) {
+    modal.remove();
+    document.body.classList.remove('modal-open');
+  }
+}
+
+// 复制源代码
+function copySourceCode() {
+  const editor = document.getElementById('source-code-editor');
+  if (editor) {
+    navigator.clipboard.writeText(editor.value).then(() => {
+      showToast('代码已复制到剪贴板');
+    }).catch(() => {
+      editor.select();
+      document.execCommand('copy');
+      showToast('代码已复制到剪贴板');
+    });
+  }
+}
+
+// 应用源代码修改
+function applySourceCodeChanges() {
+  const editor = document.getElementById('source-code-editor');
+  if (editor) {
+    const newCode = editor.value;
+    state.currentGameCode = newCode;
+
+    // 重新加载游戏
+    const iframe = document.getElementById('game-frame');
+    if (iframe) {
+      iframe.srcdoc = newCode;
+    }
+
+    closeSourceCodeModal();
+    showToast('代码已应用，游戏已重新加载');
   }
 }
 
@@ -5423,13 +5503,13 @@ async function openFollowModal(userTokenOrTab, tab) {
     currentViewingUserToken = userTokenOrTab || getUserToken();
     currentFollowTab = tab || 'following';
   }
-  
+
   const modal = document.getElementById('follow-modal');
   if (!modal) {
     console.error('关注弹窗元素不存在');
     return;
   }
-  
+
   // 加载关注统计来更新标签计数
   try {
     const statsResponse = await fetch(`/api/users/${currentViewingUserToken}/follow-stats`, {
@@ -5437,19 +5517,23 @@ async function openFollowModal(userTokenOrTab, tab) {
     });
     const statsData = await statsResponse.json();
     if (statsData.success) {
+      // 兼容两种字段名格式
+      const following = statsData.followingCount ?? statsData.following ?? 0;
+      const followers = statsData.followerCount ?? statsData.followers ?? 0;
+
       const followingCountEl = document.getElementById('follow-tab-following-count');
       const followersCountEl = document.getElementById('follow-tab-followers-count');
-      if (followingCountEl) followingCountEl.textContent = statsData.following || 0;
-      if (followersCountEl) followersCountEl.textContent = statsData.followers || 0;
+      if (followingCountEl) followingCountEl.textContent = following;
+      if (followersCountEl) followersCountEl.textContent = followers;
     }
   } catch (e) {
     console.error('加载关注统计失败:', e);
   }
-  
+
   // 显示弹窗
   modal.classList.add('active');
   document.body.style.overflow = 'hidden';
-  
+
   // 激活对应标签并加载数据
   await switchFollowTab(currentFollowTab);
 }
@@ -5512,18 +5596,18 @@ async function loadFollowList(type) {
     if (data.success && data.users && data.users.length > 0) {
       listContainer.innerHTML = data.users.map(user => `
         <div class="follow-user-item" data-token="${user.token}">
-          <div class="follow-user-avatar">
+          <div class="follow-user-avatar" onclick="openUserProfile('${user.token}')">
             ${user.avatar || getAvatarEmoji(user.token)}
           </div>
-          <div class="follow-user-info">
+          <div class="follow-user-info" onclick="openUserProfile('${user.token}')">
             <div class="follow-user-name">${user.nickname || '游戏家用户'}</div>
             <div class="follow-user-stats">
               <span>🎮 ${user.games_count || 0} 作品</span>
               <span>👥 ${user.followers_count || 0} 粉丝</span>
             </div>
           </div>
-          <button class="follow-action-btn ${user.is_following ? 'following' : ''}" 
-                  onclick="toggleFollowUser('${user.token}', this)">
+          <button class="follow-action-btn ${user.is_following ? 'following' : ''}"
+                  onclick="event.stopPropagation(); toggleFollowUser('${user.token}', this)">
             ${user.is_following ? '已关注' : '关注'}
           </button>
         </div>
@@ -5690,28 +5774,32 @@ async function followCurrentAuthor() {
 async function loadUserFollowStats() {
   const userToken = getUserToken();
   if (!userToken) return;
-  
+
   try {
     const response = await fetch(`/api/users/${userToken}/follow-stats`, {
       headers: { 'X-User-Token': userToken }
     });
-    
+
     const data = await response.json();
-    
+
     if (data.success) {
+      // 兼容两种字段名格式
+      const following = data.followingCount ?? data.following ?? 0;
+      const followers = data.followerCount ?? data.followers ?? 0;
+
       // 更新我的页面弹窗的关注/粉丝数显示
-      const followingCount = document.getElementById('followingCount');
-      const followersCount = document.getElementById('followersCount');
-      
-      if (followingCount) followingCount.textContent = data.following || 0;
-      if (followersCount) followersCount.textContent = data.followers || 0;
-      
+      const followingCountEl = document.getElementById('followingCount');
+      const followersCountEl = document.getElementById('followersCount');
+
+      if (followingCountEl) followingCountEl.textContent = following;
+      if (followersCountEl) followersCountEl.textContent = followers;
+
       // 更新"我的"独立页面的关注/粉丝数显示
       const pageFollowing = document.getElementById('profile-page-following');
       const pageFollowers = document.getElementById('profile-page-followers');
-      
-      if (pageFollowing) pageFollowing.textContent = data.following || 0;
-      if (pageFollowers) pageFollowers.textContent = data.followers || 0;
+
+      if (pageFollowing) pageFollowing.textContent = following;
+      if (pageFollowers) pageFollowers.textContent = followers;
     }
   } catch (error) {
     console.error('加载关注统计失败:', error);
@@ -5721,6 +5809,150 @@ async function loadUserFollowStats() {
 // 关注作者（从游戏详情页）
 async function followAuthor(authorToken, buttonElement) {
   await toggleFollowUser(authorToken, buttonElement);
+}
+
+// 打开用户主页弹窗
+async function openUserProfile(userToken) {
+  if (!userToken) return;
+
+  // 如果是自己，跳转到我的页面
+  if (userToken === getUserToken()) {
+    closeFollowModal();
+    switchBottomNav('profile');
+    return;
+  }
+
+  // 创建用户主页弹窗
+  const existingModal = document.getElementById('user-profile-modal');
+  if (existingModal) existingModal.remove();
+
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.id = 'user-profile-modal';
+  modal.onclick = (e) => { if (e.target === modal) closeUserProfileModal(); };
+
+  modal.innerHTML = `
+    <div class="modal-content modal-medium">
+      <div class="modal-header">
+        <h3>👤 用户主页</h3>
+        <button class="btn btn-icon btn-close" onclick="closeUserProfileModal()">×</button>
+      </div>
+      <div class="modal-body user-profile-body">
+        <div class="user-profile-loading">
+          <div class="loading-spinner"></div>
+          <span>加载中...</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+  document.body.classList.add('modal-open');
+
+  // 加载用户信息
+  try {
+    // 并行加载用户统计和作品
+    const [statsResponse, gamesResponse] = await Promise.all([
+      fetch(`/api/users/${userToken}/follow-stats`, {
+        headers: { 'X-User-Token': getUserToken() }
+      }),
+      fetch(`/api/users/${userToken}/games`, {
+        headers: { 'X-User-Token': getUserToken() }
+      })
+    ]);
+
+    const statsData = await statsResponse.json();
+    const gamesData = await gamesResponse.json();
+
+    // 检查是否已关注
+    const followStatusResponse = await fetch(`/api/users/${userToken}/follow-status`, {
+      headers: { 'X-User-Token': getUserToken() }
+    });
+    const followStatusData = await followStatusResponse.json();
+    const isFollowing = followStatusData.success && followStatusData.following;
+
+    const following = statsData.followingCount ?? statsData.following ?? 0;
+    const followers = statsData.followerCount ?? statsData.followers ?? 0;
+    const games = gamesData.success ? gamesData.games || [] : [];
+    const nickname = games.length > 0 ? (games[0].author_name || '游戏家用户') : '游戏家用户';
+
+    const modalBody = modal.querySelector('.user-profile-body');
+    modalBody.innerHTML = `
+      <div class="user-profile-header">
+        <div class="user-profile-avatar">${getAvatarEmoji(userToken)}</div>
+        <div class="user-profile-info">
+          <div class="user-profile-name">${escapeHtml(nickname)}</div>
+          <div class="user-profile-stats">
+            <span class="user-stat-item" onclick="openFollowModal('${userToken}', 'following')">
+              <strong>${following}</strong> 关注
+            </span>
+            <span class="user-stat-divider">|</span>
+            <span class="user-stat-item" onclick="openFollowModal('${userToken}', 'followers')">
+              <strong>${followers}</strong> 粉丝
+            </span>
+          </div>
+        </div>
+        <button class="btn ${isFollowing ? 'btn-secondary' : 'btn-primary'} user-profile-follow-btn"
+                id="user-profile-follow-btn"
+                onclick="toggleFollowFromProfile('${userToken}', this)">
+          ${isFollowing ? '已关注' : '+ 关注'}
+        </button>
+      </div>
+      <div class="user-profile-games">
+        <h4>🎮 作品 (${games.length})</h4>
+        ${games.length > 0 ? `
+          <div class="user-games-grid">
+            ${games.slice(0, 6).map(game => `
+              <div class="user-game-card" onclick="closeUserProfileModal(); openGame('${game.id}')">
+                <div class="user-game-emoji">${getGameEmoji(game.title)}</div>
+                <div class="user-game-title">${escapeHtml(game.title)}</div>
+                <div class="user-game-stats">
+                  <span>🎮 ${formatNumber(game.play_count || 0)}</span>
+                  <span>❤️ ${formatNumber(game.like_count || 0)}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          ${games.length > 6 ? `<p class="user-games-more">还有 ${games.length - 6} 个作品</p>` : ''}
+        ` : '<div class="user-games-empty">暂无作品</div>'}
+      </div>
+    `;
+  } catch (error) {
+    console.error('加载用户信息失败:', error);
+    const modalBody = modal.querySelector('.user-profile-body');
+    modalBody.innerHTML = `
+      <div class="user-profile-error">
+        <div class="error-icon">😕</div>
+        <div class="error-text">加载失败，请重试</div>
+      </div>
+    `;
+  }
+}
+
+// 关闭用户主页弹窗
+function closeUserProfileModal() {
+  const modal = document.getElementById('user-profile-modal');
+  if (modal) {
+    modal.remove();
+    // 检查是否还有其他弹窗
+    const hasOpenModals = document.querySelector('.modal.active');
+    if (!hasOpenModals) {
+      document.body.classList.remove('modal-open');
+    }
+  }
+}
+
+// 从用户主页切换关注状态
+async function toggleFollowFromProfile(targetToken, buttonElement) {
+  await toggleFollowUser(targetToken, buttonElement);
+
+  // 更新按钮样式
+  if (buttonElement) {
+    const isFollowing = buttonElement.classList.contains('following');
+    buttonElement.classList.toggle('btn-primary', !isFollowing);
+    buttonElement.classList.toggle('btn-secondary', isFollowing);
+    buttonElement.textContent = isFollowing ? '已关注' : '+ 关注';
+  }
 }
 
 // 点击弹窗背景关闭
