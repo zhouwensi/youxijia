@@ -130,12 +130,18 @@
     <div id="create-page" class="page">
       <div class="page-header">
         <h2>✨ 创作游戏</h2>
+        <span class="header-model-tag">🤖 <span id="create-model-display">DeepSeek V3</span></span>
       </div>
       <div class="create-page-body">
         <div class="create-hero">
           <div class="create-icon-large">🎮</div>
           <h3>用一句话描述你的游戏</h3>
           <p>AI 将为你生成可玩的 HTML5 游戏</p>
+        </div>
+        <!-- 滚动Tips -->
+        <div class="create-tips-banner">
+          <span class="tips-icon">💡</span>
+          <span class="tips-text" id="create-tips-text">描述越具体，游戏越精确！</span>
         </div>
         <div class="create-input-area">
           <textarea 
@@ -186,101 +192,72 @@
               <span>❤️ <strong id="profile-page-likes">0</strong> 点赞</span>
               <span>💎 <strong id="profile-page-credits">0</strong> 积分</span>
             </div>
+            <div class="profile-follow-stats">
+              <span class="follow-stat-item" onclick="openFollowModal('following')">
+                <strong id="profile-page-following">0</strong> 关注
+              </span>
+              <span class="follow-stat-divider">|</span>
+              <span class="follow-stat-item" onclick="openFollowModal('followers')">
+                <strong id="profile-page-followers">0</strong> 粉丝
+              </span>
+            </div>
           </div>
         </div>
-      </div>
-      <!-- 标签页导航 -->
-      <div class="profile-page-tabs">
-        <button class="profile-page-tab active" data-tab="my-games" onclick="switchProfilePageTab('my-games')">
-          🎨 我的作品
-        </button>
-        <button class="profile-page-tab" data-tab="my-likes" onclick="switchProfilePageTab('my-likes')">
-          ❤️ 我的点赞
-        </button>
-        <button class="profile-page-tab" data-tab="my-favs" onclick="switchProfilePageTab('my-favs')">
-          ⭐ 我的收藏
-        </button>
-        <button class="profile-page-tab" data-tab="my-settings" onclick="switchProfilePageTab('my-settings')">
-          ⚙️ 设置
+        <!-- 右上角设置按钮 -->
+        <button class="profile-settings-btn" onclick="openProfileSettings()" title="设置">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
         </button>
       </div>
-      <div class="profile-page-content">
+      <!-- 竖向标签布局 - 每个标签占一行 -->
+      <div class="profile-sections-vertical">
         <!-- 我的作品 -->
-        <div class="profile-page-panel active" id="profile-panel-my-games">
-          <div class="profile-list-container" id="profile-games-list">
-            <div class="loading-games">加载中...</div>
+        <div class="profile-section-row">
+          <div class="profile-section-header-v">
+            <span class="section-icon">🎨</span>
+            <span class="section-title">我的作品</span>
+            <button class="btn-more-header" id="profile-games-more" onclick="showMoreGames('my-games')" style="display:none;">更多 →</button>
+            <span class="section-count" id="section-count-games">0</span>
+          </div>
+          <div class="profile-horizontal-scroll">
+            <div class="profile-horizontal-list" id="profile-games-list">
+              <div class="loading-games">加载中...</div>
+            </div>
           </div>
         </div>
+        
         <!-- 我的点赞 -->
-        <div class="profile-page-panel" id="profile-panel-my-likes">
-          <div class="profile-list-container" id="profile-likes-list">
-            <div class="loading-games">加载中...</div>
+        <div class="profile-section-row">
+          <div class="profile-section-header-v">
+            <span class="section-icon">❤️</span>
+            <span class="section-title">我的点赞</span>
+            <button class="btn-more-header" id="profile-likes-more" onclick="showMoreGames('my-likes')" style="display:none;">更多 →</button>
+            <span class="section-count" id="section-count-likes">0</span>
+          </div>
+          <div class="profile-horizontal-scroll">
+            <div class="profile-horizontal-list" id="profile-likes-list">
+              <div class="loading-games">加载中...</div>
+            </div>
           </div>
         </div>
+        
         <!-- 我的收藏 -->
-        <div class="profile-page-panel" id="profile-panel-my-favs">
-          <div class="profile-list-container" id="profile-favs-list">
-            <div class="loading-games">加载中...</div>
+        <div class="profile-section-row">
+          <div class="profile-section-header-v">
+            <span class="section-icon">⭐</span>
+            <span class="section-title">我的收藏</span>
+            <button class="btn-more-header" id="profile-favs-more" onclick="showMoreGames('my-favs')" style="display:none;">更多 →</button>
+            <span class="section-count" id="section-count-favs">0</span>
+          </div>
+          <div class="profile-horizontal-scroll">
+            <div class="profile-horizontal-list" id="profile-favs-list">
+              <div class="loading-games">加载中...</div>
+            </div>
           </div>
         </div>
-        <!-- 设置 -->
-        <div class="profile-page-panel" id="profile-panel-my-settings">
-          <div class="settings-page-sections">
-            <!-- 账号信息 -->
-            <div class="settings-page-card">
-              <h4>🔑 我的账号</h4>
-              <div class="account-info-display">
-                <div class="account-row">
-                  <span class="account-label">账号 ID：</span>
-                  <span class="account-value" id="settings-account-id">加载中...</span>
-                  <button class="btn-copy-id" onclick="copyAccountId()" title="复制">📋</button>
-                </div>
-                <div class="account-row">
-                  <span class="account-label">账号状态：</span>
-                  <span class="account-value" id="settings-account-status">
-                    <span class="status-tag guest">游客模式</span>
-                  </span>
-                </div>
-              </div>
-              <button class="btn btn-secondary btn-full" onclick="showLoginDialog()">
-                🔐 使用账号登录
-              </button>
-            </div>
-            <!-- 个人信息 -->
-            <div class="settings-page-card">
-              <h4>👤 个人信息</h4>
-              <div class="form-group">
-                <label>昵称</label>
-                <input type="text" id="settings-nickname" placeholder="你的昵称" maxlength="20">
-              </div>
-              <div class="form-group">
-                <label>邮箱</label>
-                <input type="email" id="settings-email" placeholder="your@email.com">
-              </div>
-            </div>
-            <!-- AI 模型 -->
-            <div class="settings-page-card">
-              <h4>🤖 AI 模型</h4>
-              <div class="form-group">
-                <label>选择模型</label>
-                <select id="settings-model">
-                  <option value="deepseek-v3">DeepSeek V3 ⭐推荐</option>
-                  <option value="deepseek-r1">DeepSeek R1</option>
-                  <option value="gpt-4o-mini">GPT-4o Mini</option>
-                  <option value="gpt-4o">GPT-4o</option>
-                  <option value="claude-4-sonnet">Claude 4 Sonnet</option>
-                  <option value="custom">自定义...</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>API Key</label>
-                <input type="password" id="settings-api-key" placeholder="输入 API Key">
-              </div>
-            </div>
-            <!-- 保存按钮 -->
-            <button class="btn btn-primary btn-full" onclick="savePageSettings()">💾 保存设置</button>
-          </div>
-        </div>
+        
       </div>
     </div>
 
@@ -314,7 +291,7 @@
           </button>
           <div class="game-info">
             <h2 id="game-title">游戏标题</h2>
-            <span class="game-author" id="game-author">作者：匿名</span>
+            <span class="game-model-tag" id="game-model-tag" style="display:none;">🤖 DeepSeek V3</span>
           </div>
           <div class="game-header-actions">
             <button class="btn btn-action" onclick="viewGameSource()" title="查看源码">📄</button>
@@ -322,34 +299,42 @@
           </div>
         </div>
         
-        <!-- 社交互动条（合并统计+操作） -->
-        <div class="game-stats-bar" id="game-stats-bar">
-          <div class="stat-item" title="游玩次数">
-            <span class="stat-icon">🎮</span>
-            <span class="stat-value" id="stat-plays">0</span>
-            <span class="stat-label">游玩</span>
-          </div>
-          <div class="stat-item stat-clickable" id="stat-like-btn" title="点击点赞" onclick="likeGame()">
-            <span class="stat-icon" id="stat-like-icon">🤍</span>
-            <span class="stat-value" id="stat-likes">0</span>
-            <span class="stat-label">点赞</span>
-          </div>
-          <div class="stat-item stat-clickable" id="stat-fav-btn" title="点击收藏" onclick="toggleFavorite()">
-            <span class="stat-icon" id="stat-fav-icon">☆</span>
-            <span class="stat-value">收藏</span>
-          </div>
-          <div class="stat-item stat-clickable" title="点击分享" onclick="openSharePanel()">
-            <span class="stat-icon">�</span>
-            <span class="stat-value" id="stat-shares">0</span>
-            <span class="stat-label">分享</span>
-          </div>
-          <div class="stat-item stat-hot" title="热度指数">
-            <span class="stat-icon">🔥</span>
-            <span class="stat-value" id="stat-hot">0</span>
-            <span class="stat-label">热度</span>
-          </div>
+        <!-- 隐藏的兼容性统计条（完全隐藏） -->
+        <div id="game-stats-bar" style="display:none!important;visibility:hidden;">
+          <span id="stat-hot">0</span>
         </div>
+        
         <div class="game-frame-container">
+          <!-- 抖音风格左下角作者信息 -->
+          <div class="tiktok-author-info" id="tiktok-author-info">
+            <div class="tiktok-author-avatar">👤</div>
+            <div class="tiktok-author-details">
+              <span class="tiktok-author-name" id="tiktok-author-name">作者</span>
+              <button class="tiktok-follow-btn" id="tiktok-follow-btn" onclick="followCurrentAuthor()">
+                <span class="follow-icon">+</span> 关注
+              </button>
+            </div>
+          </div>
+          
+          <!-- TikTok风格右侧互动栏 -->
+          <div class="tiktok-sidebar" id="tiktok-sidebar">
+            <div class="tiktok-action" id="stat-like-btn" onclick="likeGame()">
+              <div class="tiktok-icon" id="stat-like-icon">🤍</div>
+              <span class="tiktok-count" id="stat-likes">0</span>
+            </div>
+            <div class="tiktok-action" id="stat-fav-btn" onclick="toggleFavorite()">
+              <div class="tiktok-icon" id="stat-fav-icon">☆</div>
+              <span class="tiktok-count">收藏</span>
+            </div>
+            <div class="tiktok-action" onclick="openSharePanel()">
+              <div class="tiktok-icon">🔗</div>
+              <span class="tiktok-count" id="stat-shares">0</span>
+            </div>
+            <div class="tiktok-action tiktok-info" title="游玩次数">
+              <div class="tiktok-icon">🎮</div>
+              <span class="tiktok-count" id="stat-plays">0</span>
+            </div>
+          </div>
           <div class="game-loading" id="game-loading">
             <div class="loading-spinner"></div>
             <p>游戏加载中...</p>
@@ -360,8 +345,23 @@
           </div>
           <iframe id="game-frame" sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-forms allow-modals allow-popups"></iframe>
           
-          <!-- 品牌水印浮层 -->
-          <div class="brand-watermark" id="brand-watermark" onclick="showBrandPromo()">
+          <!-- 全屏模式悬浮操作按钮 -->
+          <div class="fullscreen-floating-btns" id="fullscreen-floating-btns">
+            <button class="floating-btn floating-btn-back" onclick="exitFullscreenMode()" title="退出全屏">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"></path>
+              </svg>
+            </button>
+            <button class="floating-btn floating-btn-share" onclick="openSharePanel()" title="分享">
+              🔗
+            </button>
+            <button class="floating-btn floating-btn-expand" onclick="toggleFullscreenMode()" title="切换全屏" id="fullscreen-toggle-btn">
+              ⛶
+            </button>
+          </div>
+          
+          <!-- 品牌水印浮层（不可交互） -->
+          <div class="brand-watermark" id="brand-watermark">
             <span class="watermark-logo">🎮</span>
             <span class="watermark-text">游戏开发技术教程</span>
           </div>
@@ -394,16 +394,24 @@
         <h3>AI 正在创作游戏...</h3>
         <p class="generating-tip" id="generating-status">正在连接 AI 服务</p>
         <p class="generating-time" id="generating-time">已用时: 0秒</p>
+        <div class="generating-progress">
+          <div class="generating-progress-bar" id="generating-progress-bar"></div>
+        </div>
         <div class="generating-log" id="generating-log">
           <div class="log-item">⏳ 等待生成...</div>
         </div>
+        
+        <!-- 生成过程中的提示 -->
+        <div class="generating-tips-box" id="generating-tips-box">
+          <div class="tips-icon">💡</div>
+          <div class="tips-text" id="generating-tips-text">提示：添加具体的游戏玩法描述，效果会更好哦！</div>
+        </div>
+        
         <div class="generating-actions">
           <button class="btn btn-secondary btn-minimize" onclick="minimizeGenerating()" title="最小化，继续浏览">
             <span>📥</span> 最小化
           </button>
-          <button class="btn btn-secondary btn-cancel" onclick="cancelGeneration()">
-            <span>✕</span> 取消
-          </button>
+          <!-- 取消按钮已移除：LLM请求无法取消 -->
         </div>
       </div>
     </div>
@@ -416,7 +424,7 @@
         <span class="float-time" id="float-time">0s</span>
       </div>
       <button class="float-restore" onclick="restoreGenerating()" title="展开">📤</button>
-      <button class="float-cancel" onclick="cancelGeneration()" title="取消">✕</button>
+      <!-- 取消按钮已移除：LLM请求无法取消 -->
     </div>
     
     <!-- 生成完成通知（取消/最小化后生成成功时显示） -->
@@ -509,6 +517,25 @@
               </label>
             </div>
           </div>
+          <div class="settings-section">
+            <h4>🔐 账号管理</h4>
+            <div class="form-group">
+              <div class="account-id-display">
+                <span class="account-id-label">当前账号ID：</span>
+                <code class="account-id-value" id="settings-account-id">未知</code>
+                <button class="btn btn-icon btn-small" onclick="copyAccountId()" title="复制">📋</button>
+              </div>
+            </div>
+            <div class="form-group account-actions-row">
+              <button class="btn btn-secondary" onclick="closeSettings(); showLoginDialog();">
+                🔄 切换/恢复账号
+              </button>
+              <button class="btn btn-danger" onclick="logoutAccount()">
+                🚪 退出登录
+              </button>
+            </div>
+            <p class="form-hint">💡 退出前请记住账号ID，换设备时输入即可恢复数据</p>
+          </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" onclick="closeSettings()">取消</button>
@@ -533,13 +560,13 @@
           <div class="credits-ways">
             <h4>获取更多次数</h4>
             
-            <div class="credit-way" id="way-wechat">
+            <div class="credit-way" id="way-wechat" onclick="toggleWechatVerify()">
               <div class="credit-way-icon">📱</div>
               <div class="credit-way-info">
                 <div class="credit-way-title">关注公众号</div>
-                <div class="credit-way-desc">关注后输入验证码领取</div>
+                <div class="credit-way-desc" id="way-wechat-desc">关注后输入验证码领取</div>
               </div>
-              <div class="credit-way-reward">+3次</div>
+              <div class="credit-way-reward" id="way-wechat-reward">+3次</div>
             </div>
             
             <!-- 视频广告功能暂时隐藏
@@ -553,7 +580,7 @@
             </div>
             -->
             
-            <div class="credit-way" onclick="shareForCredits()">
+            <div class="credit-way" id="way-share" onclick="shareForCredits()">
               <div class="credit-way-icon">🔗</div>
               <div class="credit-way-info">
                 <div class="credit-way-title">分享游戏</div>
@@ -562,29 +589,30 @@
               <div class="credit-way-reward">+1次</div>
             </div>
             
-            <div class="credit-way" onclick="toggleInviteSection()">
-              <div class="credit-way-icon">🎫</div>
+            <div class="credit-way" id="way-invite" onclick="toggleInviteSection()">
+              <div class="credit-way-icon">�</div>
               <div class="credit-way-info">
                 <div class="credit-way-title">邀请好友</div>
-                <div class="credit-way-desc">邀请新用户，双方各得积分</div>
+                <div class="credit-way-desc">分享邀请链接，双方各得+3积分</div>
               </div>
-              <div class="credit-way-reward">+2次</div>
+              <div class="credit-way-reward">+3次</div>
             </div>
           </div>
           
-          <!-- 邀请码区域 -->
+          <!-- 邀请链接区域 -->
           <div class="invite-section" id="invite-section" style="display:none;">
-            <h4>我的邀请码</h4>
-            <div class="invite-code-display">
-              <code id="my-invite-code">加载中...</code>
-              <button class="btn btn-secondary" onclick="copyInviteCode()">复制</button>
+            <h4>🔗 我的专属邀请链接</h4>
+            <div class="invite-link-display">
+              <input type="text" id="my-invite-link" readonly value="加载中..." class="invite-link-input">
+              <button class="btn btn-primary" onclick="copyInviteLink()">📋 复制链接</button>
             </div>
-            <p class="form-hint" style="margin-top:0.5rem;">分享给朋友，对方使用后双方各得 +2 次生成机会</p>
-            
-            <h4 style="margin-top:1rem;">使用邀请码</h4>
-            <div class="invite-input-group">
-              <input type="text" id="invite-code-input" placeholder="输入好友的邀请码" maxlength="12">
-              <button class="btn btn-primary" onclick="submitInviteCode()">领取</button>
+            <p class="form-hint" style="margin-top:0.5rem;">
+              ✨ 新用户通过你的链接访问网站，<strong>你+3积分</strong>，<strong>对方+3积分</strong>！
+            </p>
+            <div class="invite-share-buttons" style="margin-top:1rem;">
+              <button class="btn btn-secondary btn-small" onclick="shareInviteLinkTo('wechat')">💬 微信</button>
+              <button class="btn btn-secondary btn-small" onclick="shareInviteLinkTo('qq')">🐧 QQ</button>
+              <button class="btn btn-secondary btn-small" onclick="shareInviteLinkTo('weibo')">📱 微博</button>
             </div>
           </div>
           
@@ -722,6 +750,15 @@
                 <span>❤️ <strong id="profile-like-count">0</strong> 点赞</span>
                 <span>💎 <strong id="profile-credits">0</strong> 积分</span>
               </div>
+              <div class="profile-follow-stats">
+                <span class="follow-stat-item" onclick="openFollowModal(null, 'following')">
+                  <strong id="followingCount">0</strong> 关注
+                </span>
+                <span class="follow-divider">|</span>
+                <span class="follow-stat-item" onclick="openFollowModal(null, 'followers')">
+                  <strong id="followersCount">0</strong> 粉丝
+                </span>
+              </div>
             </div>
           </div>
           <button class="btn btn-icon btn-close" onclick="closeProfileModal()">×</button>
@@ -798,7 +835,10 @@
                 </div>
                 <div class="account-actions">
                   <button class="btn btn-secondary btn-small" onclick="showLoginDialog()">
-                    � 在其他设备恢复
+                    🔄 切换/恢复账号
+                  </button>
+                  <button class="btn btn-danger btn-small" onclick="logoutAccount()">
+                    🚪 退出登录
                   </button>
                 </div>
                 <p class="form-hint">💡 保存好账号ID，换设备时输入即可恢复数据</p>
@@ -938,6 +978,31 @@
           <button class="btn btn-primary btn-block" onclick="closeBrandPromo();openCreditsModal();">
             已关注，去领积分
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 关注/粉丝列表弹窗 -->
+    <div id="follow-modal" class="modal">
+      <div class="modal-content modal-medium">
+        <div class="modal-header">
+          <h3 id="follow-modal-title">👥 关注列表</h3>
+          <button class="btn btn-icon btn-close" onclick="closeFollowModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <!-- 标签切换 -->
+          <div class="follow-tabs">
+            <button class="follow-tab active" id="tab-following-btn" onclick="switchFollowTab('following')">
+              关注 <span id="follow-tab-following-count">0</span>
+            </button>
+            <button class="follow-tab" id="tab-followers-btn" onclick="switchFollowTab('followers')">
+              粉丝 <span id="follow-tab-followers-count">0</span>
+            </button>
+          </div>
+          <!-- 列表内容 -->
+          <div class="follow-list" id="follow-list">
+            <div class="loading-games">加载中...</div>
+          </div>
         </div>
       </div>
     </div>

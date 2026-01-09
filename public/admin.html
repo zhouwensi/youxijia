@@ -626,29 +626,37 @@
       </div>
 
       <div class="config-section">
-        <h2>💰 积分配置</h2>
-        <div class="config-grid">
-          <div class="config-item">
-            <label>新用户初始积分</label>
-            <input type="number" id="config-credits_initial" placeholder="5">
-          </div>
-          <div class="config-item">
-            <label>关注公众号奖励</label>
-            <input type="number" id="config-credits_follow_wechat" placeholder="3">
-          </div>
-          <div class="config-item">
-            <label>看广告奖励</label>
-            <input type="number" id="config-credits_watch_ad" placeholder="1">
-          </div>
-          <div class="config-item">
-            <label>每日广告上限</label>
-            <input type="number" id="config-credits_daily_ad_limit" placeholder="3">
-          </div>
-          <div class="config-item">
-            <label>分享游戏奖励</label>
-            <input type="number" id="config-credits_share_game" placeholder="1">
-          </div>
+        <h2>� 测试账号管理</h2>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+          <input type="text" id="new-account-nickname" placeholder="账号昵称" 
+            style="padding: 0.5rem 0.75rem; border-radius: 6px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 140px;">
+          <input type="text" id="new-account-password" placeholder="密码（默认123456）" 
+            style="padding: 0.5rem 0.75rem; border-radius: 6px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 160px;">
+          <button class="btn-save" onclick="createSingleTestAccount()" style="background: linear-gradient(135deg, #10b981, #059669);">
+            ➕ 添加账号
+          </button>
+          <button class="btn-save" onclick="loadAllTestAccounts()" style="background: linear-gradient(135deg, #6366f1, #4f46e5);">
+            🔄 刷新列表
+          </button>
         </div>
+        <div id="test-accounts-list" style="margin-top: 1rem;">
+          <table style="width: 100%; font-size: 0.85rem;">
+            <thead>
+              <tr style="text-align: left; color: #94a3b8;">
+                <th style="padding: 0.5rem;">昵称</th>
+                <th style="padding: 0.5rem;">账号ID</th>
+                <th style="padding: 0.5rem;">密码</th>
+                <th style="padding: 0.5rem;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="test-accounts-tbody">
+              <tr><td colspan="4" style="padding: 1rem; color: #64748b; text-align: center;">点击"刷新列表"查看所有测试账号</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.75rem;">
+          💡 可任意添加测试账号，用于测试关注、粉丝等功能。账号间可以互相关注。
+        </p>
       </div>
 
       <div class="config-section">
@@ -716,6 +724,72 @@
             <input type="text" id="config-llm_default_base_url" placeholder="留空使用官方地址，或填入代理地址">
           </div>
         </div>
+      </div>
+
+      <div class="config-section">
+        <h2>⏱️ 模型预计生成时间</h2>
+        <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1rem;">
+          配置各模型的预计生成时间（秒），用于在生成界面显示预计等待时间
+        </p>
+        <div class="config-grid">
+          <div class="config-item">
+            <label>DeepSeek V3</label>
+            <input type="number" id="config-llm_time_deepseek-v3" placeholder="30" min="10" max="300">
+          </div>
+          <div class="config-item">
+            <label>DeepSeek R1</label>
+            <input type="number" id="config-llm_time_deepseek-r1" placeholder="45" min="10" max="300">
+          </div>
+          <div class="config-item">
+            <label>GPT-4o</label>
+            <input type="number" id="config-llm_time_gpt-4o" placeholder="40" min="10" max="300">
+          </div>
+          <div class="config-item">
+            <label>GPT-4o Mini</label>
+            <input type="number" id="config-llm_time_gpt-4o-mini" placeholder="25" min="10" max="300">
+          </div>
+          <div class="config-item">
+            <label>Claude 4 Sonnet</label>
+            <input type="number" id="config-llm_time_claude-4-sonnet" placeholder="35" min="10" max="300">
+          </div>
+          <div class="config-item">
+            <label>Claude 4.5 Sonnet</label>
+            <input type="number" id="config-llm_time_claude-4.5-sonnet" placeholder="40" min="10" max="300">
+          </div>
+          <div class="config-item">
+            <label>Gemini 2.5 Pro</label>
+            <input type="number" id="config-llm_time_gemini-2.5-pro" placeholder="35" min="10" max="300">
+          </div>
+          <div class="config-item">
+            <label>GLM 4.7</label>
+            <input type="number" id="config-llm_time_glm-4.7" placeholder="30" min="10" max="300">
+          </div>
+          <div class="config-item">
+            <label>Kimi K2</label>
+            <input type="number" id="config-llm_time_kimi-k2" placeholder="35" min="10" max="300">
+          </div>
+          <div class="config-item">
+            <label>默认时间（未配置模型）</label>
+            <input type="number" id="config-llm_time_default" placeholder="30" min="10" max="300">
+          </div>
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h2>💡 提示语配置 (Tips)</h2>
+        <div class="config-grid" style="grid-template-columns: 1fr;">
+          <div class="config-item" style="grid-column: 1 / -1;">
+            <label>首页Tips（每行一条，会随机滚动显示）</label>
+            <textarea id="config-tips_home" rows="4" placeholder="每行一条提示&#10;例如：尝试描述游戏的核心玩法&#10;简单的指令往往效果更好" style="width: 100%; padding: 0.75rem; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 4px; resize: vertical;"></textarea>
+          </div>
+          <div class="config-item" style="grid-column: 1 / -1;">
+            <label>生成页Tips（每行一条，会随机滚动显示）</label>
+            <textarea id="config-tips_generate" rows="4" placeholder="每行一条提示&#10;例如：描述越具体，游戏质量越高&#10;可以指定游戏风格：像素风、卡通风等" style="width: 100%; padding: 0.75rem; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 4px; resize: vertical;"></textarea>
+          </div>
+        </div>
+        <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.75rem;">
+          💡 每行一条提示，用于引导用户更好地使用系统。留空则使用默认提示。
+        </p>
       </div>
 
       <button class="btn-save" onclick="saveConfig()">💾 保存配置</button>
@@ -1082,7 +1156,21 @@
         'llm_enabled',
         'llm_default_model',
         'llm_default_api_key',
-        'llm_default_base_url'
+        'llm_default_base_url',
+        // 模型预计生成时间
+        'llm_time_deepseek-v3',
+        'llm_time_deepseek-r1',
+        'llm_time_gpt-4o',
+        'llm_time_gpt-4o-mini',
+        'llm_time_claude-4-sonnet',
+        'llm_time_claude-4.5-sonnet',
+        'llm_time_gemini-2.5-pro',
+        'llm_time_glm-4.7',
+        'llm_time_kimi-k2',
+        'llm_time_default',
+        // Tips提示配置
+        'tips_home',
+        'tips_generate'
       ];
       
       const configs = configKeys.map(key => ({
@@ -1793,6 +1881,95 @@
     document.getElementById('admin-key-input').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') login();
     });
+
+    // 创建单个测试账号
+    async function createSingleTestAccount() {
+      const nickname = document.getElementById('new-account-nickname').value.trim();
+      const password = document.getElementById('new-account-password').value.trim() || '123456';
+      
+      if (!nickname) {
+        showToast('请输入账号昵称', 'error');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/admin/create-test-account', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey 
+          },
+          body: JSON.stringify({ nickname, password })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showToast(data.message, 'success');
+          document.getElementById('new-account-nickname').value = '';
+          document.getElementById('new-account-password').value = '';
+          loadAllTestAccounts(); // 刷新列表
+        } else {
+          showToast(data.error || '创建失败', 'error');
+        }
+      } catch (error) {
+        showToast('创建测试账号失败: ' + error.message, 'error');
+      }
+    }
+    
+    // 加载所有测试账号
+    async function loadAllTestAccounts() {
+      try {
+        const response = await fetch('/api/admin/test-accounts', {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        
+        const data = await response.json();
+        const tbody = document.getElementById('test-accounts-tbody');
+        
+        if (data.success && data.accounts.length > 0) {
+          tbody.innerHTML = data.accounts.map(acc => `
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <td style="padding: 0.5rem; color: #10b981; font-weight: 600;">${acc.nickname}</td>
+              <td style="padding: 0.5rem; color: #94a3b8; font-size: 0.75rem;">${acc.account_id}</td>
+              <td style="padding: 0.5rem; color: #f59e0b;">******</td>
+              <td style="padding: 0.5rem;">
+                ${acc.account_id.startsWith('test_') ? 
+                  `<button onclick="deleteTestAccount('${acc.account_id}')" style="background: #ef4444; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">删除</button>` : 
+                  '<span style="color: #64748b; font-size: 0.75rem;">非测试账号</span>'}
+              </td>
+            </tr>
+          `).join('');
+        } else {
+          tbody.innerHTML = '<tr><td colspan="4" style="padding: 1rem; color: #64748b; text-align: center;">暂无测试账号</td></tr>';
+        }
+      } catch (error) {
+        showToast('加载账号列表失败: ' + error.message, 'error');
+      }
+    }
+    
+    // 删除测试账号
+    async function deleteTestAccount(accountId) {
+      if (!confirm('确定要删除此测试账号吗？')) return;
+      
+      try {
+        const response = await fetch(`/api/admin/test-account/${accountId}`, {
+          method: 'DELETE',
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showToast('账号已删除', 'success');
+          loadAllTestAccounts();
+        } else {
+          showToast(data.error || '删除失败', 'error');
+        }
+      } catch (error) {
+        showToast('删除失败: ' + error.message, 'error');
+      }
+    }
 
     // 检查已保存的登录状态
     window.onload = () => {

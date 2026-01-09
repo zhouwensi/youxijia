@@ -528,7 +528,493 @@ body {
   color: var(--text-primary);
 }
 
-/* 我的页面标签 */
+/* 关注/粉丝统计 */
+.profile-follow-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.follow-stat-item {
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: color 0.2s;
+  padding: 0.25rem 0;
+}
+
+.follow-stat-item:hover {
+  color: var(--primary-color);
+}
+
+.follow-stat-item strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.follow-stat-divider {
+  color: var(--border-color);
+  font-size: 0.75rem;
+}
+
+/* 关注/粉丝列表弹窗 */
+.modal-medium .modal-content {
+  max-width: 420px;
+}
+
+.follow-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 1rem;
+}
+
+.follow-tab {
+  flex: 1;
+  padding: 0.75rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.follow-tab:hover {
+  color: var(--text-primary);
+}
+
+.follow-tab.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+}
+
+.follow-tab span {
+  font-weight: 700;
+  margin-left: 0.25rem;
+}
+
+.follow-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.follow-user-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-color);
+  gap: 0.75rem;
+}
+
+.follow-user-item:last-child {
+  border-bottom: none;
+}
+
+.follow-user-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.follow-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.follow-user-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+}
+
+.follow-user-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.125rem;
+}
+
+.follow-user-action {
+  flex-shrink: 0;
+}
+
+.btn-follow {
+  padding: 0.375rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid var(--primary-color);
+  background: var(--primary-color);
+  color: white;
+}
+
+.btn-follow:hover {
+  background: var(--primary-hover);
+}
+
+.btn-follow.following {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+}
+
+.btn-follow.following:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* 我的页面标签 - 竖向布局 */
+.profile-sections-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-bottom: 80px;
+}
+
+.profile-section-row {
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem;
+}
+
+.profile-section-header-v {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.profile-section-header-v .section-icon {
+  font-size: 1.125rem;
+}
+
+.profile-section-header-v .section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.profile-section-header-v .section-count {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  padding: 0.125rem 0.5rem;
+  border-radius: 10px;
+}
+
+/* 横向滚动区域 */
+.profile-horizontal-scroll {
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -1rem;
+  padding: 0 1rem;
+}
+
+.profile-horizontal-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.profile-horizontal-list {
+  display: flex;
+  flex-wrap: nowrap; /* 禁止换行，确保只显示一行 */
+  gap: 0.75rem;
+  min-height: 140px;
+  padding-bottom: 0.5rem;
+}
+
+.profile-horizontal-list .loading-games,
+.profile-horizontal-list .empty-games {
+  width: 100%;
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+}
+
+/* 横向游戏卡片 - 精致版 */
+.profile-game-card-h {
+  flex-shrink: 0;
+  width: calc((100% - 2.25rem) / 4); /* 每行4个 */
+  min-width: 90px;
+  max-width: 120px;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.profile-game-card-h:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.profile-game-card-h:active {
+  transform: scale(0.97);
+}
+
+.profile-game-card-h .card-cover {
+  position: relative;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1e1e32 0%, #2a2a45 100%);
+  font-size: 2.25rem;
+}
+
+.profile-game-card-h .card-title {
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+/* 卡片统计数据 */
+.profile-game-card-h .card-stats {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0 0.5rem 0.5rem;
+  font-size: 0.625rem;
+  color: var(--text-secondary);
+}
+
+.profile-game-card-h .card-stat {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.profile-game-card-h .card-stat .stat-icon {
+  font-size: 0.625rem;
+  opacity: 0.8;
+}
+
+/* 移动端一行显示3个 */
+@media (max-width: 480px) {
+  .profile-game-card-h {
+    width: calc((100% - 1.5rem) / 3);
+    min-width: 80px;
+  }
+}
+
+/* 标题行内更多按钮 */
+.btn-more-header {
+  background: transparent;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  margin-left: auto;
+  margin-right: 0.5rem;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.btn-more-header:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+/* 可点击的折叠标题 */
+.profile-section-clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.profile-section-clickable:hover {
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 8px;
+}
+
+.section-arrow {
+  margin-left: auto;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  transition: transform 0.3s ease;
+}
+
+.section-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+/* 更多按钮 */
+.btn-more-inline {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  font-size: 0.8125rem;
+  padding: 0.5rem 0;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+
+.btn-more-inline:hover {
+  text-decoration: underline;
+}
+
+/* 创作页面Tips横幅 */
+.create-tips-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+}
+
+.tips-icon {
+  font-size: 1.25rem;
+}
+
+.tips-text {
+  flex: 1;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  transition: opacity 0.3s ease;
+}
+
+/* 页面头部模型标签 */
+.header-model-tag {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--primary-color);
+  padding: 0.25rem 0.625rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* 游戏详情页模型标签 */
+.game-model-tag {
+  background: rgba(99, 102, 241, 0.2);
+  color: var(--primary-color);
+  padding: 0.125rem 0.5rem;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  white-space: nowrap;
+  margin-top: 0.25rem;
+}
+
+/* 游戏详情页作者行 */
+.game-author-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.author-follow-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.author-follow-btn:hover {
+  background: var(--primary-hover);
+  transform: scale(1.05);
+}
+
+.author-follow-btn.following {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.author-follow-btn.following:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
+/* 完整游戏列表弹窗 */
+.full-game-list-content {
+  max-width: 600px;
+  width: 95%;
+  max-height: 85vh;
+}
+
+.full-game-list-content .modal-body {
+  padding: 1rem;
+  overflow-y: auto;
+  max-height: calc(85vh - 60px);
+}
+
+.full-game-list-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 480px) {
+  .full-game-list-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* 我的页面右上角设置按钮 */
+.profile-settings-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.profile-settings-btn:hover {
+  background: rgba(99, 102, 241, 0.3);
+  border-color: var(--primary-color);
+  color: var(--primary-light);
+  transform: rotate(90deg);
+}
+
+.profile-settings-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* 我的页面头部需要relative以支持绝对定位按钮 */
+.profile-page-header {
+  position: relative;
+}
+
+/* 旧版标签页样式保留用于兼容 */
 .profile-page-tabs {
   display: flex;
   background: var(--bg-secondary);
@@ -580,9 +1066,91 @@ body {
 }
 
 .profile-list-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  background: var(--border-color);
+}
+
+/* 抖音风格竖向卡片 */
+.tiktok-card {
+  position: relative;
+  aspect-ratio: 9 / 12;
+  background: var(--bg-secondary);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.tiktok-card:active {
+  transform: scale(0.98);
+}
+
+.tiktok-card-cover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
+  font-size: 3rem;
+}
+
+.tiktok-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.3) 40%, transparent 70%);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  justify-content: flex-end;
+  padding: 8px;
+}
+
+.tiktok-card-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.tiktok-card-stats {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+  font-size: 0.6875rem;
+  color: rgba(255,255,255,0.85);
+}
+
+.tiktok-card-stats span {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* 空状态适配网格 */
+.profile-list-container .empty-games {
+  grid-column: 1 / -1;
+  background: var(--bg-color);
+}
+
+/* 响应式：小屏幕变为2列 */
+@media (max-width: 480px) {
+  .profile-list-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .tiktok-card-title {
+    font-size: 0.75rem;
+  }
+  
+  .tiktok-card-cover {
+    font-size: 2.5rem;
+  }
 }
 
 /* 设置页面卡片 */
@@ -1525,6 +2093,7 @@ body {
   border: none;
   background: #1a1a2e;
   display: block;
+  z-index: 1;
 }
 
 /* 游戏加载状态 */
@@ -1737,7 +2306,7 @@ body {
   display: none;
   align-items: flex-end;
   justify-content: center;
-  z-index: 1100;
+  z-index: 3000;
   overscroll-behavior: contain;
 }
 
@@ -1807,6 +2376,32 @@ body.modal-open .modal-content {
 .modal-header h3 {
   font-size: 1.0625rem;
   font-weight: 600;
+}
+
+/* 模态框关闭按钮 */
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  font-size: 1.25rem;
+  cursor: pointer;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.modal-close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.modal-close:active {
+  transform: scale(0.95);
 }
 
 .modal-body {
@@ -1957,6 +2552,45 @@ body.modal-open .modal-content {
   margin-bottom: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+/* 账号管理区域 */
+.account-id-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.75rem;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 8px;
+}
+
+.account-id-label {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+.account-id-value {
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  color: var(--primary-color);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.account-actions-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.account-actions-row .btn {
+  flex: 1;
+  min-width: 120px;
 }
 
 /* 保存弹窗 - 大弹窗布局 */
@@ -2342,6 +2976,40 @@ body.modal-open .modal-content {
   margin-bottom: 0;
 }
 
+/* 已完成的积分方式 - 灰色禁用状态 */
+.credit-way.completed {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--bg-hover);
+  border-color: var(--border-color);
+}
+
+.credit-way.completed:hover {
+  border-color: var(--border-color);
+  background: var(--bg-hover);
+  transform: none;
+}
+
+.credit-way.completed .credit-way-icon {
+  filter: grayscale(0.5);
+}
+
+.credit-way.completed .credit-way-reward {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.credit-way.completed::after {
+  content: "✓ 已完成";
+  font-size: 0.7rem;
+  color: var(--success-color);
+  background: rgba(16, 185, 129, 0.1);
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
 .credit-way-icon {
   font-size: 1.75rem;
   width: 48px;
@@ -2601,13 +3269,50 @@ body.modal-open .modal-content {
   color: var(--text-secondary);
 }
 
-/* 邀请码输入 */
+/* 邀请链接区域 */
 .invite-section {
   margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-color);
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+  border-radius: var(--border-radius);
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
+.invite-section h4 {
+  margin-bottom: 0.75rem;
+  color: var(--primary-color);
+  font-size: 0.9375rem;
+}
+
+.invite-link-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.invite-link-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-family: monospace;
+}
+
+.invite-share-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.invite-share-buttons .btn-small {
+  font-size: 0.8125rem;
+  padding: 0.5rem 0.75rem;
+}
+
+/* 兼容旧版邀请码样式 */
 .invite-code-display {
   display: flex;
   align-items: center;
@@ -2871,6 +3576,200 @@ body.modal-open .modal-content {
 
 .game-stats-bar .stat-hot .stat-value {
   color: #f59e0b;
+}
+
+/* ==================== TikTok风格左下角作者信息 ==================== */
+
+.tiktok-author-info {
+  position: absolute;
+  left: 16px;
+  bottom: 80px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 100;
+  pointer-events: auto;
+}
+
+.tiktok-author-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-color), #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.tiktok-author-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tiktok-author-name {
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.tiktok-follow-btn {
+  background: #ff2d55;
+  color: white;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(255, 45, 85, 0.4);
+}
+
+.tiktok-follow-btn:hover {
+  background: #ff1744;
+  transform: scale(1.05);
+}
+
+.tiktok-follow-btn:active {
+  transform: scale(0.95);
+}
+
+.tiktok-follow-btn .follow-icon {
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.tiktok-follow-btn.following {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.tiktok-follow-btn.following:hover {
+  background: rgba(255, 45, 85, 0.3);
+  border-color: #ff2d55;
+}
+
+/* 如果是自己的游戏，隐藏关注按钮 */
+.tiktok-author-info.is-self .tiktok-follow-btn {
+  display: none;
+}
+
+/* ==================== TikTok风格右侧互动栏 ==================== */
+
+.tiktok-sidebar {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  z-index: 100;
+  pointer-events: auto;
+}
+
+.tiktok-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tiktok-action:active {
+  transform: scale(0.9);
+}
+
+.tiktok-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  transition: all 0.2s ease;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.tiktok-action:hover .tiktok-icon {
+  transform: scale(1.1);
+  background: rgba(0, 0, 0, 0.8);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.tiktok-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+}
+
+/* 点赞按钮状态 */
+#stat-like-btn.liked .tiktok-icon {
+  background: rgba(239, 68, 68, 0.8);
+  border-color: #ef4444;
+  animation: likePopTiktok 0.3s ease;
+}
+
+@keyframes likePopTiktok {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+/* 收藏按钮状态 */
+#stat-fav-btn.favorited .tiktok-icon {
+  background: rgba(251, 191, 36, 0.8);
+  border-color: #fbbf24;
+}
+
+/* 信息类按钮（不可点击感） */
+.tiktok-action.tiktok-info {
+  cursor: default;
+  opacity: 0.8;
+}
+
+.tiktok-action.tiktok-info:active {
+  transform: none;
+}
+
+.tiktok-action.tiktok-info .tiktok-icon {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 移动端适配 */
+@media (max-width: 640px) {
+  .tiktok-sidebar {
+    right: 8px;
+    gap: 12px;
+  }
+  
+  .tiktok-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+  
+  .tiktok-count {
+    font-size: 11px;
+  }
 }
 
 /* 点赞按钮状态 */
@@ -3313,8 +4212,63 @@ body.modal-open .modal-content {
 .generating-time {
   color: var(--text-muted);
   font-size: 0.8rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   font-variant-numeric: tabular-nums;
+}
+
+/* 生成进度条 */
+.generating-progress {
+  width: 100%;
+  max-width: 300px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 0 auto 1rem;
+}
+
+.generating-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+/* 生成过程中的提示框 */
+.generating-tips-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding: 0.875rem 1.25rem;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 12px;
+  max-width: 350px;
+  animation: tipsFadeIn 0.5s ease;
+}
+
+.generating-tips-box .tips-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.generating-tips-box .tips-text {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+@keyframes tipsFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* 生成操作按钮组 */
@@ -3614,27 +4568,127 @@ body.modal-open .modal-content {
   color: var(--primary-color);
 }
 
-/* 游戏页品牌水印 */
+/* 游戏页品牌水印（不可交互）- 已隐藏，避免与浮动提示重复 */
 .brand-watermark {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.375rem 0.75rem;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
-  border-radius: 20px;
-  cursor: pointer;
-  z-index: 100;
-  transition: var(--transition);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: none !important; /* 隐藏，只保留浮动提示按钮 */
 }
 
-.brand-watermark:hover {
+/* 全屏模式悬浮操作按钮 */
+.fullscreen-floating-btns {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 200;
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+}
+
+.fullscreen-floating-btns:hover {
+  opacity: 1;
+}
+
+.floating-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  color: white;
+  font-size: 1.125rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.floating-btn:hover {
+  background: var(--primary-color);
+  transform: scale(1.1);
+}
+
+.floating-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.floating-btn-back {
+  background: rgba(239, 68, 68, 0.8);
+}
+
+.floating-btn-back:hover {
+  background: #ef4444;
+}
+
+.floating-btn-share {
+  background: rgba(59, 130, 246, 0.8);
+}
+
+.floating-btn-share:hover {
+  background: #3b82f6;
+}
+
+.floating-btn-expand {
   background: rgba(99, 102, 241, 0.8);
-  transform: scale(1.05);
+}
+
+.floating-btn-expand:hover {
+  background: var(--primary-color);
+}
+
+/* 全屏模式样式 */
+.game-page-fullscreen {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 9999 !important;
+  background: #000 !important;
+}
+
+.game-page-fullscreen .game-container {
+  height: 100vh !important;
+  max-width: none !important;
+  padding: 0 !important;
+}
+
+.game-page-fullscreen .game-header {
+  display: none !important; /* 全屏时隐藏顶部栏 */
+}
+
+.game-page-fullscreen .game-frame-container {
+  height: 100vh !important;
+  border-radius: 0 !important;
+}
+
+.game-page-fullscreen #game-frame {
+  border-radius: 0 !important;
+}
+
+.game-page-fullscreen .fullscreen-floating-btns {
+  opacity: 0.5;
+}
+
+.game-page-fullscreen .tiktok-sidebar {
+  bottom: 80px; /* 全屏时调整位置 */
+}
+
+.game-page-fullscreen .brand-watermark {
+  top: 10px;
+  right: 10px;
+}
+
+/* 非全屏模式下隐藏悬浮操作按钮（使用顶部栏和侧边栏） */
+.game-container:not(.game-page-fullscreen) .fullscreen-floating-btns {
+  display: none;
 }
 
 .watermark-logo {
