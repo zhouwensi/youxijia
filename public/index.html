@@ -294,6 +294,8 @@
             <span class="game-model-tag" id="game-model-tag" style="display:none;">🤖 DeepSeek V3</span>
           </div>
           <div class="game-header-actions">
+            <!-- 手机端显示公众号按钮，PC端隐藏 -->
+            <button class="btn btn-action btn-wechat-mobile" onclick="showBrandPromo()" title="关注公众号">📱</button>
             <button class="btn btn-action" onclick="viewGameSource()" title="查看源码">📄</button>
             <button class="btn btn-action" id="edit-btn" onclick="editGame()" title="编辑" style="display:none;">✏️</button>
           </div>
@@ -307,12 +309,14 @@
         <div class="game-frame-container">
           <!-- 抖音风格左下角作者信息 -->
           <div class="tiktok-author-info" id="tiktok-author-info">
-            <div class="tiktok-author-avatar" onclick="openAuthorProfile()">👤</div>
-            <div class="tiktok-author-details">
-              <span class="tiktok-author-name" id="tiktok-author-name" onclick="openAuthorProfile()">作者</span>
-              <button class="tiktok-follow-btn" id="tiktok-follow-btn" onclick="followCurrentAuthor()">
-                <span class="follow-icon">+</span> 关注
-              </button>
+            <div class="tiktok-author-row">
+              <div class="tiktok-author-avatar" onclick="openAuthorProfile()">👤</div>
+              <div class="tiktok-author-details">
+                <span class="tiktok-author-name" id="tiktok-author-name" onclick="openAuthorProfile()">作者</span>
+                <button class="tiktok-follow-btn" id="tiktok-follow-btn" onclick="followCurrentAuthor()">
+                  <span class="follow-icon">+</span> 关注
+                </button>
+              </div>
             </div>
           </div>
           

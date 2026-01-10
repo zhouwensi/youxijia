@@ -610,6 +610,32 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (debugCheckbox) {
     debugCheckbox.checked = state.debugMode;
   }
+  
+  // 监听页面可见性变化（手机切换后台再回来时恢复生成状态）
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      log('页面重新可见，检查生成状态...', 'info');
+      
+      // 如果有正在进行的生成任务，确保UI状态正确
+      if (state.isGenerating && backgroundTask.isActive) {
+        log('恢复生成中状态显示', 'info');
+        
+        // 确保遮罩或浮动条显示正确
+        const overlay = document.getElementById('generating-overlay');
+        const floatBar = document.getElementById('generating-float');
+        
+        if (backgroundTask.isMinimized) {
+          // 最小化状态：显示浮动条
+          if (overlay) overlay.classList.remove('active');
+          if (floatBar) floatBar.classList.add('active');
+        } else {
+          // 正常状态：显示遮罩
+          if (overlay) overlay.classList.add('active');
+          if (floatBar) floatBar.classList.remove('active');
+        }
+      }
+    }
+  });
 });
 
 // ==================== 内测横幅 ====================
@@ -4825,8 +4851,8 @@ async function generateGame() {
       document.getElementById('generating-overlay').classList.add('active');
       startGeneratingTimer(); // 启动计时器
       
-      log(`游客模式生成游戏: "${prompt}"`);
-      updateGeneratingStatus('🎁 使用游客模式生成...');
+      log(`生成游戏: "${prompt}"`);
+      updateGeneratingStatus('🎮 AI 正在创作中...');
       
       try {
         const data = await generateWithTrial();

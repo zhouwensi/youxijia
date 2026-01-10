@@ -938,6 +938,24 @@ body {
   margin-top: 0.25rem;
 }
 
+/* 手机端公众号按钮（在顶部替代模型标签） */
+.btn-wechat-mobile {
+  display: none; /* 默认PC端隐藏 */
+}
+
+@media (max-width: 640px) {
+  .btn-wechat-mobile {
+    display: flex !important;
+    background: linear-gradient(135deg, #07c160, #06ad56);
+    color: white !important;
+  }
+  
+  .btn-wechat-mobile:hover,
+  .btn-wechat-mobile:active {
+    background: linear-gradient(135deg, #06ad56, #059648);
+  }
+}
+
 /* 游戏详情页作者行 */
 .game-author-row {
   display: flex;
@@ -1004,10 +1022,12 @@ body {
   position: absolute;
   top: 1rem;
   right: 1rem;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: var(--text-secondary);
   display: flex;
@@ -1015,9 +1035,13 @@ body {
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  z-index: 100;
+  z-index: 1000;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  /* 确保手机端可点击 */
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .profile-settings-btn:hover,
@@ -3607,15 +3631,21 @@ body.modal-open .modal-content {
 .tiktok-author-info {
   position: absolute;
   left: 16px;
-  top: 16px;
+  bottom: 80px;
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 100;
+  pointer-events: auto;
+  /* 无背景色，抖音风格 */
+  padding: 0;
+}
+
+.tiktok-author-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  z-index: 100;
-  pointer-events: auto;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 8px 12px;
-  border-radius: 24px;
 }
 
 .tiktok-author-avatar {
@@ -3627,28 +3657,29 @@ body.modal-open .modal-content {
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .tiktok-author-avatar:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
 .tiktok-author-details {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
 }
 
 .tiktok-author-name {
   color: white;
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  font-size: 1rem;
+  font-weight: 700;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
   cursor: pointer;
   transition: opacity 0.2s;
 }
@@ -3658,24 +3689,24 @@ body.modal-open .modal-content {
 }
 
 .tiktok-follow-btn {
-  background: #ff2d55;
+  background: #fe2c55;
   color: white;
   border: none;
-  padding: 4px 12px;
+  padding: 6px 16px;
   border-radius: 4px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(255, 45, 85, 0.4);
+  text-shadow: none;
 }
 
 .tiktok-follow-btn:hover {
-  background: #ff1744;
-  transform: scale(1.05);
+  background: #e6284d;
+  transform: scale(1.02);
 }
 
 .tiktok-follow-btn:active {
@@ -3683,19 +3714,18 @@ body.modal-open .modal-content {
 }
 
 .tiktok-follow-btn .follow-icon {
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   font-weight: bold;
 }
 
 .tiktok-follow-btn.following {
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 .tiktok-follow-btn.following:hover {
-  background: rgba(255, 45, 85, 0.3);
-  border-color: #ff2d55;
+  background: rgba(254, 44, 85, 0.3);
+  border-color: #fe2c55;
 }
 
 /* 如果是自己的游戏，隐藏关注按钮 */
@@ -3809,6 +3839,32 @@ body.modal-open .modal-content {
   
   .tiktok-count {
     font-size: 11px;
+  }
+  
+  /* 移动端隐藏游戏页面顶部的模型标签 */
+  .game-model-tag {
+    display: none !important;
+  }
+  
+  /* 移动端作者信息调整 */
+  .tiktok-author-info {
+    left: 12px;
+    bottom: 70px;
+  }
+  
+  .tiktok-author-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+  }
+  
+  .tiktok-author-name {
+    font-size: 0.9375rem;
+  }
+  
+  .tiktok-follow-btn {
+    padding: 5px 14px;
+    font-size: 0.75rem;
   }
 }
 
