@@ -20,13 +20,18 @@
   <div id="app" class="app-layout">
     <!-- 内测提示横幅 -->
     <div class="beta-banner" id="beta-banner">
-      <span class="beta-icon">✨</span>
-      <span class="beta-text">欢迎体验！有建议欢迎反馈 💬</span>
+      <span class="beta-icon">🧪</span>
+      <span class="beta-text">内测版本 - 有问题或建议欢迎反馈</span>
       <button class="beta-close" onclick="closeBetaBanner()">×</button>
     </div>
     
     <!-- 主页内容 -->
     <div id="home-page" class="page active">
+      <!-- 下拉刷新指示器 -->
+      <div class="pull-refresh-indicator" id="pull-refresh-indicator">
+        <div class="pull-refresh-icon">↓</div>
+        <span class="pull-refresh-text">下拉刷新</span>
+      </div>
       <!-- 主内容区 -->
       <main class="main-content" id="main-content">
         <!-- Hero 创作区域 -->
@@ -185,11 +190,17 @@
 
     <!-- 我的页面（独立页面） -->
     <div id="profile-page" class="page">
+      <!-- 下拉刷新指示器 -->
+      <div class="pull-refresh-indicator" id="profile-pull-refresh-indicator">
+        <div class="pull-refresh-icon">↓</div>
+        <span class="pull-refresh-text">下拉刷新</span>
+      </div>
       <div class="page-header profile-page-header">
         <div class="profile-user-section">
           <div class="profile-avatar-large">👤</div>
           <div class="profile-user-details">
             <h2 id="profile-page-username">游戏创作者</h2>
+            <div class="profile-account-id" id="profile-page-account-id" onclick="copyAccountId()"></div>
             <div class="profile-mini-stats">
               <span class="stat-clickable" onclick="showMoreGames('my-games')">🎮 <strong id="profile-page-games">0</strong> 作品</span>
               <span class="stat-clickable" onclick="showMoreGames('my-likes')">❤️ <strong id="profile-page-likes">0</strong> 点赞</span>
@@ -364,11 +375,10 @@
             <span class="watermark-text">游戏开发技术教程</span>
           </div>
           
-          <!-- 右下角浮动提示 (不再挡住底部) -->
+          <!-- 右下角公众号按钮 -->
           <div class="game-promo-float" id="game-promo-float" onclick="showBrandPromo()">
-            <span class="promo-float-icon">🎮</span>
-            <span class="promo-float-text">关注公众号免费创作</span>
-            <button class="promo-float-close" onclick="event.stopPropagation();closePromoBar()">×</button>
+            <span class="promo-float-icon">📱</span>
+            <span class="promo-float-text">公众号</span>
           </div>
         </div>
         <!-- 调试面板 -->
@@ -938,7 +948,7 @@
     <div id="brand-promo-modal" class="modal">
       <div class="modal-content modal-small">
         <div class="modal-header">
-          <h3>🎮 关注公众号</h3>
+          <h3>📱 关注公众号</h3>
           <button class="btn btn-icon btn-close" onclick="closeBrandPromo()">×</button>
         </div>
         <div class="modal-body brand-promo-body">
@@ -946,15 +956,20 @@
             <img src="/images/wechat-qrcode.png" alt="微信搜一搜：游戏开发技术教程" class="promo-banner-modal">
           </div>
           <div class="promo-modal-info">
+            <p style="text-align:center;color:var(--text-secondary);margin-bottom:0.75rem;">微信搜索【<strong>游戏开发技术教程</strong>】</p>
             <ul class="promo-list">
               <li>🎁 关注即送 <strong>3次</strong> 免费生成</li>
               <li>📚 Unity/UE4/UE5 实战干货</li>
               <li>💼 大厂内推 & 职业规划</li>
             </ul>
           </div>
-          <button class="btn btn-primary btn-block" onclick="closeBrandPromo();openCreditsModal();">
-            已关注，去领积分
-          </button>
+          <div class="promo-verify-section" id="promo-verify-section">
+            <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:0.5rem;">关注后回复"<strong>积分</strong>"获取验证码</p>
+            <div class="verify-input" style="display:flex;gap:0.5rem;">
+              <input type="text" id="promo-verify-code" placeholder="输入验证码" maxlength="20" style="flex:1;">
+              <button class="btn btn-primary" onclick="verifyWechatFromPromo()">领取</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

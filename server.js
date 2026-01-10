@@ -489,6 +489,30 @@ try {
   // 字段已存在，忽略
 }
 
+// 添加 is_public 字段（如果不存在）- 游戏是否公开，默认公开
+try {
+  db.exec(`ALTER TABLE games ADD COLUMN is_public INTEGER DEFAULT 1`);
+  console.log('[DB] 添加 is_public 字段成功');
+} catch (e) {
+  // 字段已存在，忽略
+}
+
+// 添加 status 字段（如果不存在）- 游戏状态：draft(草稿)/published(已发布)
+try {
+  db.exec(`ALTER TABLE games ADD COLUMN status TEXT DEFAULT 'published'`);
+  console.log('[DB] 添加 status 字段成功');
+} catch (e) {
+  // 字段已存在，忽略
+}
+
+// 添加 share_count 字段（如果不存在）
+try {
+  db.exec(`ALTER TABLE games ADD COLUMN share_count INTEGER DEFAULT 0`);
+  console.log('[DB] 添加 share_count 字段成功');
+} catch (e) {
+  // 字段已存在，忽略
+}
+
 // 创建索引
 db.exec(`
   CREATE INDEX IF NOT EXISTS idx_games_created_at ON games(created_at DESC);
@@ -589,6 +613,10 @@ const defaultConfigs = [
   { key: 'llm_default_api_key', value: '', description: '默认LLM API密钥' },
   { key: 'llm_default_base_url', value: '', description: '默认LLM API地址（可选）' },
   { key: 'llm_enabled', value: 'true', description: '是否启用LLM生成功能' },
+  // 分享文案配置
+  { key: 'share_text_template', value: '我用一句话做了个游戏《{title}》，快来玩！', description: '分享文案模板，支持{title}变量' },
+  { key: 'share_text_weibo', value: '我用一句话做了个游戏：{title} 快来玩！#AI游戏# #一句话生成游戏#', description: '微博分享文案' },
+  { key: 'share_text_qq', value: '一句话生成的AI游戏，快来玩！', description: 'QQ分享描述' },
 ];
 
 const insertConfig = db.prepare(`
@@ -1543,22 +1571,41 @@ app.get('/api/config/model-times', (req, res) => {
     const times = {};
     const stmt = db.prepare("SELECT key, value FROM system_config WHERE key LIKE 'llm_time_%'");
     const rows = stmt.all();
-    
+
     rows.forEach(row => {
       // 提取模型名: llm_time_deepseek-v3 -> deepseek-v3
       const modelName = row.key.replace('llm_time_', '');
       times[modelName] = parseInt(row.value) || 30;
     });
-    
+
     // 确保有默认值
     if (!times.default) {
       times.default = 30;
     }
-    
+
     res.json({ success: true, times });
   } catch (error) {
     console.error('获取模型时间失败:', error);
     res.json({ success: true, times: { default: 30 } });
+  }
+});
+
+// 获取分享文案配置
+app.get('/api/config/share-text', (req, res) => {
+  try {
+    const shareConfig = {
+      template: getConfig('share_text_template', '我用一句话做了个游戏《{title}》，快来玩！'),
+      weibo: getConfig('share_text_weibo', '我用一句话做了个游戏：{title} 快来玩！#AI游戏# #一句话生成游戏#'),
+      qq: getConfig('share_text_qq', '一句话生成的AI游戏，快来玩！'),
+    };
+    res.json({ success: true, shareConfig });
+  } catch (error) {
+    console.error('获取分享配置失败:', error);
+    res.json({ success: true, shareConfig: {
+      template: '我用一句话做了个游戏《{title}》，快来玩！',
+      weibo: '我用一句话做了个游戏：{title} 快来玩！',
+      qq: '一句话生成的AI游戏，快来玩！'
+    }});
   }
 });
 
@@ -2062,28 +2109,30 @@ app.get('/api/games/search/:keyword', (req, res) => {
 
 // ==================== 我的游戏管理 ====================
 
-// 获取我的游戏列表
+// 获取我的游戏列表（包括草稿）
 app.get('/api/my-games', (req, res) => {
   try {
     const authorToken = req.headers['x-author-token'];
     if (!authorToken) {
       return res.json({ success: true, games: [], stats: { count: 0, plays: 0, likes: 0 } });
     }
-    
+
     const games = db.prepare(`
-      SELECT id, title, prompt, author_name, play_count, like_count, created_at 
-      FROM games 
+      SELECT id, title, prompt, author_name, play_count, like_count, created_at,
+             COALESCE(status, 'published') as status
+      FROM games
       WHERE author_token = ?
       ORDER BY created_at DESC
     `).all(authorToken);
-    
-    // 计算总统计
+
+    // 计算总统计（只统计已发布的）
+    const publishedGames = games.filter(g => g.status !== 'draft');
     const stats = {
-      count: games.length,
-      plays: games.reduce((sum, g) => sum + (g.play_count || 0), 0),
-      likes: games.reduce((sum, g) => sum + (g.like_count || 0), 0)
+      count: publishedGames.length,
+      plays: publishedGames.reduce((sum, g) => sum + (g.play_count || 0), 0),
+      likes: publishedGames.reduce((sum, g) => sum + (g.like_count || 0), 0)
     };
-    
+
     res.json({ success: true, games, stats });
   } catch (error) {
     console.error('[ERROR] 获取我的游戏失败:', error);
@@ -2375,6 +2424,49 @@ app.get('/api/users/:token/follow-stats', (req, res) => {
   }
 });
 
+// 获取用户基本信息
+app.get('/api/users/:token/profile', (req, res) => {
+  try {
+    const userToken = req.params.token;
+
+    // 从用户账号表获取昵称
+    const account = db.prepare('SELECT account_id, nickname FROM user_accounts WHERE user_token = ?')
+      .get(userToken);
+
+    // 如果账号表没有，从游戏表获取作者名
+    let nickname = account?.nickname;
+    let accountId = account?.account_id;
+
+    if (!nickname || nickname === '游戏玩家') {
+      const game = db.prepare('SELECT author_name FROM games WHERE author_token = ? LIMIT 1')
+        .get(userToken);
+      nickname = game?.author_name || '游戏家用户';
+    }
+
+    // 获取作品数
+    const gamesCount = db.prepare('SELECT COUNT(*) as count FROM games WHERE author_token = ? AND (is_public = 1 OR is_public IS NULL)')
+      .get(userToken)?.count || 0;
+
+    // 获取获赞数
+    const likesCount = db.prepare('SELECT SUM(like_count) as total FROM games WHERE author_token = ?')
+      .get(userToken)?.total || 0;
+
+    res.json({
+      success: true,
+      profile: {
+        token: userToken,
+        accountId: accountId,
+        nickname: nickname,
+        gamesCount: gamesCount,
+        likesCount: likesCount
+      }
+    });
+  } catch (error) {
+    console.error('[ERROR] 获取用户信息失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // 获取用户的游戏列表
 app.get('/api/users/:token/games', (req, res) => {
   try {
@@ -2382,10 +2474,11 @@ app.get('/api/users/:token/games', (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const offset = parseInt(req.query.offset) || 0;
 
+    // 修复：is_public 可能为 NULL（旧数据），所以用 OR is_public IS NULL
     const games = db.prepare(`
       SELECT id, title, author_name, play_count, like_count, share_count, created_at
       FROM games
-      WHERE author_token = ? AND is_public = 1
+      WHERE author_token = ? AND (is_public = 1 OR is_public IS NULL) AND (is_hidden = 0 OR is_hidden IS NULL)
       ORDER BY created_at DESC
       LIMIT ? OFFSET ?
     `).all(userToken, limit, offset);
