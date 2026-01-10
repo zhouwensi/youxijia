@@ -466,6 +466,68 @@ const backgroundTask = {
   error: null           // 错误信息
 };
 
+// 保存生成状态到localStorage
+function saveGeneratingState() {
+  if (state.isGenerating && backgroundTask.isActive && backgroundTask.prompt) {
+    const generatingState = {
+      isGenerating: true,
+      prompt: backgroundTask.prompt,
+      startTime: generatingStartTime || Date.now(),
+      timestamp: Date.now()
+    };
+    localStorage.setItem('aigame-generating-state', JSON.stringify(generatingState));
+    log('保存生成状态到本地存储', 'info');
+  }
+}
+
+// 清除生成状态
+function clearGeneratingState() {
+  localStorage.removeItem('aigame-generating-state');
+}
+
+// 检查并恢复生成状态
+function checkAndRestoreGeneratingState() {
+  const savedState = localStorage.getItem('aigame-generating-state');
+  if (!savedState) return;
+  
+  try {
+    const generatingState = JSON.parse(savedState);
+    
+    // 检查是否过期（超过10分钟认为已过期）
+    const elapsed = Date.now() - generatingState.timestamp;
+    if (elapsed > 10 * 60 * 1000) {
+      clearGeneratingState();
+      return;
+    }
+    
+    // 有未完成的生成任务，提示用户
+    if (generatingState.isGenerating && generatingState.prompt) {
+      // 清除保存的状态
+      clearGeneratingState();
+      
+      // 延迟显示提示，等页面加载完成
+      setTimeout(() => {
+        const promptPreview = generatingState.prompt.length > 30 
+          ? generatingState.prompt.substring(0, 30) + '...' 
+          : generatingState.prompt;
+        
+        // 使用确认框询问用户
+        if (confirm(`检测到上次有未完成的游戏生成任务：\n\n"${promptPreview}"\n\n是否重新开始生成？`)) {
+          // 恢复prompt并重新生成
+          const promptInput = document.getElementById('prompt-input');
+          if (promptInput) {
+            promptInput.value = generatingState.prompt;
+          }
+          generateGame();
+        }
+      }, 1000);
+    }
+  } catch (e) {
+    console.error('恢复生成状态失败:', e);
+    clearGeneratingState();
+  }
+}
+
 // 设置所有生成按钮的loading状态
 function setGenerateButtonLoading(isLoading) {
   document.querySelectorAll('.btn-generate').forEach(btn => {
@@ -593,6 +655,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   initMainTabs();  // 初始化主标签页
   handleRouting();
   initBetaBanner();
+  
+  // 检查是否有未完成的生成任务
+  checkAndRestoreGeneratingState();
   
   // 监听浏览器前进后退
   window.addEventListener('popstate', handleRouting);
@@ -1227,9 +1292,12 @@ function switchBottomNav(navName) {
   });
   
   // 显示对应页面
+  const settingsBtn = document.getElementById('profile-settings-btn');
+  
   if (navName === 'home') {
     document.getElementById('home-page').classList.add('active');
     history.pushState(null, '', '/');
+    if (settingsBtn) settingsBtn.classList.remove('visible');
   } else if (navName === 'create') {
     document.getElementById('create-page').classList.add('active');
     // 更新积分显示
@@ -1239,9 +1307,12 @@ function switchBottomNav(navName) {
     updateCreateModelDisplay();
     // 初始化Tips滚动
     initCreateTips();
+    if (settingsBtn) settingsBtn.classList.remove('visible');
   } else if (navName === 'profile') {
     document.getElementById('profile-page').classList.add('active');
     loadProfilePageData();
+    // 显示设置按钮
+    if (settingsBtn) settingsBtn.classList.add('visible');
   }
   
   // 显示底部导航
@@ -1340,6 +1411,44 @@ function updateCreateModelDisplay() {
   
   const modelId = state.settings.llmModelId || 'deepseek-v3';
   modelDisplay.textContent = getModelDisplayName(modelId);
+}
+
+// 打开模型选择器
+function openModelSelector() {
+  // 检查是否设置了API Key
+  if (!state.settings.llmApiKey) {
+    // 没有API Key，提示去设置
+    showToast('请先在个人中心设置API Key', 'info');
+    // 延迟一下再跳转，让用户看到提示
+    setTimeout(() => {
+      switchBottomNav('profile');
+      // 再延迟一下打开设置弹窗
+      setTimeout(() => {
+        openProfileSettings();
+      }, 300);
+    }, 500);
+    return;
+  }
+  
+  // 有API Key，打开设置弹窗并定位到模型选择
+  openSettings();
+  // 聚焦到模型选择器
+  setTimeout(() => {
+    const modelSelect = document.getElementById('llm-model-select');
+    if (modelSelect) {
+      modelSelect.focus();
+      // 高亮显示模型选择区域
+      const settingsSection = modelSelect.closest('.settings-section');
+      if (settingsSection) {
+        settingsSection.style.background = 'rgba(99, 102, 241, 0.1)';
+        settingsSection.style.borderRadius = '8px';
+        settingsSection.style.transition = 'background 0.3s ease';
+        setTimeout(() => {
+          settingsSection.style.background = '';
+        }, 2000);
+      }
+    }
+  }, 200);
 }
 
 // 设置创作页面的prompt
@@ -1800,6 +1909,9 @@ function showGamePage() {
   document.getElementById('game-page').classList.add('active');
   // 隐藏底部导航
   document.getElementById('bottom-nav').style.display = 'none';
+  // 隐藏设置按钮
+  const settingsBtn = document.getElementById('profile-settings-btn');
+  if (settingsBtn) settingsBtn.classList.remove('visible');
   // 清除底部导航的选中状态
   document.querySelectorAll('.bottom-nav .nav-item').forEach(item => {
     item.classList.remove('active');
@@ -2614,6 +2726,9 @@ async function generateGame() {
   
   startGeneratingTimer();
   
+  // 保存生成状态到本地存储（防止关闭浏览器丢失）
+  saveGeneratingState();
+  
   log(`开始生成游戏: "${prompt}"`);
   updateGeneratingStatus('正在连接 AI 服务...');
   
@@ -2779,6 +2894,8 @@ async function generateGame() {
     state.abortController = null;
     backgroundTask.isActive = false;
     stopGeneratingTimer();
+    // 清除保存的生成状态
+    clearGeneratingState();
     // setGenerateButtonLoading(false);
   }
 }
@@ -4844,12 +4961,22 @@ async function generateGame() {
       state.isGenerating = true;
       state.abortController = new AbortController();
       
+      // 初始化后台任务状态
+      backgroundTask.isActive = true;
+      backgroundTask.isMinimized = false;
+      backgroundTask.isCancelled = false;
+      backgroundTask.prompt = prompt;
+      backgroundTask.result = null;
+      
       // 不再禁用按钮，允许多任务生成
       // setGenerateButtonLoading(true);
       
       clearGeneratingLog();
       document.getElementById('generating-overlay').classList.add('active');
       startGeneratingTimer(); // 启动计时器
+      
+      // 保存生成状态
+      saveGeneratingState();
       
       log(`生成游戏: "${prompt}"`);
       updateGeneratingStatus('🎮 AI 正在创作中...');
@@ -4885,6 +5012,9 @@ async function generateGame() {
       } finally {
         state.isGenerating = false;
         state.abortController = null;
+        backgroundTask.isActive = false;
+        // 清除保存的生成状态
+        clearGeneratingState();
         // setGenerateButtonLoading(false);
       }
       return;
@@ -5401,9 +5531,13 @@ document.addEventListener('DOMContentLoaded', () => {
     wayWechat.onclick = showWechatVerify;
   }
   
-  // 页面离开时记录游戏时长
+  // 页面离开时记录游戏时长和保存生成状态
   window.addEventListener('beforeunload', () => {
     recordPlayEnd();
+    // 保存生成状态（如果正在生成中）
+    if (state.isGenerating && backgroundTask.isActive) {
+      saveGeneratingState();
+    }
   });
 });
 

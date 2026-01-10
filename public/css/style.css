@@ -926,6 +926,29 @@ body {
   white-space: nowrap;
 }
 
+/* 可点击的模型标签按钮 */
+.header-model-btn {
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.header-model-btn:hover,
+.header-model-btn:active {
+  background: rgba(99, 102, 241, 0.25);
+  border-color: var(--primary-color);
+}
+
+.header-model-btn .model-arrow {
+  font-size: 0.625rem;
+  opacity: 0.7;
+  margin-left: 0.125rem;
+}
+
 /* 游戏详情页模型标签 */
 .game-model-tag {
   background: rgba(99, 102, 241, 0.2);
@@ -938,23 +961,6 @@ body {
   margin-top: 0.25rem;
 }
 
-/* 手机端公众号按钮（在顶部替代模型标签） */
-.btn-wechat-mobile {
-  display: none; /* 默认PC端隐藏 */
-}
-
-@media (max-width: 640px) {
-  .btn-wechat-mobile {
-    display: flex !important;
-    background: linear-gradient(135deg, #07c160, #06ad56);
-    color: white !important;
-  }
-  
-  .btn-wechat-mobile:hover,
-  .btn-wechat-mobile:active {
-    background: linear-gradient(135deg, #06ad56, #059648);
-  }
-}
 
 /* 游戏详情页作者行 */
 .game-author-row {
@@ -1017,31 +1023,37 @@ body {
   }
 }
 
-/* 我的页面右上角设置按钮 */
+/* 我的页面右上角设置按钮 - 使用固定定位确保手机端可点击 */
 .profile-settings-btn {
-  position: absolute;
-  top: 1rem;
+  position: fixed;
+  top: calc(1rem + var(--safe-area-top, 0px));
   right: 1rem;
   width: 48px;
   height: 48px;
   min-width: 48px;
   min-height: 48px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(30, 30, 50, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   color: var(--text-secondary);
-  display: flex;
+  display: none; /* 默认隐藏，通过JS控制显示 */
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
-  z-index: 1000;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  z-index: 9999;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
-  /* 确保手机端可点击 */
   pointer-events: auto;
   user-select: none;
   -webkit-user-select: none;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.profile-settings-btn.visible {
+  display: flex;
 }
 
 .profile-settings-btn:hover,
@@ -4884,38 +4896,39 @@ body.modal-open .modal-content {
   letter-spacing: 0.02em;
 }
 
-/* 右下角浮动提示（替代底部推广条，不遮挡游戏） */
+/* 底部固定公众号提示（不随屏幕滚动） */
 .game-promo-float {
-  position: absolute;
+  position: fixed;
   bottom: 20px;
-  right: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 0.875rem;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
+  padding: 0.5rem 1rem;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-radius: 25px;
   border: 1px solid rgba(255, 255, 255, 0.15);
-  z-index: 100;
+  z-index: 500;
   cursor: pointer;
   opacity: 0;
-  transform: translateY(20px);
-  animation: promoFloatIn 0.4s ease 4s forwards;
-  transition: var(--transition);
+  animation: promoFloatIn 0.4s ease 2s forwards;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 @keyframes promoFloatIn {
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(-50%) translateY(0);
   }
 }
 
 .game-promo-float:hover {
-  background: rgba(99, 102, 241, 0.85);
-  transform: translateY(0) scale(1.02);
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.9);
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
 }
 
 .promo-float-icon {
@@ -4960,10 +4973,8 @@ body.modal-open .modal-content {
 @media (max-width: 480px) {
   .game-promo-float {
     bottom: 15px;
-    right: 10px;
-    left: 10px;
-    justify-content: center;
-    padding: 0.375rem 0.75rem;
+    padding: 0.4rem 0.875rem;
+    max-width: calc(100% - 24px);
   }
   
   .promo-float-text {

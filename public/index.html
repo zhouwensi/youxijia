@@ -130,7 +130,10 @@
     <div id="create-page" class="page">
       <div class="page-header">
         <h2>✨ 创作游戏</h2>
-        <span class="header-model-tag">🤖 <span id="create-model-display">DeepSeek V3</span></span>
+        <button class="header-model-tag header-model-btn" onclick="openModelSelector()" title="点击切换AI模型">
+          🤖 <span id="create-model-display">DeepSeek V3</span>
+          <span class="model-arrow">▼</span>
+        </button>
       </div>
       <div class="create-page-body">
         <div class="create-hero">
@@ -203,13 +206,6 @@
             </div>
           </div>
         </div>
-        <!-- 右上角设置按钮 -->
-        <button class="profile-settings-btn" onclick="openProfileSettings()" title="设置">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-          </svg>
-        </button>
       </div>
       <!-- 竖向标签布局 - 每个标签占一行 -->
       <div class="profile-sections-vertical">
@@ -294,8 +290,6 @@
             <span class="game-model-tag" id="game-model-tag" style="display:none;">🤖 DeepSeek V3</span>
           </div>
           <div class="game-header-actions">
-            <!-- 手机端显示公众号按钮，PC端隐藏 -->
-            <button class="btn btn-action btn-wechat-mobile" onclick="showBrandPromo()" title="关注公众号">📱</button>
             <button class="btn btn-action" onclick="viewGameSource()" title="查看源码">📄</button>
             <button class="btn btn-action" id="edit-btn" onclick="editGame()" title="编辑" style="display:none;">✏️</button>
           </div>
@@ -992,6 +986,14 @@
 
     <!-- Toast提示 -->
     <div id="toast" class="toast"></div>
+    
+    <!-- 我的页面设置按钮（固定定位，确保手机端可点击） -->
+    <button class="profile-settings-btn" id="profile-settings-btn" onclick="openProfileSettings()" title="设置">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
   </div>
 
   <script src="/js/app.js"></script>
