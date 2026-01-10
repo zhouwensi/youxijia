@@ -307,9 +307,9 @@
         <div class="game-frame-container">
           <!-- 抖音风格左下角作者信息 -->
           <div class="tiktok-author-info" id="tiktok-author-info">
-            <div class="tiktok-author-avatar">👤</div>
+            <div class="tiktok-author-avatar" onclick="openAuthorProfile()">👤</div>
             <div class="tiktok-author-details">
-              <span class="tiktok-author-name" id="tiktok-author-name">作者</span>
+              <span class="tiktok-author-name" id="tiktok-author-name" onclick="openAuthorProfile()">作者</span>
               <button class="tiktok-follow-btn" id="tiktok-follow-btn" onclick="followCurrentAuthor()">
                 <span class="follow-icon">+</span> 关注
               </button>
@@ -685,9 +685,10 @@
           <h3>🎉 分享游戏</h3>
           <button class="btn btn-icon btn-close" onclick="closeShareModal()">×</button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body share-modal-body">
           <!-- 分享统计展示 -->
           <div class="share-stats-preview">
+            <div class="share-game-emoji" id="share-game-emoji">🎮</div>
             <div class="share-game-title" id="share-game-title">游戏名称</div>
             <div class="share-mini-stats">
               <span>🎮 <strong id="share-play-count">0</strong> 人玩过</span>
@@ -695,23 +696,18 @@
               <span>🔗 <strong id="share-share-count">0</strong> 次分享</span>
             </div>
           </div>
-          
-          <!-- 分享渠道 - 只保留复制链接 -->
-          <div class="share-channels">
-            <button class="share-channel-btn share-channel-primary" onclick="shareToChannel('copy')">
-              <span class="channel-icon">🔗</span>
-              <span class="channel-name">复制链接</span>
-            </button>
-          </div>
-          
-          <div class="form-group">
-            <label>游戏链接</label>
-            <div class="copy-field">
-              <input type="text" id="share-url" readonly>
-              <button class="btn btn-primary" onclick="copyShareUrl()">复制</button>
+
+          <!-- 链接复制区域 -->
+          <div class="share-link-section">
+            <label class="share-link-label">游戏链接</label>
+            <div class="share-link-box">
+              <input type="text" id="share-url" readonly class="share-link-input">
+              <button class="btn btn-primary share-copy-btn" onclick="copyShareUrl()">
+                <span>📋</span> 复制链接
+              </button>
             </div>
           </div>
-          
+
           <div class="share-tips">
             <p>📱 分享给朋友一起来玩吧！</p>
             <p class="share-reward-hint">💡 分享游戏可获得积分奖励</p>

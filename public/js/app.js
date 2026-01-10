@@ -281,24 +281,32 @@ function saveUserToken(token) {
 // 初始化账号（支持设备指纹自动恢复）
 async function initAccount() {
   try {
+    // 检查用户是否主动退出过，如果是则清除标记并创建新账号
+    const loggedOut = localStorage.getItem('aigame-logged-out');
+    if (loggedOut === 'true') {
+      localStorage.removeItem('aigame-logged-out');
+      // 不传设备指纹，创建全新账号
+    }
+
     const currentToken = getUserToken();
-    const deviceFingerprint = getDeviceFingerprint();
-    
+    // 如果用户主动退出过，不使用设备指纹恢复
+    const deviceFingerprint = loggedOut === 'true' ? null : getDeviceFingerprint();
+
     const response = await fetch('/api/account/init', {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
         'X-User-Token': currentToken || ''
       },
       body: JSON.stringify({ deviceFingerprint })
     });
-    
+
     if (response.ok) {
       const data = await response.json();
-      
+
       // 保存服务器返回的 token
       saveUserToken(data.userToken);
-      
+
       // 更新状态
       state.account = {
         accountId: data.account.accountId,
@@ -306,13 +314,13 @@ async function initAccount() {
         hasPassword: data.account.hasPassword,
         loaded: true
       };
-      
+
       // 如果是恢复的账号，提示用户
       if (data.recovered) {
         console.log('🔄 账号已自动恢复:', data.account.accountId);
         showToast('欢迎回来！已自动恢复您的账号', 'success');
       }
-      
+
       return data.userToken;
     } else {
       console.error('账号初始化失败');
@@ -915,16 +923,20 @@ function confirmLogout() {
   localStorage.removeItem('aigame-author-token');
   localStorage.removeItem('aigame-account-id');
   localStorage.removeItem('aigame-author-name');
-  
+  // 清除设备指纹，防止自动恢复
+  localStorage.removeItem('aigame-device-fingerprint');
+  // 标记用户主动退出
+  localStorage.setItem('aigame-logged-out', 'true');
+
   // 关闭确认框
   const confirmDialog = document.getElementById('logout-confirm');
   if (confirmDialog) confirmDialog.remove();
-  
+
   // 关闭个人资料弹窗
   closeProfileModal();
-  
+
   showToast('已退出登录', 'success');
-  
+
   // 刷新页面重新初始化
   setTimeout(() => {
     window.location.reload();
@@ -5205,25 +5217,29 @@ function openSharePanel() {
     showToast('请先保存游戏', 'error');
     return;
   }
-  
+
   const modal = document.getElementById('share-modal');
-  
+
   // 更新分享预览
+  const previewEmoji = document.getElementById('share-game-emoji');
   const previewTitle = document.getElementById('share-game-title');
   const previewPlays = document.getElementById('share-play-count');
   const previewLikes = document.getElementById('share-like-count');
   const previewShares = document.getElementById('share-share-count');
-  
-  if (previewTitle) previewTitle.textContent = state.currentGame?.title || '我的游戏';
+
+  const gameTitle = state.currentGame?.title || '我的游戏';
+  if (previewEmoji) previewEmoji.textContent = getGameEmoji(gameTitle);
+  if (previewTitle) previewTitle.textContent = gameTitle;
   if (previewPlays) previewPlays.textContent = currentGameStats?.plays || 0;
   if (previewLikes) previewLikes.textContent = currentGameStats?.likes || 0;
   if (previewShares) previewShares.textContent = currentGameStats?.shares || 0;
-  
+
   // 设置带分享者信息的分享链接（分享后别人访问，分享者+1积分）
   const url = generateShareUrl(state.currentGameId);
   document.getElementById('share-url').value = url;
-  
+
   modal.classList.add('active');
+  document.body.classList.add('modal-open');
 }
 
 // 分享到指定渠道
@@ -5400,7 +5416,8 @@ function showBrandPromo() {
   const modal = document.getElementById('brand-promo-modal');
   if (modal) {
     modal.classList.add('active');
-    
+    document.body.classList.add('modal-open');
+
     // 如果有二维码图片，替换占位符
     if (BRAND_CONFIG.qrcodeUrl) {
       const qrPlaceholders = document.querySelectorAll('.qr-placeholder, .qrcode-placeholder');
@@ -5416,6 +5433,7 @@ function closeBrandPromo() {
   const modal = document.getElementById('brand-promo-modal');
   if (modal) {
     modal.classList.remove('active');
+    document.body.classList.remove('modal-open');
   }
 }
 
@@ -5743,6 +5761,15 @@ async function setupAuthorFollowButton(authorToken, authorName) {
     console.error('检查关注状态失败:', error);
     followBtn.innerHTML = '<span class="follow-icon">+</span> 关注';
   }
+}
+
+// 打开当前游戏作者的主页
+function openAuthorProfile() {
+  if (!currentGameAuthorToken) {
+    showToast('作者信息加载中...', 'warning');
+    return;
+  }
+  openUserProfile(currentGameAuthorToken);
 }
 
 // 关注当前游戏的作者
