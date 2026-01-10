@@ -530,6 +530,24 @@ body {
   color: var(--text-primary);
 }
 
+/* 可点击的统计项 */
+.profile-mini-stats .stat-clickable {
+  cursor: pointer;
+  transition: color 0.2s, transform 0.2s;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  margin: -0.25rem -0.5rem;
+}
+
+.profile-mini-stats .stat-clickable:hover {
+  color: var(--primary-color);
+  background: var(--bg-secondary);
+}
+
+.profile-mini-stats .stat-clickable:active {
+  transform: scale(0.95);
+}
+
 /* 关注/粉丝统计 */
 .profile-follow-stats {
   display: flex;

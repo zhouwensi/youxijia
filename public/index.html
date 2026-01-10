@@ -188,9 +188,9 @@
           <div class="profile-user-details">
             <h2 id="profile-page-username">游戏创作者</h2>
             <div class="profile-mini-stats">
-              <span>🎮 <strong id="profile-page-games">0</strong> 作品</span>
-              <span>❤️ <strong id="profile-page-likes">0</strong> 点赞</span>
-              <span>💎 <strong id="profile-page-credits">0</strong> 积分</span>
+              <span class="stat-clickable" onclick="showMoreGames('my-games')">🎮 <strong id="profile-page-games">0</strong> 作品</span>
+              <span class="stat-clickable" onclick="showMoreGames('my-likes')">❤️ <strong id="profile-page-likes">0</strong> 点赞</span>
+              <span class="stat-clickable" onclick="openCreditsModal()">💎 <strong id="profile-page-credits">0</strong> 积分</span>
             </div>
             <div class="profile-follow-stats">
               <span class="follow-stat-item" onclick="openFollowModal('following')">
