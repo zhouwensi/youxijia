@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="description" content="做个愤怒的小鸟。 - AI一句话生成的游戏">
+  <meta property="og:title" content="愤怒的小鸟 - HTML5版 - AI游戏">
+  <meta property="og:description" content="这个游戏由AI一句话生成！关注公众号「游戏开发技术教程」，你也可以免费生成游戏！">
+  <meta property="og:type" content="website">
+  <title>愤怒的小鸟 - HTML5版 - AI游戏</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+  <!-- 推广栏样式 -->
+  <style>
+/* 游戏家推广栏 - 固定在底部 */
+.yxj-promo-bar {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 60px !important;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+  padding: 8px 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  z-index: 999999 !important;
+  box-shadow: 0 -2px 15px rgba(99, 102, 241, 0.4) !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+.yxj-promo-bar.yxj-hidden {
+  display: none !important;
+}
+.yxj-promo-qr {
+  width: 44px !important;
+  height: 44px !important;
+  background: #fff !important;
+  border-radius: 6px !important;
+  padding: 2px !important;
+  flex-shrink: 0 !important;
+}
+.yxj-promo-qr img {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+}
+.yxj-promo-info {
+  color: #fff !important;
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+  text-align: left !important;
+}
+.yxj-promo-info strong {
+  display: block !important;
+  font-size: 13px !important;
+  margin-bottom: 2px !important;
+}
+.yxj-promo-info span {
+  opacity: 0.9 !important;
+  font-size: 11px !important;
+}
+.yxj-promo-close {
+  position: absolute !important;
+  right: 6px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  background: rgba(255,255,255,0.2) !important;
+  border: none !important;
+  color: #fff !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+.yxj-promo-home {
+  position: fixed !important;
+  top: 10px !important;
+  left: 10px !important;
+  background: rgba(0,0,0,0.5) !important;
+  color: #fff !important;
+  text-decoration: none !important;
+  padding: 6px 12px !important;
+  border-radius: 20px !important;
+  font-size: 12px !important;
+  z-index: 999998 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+/* 顶部作者信息 */
+.yxj-author-info {
+  position: fixed !important;
+  top: 10px !important;
+  right: 10px !important;
+  background: rgba(0,0,0,0.5) !important;
+  color: #fff !important;
+  padding: 6px 12px !important;
+  border-radius: 20px !important;
+  font-size: 12px !important;
+  z-index: 999998 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  max-width: 45% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+.yxj-author-info span {
+  opacity: 0.8 !important;
+}
+/* 为推广栏预留底部空间 */
+body {
+  padding-bottom: 65px !important;
+}
+</style>
+  <!-- 原游戏head内容 -->
+  
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            overflow: hidden;
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            touch-action: none;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 600px;
+            margin: 0 auto;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        canvas {
+            display: block;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98D8E8 100%);
+            border-radius: 10px;
+        }
+        
+        #uiContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 20;
+            padding: 20px;
+            text-align: center;
+            transition: opacity 0.5s;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            color: #FFD700;
+            text-shadow: 3px 3px 0 #FF4500, 6px 6px 0 rgba(0, 0, 0, 0.5);
+            letter-spacing: 2px;
+        }
+        
+        h2 {
+            font-size: 2.2rem;
+            margin-bottom: 15px;
+            color: #FFD700;
+        }
+        
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            max-width: 600px;
+            line-height: 1.5;
+        }
+        
+        .instructions {
+            background: rgba(255, 69, 0, 0.2);
+            border: 2px solid #FF4500;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            max-width: 500px;
+        }
+        
+        .key {
+            display: inline-block;
+            background: #333;
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin: 0 5px;
+            font-weight: bold;
+            color: #FFD700;
+        }
+        
+        .btn {
+            background: linear-gradient(to bottom, #FF4500 0%, #FF6347 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.3rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            box-shadow: 0 5px 0 #8B0000;
+            transition: all 0.1s;
+            pointer-events: auto;
+        }
+        
+        .btn:hover, .btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 3px 0 #8B0000;
+        }
+        
+        .btn:active {
+            transform: translateY(5px);
+            box-shadow: none;
+        }
+        
+        #gameUI {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .score {
+            font-size: 1.8rem;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid #FFD700;
+        }
+        
+        .birdsLeft {
+            font-size: 1.8rem;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid #FF4500;
+        }
+        
+        .level {
+            font-size: 1.8rem;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid #1E90FF;
+        }
+        
+        #powerIndicator {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #333;
+        }
+        
+        #powerBar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(to right, #00FF00, #FFFF00, #FF0000);
+            transition: width 0.1s;
+        }
+        
+        #touchControls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            display: none;
+        }
+        
+        .touchBtn {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 69, 0, 0.7);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            pointer-events: auto;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        
+        @media (max-width: 768px) {
+            #gameContainer {
+                height: 100vh;
+                max-width: 100%;
+                border-radius: 0;
+            }
+            
+            canvas {
+                border-radius: 0;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            h2 {
+                font-size: 1.8rem;
+            }
+            
+            #touchControls {
+                display: flex;
+            }
+        }
+        
+        @media (max-height: 700px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            h2 {
+                font-size: 1.5rem;
+            }
+            
+            p {
+                font-size: 1rem;
+            }
+        }
+    </style>
+<style>
+/* AI游戏工坊品牌水印 - 请勿删除 */
+.aigame-watermark {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  border-radius: 20px;
+  z-index: 99999;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.aigame-watermark:hover {
+  background: rgba(99, 102, 241, 0.9);
+  transform: scale(1.05);
+}
+.aigame-watermark-logo {
+  font-size: 14px;
+}
+.aigame-watermark-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.02em;
+}
+.aigame-watermark-sub {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.6);
+}
+@media (max-width: 480px) {
+  .aigame-watermark {
+    padding: 4px 8px;
+    bottom: 5px;
+    right: 5px;
+  }
+  .aigame-watermark-logo {
+    font-size: 12px;
+  }
+  .aigame-watermark-text {
+    font-size: 10px;
+  }
+  .aigame-watermark-sub {
+    display: none;
+  }
+}
+</style>
+
+</head>
+<body>
+  <!-- 原游戏body内容 -->
+  ```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>愤怒的小鸟 - HTML5版</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            overflow: hidden;
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            touch-action: none;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 600px;
+            margin: 0 auto;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        canvas {
+            display: block;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98D8E8 100%);
+            border-radius: 10px;
+        }
+        
+        #uiContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 20;
+            padding: 20px;
+            text-align: center;
+            transition: opacity 0.5s;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            color: #FFD700;
+            text-shadow: 3px 3px 0 #FF4500, 6px 6px 0 rgba(0, 0, 0, 0.5);
+            letter-spacing: 2px;
+        }
+        
+        h2 {
+            font-size: 2.2rem;
+            margin-bottom: 15px;
+            color: #FFD700;
+        }
+        
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            max-width: 600px;
+            line-height: 1.5;
+        }
+        
+        .instructions {
+            background: rgba(255, 69, 0, 0.2);
+            border: 2px solid #FF4500;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            max-width: 500px;
+        }
+        
+        .key {
+            display: inline-block;
+            background: #333;
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin: 0 5px;
+            font-weight: bold;
+            color: #FFD700;
+        }
+        
+        .btn {
+            background: linear-gradient(to bottom, #FF4500 0%, #FF6347 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.3rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            box-shadow: 0 5px 0 #8B0000;
+            transition: all 0.1s;
+            pointer-events: auto;
+        }
+        
+        .btn:hover, .btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 3px 0 #8B0000;
+        }
+        
+        .btn:active {
+            transform: translateY(5px);
+            box-shadow: none;
+        }
+        
+        #gameUI {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .score {
+            font-size: 1.8rem;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid #FFD700;
+        }
+        
+        .birdsLeft {
+            font-size: 1.8rem;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid #FF4500;
+        }
+        
+        .level {
+            font-size: 1.8rem;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid #1E90FF;
+        }
+        
+        #powerIndicator {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #333;
+        }
+        
+        #powerBar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(to right, #00FF00, #FFFF00, #FF0000);
+            transition: width 0.1s;
+        }
+        
+        #touchControls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            display: none;
+        }
+        
+        .touchBtn {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 69, 0, 0.7);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            pointer-events: auto;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        
+        @media (max-width: 768px) {
+            #gameContainer {
+                height: 100vh;
+                max-width: 100%;
+                border-radius: 0;
+            }
+            
+            canvas {
+                border-radius: 0;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            h2 {
+                font-size: 1.8rem;
+            }
+            
+            #touchControls {
+                display: flex;
+            }
+        }
+        
+        @media (max-height: 700px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            h2 {
+                font-size: 1.5rem;
+            }
+            
+            p {
+                font-size: 1rem;
+            }
+        }
+    </style>
+<style>
+/* AI游戏工坊品牌水印 - 请勿删除 */
+.aigame-watermark {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  border-radius: 20px;
+  z-index: 99999;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.aigame-watermark:hover {
+  background: rgba(99, 102, 241, 0.9);
+  transform: scale(1.05);
+}
+.aigame-watermark-logo {
+  font-size: 14px;
+}
+.aigame-watermark-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.02em;
+}
+.aigame-watermark-sub {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.6);
+}
+@media (max-width: 480px) {
+  .aigame-watermark {
+    padding: 4px 8px;
+    bottom: 5px;
+    right: 5px;
+  }
+  .aigame-watermark-logo {
+    font-size: 12px;
+  }
+  .aigame-watermark-text {
+    font-size: 10px;
+  }
+  .aigame-watermark-sub {
+    display: none;
+  }
+}
+</style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="uiContainer">
+            <div id="startScreen" class="screen">
+                <h1>愤怒的小鸟</h1>
+                <p>邪恶的猪猪偷走了鸟蛋！用弹弓发射小鸟，摧毁猪猪的堡垒！</p>
+                
+                <div class="instructions">
+                    <h2>操作说明</h2>
+                    <p><span class="key">鼠标/触摸</span>拖动小鸟调整发射角度和力度</p>
+                    <p><span class="key">松开</span>发射小鸟</p>
+                    <p><span class="key">空格键</span>发射特殊技能</p>
+                    <p><span class="key">R键</span>重新开始当前关卡</p>
+                    <p><span class="key">P键</span>暂停/继续游戏</p>
+                </div>
+                
+                <button id="startBtn" class="btn">开始游戏</button>
+            </div>
+            
+            <div id="gameScreen" class="screen hidden">
+                <div id="gameUI">
+                    <div class="score">得分: <span id="scoreValue">0</span></div>
+                    <div class="level">关卡: <span id="levelValue">1</span></div>
+                    <div class="birdsLeft">剩余小鸟: <span id="birdsValue">5</span></div>
+                </div>
+                
+                <div id="powerIndicator">
+                    <div id="powerBar"></div>
+                </div>
+                
+                <div id="touchControls">
+                    <div id="restartBtn" class="touchBtn">R</div>
+                    <div id="pauseBtn" class="touchBtn">P</div>
+                    <div id="specialBtn" class="touchBtn">S</div>
+                </div>
+            </div>
+            
+            <div id="pauseScreen" class="screen hidden">
+                <h1>游戏暂停</h1>
+                <p>游戏已暂停，点击继续按钮返回游戏</p>
+                <button id="resumeBtn" class="btn">继续游戏</button>
+                <button id="restartFromPauseBtn" class="btn" style="margin-top: 10px;">重新开始</button>
+            </div>
+            
+            <div id="endScreen" class="screen hidden">
+                <h1 id="endTitle">关卡完成！</h1>
+                <p id="endMessage">你成功击败了所有猪猪！</p>
+                <div class="score" style="margin: 20px 0; font-size: 2.5rem;">得分: <span id="finalScore">0</span></div>
+                <button id="nextLevelBtn" class="btn">下一关</button>
+                <button id="restartEndBtn" class="btn" style="margin-top: 10px;">重新开始</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 游戏变量
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            const startScreen = document.getElementById('startScreen');
+            const gameScreen = document.getElementById('gameScreen');
+            const pauseScreen = document.getElementById('pauseScreen');
+            const endScreen = document.getElementById('endScreen');
+            const startBtn = document.getElementById('startBtn');
+            const resumeBtn = document.getElementById('resumeBtn');
+            const restartFromPauseBtn = document.getElementById('restartFromPauseBtn');
+            const nextLevelBtn = document.getElementById('nextLevelBtn');
+            const restartEndBtn = document.getElementById('restartEndBtn');
+            const scoreValue = document.getElementById('scoreValue');
+            const levelValue = document.getElementById('levelValue');
+            const birdsValue = document.getElementById('birdsValue');
+            const finalScore = document.getElementById('finalScore');
+            const endTitle = document.getElementById('endTitle');
+            const endMessage = document.getElementById('endMessage');
+            const powerBar = document.getElementById('powerBar');
+            const restartBtn = document.getElementById('restartBtn');
+            const pauseBtn = document.getElementById('pauseBtn');
+            const specialBtn = document.getElementById('specialBtn');
+            
+            // 设置画布尺寸
+            function resizeCanvas() {
+                canvas.width = canvas.parentElement.clientWidth;
+                canvas.height = canvas.parentElement.clientHeight;
+            }
+            
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // 游戏状态
+            let gameState = 'start'; // start, playing, paused, ended
+            let score = 0;
+            let level = 1;
+            let birdsLeft = 5;
+            let currentBird = null;
+            let isDragging = false;
+            let dragStart = {x: 0, y: 0};
+            let power = 0;
+            let isCharging = false;
+            let specialActive = false;
+            
+            // 游戏对象
+            const slingshot = {
+                x: 150,
+                y: canvas.height - 150,
+                width: 40,
+                height: 80
+            };
+            
+            const ground = {
+                y: canvas.height - 50,
+                height: 50
+            };
+            
+            let birds = [];
+            let pigs = [];
+            let blocks = [];
+            let particles = [];
+            
+            // 初始化游戏
+            function initGame() {
+                score = 0;
+                birdsLeft = 5;
+                updateUI();
+                
+                // 创建小鸟
+                birds = [];
+                for (let i = 0; i < birdsLeft; i++) {
+                    birds.push({
+                        x: slingshot.x + 50 + i * 30,
+                        y: slingshot.y,
+                        radius: 15,
+                        color: '#FF4500',
+                        velocity: {x: 0, y: 0},
+                        launched: false,
+                        active: false
+                    });
+                }
+                
+                // 设置当前小鸟
+                if (birds.length > 0) {
+                    currentBird = birds[0];
+                    currentBird.active = true;
+                }
+                
+                // 创建猪猪和障碍物
+                createLevel(level);
+                
+                // 重置粒子
+                particles = [];
+            }
+            
+            // 创建关卡
+            function createLevel(levelNum) {
+                pigs = [];
+                blocks = [];
+                
+                // 根据关卡增加难度
+                const pigCount = 2 + levelNum;
+                const blockCount = 3 + levelNum * 2;
+                
+                // 创建猪猪
+                for (let i = 0; i < pigCount; i++) {
+                    pigs.push({
+                        x: canvas.width - 200 - i * 80,
+                        y: ground.y - 20,
+                        radius: 20,
+                        color: '#32CD32',
+                        health: 1,
+                        alive: true
+                    });
+                }
+                
+                // 创建障碍物（木箱）
+                for (let i = 0; i < blockCount; i++) {
+                    const blockType = Math.floor(Math.random() * 3);
+                    let color, width, height;
+                    
+                    switch(blockType) {
+                        case 0: // 木箱
+                            color = '#8B4513';
+                            width = 40;
+                            height = 40;
+                            break;
+                        case 1: // 石箱
+                            color = '#808080';
+                            width = 50;
+                            height = 50;
+                            break;
+                        case 2: // 玻璃
+                            color = '#87CEEB';
+                            width = 35;
+                            height = 35;
+                            break;
+                    }
+                    
+                    blocks.push({
+                        x: canvas.width - 250 - (i % 5) * 60,
+                        y: ground.y - height - Math.floor(i / 5) * 70,
+                        width: width,
+                        height: height,
+                        color: color,
+                        health: blockType === 1 ? 2 : 1,
+                        broken: false
+                    });
+                }
+            }
+            
+            // 更新UI
+            function updateUI() {
+                scoreValue.textContent = score;
+                levelValue.textContent = level;
+                birdsValue.textContent = birdsLeft;
+            }
+            
+            // 绘制游戏
+            function draw() {
+                // 清除画布
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // 绘制天空
+                const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                gradient.addColorStop(0, '#87CEEB');
+                gradient.addColorStop(1, '#98D8E8');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // 绘制云朵
+                drawClouds();
+                
+                // 绘制地面
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(0, ground.y, canvas.width, ground.height);
+                ctx.fillStyle = '#556B2F';
+                ctx.fillRect(0, ground.y, canvas.width, 10);
+                
+                // 绘制弹弓
+                drawSlingshot();
+                
+                // 绘制障碍物
+                blocks.forEach(block => {
+                    if (!block.broken) {
+                        ctx.fillStyle = block.color;
+                        ctx.fillRect(block.x - block.width/2, block.y - block.height/2, block.width, block.height);
+                        
+                        // 边框
+                        ctx.strokeStyle = '#000';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(block.x - block.width/2, block.y - block.height/2, block.width, block.height);
+                    }
+                });
+                
+                // 绘制猪猪
+                pigs.forEach(pig => {
+                    if (pig.alive) {
+                        // 身体
+                        ctx.fillStyle = pig.color;
+                        ctx.beginPath();
+                        ctx.arc(pig.x, pig.y, pig.radius, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // 眼睛
+                        ctx.fillStyle = 'white';
+                        ctx.beginPath();
+                        ctx.arc(pig.x - 8, pig.y - 5, 5, 0, Math.PI * 2);
+                        ctx.arc(pig.x + 8, pig.y - 5, 5, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // 瞳孔
+                        ctx.fillStyle = 'black';
+                        ctx.beginPath();
+                        ctx.arc(pig.x - 8, pig.y - 5, 2, 0, Math.PI * 2);
+                        ctx.arc(pig.x + 8, pig.y - 5, 2, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // 鼻子
+                        ctx.fillStyle = '#FF69B4';
+                        ctx.beginPath();
+                        ctx.arc(pig.x, pig.y + 5, 6, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+                
+                // 绘制小鸟
+                birds.forEach(bird => {
+                    if (!bird.launched || bird.active) {
+                        ctx.fillStyle = bird.color;
+                        ctx.beginPath();
+                        ctx.arc(bird.x, bird.y, bird.radius, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // 眼睛
+                        ctx.fillStyle = 'white';
+                        ctx.beginPath();
+                        ctx.arc(bird.x - 5, bird.y - 5, 4, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        ctx.fillStyle = 'black';
+                        ctx.beginPath();
+                        ctx.arc(bird.x - 5, bird.y - 5, 2, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // 眉毛（愤怒的表情）
+                        ctx.strokeStyle = 'black';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(bird.x - 10, bird.y - 10);
+                        ctx.lineTo(bird.x - 2, bird.y - 8);
+                        ctx.stroke();
+                    }
+                });
+                
+                // 绘制粒子效果
+                particles.forEach((particle, index) => {
+                    ctx.fillStyle = particle.color;
+                    ctx.beginPath();
+                    ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 更新粒子
+                    particle.x += particle.vx;
+                    particle.y += particle.vy;
+                    particle.vy += 0.1; // 重力
+                    particle.life--;
+                    
+                    // 移除死亡的粒子
+                    if (particle.life <= 0) {
+                        particles.splice(index, 1);
+                    }
+                });
+                
+                // 如果正在拖动小鸟，绘制弹力线
+                if (isDragging && currentBird && !currentBird.launched) {
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(slingshot.x, slingshot.y);
+                    ctx.lineTo(currentBird.x, currentBird.y);
+                    ctx.stroke();
+                    
+                    // 绘制力量指示器
+                    const angle = Math.atan2(slingshot.y - currentBird.y, slingshot.x - currentBird.x);
+                    const force = Math.min(Math.sqrt(
+                        Math.pow(currentBird.x - slingshot.x, 2) + 
+                        Math.pow(currentBird.y - slingshot.y, 2)
+                    ) / 100, 1);
+                    
+                    const endX = currentBird.x + Math.cos(angle) * force * 50;
+                    const endY = currentBird.y + Math.sin(angle) * force * 50;
+                    
+                    ctx.strokeStyle = 'rgba(255, 69, 0, 0.8)';
+                    ctx.lineWidth = 5;
+                    ctx.beginPath();
+                    ctx.moveTo(currentBird.x, currentBird.y);
+                    ctx.lineTo(endX, endY);
+                    ctx.stroke();
+                }
+                
+                // 如果特殊技能激活，绘制特效
+                if (specialActive && currentBird && currentBird.launched) {
+                    ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+                    ctx.beginPath();
+                    ctx.arc(currentBird.x, currentBird.y, 30, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            // 绘制弹弓
+            function drawSlingshot() {
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(slingshot.x - slingshot.width/2, slingshot.y, slingshot.width, slingshot.height);
+                
+                // 弹弓的Y形支架
+                ctx.strokeStyle = '#8B4513';
+                ctx.lineWidth = 10;
+                ctx.beginPath();
+                ctx.moveTo(slingshot.x - 30, slingshot.y + slingshot.height);
+                ctx.lineTo(slingshot.x, slingshot.y - 20);
+                ctx.lineTo(slingshot.x + 30, slingshot.y + slingshot.height);
+                ctx.stroke();
+                
+                // 皮筋连接点
+                ctx.fillStyle = '#D2691E';
+                ctx.beginPath();
+                ctx.arc(slingshot.x, slingshot.y - 20, 8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // 绘制云朵
+            function drawClouds() {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                
+                // 云朵1
+                ctx.beginPath();
+                ctx.arc(100, 80, 30, 0, Math.PI * 2);
+                ctx.arc(140, 70, 40, 0, Math.PI * 2);
+                ctx.arc(180, 80, 30, 0, Math.PI * 2);
+                ctx.arc(140, 90, 35, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 云朵2
+                ctx.beginPath();
+                ctx.arc(canvas.width - 150, 120, 25, 0, Math.PI * 2);
+                ctx.arc(canvas.width - 120, 110, 35, 0, Math.PI * 2);
+                ctx.arc(canvas.width - 90, 120, 25, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // 创建粒子效果
+            function createParticles(x, y, color, count) {
+                for (let i = 0; i < count; i++) {
+                    particles.push({
+                        x: x,
+                        y: y,
+                        radius: Math.random() * 5 + 2,
+                        color: color,
+                        vx: (Math.random() - 0.5) * 10,
+                        vy: (Math.random() - 0.5) * 10,
+                        life: Math.random() * 30 + 20
+                    });
+                }
+            }
+            
+            // 更新游戏逻辑
+            function update() {
+                if (gameState !== 'playing') return;
+                
+                // 更新小鸟位置
+                birds.forEach(bird => {
+                    if (bird.launched && bird.active) {
+                        // 应用重力
+                        bird.velocity.y += 0.5;
+                        
+                        // 更新位置
+                        bird.x += bird.velocity.x;
+                        bird.y += bird.velocity.y;
+                        
+                        // 边界检查
+                        if (bird.x < 0 || bird.x > canvas.width || bird.y > canvas.height) {
+                            bird.active = false;
+                            nextBird();
+                        }
+                        
+                        // 地面碰撞
+                        if (bird.y + bird.radius > ground.y) {
+                            bird.y = ground.y - bird.radius;
+                            bird.velocity.y *= -0.6; // 反弹
+                            bird.velocity.x *= 0.8; // 摩擦力
+                            
+                            // 如果速度很小，停止小鸟
+                            if (Math.abs(bird.velocity.x) < 0.5 && Math.abs(bird.velocity.y) < 0.5) {
+                                bird.active = false;
+                                setTimeout(nextBird, 500);
+                            }
+                        }
+                        
+                        // 与障碍物碰撞
+                        blocks.forEach((block, blockIndex) => {
+                            if (!block.broken) {
+                                if (bird.x + bird.radius > block.x - block.width/2 &&
+                                    bird.x - bird.radius < block.x + block.width/2 &&
+                                    bird.y + bird.radius > block.y - block.height/2 &&
+                                    bird.y - bird.radius < block.y + block.height/2) {
+                                    
+                                    // 碰撞反应
+                                    const dx = bird.x - block.x;
+                                    const dy = bird.y - block.y;
+                                    
+                                    if (Math.abs(dx) > Math.abs(dy)) {
+                                        bird.velocity.x *= -0.8;
+                                        bird.x += dx > 0 ? 5 : -5;
+                                    } else {
+                                        bird.velocity.y *= -0.8;
+                                        bird.y += dy > 0 ? 5 : -5;
+                                    }
+                                    
+                                    // 障碍物受损
+                                    block.health--;
+                                    if (block.health <= 0) {
+                                        block.broken = true;
+                                        score += 50;
+                                        createParticles(block.x, block.y, block.color, 15);
+                                    } else {
+                                        score += 20;
+                                        createParticles(block.x, block.y, block.color, 5);
+                                    }
+                                    
+                                    updateUI();
+                                }
+                            }
+                        });
+                        
+                        // 与猪猪碰撞
+                        pigs.forEach((pig, pigIndex) => {
+                            if (pig.alive) {
+                                const dx = bird.x - pig.x;
+                                const dy = bird.y - pig.y;
+                                const distance = Math.sqrt(dx * dx + dy * dy);
+                                
+                                if (distance < bird.radius + pig.radius) {
+                                    // 猪猪受到伤害
+                                    pig.health--;
+                                    
+                                    if (specialActive) {
+                                        pig.health = 0; // 特殊技能直接击败猪猪
+                                    }
+                                    
+                                    if (pig.health <= 0) {
+                                        pig.alive = false;
+                                        score += 100;
+                                        createParticles(pig.x, pig.y, pig.color, 20);
+                                        
+                                        // 检查是否所有猪猪都被击败
+                                        checkLevelComplete();
+                                    } else {
+                                        score += 30;
+                                        createParticles(pig.x, pig.y, pig.color, 10);
+                                    }
+                                    
+                                    // 小鸟反弹
+                                    bird.velocity.x = dx / distance * 10;
+                                    bird.velocity.y = dy / distance * 10;
+                                    
+                                    updateUI();
+                                }
+                            }
+                        });
+                    }
+                });
+                
+                // 更新UI
+                if (isCharging && currentBird && !currentBird.launched) {
+                    power = Math.min(Math.sqrt(
+                        Math.pow(currentBird.x - slingshot.x, 2) + 
+                        Math.pow(currentBird.y - slingshot.y, 2)
+                    ) / 100, 1);
+                    
+                    powerBar.style.width = (power * 100) + '%';
+                }
+            }
+            
+            // 切换到下一只小鸟
+            function nextBird() {
+                if (birdsLeft > 0) {
+                    const nextActiveIndex = birds.findIndex(bird => !bird.launched);
+                    
+                    if (nextActiveIndex !== -1) {
+                        if (currentBird) currentBird.active = false;
+                        currentBird = birds[nextActiveIndex];
+                        currentBird.active = true;
+                    } else {
+                        // 没有更多小鸟了
+                        currentBird = null;
+                        birdsLeft = 0;
+                        birdsValue.textContent = birdsLeft;
+                        
+                        // 检查游戏是否结束
+                        setTimeout(() => {
+                            const alivePigs = pigs.filter(pig => pig.alive).length;
+                            if (alivePigs > 0) {
+                                endGame(false);
+                            }
+                        }, 1000);
+                    }
+                }
+            }
+            
+            // 检查关卡是否完成
+            function checkLevelComplete() {
+                const alivePigs = pigs.filter(pig => pig.alive).length;
+                
+                if (alivePigs === 0) {
+                    setTimeout(() => {
+                        endGame(true);
+                    }, 1000);
+                }
+            }
+            
+            // 结束游戏
+            function endGame(win) {
+                gameState = 'ended';
+                finalScore.textContent = score;
+                
+                if (win) {
+                    endTitle.textContent = `关卡 ${level} 完成！`;
+                    endMessage.textContent = `你击败了所有猪猪！得分: ${score}`;
+                    nextLevelBtn.style.display = 'block';
+                } else {
+                    endTitle.textContent = '游戏结束';
+                    endMessage.textContent = `猪猪们逃走了！最终得分: ${score}`;
+                    nextLevelBtn.style.display = 'none';
+                }
+                
+                gameScreen.classList.add('hidden');
+                endScreen.classList.remove('hidden');
+            }
+            
+            // 游戏循环
+            function gameLoop() {
+                update();
+                draw();
+                requestAnimationFrame(gameLoop);
+            }
+            
+            // 事件监听器
+            startBtn.addEventListener('click', () => {
+                gameState = 'playing';
+                startScreen.classList.add('hidden');
+                gameScreen.classList.remove('hidden');
+                initGame();
+            });
+            
+            resumeBtn.addEventListener('click', () => {
+                gameState = 'playing';
+                pauseScreen.classList.add('hidden');
+                gameScreen.classList.remove('hidden');
+            });
+            
+            restartFromPauseBtn.addEventListener('click', () => {
+                gameState = 'playing';
+                pauseScreen.classList.add('hidden');
+                gameScreen.classList.remove('hidden');
+                initGame();
+            });
+            
+            nextLevelBtn.addEventListener('click', () => {
+                level++;
+                gameState = 'playing';
+                endScreen.classList.add('hidden');
+                gameScreen.classList.remove('hidden');
+                initGame();
+            });
+            
+            restartEndBtn.addEventListener('click', () => {
+                level = 1;
+                gameState = 'playing';
+                endScreen.classList.add('hidden');
+                gameScreen.classList.remove('hidden');
+                initGame();
+            });
+            
+            // 键盘控制
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space' && gameState === 'playing' && currentBird && currentBird.launched) {
+                    // 激活特殊技能
+                    specialActive = true;
+                    setTimeout(() => {
+                        specialActive = false;
+                    }, 3000);
+                }
+                
+                if (e.code === 'KeyR') {
+                    // 重新开始
+                    if (gameState === 'playing') {
+                        initGame();
+                    }
+                }
+                
+                if (e.code === 'KeyP') {
+                    // 暂停/继续
+                    if (gameState === 'playing') {
+                        gameState = 'paused';
+                        gameScreen.classList.add('hidden');
+                        pauseScreen.classList.remove('hidden');
+                    } else if (gameState === 'paused') {
+                        gameState = 'playing';
+                        pauseScreen.classList.add('hidden');
+                        gameScreen.classList.remove('hidden');
+                    }
+                }
+            });
+            
+            // 鼠标/触摸控制
+            canvas.addEventListener('mousedown', handleStart);
+            canvas.addEventListener('touchstart', handleStart);
+            
+            canvas.addEventListener('mousemove', handleMove);
+            canvas.addEventListener('touchmove', handleMove);
+            
+            canvas.addEventListener('mouseup', handleEnd);
+            canvas.addEventListener('touchend', handleEnd);
+            
+            // 触摸按钮控制
+            restartBtn.addEventListener('click', () => initGame());
+            pauseBtn.addEventListener('click', () => {
+                if (gameState === 'playing') {
+                    gameState = 'paused';
+                    gameScreen.classList.add('hidden');
+                    pauseScreen.classList.remove('hidden');
+                } else if (gameState === 'paused') {
+                    gameState = 'playing';
+                    pauseScreen.classList.add('hidden');
+                    gameScreen.classList.remove('hidden');
+                }
+            });
+            specialBtn.addEventListener('click', () => {
+                if (gameState === 'playing' && currentBird && currentBird.launched) {
+                    specialActive = true;
+                    setTimeout(() => {
+                        specialActive = false;
+                    }, 3000);
+                }
+            });
+            
+            function handleStart(e) {
+                if (gameState !== 'playing' || !currentBird || currentBird.launched) return;
+                
+                e.preventDefault();
+                const pos = getEventPosition(e);
+                
+                // 检查是否点击了小鸟
+                const dx = pos.x - currentBird.x;
+                const dy = pos.y - currentBird.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < currentBird.radius) {
+                    isDragging = true;
+                    isCharging = true;
+                    dragStart.x = pos.x;
+                    dragStart.y = pos.y;
+                }
+            }
+            
+            function handleMove(e) {
+                if (!isDragging || !currentBird || currentBird.launched) return;
+                
+                e.preventDefault();
+                const pos = getEventPosition(e);
+                
+                // 限制拖动范围
+                const maxDrag = 100;
+                const dx = pos.x - slingshot.x;
+                const dy = pos.y - slingshot.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > maxDrag) {
+                    const angle = Math.atan2(dy, dx);
+                    currentBird.x = slingshot.x + Math.cos(angle) * maxDrag;
+                    currentBird.y = slingshot.y + Math.sin(angle) * maxDrag;
+                } else {
+                    currentBird.x = pos.x;
+                    currentBird.y = pos.y;
+                }
+            }
+            
+            function handleEnd(e) {
+                if (!isDragging || !currentBird || currentBird.launched) return;
+                
+                e.preventDefault();
+                isDragging = false;
+                
+                // 发射小鸟
+                const dx = slingshot.x - currentBird.x;
+                const dy = slingshot.y - currentBird.y;
+                
+                currentBird.velocity.x = dx * 0.2;
+                currentBird.velocity.y = dy * 0.2;
+                currentBird.launched = true;
+                
+                // 减少小鸟数量
+                birdsLeft--;
+                birdsValue.textContent = birdsLeft;
+                
+                // 重置力量条
+                isCharging = false;
+                powerBar.style.width = '0%';
+                
+                // 创建发射粒子效果
+                createParticles(currentBird.x, currentBird.y, currentBird.color, 10);
+            }
+            
+            function getEventPosition(e) {
+                let x, y;
+                
+                if (e.type.includes('touch')) {
+                    const touch = e.touches[0] || e.changedTouches[0];
+                    const rect = canvas.getBoundingClientRect();
+                    x = touch.clientX - rect
+<!-- 游戏开发技术教程 - 品牌水印 -->
+<a class="aigame-watermark" href="javascript:void(0)" onclick="alert('关注公众号「游戏开发技术教程」(微信号: GameDevLearning)\n\n网易十年游戏开发老兵｜聚焦Unity3D/UE4/UE5引擎\n\n你也可以用AI一句话生成游戏！')">
+  <span class="aigame-watermark-logo">🎮</span>
+  <span class="aigame-watermark-text">游戏开发技术教程</span>
+  <span class="aigame-watermark-sub">一句话，AI帮你写游戏</span>
+</a>
+
+  <!-- 推广栏 -->
+  
+<!-- 游戏家顶部导航 -->
+<a class="yxj-promo-home" href="/" title="更多游戏">🏠 更多游戏</a>
+<div class="yxj-author-info">👤 <span>作者:</span> MarsZhou</div>
+<!-- 游戏家推广栏 -->
+<div class="yxj-promo-bar" id="yxj-promo">
+  <button class="yxj-promo-close" onclick="document.getElementById('yxj-promo').classList.add('yxj-hidden');document.body.style.paddingBottom='0';">×</button>
+  <div class="yxj-promo-qr">
+    <img src="/images/wechat-qrcode.png" alt="公众号" onerror="this.src='/images/wechat-qrcode.svg'">
+  </div>
+  <div class="yxj-promo-info">
+    <strong>🎮 关注「游戏开发技术教程」</strong>
+    <span>一句话免费生成你的专属游戏！</span>
+  </div>
+</div>
+<script>
+// 记录游玩
+(function(){try{fetch('/api/games/6323b14d-a74a-4a09-b26d-a905cbcb457d/play',{method:'POST'}).catch(function(){});}catch(e){}})();
+</script>
+
+</body>
+</html>

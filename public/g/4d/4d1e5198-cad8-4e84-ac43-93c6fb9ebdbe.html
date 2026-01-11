@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="description" content="做个推箱子的游戏 - AI一句话生成的游戏">
+  <meta property="og:title" content="推箱子游戏 - AI游戏">
+  <meta property="og:description" content="这个游戏由AI一句话生成！关注公众号「游戏开发技术教程」，你也可以免费生成游戏！">
+  <meta property="og:type" content="website">
+  <title>推箱子游戏 - AI游戏</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+  <!-- 推广栏样式 -->
+  <style>
+/* 游戏家推广栏 - 固定在底部 */
+.yxj-promo-bar {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 60px !important;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+  padding: 8px 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  z-index: 999999 !important;
+  box-shadow: 0 -2px 15px rgba(99, 102, 241, 0.4) !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+.yxj-promo-bar.yxj-hidden {
+  display: none !important;
+}
+.yxj-promo-qr {
+  width: 44px !important;
+  height: 44px !important;
+  background: #fff !important;
+  border-radius: 6px !important;
+  padding: 2px !important;
+  flex-shrink: 0 !important;
+}
+.yxj-promo-qr img {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+}
+.yxj-promo-info {
+  color: #fff !important;
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+  text-align: left !important;
+}
+.yxj-promo-info strong {
+  display: block !important;
+  font-size: 13px !important;
+  margin-bottom: 2px !important;
+}
+.yxj-promo-info span {
+  opacity: 0.9 !important;
+  font-size: 11px !important;
+}
+.yxj-promo-close {
+  position: absolute !important;
+  right: 6px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  background: rgba(255,255,255,0.2) !important;
+  border: none !important;
+  color: #fff !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+.yxj-promo-home {
+  position: fixed !important;
+  top: 10px !important;
+  left: 10px !important;
+  background: rgba(0,0,0,0.5) !important;
+  color: #fff !important;
+  text-decoration: none !important;
+  padding: 6px 12px !important;
+  border-radius: 20px !important;
+  font-size: 12px !important;
+  z-index: 999998 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+/* 顶部作者信息 */
+.yxj-author-info {
+  position: fixed !important;
+  top: 10px !important;
+  right: 10px !important;
+  background: rgba(0,0,0,0.5) !important;
+  color: #fff !important;
+  padding: 6px 12px !important;
+  border-radius: 20px !important;
+  font-size: 12px !important;
+  z-index: 999998 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  max-width: 45% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+.yxj-author-info span {
+  opacity: 0.8 !important;
+}
+/* 为推广栏预留底部空间 */
+body {
+  padding-bottom: 65px !important;
+}
+</style>
+  <!-- 原游戏head内容 -->
+  
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00dbde, #fc00ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin-bottom: 20px;
+        }
+        
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+            gap: 20px;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 15px 25px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #4cc9f0;
+        }
+        
+        .game-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        #game-canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background-color: #0f3460;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 10px;
+            width: 100%;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, #00dbde, #fc00ff);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+        }
+        
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 600px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .instructions h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #4cc9f0;
+        }
+        
+        .instructions p {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        .key {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 0 3px;
+        }
+        
+        .mobile-controls {
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+            width: 200px;
+            height: 200px;
+        }
+        
+        .mobile-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .mobile-btn:active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .center-btn {
+            grid-column: 2;
+            grid-row: 2;
+        }
+        
+        .up-btn {
+            grid-column: 2;
+            grid-row: 1;
+        }
+        
+        .down-btn {
+            grid-column: 2;
+            grid-row: 3;
+        }
+        
+        .left-btn {
+            grid-column: 1;
+            grid-row: 2;
+        }
+        
+        .right-btn {
+            grid-column: 3;
+            grid-row: 2;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            transform: translateY(20px);
+            transition: transform 0.3s;
+        }
+        
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+        
+        .modal h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #4cc9f0;
+        }
+        
+        .modal p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .mobile-controls {
+                display: grid;
+            }
+            
+            .btn {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+            
+            .stat-value {
+                font-size: 1.5rem;
+            }
+            
+            .instructions {
+                padding: 15px;
+            }
+        }
+    </style>
+
+</head>
+<body>
+  <!-- 原游戏body内容 -->
+  ```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>推箱子游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00dbde, #fc00ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin-bottom: 20px;
+        }
+        
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+            gap: 20px;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 15px 25px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #4cc9f0;
+        }
+        
+        .game-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        #game-canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background-color: #0f3460;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 10px;
+            width: 100%;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, #00dbde, #fc00ff);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+        }
+        
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 600px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .instructions h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #4cc9f0;
+        }
+        
+        .instructions p {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        .key {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 0 3px;
+        }
+        
+        .mobile-controls {
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+            width: 200px;
+            height: 200px;
+        }
+        
+        .mobile-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .mobile-btn:active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .center-btn {
+            grid-column: 2;
+            grid-row: 2;
+        }
+        
+        .up-btn {
+            grid-column: 2;
+            grid-row: 1;
+        }
+        
+        .down-btn {
+            grid-column: 2;
+            grid-row: 3;
+        }
+        
+        .left-btn {
+            grid-column: 1;
+            grid-row: 2;
+        }
+        
+        .right-btn {
+            grid-column: 3;
+            grid-row: 2;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            transform: translateY(20px);
+            transition: transform 0.3s;
+        }
+        
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+        
+        .modal h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #4cc9f0;
+        }
+        
+        .modal p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .mobile-controls {
+                display: grid;
+            }
+            
+            .btn {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+            
+            .stat-value {
+                font-size: 1.5rem;
+            }
+            
+            .instructions {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>推箱子</h1>
+        <p class="subtitle">将所有的箱子推到目标位置即可过关</p>
+    </div>
+    
+    <div class="game-container">
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-label">关卡</div>
+                <div class="stat-value" id="level">1</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">步数</div>
+                <div class="stat-value" id="steps">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">剩余箱子</div>
+                <div class="stat-value" id="remaining">3</div>
+            </div>
+        </div>
+        
+        <div class="game-wrapper">
+            <canvas id="game-canvas" width="600" height="600"></canvas>
+        </div>
+        
+        <div class="mobile-controls">
+            <button class="mobile-btn up-btn" id="up-btn">↑</button>
+            <button class="mobile-btn down-btn" id="down-btn">↓</button>
+            <button class="mobile-btn left-btn" id="left-btn">←</button>
+            <button class="mobile-btn right-btn" id="right-btn">→</button>
+            <button class="mobile-btn center-btn" id="reset-btn">↺</button>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-primary" id="restart-btn">重新开始</button>
+            <button class="btn btn-secondary" id="prev-level">上一关</button>
+            <button class="btn btn-secondary" id="next-level">下一关</button>
+            <button class="btn btn-primary" id="hint-btn">提示</button>
+        </div>
+        
+        <div class="instructions">
+            <h2>游戏说明</h2>
+            <p>使用 <span class="key">W</span> <span class="key">A</span> <span class="key">S</span> <span class="key">D</span> 或 <span class="key">↑</span> <span class="key">↓</span> <span class="key">←</span> <span class="key">→</span> 方向键控制角色移动</p>
+            <p>将所有的 <span style="color:#FFD700">黄色箱子</span> 推到 <span style="color:#32CD32">绿色目标点</span> 上即可过关</p>
+            <p>一次只能推动一个箱子，箱子不能被拉出，也不能推到墙上</p>
+            <p>点击"重新开始"按钮可以重置当前关卡，点击"提示"按钮可以显示可移动方向</p>
+        </div>
+    </div>
+    
+    <div class="modal" id="start-modal">
+        <div class="modal-content">
+            <h2>推箱子游戏</h2>
+            <p>欢迎来到推箱子游戏！你的目标是将所有箱子推到目标位置。</p>
+            <p>使用键盘方向键或屏幕上的按钮控制角色移动。</p>
+            <p>准备好开始挑战了吗？</p>
+            <button class="btn btn-primary" id="start-btn">开始游戏</button>
+        </div>
+    </div>
+    
+    <div class="modal" id="win-modal">
+        <div class="modal-content">
+            <h2>恭喜过关！</h2>
+            <p>你成功完成了第 <span id="win-level">1</span> 关！</p>
+            <p>使用步数: <span id="win-steps">0</span></p>
+            <div class="controls" style="margin-top: 30px;">
+                <button class="btn btn-secondary" id="replay-btn">再玩一次</button>
+                <button class="btn btn-primary" id="continue-btn">继续下一关</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 游戏状态
+        const GameState = {
+            START: 'start',
+            PLAYING: 'playing',
+            WIN: 'win'
+        };
+        
+        // 游戏元素类型
+        const TileType = {
+            EMPTY: 0,
+            WALL: 1,
+            PLAYER: 2,
+            BOX: 3,
+            TARGET: 4,
+            BOX_ON_TARGET: 5,
+            PLAYER_ON_TARGET: 6
+        };
+        
+        // 关卡数据
+        const levels = [
+            // 关卡1
+            [
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 0, 0, 0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 1],
+                [1, 0, 0, 3, 4, 0, 0, 1],
+                [1, 0, 2, 0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1]
+            ],
+            // 关卡2
+            [
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 0, 0, 0, 0, 0, 0, 1],
+                [1, 0, 3, 0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 4, 0, 0, 1],
+                [1, 0, 0, 2, 0, 0, 0, 1],
+                [1, 0, 0, 3, 0, 0, 0, 1],
+                [1, 0, 0, 0, 4, 0, 0, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1]
+            ],
+            // 关卡3
+            [
+                [1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 1],
+                [1, 0, 0, 1, 3, 1, 0, 0, 1],
+                [1, 0, 0, 3, 4, 3, 0, 0, 1],
+                [1, 0, 0, 1, 3, 1, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 1],
+                [1, 0, 2, 0, 0, 0, 0, 0, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1]
+            ],
+            // 关卡4
+            [
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                [1, 0, 0, 1, 1, 1, 1, 0, 0, 1],
+                [1, 0, 0, 1, 4, 4, 1, 0, 0, 1],
+                [1, 0, 0, 1, 3, 3, 1, 0, 0, 1],
+                [1, 0, 0, 1, 0, 0, 1, 0, 0, 1],
+                [1, 0, 0, 0, 2, 0, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+            ]
+        ];
+        
+        // 游戏变量
+        let currentLevel = 0;
+        let gameState = GameState.START;
+        let steps = 0;
+        let gameBoard = [];
+        let playerPos = {x: 0, y: 0};
+        let tileSize = 0;
+        let canvas, ctx;
+        let hintDirections = [];
+        
+        // DOM元素
+        const levelElement = document.getElementById('level');
+        const stepsElement = document.getElementById('steps');
+        const remainingElement = document.getElementById('remaining');
+        const startModal = document.getElementById('start-modal');
+        const winModal = document.getElementById('win-modal');
+        const winLevelElement = document.getElementById('win-level');
+        const winStepsElement = document.getElementById('win-steps');
+        
+        // 初始化游戏
+        function initGame() {
+            canvas = document.getElementById('game-canvas');
+            ctx = canvas.getContext('2d');
+            
+            // 根据屏幕大小调整画布
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // 加载第一关
+            loadLevel(currentLevel);
+            
+            // 显示开始模态框
+            startModal.classList.add('active');
+            
+            // 绘制初始游戏画面
+            drawGame();
+        }
+        
+        // 调整画布大小
+        function resizeCanvas() {
+            const containerWidth = document.querySelector('.game-wrapper').offsetWidth;
+            canvas.style.width = containerWidth + 'px';
+            canvas.style.height = containerWidth + 'px';
+            tileSize = containerWidth / gameBoard[0].length;
+            drawGame();
+        }
+        
+        // 加载关卡
+        function loadLevel(levelIndex) {
+            // 重置游戏状态
+            gameBoard = JSON.parse(JSON.stringify(levels[levelIndex]));
+            steps = 0;
+            hintDirections = [];
+            
+            // 更新UI
+            levelElement.textContent = levelIndex + 1;
+            stepsElement.textContent = steps;
+            updateRemainingBoxes();
+            
+            // 查找玩家位置
+            for (let y = 0; y < gameBoard.length; y++) {
+                for (let x = 0; x < gameBoard[y].length; x++) {
+                    if (gameBoard[y][x] === TileType.PLAYER || gameBoard[y][x] === TileType.PLAYER_ON_TARGET) {
+                        playerPos = {x, y};
+                    }
+                }
+            }
+            
+            // 设置游戏状态
+            gameState = GameState.PLAYING;
+            
+            // 调整tile大小
+            tileSize = canvas.width / gameBoard[0].length;
+        }
+        
+        // 更新剩余箱子数量
+        function updateRemainingBoxes() {
+            let remaining = 0;
+            for (let y = 0; y < gameBoard.length; y++) {
+                for (let x = 0; x < gameBoard[y].length; x++) {
+                    if (gameBoard[y][x] === TileType.BOX) {
+                        remaining++;
+                    }
+                }
+            }
+            remainingElement.textContent = remaining;
+            return remaining;
+        }
+        
+        // 绘制游戏
+        function drawGame() {
+            // 清空画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制背景
+            ctx.fillStyle = '#0f3460';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制网格
+            drawGrid();
+            
+            // 绘制游戏元素
+            for (let y = 0; y < gameBoard.length; y++) {
+                for (let x = 0; x < gameBoard[y].length; x++) {
+                    const tile = gameBoard[y][x];
+                    drawTile(x, y, tile);
+                }
+            }
+            
+            // 绘制提示
+            if (hintDirections.length > 0) {
+                drawHints();
+            }
+        }
+        
+        // 绘制网格
+        function drawGrid() {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            
+            // 垂直线
+            for (let x = 0; x <= gameBoard[0].length; x++) {
+                ctx.beginPath();
+                ctx.moveTo(x * tileSize, 0);
+                ctx.lineTo(x * tileSize, canvas.height);
+                ctx.stroke();
+            }
+            
+            // 水平线
+            for (let y = 0; y <= gameBoard.length; y++) {
+                ctx.beginPath();
+                ctx.moveTo(0, y * tileSize);
+                ctx.lineTo(canvas.width, y * tileSize);
+                ctx.stroke();
+            }
+        }
+        
+        // 绘制单个格子
+        function drawTile(x, y, tile) {
+            const centerX = x * tileSize + tileSize / 2;
+            const centerY = y * tileSize + tileSize / 2;
+            const radius = tileSize * 0.35;
+            
+            switch(tile) {
+                case TileType.WALL:
+                    // 墙壁
+                    ctx.fillStyle = '#4361ee';
+                    ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+                    
+                    // 墙壁纹理
+                    ctx.fillStyle = '#3a56d4';
+                    ctx.fillRect(x * tileSize + 2, y * tileSize + 2, tileSize - 4, tileSize - 4);
+                    break;
+                    
+                case TileType.PLAYER:
+                    // 玩家
+                    ctx.fillStyle = '#f72585';
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 玩家眼睛
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(centerX - radius * 0.3, centerY - radius * 0.3, radius * 0.2, 0, Math.PI * 2);
+                    ctx.arc(centerX + radius * 0.3, centerY - radius * 0.3, radius * 0.2, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+                    
+                case TileType.BOX:
+                    // 箱子
+                    ctx.fillStyle = '#FFD700';
+                    ctx.fillRect(x * tileSize + 4, y * tileSize + 4, tileSize - 8, tileSize - 8);
+                    
+                    // 箱子阴影
+                    ctx.fillStyle = '#DAA520';
+                    ctx.fillRect(x * tileSize + 4, y * tileSize + 4, tileSize - 8, 4);
+                    ctx.fillRect(x * tileSize + 4, y * tileSize + 4, 4, tileSize - 8);
+                    break;
+                    
+                case TileType.TARGET:
+                    // 目标点
+                    ctx.fillStyle = '#32CD32';
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius * 0.7, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 目标点内圈
+                    ctx.fillStyle = '#228B22';
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius * 0.4, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+                    
+                case TileType.BOX_ON_TARGET:
+                    // 箱子在目标点上
+                    // 先画目标点
+                    ctx.fillStyle = '#32CD32';
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius * 0.7, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 再画箱子
+                    ctx.fillStyle = '#FFA500';
+                    ctx.fillRect(x * tileSize + 4, y * tileSize + 4, tileSize - 8, tileSize - 8);
+                    
+                    // 箱子阴影
+                    ctx.fillStyle = '#FF8C00';
+                    ctx.fillRect(x * tileSize + 4, y * tileSize + 4, tileSize - 8, 4);
+                    ctx.fillRect(x * tileSize + 4, y * tileSize + 4, 4, tileSize - 8);
+                    break;
+                    
+                case TileType.PLAYER_ON_TARGET:
+                    // 玩家在目标点上
+                    // 先画目标点
+                    ctx.fillStyle = '#32CD32';
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius * 0.7, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 再画玩家
+                    ctx.fillStyle = '#f72585';
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 玩家眼睛
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(centerX - radius * 0.3, centerY - radius * 0.3, radius * 0.2, 0, Math.PI * 2);
+                    ctx.arc(centerX + radius * 0.3, centerY - radius * 0.3, radius * 0.2, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+            }
+        }
+        
+        // 绘制提示
+        function drawHints() {
+            ctx.fillStyle = 'rgba(76, 201, 240, 0.5)';
+            
+            for (const dir of hintDirections) {
+                const x = playerPos.x + dir.x;
+                const y = playerPos.y + dir.y;
+                
+                if (x >= 0 && x < gameBoard[0].length && y >= 0 && y < gameBoard.length) {
+                    ctx.beginPath();
+                    ctx.arc(
+                        x * tileSize + tileSize / 2,
+                        y * tileSize + tileSize / 2,
+                        tileSize * 0.2,
+                        0,
+                        Math.PI * 2
+                    );
+                    ctx.fill();
+                }
+            }
+        }
+        
+        // 移动玩家
+        function movePlayer(dx, dy) {
+            if (gameState !== GameState.PLAYING) return false;
+            
+            const newX = playerPos.x + dx;
+            const newY = playerPos.y + dy;
+            
+            // 检查边界
+            if (newX < 0 || newX >= gameBoard[0].length || newY < 0 || newY >= gameBoard.length) {
+                return false;
+            }
+            
+            const targetTile = gameBoard[newY][newX];
+            
+            // 如果目标位置是空地或目标点
+            if (targetTile === TileType.EMPTY || targetTile === TileType.TARGET) {
+                // 移动玩家
+                movePlayerTo(newX, newY);
+                steps++;
+                stepsElement.textContent = steps;
+                return true;
+            }
+            
+            // 如果目标位置是箱子
+            if (targetTile === TileType.BOX || targetTile === TileType.BOX_ON_TARGET) {
+                const boxNewX = newX + dx;
+                const boxNewY = newY + dy;
+                
+                // 检查箱子是否可以移动
+                if (boxNewX < 0 || boxNewX >= gameBoard[0].length || boxNewY < 0 || boxNewY >= gameBoard.length) {
+                    return false;
+                }
+                
+                const boxTargetTile = gameBoard[boxNewY][boxNewX];
+                
+                // 箱子目标位置必须是空地或目标点
+                if (boxTargetTile === TileType.EMPTY || boxTargetTile === TileType.TARGET) {
+                    // 移动箱子
+                    if (boxTargetTile === TileType.EMPTY) {
+                        gameBoard[boxNewY][boxNewX] = TileType.BOX;
+                    } else {
+                        gameBoard[boxNewY][boxNewX] = TileType.BOX_ON_TARGET;
+                    }
+                    
+                    // 移动玩家
+                    movePlayerTo(newX, newY);
+                    
+                    steps++;
+                    stepsElement.textContent = steps;
+                    
+                    // 更新剩余箱子数量
+                    updateRemainingBoxes();
+                    
+                    // 检查是否获胜
+                    checkWin();
+                    
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
+        // 移动玩家到指定位置
+        function movePlayerTo(x, y) {
+            // 清除原位置玩家
+            const oldTile = gameBoard[playerPos.y][playerPos.x];
+            if (oldTile === TileType.PLAYER) {
+                gameBoard[playerPos.y][playerPos.x] = TileType.EMPTY;
+            } else if (oldTile === TileType.PLAYER_ON_TARGET) {
+                gameBoard[playerPos.y][playerPos.x] = TileType.TARGET;
+            }
+            
+            // 设置新位置玩家
+            const newTile = gameBoard[y][x];
+            if (newTile === TileType.EMPTY) {
+                gameBoard[y][x] = TileType.PLAYER;
+            } else if (newTile === TileType.TARGET) {
+                gameBoard[y][x] = TileType.PLAYER_ON_TARGET;
+            }
+            
+            // 更新玩家位置
+            playerPos = {x, y};
+            
+            // 重绘游戏
+            drawGame();
+        }
+        
+        // 检查是否获胜
+        function checkWin() {
+            const remaining = updateRemainingBoxes();
+            
+            if (remaining === 0) {
+                gameState = GameState.WIN;
+                winLevelElement.textContent = currentLevel + 1;
+                winStepsElement.textContent = steps;
+                setTimeout(() => {
+                    winModal.classList.add('active');
+                }, 500);
+            }
+        }
+        
+        // 显示提示
+        function showHint() {
+            hintDirections = [];
+            const directions = [
+                {x: 0, y: -1}, // 上
+                {x: 1, y: 0},  // 右
+                {x: 0, y: 1},  // 下
+                {x: -1, y: 0}  // 左
+            ];
+            
+            for (const dir of directions) {
+                const newX = playerPos.x + dir.x;
+                const newY = playerPos.y + dir.y;
+                
+                // 检查边界
+                if (newX < 0 || newX >= gameBoard[0].length || newY < 0 || newY >= gameBoard.length) {
+                    continue;
+                }
+                
+                const targetTile = gameBoard[newY][newX];
+                
+                // 如果目标位置是空地或目标点
+                if (targetTile === TileType.EMPTY || targetTile === TileType.TARGET) {
+                    hintDirections.push(dir);
+                }
+                
+                // 如果目标位置是箱子
+                if (targetTile === TileType.BOX || targetTile === TileType.BOX_ON_TARGET) {
+                    const boxNewX = newX + dir.x;
+                    const boxNewY = newY + dir.y;
+                    
+                    // 检查箱子是否可以移动
+                    if (boxNewX < 0 || boxNewX >= gameBoard[0].length || boxNewY < 0 || boxNewY >= gameBoard.length) {
+                        continue;
+                    }
+                    
+                    const boxTargetTile = gameBoard[boxNewY][boxNewX];
+                    
+                    // 箱子目标位置必须是空地或目标点
+                    if (boxTargetTile === TileType.EMPTY || boxTargetTile === TileType.TARGET) {
+                        hintDirections.push(dir);
+                    }
+                }
+            }
+            
+            drawGame();
+            
+            // 3秒后清除提示
+            setTimeout(() => {
+                hintDirections = [];
+                drawGame();
+            }, 3000);
+        }
+        
+        // 事件监听
+        document.addEventListener('keydown', (e) => {
+            if (gameState !== GameState.PLAYING) return;
+            
+            let moved = false;
+            
+            switch(e.key) {
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    moved = movePlayer(0, -1);
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    moved = movePlayer(0, 1);
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    moved = movePlayer(-1, 0);
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    moved = movePlayer(1, 0);
+                    break;
+            }
+            
+            if (moved) {
+                e.preventDefault();
+            }
+        });
+        
+        // 按钮事件
+        document.getElementById('start-btn').addEventListener('click', () => {
+            startModal.classList.remove('active');
+        });
+        
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            loadLevel(currentLevel);
+            drawGame();
+        });
+        
+        document.getElementById('prev-level').addEventListener('click', () => {
+            if (currentLevel > 0) {
+                currentLevel--;
+                loadLevel(currentLevel);
+                drawGame();
+            }
+        });
+        
+        document.getElementById('next-level').addEventListener('click', () => {
+            if (currentLevel < levels.length - 1) {
+                currentLevel++;
+                loadLevel(currentLevel);
+                drawGame();
+            }
+        });
+        
+        document.getElementById('hint-btn').addEventListener('click', showHint);
+        
+        document.getElementById('replay-btn').addEventListener('click', () => {
+            winModal.classList.remove('active');
+            loadLevel(currentLevel);
+            drawGame();
+        });
+        
+        document.getElementById('continue-btn').addEventListener('click', () => {
+            if (currentLevel < levels.length - 1) {
+                currentLevel++;
+                loadLevel(currentLevel);
+                winModal.classList.remove('active');
+                drawGame();
+            } else {
+                winModal.classList.remove('active');
+                alert('恭喜你！你已经完成了所有关卡！');
+            }
+        });
+        
+        // 移动端控制按钮
+        document.getElementById('up-btn').addEventListener('click', () => movePlayer(0, -1));
+        document.getElementById('down-btn').addEventListener('click', () => movePlayer(0, 1));
+        document.getElementById('left-btn').addEventListener('click', () =>
+  <!-- 推广栏 -->
+  
+<!-- 游戏家顶部导航 -->
+<a class="yxj-promo-home" href="/" title="更多游戏">🏠 更多游戏</a>
+<div class="yxj-author-info">👤 <span>作者:</span> MarsZhou</div>
+<!-- 游戏家推广栏 -->
+<div class="yxj-promo-bar" id="yxj-promo">
+  <button class="yxj-promo-close" onclick="document.getElementById('yxj-promo').classList.add('yxj-hidden');document.body.style.paddingBottom='0';">×</button>
+  <div class="yxj-promo-qr">
+    <img src="/images/wechat-qrcode.png" alt="公众号" onerror="this.src='/images/wechat-qrcode.svg'">
+  </div>
+  <div class="yxj-promo-info">
+    <strong>🎮 关注「游戏开发技术教程」</strong>
+    <span>一句话免费生成你的专属游戏！</span>
+  </div>
+</div>
+<script>
+// 记录游玩
+(function(){try{fetch('/api/games/4d1e5198-cad8-4e84-ac43-93c6fb9ebdbe/play',{method:'POST'}).catch(function(){});}catch(e){}})();
+</script>
+
+</body>
+</html>

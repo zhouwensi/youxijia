@@ -3537,6 +3537,17 @@ function reloadGame() {
 // 通过ID加载游戏
 async function loadGameById(gameId) {
   log(`加载游戏: ${gameId}`);
+  
+  // 检测微信环境 - 直接跳转到静态页面以获得最佳体验
+  const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
+  if (isWeChat && !window.location.pathname.startsWith('/g/')) {
+    // 微信浏览器中，如果不是已经在静态页面，则跳转到静态页面
+    const staticUrl = `/g/${gameId.substring(0, 2)}/${gameId}.html`;
+    log(`微信环境检测到，跳转到静态页面: ${staticUrl}`);
+    window.location.href = staticUrl;
+    return;
+  }
+  
   showGamePage();
   showGameLoading(true);
   
@@ -3805,23 +3816,57 @@ ${processedCode}
   // 保存原始代码用于调试
   state.currentGameCode = processedCode;
   
-  // 检测是否是微信浏览器
+  // 检测浏览器环境
   const isWechat = /MicroMessenger/i.test(navigator.userAgent);
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  
+  log(`浏览器环境: 微信=${isWechat}, iOS=${isIOS}, Android=${isAndroid}`);
   
   if (isWechat) {
-    // 微信浏览器使用Blob URL方式加载，更好的兼容性
-    try {
-      const blob = new Blob([processedCode], { type: 'text/html;charset=utf-8' });
-      const blobUrl = URL.createObjectURL(blob);
-      iframe.src = blobUrl;
-      // 清理之前的blob URL
-      iframe.onload = () => {
-        showGameLoading(false);
-        URL.revokeObjectURL(blobUrl);
-      };
-    } catch (e) {
-      log('Blob URL创建失败，回退到srcdoc', 'warn');
+    // 微信浏览器特殊处理
+    log('检测到微信浏览器，使用兼容模式加载');
+    
+    if (isIOS) {
+      // iOS 微信使用 srcdoc（iOS WKWebView 对 Blob URL 支持差）
+      log('iOS微信: 使用srcdoc方式加载');
       iframe.srcdoc = processedCode;
+    } else {
+      // Android 微信尝试使用 Blob URL，失败则回退
+      try {
+        const blob = new Blob([processedCode], { type: 'text/html;charset=utf-8' });
+        const blobUrl = URL.createObjectURL(blob);
+        
+        // 保存原始onload处理函数
+        const originalOnload = iframe.onload;
+        
+        iframe.src = blobUrl;
+        
+        // 不覆盖原有的onload逻辑，只添加清理逻辑
+        const cleanupBlobUrl = () => {
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+        };
+        
+        // 设置超时检测，如果5秒内未加载成功则回退到srcdoc
+        const loadTimeout = setTimeout(() => {
+          log('Blob URL加载超时，回退到srcdoc', 'warn');
+          URL.revokeObjectURL(blobUrl);
+          iframe.srcdoc = processedCode;
+        }, 5000);
+        
+        // 增强onload处理
+        const enhancedOnload = iframe.onload;
+        iframe.onload = () => {
+          clearTimeout(loadTimeout);
+          cleanupBlobUrl();
+          if (enhancedOnload) enhancedOnload();
+        };
+        
+        log('Android微信: 使用Blob URL方式加载');
+      } catch (e) {
+        log('Blob URL创建失败，回退到srcdoc: ' + e.message, 'warn');
+        iframe.srcdoc = processedCode;
+      }
     }
   } else {
     // 其他浏览器使用srcdoc

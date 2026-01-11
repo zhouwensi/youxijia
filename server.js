@@ -7,6 +7,291 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 
+// ==================== 静态游戏文件系统 ====================
+
+// 静态游戏存储目录
+const GAMES_STATIC_DIR = path.join(__dirname, 'public', 'g');
+
+// 确保游戏目录存在
+function ensureGameDir(gameId) {
+  // 使用游戏ID前2位作为子目录，避免单目录文件过多
+  const subDir = gameId.substring(0, 2);
+  const gameDir = path.join(GAMES_STATIC_DIR, subDir);
+  if (!fs.existsSync(gameDir)) {
+    fs.mkdirSync(gameDir, { recursive: true });
+  }
+  return gameDir;
+}
+
+// 获取游戏静态文件路径
+function getGameFilePath(gameId) {
+  const subDir = gameId.substring(0, 2);
+  return path.join(GAMES_STATIC_DIR, subDir, `${gameId}.html`);
+}
+
+// 获取游戏静态访问URL
+function getGameStaticUrl(gameId) {
+  const subDir = gameId.substring(0, 2);
+  return `/g/${subDir}/${gameId}.html`;
+}
+
+// HTML属性转义（用于srcdoc）
+function escapeHtmlAttr(str) {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+// HTML内容转义
+function escapeHtmlSafe(str) {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// 保存游戏静态文件
+function saveGameStaticFile(gameId, gameCode, gameInfo) {
+  try {
+    // 确保目录存在
+    ensureGameDir(gameId);
+    
+    // 生成独立页面HTML
+    const standaloneHtml = generateStandaloneGameHtml(gameCode, {
+      ...gameInfo,
+      gameId
+    });
+    
+    // 写入文件
+    const filePath = getGameFilePath(gameId);
+    fs.writeFileSync(filePath, standaloneHtml, 'utf-8');
+    
+    console.log(`[INFO] 游戏静态文件已保存: ${filePath}`);
+    return true;
+  } catch (error) {
+    console.error(`[ERROR] 保存游戏静态文件失败: ${error.message}`);
+    return false;
+  }
+}
+
+// 删除游戏静态文件
+function deleteGameStaticFile(gameId) {
+  try {
+    const filePath = getGameFilePath(gameId);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      console.log(`[INFO] 游戏静态文件已删除: ${filePath}`);
+    }
+    return true;
+  } catch (error) {
+    console.error(`[ERROR] 删除游戏静态文件失败: ${error.message}`);
+    return false;
+  }
+}
+
+// 生成独立游戏HTML页面（直接嵌入游戏代码，不使用iframe，微信兼容）
+function generateStandaloneGameHtml(gameCode, gameInfo) {
+  const { title, authorName, gameId, prompt } = gameInfo;
+  
+  const safeTitle = escapeHtmlSafe(title || '未命名游戏');
+  const safeAuthor = escapeHtmlSafe(authorName || '匿名');
+  const safePrompt = escapeHtmlSafe(prompt || title || '');
+  
+  // 从游戏代码中提取<head>和<body>内容
+  let headContent = '';
+  let bodyContent = '';
+  let bodyAttrs = '';
+  
+  // 提取<head>内容
+  const headMatch = gameCode.match(/<head[^>]*>([\s\S]*?)<\/head>/i);
+  if (headMatch) {
+    headContent = headMatch[1];
+    // 移除原有的title标签，我们会添加自己的
+    headContent = headContent.replace(/<title[^>]*>[\s\S]*?<\/title>/gi, '');
+  }
+  
+  // 提取<body>内容和属性
+  const bodyMatch = gameCode.match(/<body([^>]*)>([\s\S]*?)<\/body>/i);
+  if (bodyMatch) {
+    bodyAttrs = bodyMatch[1] || '';
+    bodyContent = bodyMatch[2];
+  } else {
+    // 如果没有body标签，使用整个代码
+    bodyContent = gameCode;
+  }
+  
+  // 底部推广栏的样式和HTML（会注入到游戏页面底部）
+  const promoBarStyle = `
+/* 游戏家推广栏 - 固定在底部 */
+.yxj-promo-bar {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 60px !important;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+  padding: 8px 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  z-index: 999999 !important;
+  box-shadow: 0 -2px 15px rgba(99, 102, 241, 0.4) !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+.yxj-promo-bar.yxj-hidden {
+  display: none !important;
+}
+.yxj-promo-qr {
+  width: 44px !important;
+  height: 44px !important;
+  background: #fff !important;
+  border-radius: 6px !important;
+  padding: 2px !important;
+  flex-shrink: 0 !important;
+}
+.yxj-promo-qr img {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+}
+.yxj-promo-info {
+  color: #fff !important;
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+  text-align: left !important;
+}
+.yxj-promo-info strong {
+  display: block !important;
+  font-size: 13px !important;
+  margin-bottom: 2px !important;
+}
+.yxj-promo-info span {
+  opacity: 0.9 !important;
+  font-size: 11px !important;
+}
+.yxj-promo-close {
+  position: absolute !important;
+  right: 6px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  background: rgba(255,255,255,0.2) !important;
+  border: none !important;
+  color: #fff !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+.yxj-promo-home {
+  position: fixed !important;
+  top: 10px !important;
+  left: 10px !important;
+  background: rgba(0,0,0,0.5) !important;
+  color: #fff !important;
+  text-decoration: none !important;
+  padding: 6px 12px !important;
+  border-radius: 20px !important;
+  font-size: 12px !important;
+  z-index: 999998 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+/* 顶部作者信息 */
+.yxj-author-info {
+  position: fixed !important;
+  top: 10px !important;
+  right: 10px !important;
+  background: rgba(0,0,0,0.5) !important;
+  color: #fff !important;
+  padding: 6px 12px !important;
+  border-radius: 20px !important;
+  font-size: 12px !important;
+  z-index: 999998 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  max-width: 45% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+.yxj-author-info span {
+  opacity: 0.8 !important;
+}
+/* 为推广栏预留底部空间 */
+body {
+  padding-bottom: 65px !important;
+}
+`;
+
+  const promoBarHtml = `
+<!-- 游戏家顶部导航 -->
+<a class="yxj-promo-home" href="/" title="更多游戏">🏠 更多游戏</a>
+<div class="yxj-author-info">👤 <span>作者:</span> ${safeAuthor}</div>
+<!-- 游戏家推广栏 -->
+<div class="yxj-promo-bar" id="yxj-promo">
+  <button class="yxj-promo-close" onclick="document.getElementById('yxj-promo').classList.add('yxj-hidden');document.body.style.paddingBottom='0';">×</button>
+  <div class="yxj-promo-qr">
+    <img src="/images/wechat-qrcode.png" alt="公众号" onerror="this.src='/images/wechat-qrcode.svg'">
+  </div>
+  <div class="yxj-promo-info">
+    <strong>🎮 关注「${BRAND_CONFIG.name}」</strong>
+    <span>一句话免费生成你的专属游戏！</span>
+  </div>
+</div>
+<script>
+// 记录游玩
+(function(){try{fetch('/api/games/${gameId}/play',{method:'POST'}).catch(function(){});}catch(e){}})();
+</script>
+`;
+  
+  // 生成最终的独立HTML页面 - 直接嵌入游戏代码
+  const standaloneHtml = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="description" content="${safePrompt} - AI一句话生成的游戏">
+  <meta property="og:title" content="${safeTitle} - AI游戏">
+  <meta property="og:description" content="这个游戏由AI一句话生成！关注公众号「${BRAND_CONFIG.name}」，你也可以免费生成游戏！">
+  <meta property="og:type" content="website">
+  <title>${safeTitle} - AI游戏</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+  <!-- 推广栏样式 -->
+  <style>${promoBarStyle}</style>
+  <!-- 原游戏head内容 -->
+  ${headContent}
+</head>
+<body${bodyAttrs}>
+  <!-- 原游戏body内容 -->
+  ${bodyContent}
+  <!-- 推广栏 -->
+  ${promoBarHtml}
+</body>
+</html>`;
+
+  return standaloneHtml;
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -25,7 +310,7 @@ const BRAND_CONFIG = {
   description: '网易十年游戏开发老兵｜聚焦Unity3D/UE4/UE5引擎',
 };
 
-// 注入品liulanqi
+// 注入品牌水印到游戏代码中
 function injectBrandWatermark(htmlCode) {
   if (!htmlCode) return htmlCode;
   
@@ -1593,52 +1878,19 @@ app.get('/api/config/model-times', (req, res) => {
 // 获取分享文案配置
 app.get('/api/config/share-text', (req, res) => {
   try {
-    // 从数据库读取配置，如果没有则使用默认值
-    const defaultTemplate = '🎮 我用一句话免费做了个游戏《{title}》，太好玩了！你也来试试吧👇';
-    const template = getConfig('share_text_template', '') || defaultTemplate;
-    
     const shareConfig = {
-      template: template,
-      weibo: '🎮 我用一句话免费做了个游戏：{title}，你也来试试吧！#AI游戏# #一句话生成游戏#',
-      qq: '🎮 一句话免费做游戏，你也来试试吧！',
+      template: getConfig('share_text_template', '我用一句话做了个游戏《{title}》，快来玩！'),
+      weibo: getConfig('share_text_weibo', '我用一句话做了个游戏：{title} 快来玩！#AI游戏# #一句话生成游戏#'),
+      qq: getConfig('share_text_qq', '一句话生成的AI游戏，快来玩！'),
     };
     res.json({ success: true, shareConfig });
   } catch (error) {
     console.error('获取分享配置失败:', error);
     res.json({ success: true, shareConfig: {
-      template: '🎮 我用一句话免费做了个游戏《{title}》，太好玩了！你也来试试吧👇',
-      weibo: '🎮 我用一句话免费做了个游戏：{title}，你也来试试吧！#AI游戏#',
-      qq: '🎮 一句话免费做游戏，你也来试试吧！'
+      template: '我用一句话做了个游戏《{title}》，快来玩！',
+      weibo: '我用一句话做了个游戏：{title} 快来玩！',
+      qq: '一句话生成的AI游戏，快来玩！'
     }});
-  }
-});
-
-// 管理接口：更新分享文案配置（需要管理员权限）
-app.put('/api/admin/share-config', (req, res) => {
-  const adminKey = req.headers['x-admin-key'];
-  
-  if (adminKey !== process.env.ADMIN_KEY) {
-    return res.status(403).json({ success: false, error: '无权限' });
-  }
-  
-  try {
-    const { template, weibo, qq } = req.body;
-    
-    if (template) setConfig('share_text_template', template);
-    if (weibo) setConfig('share_text_weibo', weibo);
-    if (qq) setConfig('share_text_qq', qq);
-    
-    res.json({ 
-      success: true, 
-      shareConfig: {
-        template: getConfig('share_text_template', '我用一句话做了个游戏《{title}》，快来玩！'),
-        weibo: getConfig('share_text_weibo', '我用一句话做了个游戏：{title} 快来玩！'),
-        qq: getConfig('share_text_qq', '一句话生成的AI游戏，快来玩！')
-      }
-    });
-  } catch (error) {
-    console.error('更新分享配置失败:', error);
-    res.status(500).json({ success: false, error: '更新失败' });
   }
 });
 
@@ -1733,7 +1985,7 @@ app.get('/api/games/:id', (req, res) => {
     res.set('Expires', '0');
     
     const game = db.prepare(`
-      SELECT id, title, prompt, code, author_name, author_token, llm_model, play_count, like_count, created_at, status 
+      SELECT id, title, prompt, code, author_name, author_token, llm_model, play_count, like_count, created_at 
       FROM games 
       WHERE id = ?
     `).get(req.params.id);
@@ -1745,7 +1997,10 @@ app.get('/api/games/:id', (req, res) => {
     // 增加播放次数
     db.prepare('UPDATE games SET play_count = play_count + 1 WHERE id = ?').run(req.params.id);
     
-    res.json({ success: true, game });
+    // 添加静态URL
+    const staticUrl = getGameStaticUrl(req.params.id);
+    
+    res.json({ success: true, game, staticUrl });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -1774,10 +2029,9 @@ app.post('/api/generate', async (req, res) => {
   console.log('\n========== 开始生成游戏 ==========');
   
   try {
-    const { prompt, llmConfig, draftId } = req.body;
+    const { prompt, llmConfig } = req.body;
     const userToken = req.headers['x-user-token'] || null;
-    const authorToken = req.headers['x-author-token'] || null;
-    console.log('[INFO] 收到生成请求:', { prompt, provider: llmConfig?.provider, user: userToken, draftId: draftId || '无' });
+    console.log('[INFO] 收到生成请求:', { prompt, provider: llmConfig?.provider, user: userToken });
     
     if (!prompt || prompt.trim().length === 0) {
       console.log('[ERROR] 游戏描述为空');
@@ -1902,7 +2156,6 @@ app.post('/api/generate', async (req, res) => {
 3. 包含操作说明（支持键盘和触屏）
 4. 界面美观，使用现代化深色主题设计
 5. 适配手机和电脑屏幕
-6. 禁止使用alert()、confirm()、prompt()等弹窗函数，所有提示信息都要在游戏界面内显示
 
 【代码结构】：
 \`\`\`html
@@ -1989,24 +2242,6 @@ app.post('/api/generate', async (req, res) => {
     code = injectBrandWatermark(code);
     console.log('[INFO] 已注入品牌水印');
 
-    // 如果有草稿ID，在后端直接更新草稿状态为已发布
-    // 这样即使用户刷新页面，游戏也会正确完成
-    if (draftId && authorToken) {
-      try {
-        const draft = db.prepare('SELECT author_token FROM games WHERE id = ?').get(draftId);
-        if (draft && draft.author_token === authorToken) {
-          db.prepare(`
-            UPDATE games SET title = ?, code = ?, status = 'published' WHERE id = ?
-          `).run(title, code, draftId);
-          console.log(`[INFO] 草稿已自动更新为已发布: ${draftId}`);
-        } else {
-          console.log(`[WARN] 草稿权限不匹配或不存在: ${draftId}`);
-        }
-      } catch (e) {
-        console.error('[ERROR] 自动更新草稿失败:', e.message);
-      }
-    }
-
     const totalTime = Date.now() - startTime;
     console.log(`[SUCCESS] 游戏生成完成，总耗时: ${totalTime}ms`);
     console.log('========================================\n');
@@ -2016,7 +2251,6 @@ app.post('/api/generate', async (req, res) => {
       code,
       title,
       prompt,
-      draftId, // 返回draftId供前端确认
       debug: {
         codeLength: code.length,
         apiTime,
@@ -2035,29 +2269,31 @@ app.post('/api/generate', async (req, res) => {
 // 保存游戏
 app.post('/api/games', (req, res) => {
   try {
-    const { title, prompt, code, authorName, authorToken, status } = req.body;
+    const { title, prompt, code, authorName, authorToken } = req.body;
     
-    // 草稿模式只需要prompt，不需要code
-    if (status === 'draft') {
-      if (!prompt) {
-        return res.status(400).json({ success: false, error: '缺少必要参数' });
-      }
-    } else {
-      if (!code || !prompt) {
-        return res.status(400).json({ success: false, error: '缺少必要参数' });
-      }
+    if (!code || !prompt) {
+      return res.status(400).json({ success: false, error: '缺少必要参数' });
     }
 
     const id = uuidv4();
     const token = authorToken || uuidv4();
-    const gameStatus = status || 'published';
+    
+    const gameTitle = title || prompt.slice(0, 50);
+    const gameAuthor = authorName || '匿名';
     
     db.prepare(`
-      INSERT INTO games (id, title, prompt, code, author_name, author_token, status) 
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(id, title || prompt.slice(0, 50), prompt, code || '', authorName || '匿名', token, gameStatus);
+      INSERT INTO games (id, title, prompt, code, author_name, author_token) 
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(id, gameTitle, prompt, code, gameAuthor, token);
 
-    res.json({ success: true, id, authorToken: token });
+    // 保存游戏静态文件（微信分享用）
+    saveGameStaticFile(id, code, {
+      title: gameTitle,
+      authorName: gameAuthor,
+      prompt: prompt
+    });
+
+    res.json({ success: true, id, authorToken: token, staticUrl: getGameStaticUrl(id) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -2066,48 +2302,34 @@ app.post('/api/games', (req, res) => {
 // 更新游戏
 app.put('/api/games/:id', (req, res) => {
   try {
-    const { title, prompt, code, authorName, authorToken: bodyToken, status } = req.body;
-    const gameId = req.params.id;
-    
-    // 从body或header获取authorToken
-    const authorToken = bodyToken || req.headers['x-author-token'];
-    
-    console.log(`[INFO] 更新游戏请求: id=${gameId}, status=${status}, hasCode=${!!code}`);
+    const { title, prompt, code, authorName, authorToken } = req.body;
     
     // 验证作者权限
-    const game = db.prepare('SELECT author_token, status as currentStatus FROM games WHERE id = ?').get(gameId);
+    const game = db.prepare('SELECT author_token FROM games WHERE id = ?').get(req.params.id);
     
     if (!game) {
-      console.log(`[ERROR] 游戏不存在: ${gameId}`);
       return res.status(404).json({ success: false, error: '游戏不存在' });
     }
     
     if (game.author_token !== authorToken) {
-      console.log(`[ERROR] 权限不匹配: 期望=${game.author_token?.slice(0,8)}..., 实际=${authorToken?.slice(0,8)}...`);
       return res.status(403).json({ success: false, error: '无权限编辑此游戏' });
     }
 
-    // 动态构建更新语句，只更新提供的字段
-    const updates = [];
-    const values = [];
-    
-    if (title !== undefined) { updates.push('title = ?'); values.push(title); }
-    if (prompt !== undefined) { updates.push('prompt = ?'); values.push(prompt); }
-    if (code !== undefined) { updates.push('code = ?'); values.push(code); }
-    if (authorName !== undefined) { updates.push('author_name = ?'); values.push(authorName); }
-    if (status !== undefined) { updates.push('status = ?'); values.push(status); }
-    
-    updates.push('updated_at = CURRENT_TIMESTAMP');
-    values.push(gameId);
-    
-    const sql = `UPDATE games SET ${updates.join(', ')} WHERE id = ?`;
-    db.prepare(sql).run(...values);
-    
-    console.log(`[INFO] 游戏更新成功: ${gameId}, 状态: ${game.currentStatus} -> ${status || game.currentStatus}`);
+    db.prepare(`
+      UPDATE games 
+      SET title = ?, prompt = ?, code = ?, author_name = ?, updated_at = CURRENT_TIMESTAMP 
+      WHERE id = ?
+    `).run(title, prompt, code, authorName, req.params.id);
 
-    res.json({ success: true });
+    // 更新游戏静态文件
+    saveGameStaticFile(req.params.id, code, {
+      title: title,
+      authorName: authorName,
+      prompt: prompt
+    });
+
+    res.json({ success: true, staticUrl: getGameStaticUrl(req.params.id) });
   } catch (error) {
-    console.error('[ERROR] 更新游戏失败:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -2246,10 +2468,51 @@ app.delete('/api/games/:id', (req, res) => {
     // 删除游戏
     db.prepare('DELETE FROM games WHERE id = ?').run(gameId);
     
+    // 删除静态文件
+    deleteGameStaticFile(gameId);
+    
     console.log(`[INFO] 游戏已删除: ${gameId}`);
     res.json({ success: true });
   } catch (error) {
     console.error('[ERROR] 删除游戏失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 更新我的游戏
+app.put('/api/games/:id', (req, res) => {
+  try {
+    const authorToken = req.headers['x-author-token'];
+    const gameId = req.params.id;
+    const { title, code } = req.body;
+    
+    if (!authorToken) {
+      return res.status(401).json({ success: false, error: '未授权' });
+    }
+    
+    // 验证是否是作者本人
+    const game = db.prepare('SELECT author_token FROM games WHERE id = ?').get(gameId);
+    if (!game) {
+      return res.status(404).json({ success: false, error: '游戏不存在' });
+    }
+    
+    if (game.author_token !== authorToken) {
+      return res.status(403).json({ success: false, error: '无权编辑此游戏' });
+    }
+    
+    // 更新游戏
+    if (title && code) {
+      db.prepare('UPDATE games SET title = ?, code = ? WHERE id = ?').run(title, code, gameId);
+    } else if (title) {
+      db.prepare('UPDATE games SET title = ? WHERE id = ?').run(title, gameId);
+    } else if (code) {
+      db.prepare('UPDATE games SET code = ? WHERE id = ?').run(code, gameId);
+    }
+    
+    console.log(`[INFO] 游戏已更新: ${gameId}`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[ERROR] 更新游戏失败:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -2831,10 +3094,9 @@ app.get('/api/trial/status', (req, res) => {
 app.post('/api/trial/generate', async (req, res) => {
   const startTime = Date.now();
   const userToken = req.headers['x-user-token'] || 'anonymous-' + Date.now();
-  const authorToken = req.headers['x-author-token'] || null;
   
   try {
-    const { prompt, draftId } = req.body;
+    const { prompt } = req.body;
     
     if (!prompt || prompt.trim().length === 0) {
       return res.status(400).json({ success: false, error: '请输入游戏描述' });
@@ -2881,7 +3143,6 @@ app.post('/api/trial/generate', async (req, res) => {
 3. 包含操作说明（支持键盘和触屏）
 4. 界面美观，使用现代化深色主题设计
 5. 适配手机和电脑屏幕
-6. 禁止使用alert()、confirm()、prompt()等弹窗函数，所有提示信息都要在游戏界面内显示
 
 【移动端适配】：
 1. 添加触屏控制支持（虚拟摇杆或触屏按钮）
@@ -3002,21 +3263,6 @@ app.post('/api/trial/generate', async (req, res) => {
     // 注入品牌水印
     code = injectBrandWatermark(code);
 
-    // 如果有草稿ID，在后端直接更新草稿状态为已发布
-    if (draftId && authorToken) {
-      try {
-        const draft = db.prepare('SELECT author_token FROM games WHERE id = ?').get(draftId);
-        if (draft && draft.author_token === authorToken) {
-          db.prepare(`
-            UPDATE games SET title = ?, code = ?, status = 'published' WHERE id = ?
-          `).run(title, code, draftId);
-          console.log(`[TRIAL] 草稿已自动更新为已发布: ${draftId}`);
-        }
-      } catch (e) {
-        console.error('[TRIAL ERROR] 自动更新草稿失败:', e.message);
-      }
-    }
-
     const totalTime = Date.now() - startTime;
     console.log(`[TRIAL SUCCESS] 生成完成，耗时: ${totalTime}ms`);
 
@@ -3025,7 +3271,6 @@ app.post('/api/trial/generate', async (req, res) => {
       code,
       title,
       prompt,
-      draftId, // 返回draftId
       trialMode: true,
       remaining: quota.remaining - 1,
       debug: {
@@ -3789,17 +4034,17 @@ app.get('/api/games', (req, res) => {
       }
     }
     
-    // 获取总数（排除草稿状态的游戏）
-    const countSql = `SELECT COUNT(*) as total FROM games WHERE is_hidden = 0 AND (status IS NULL OR status != 'draft') ${categoryWhere}`;
+    // 获取总数
+    const countSql = `SELECT COUNT(*) as total FROM games WHERE is_hidden = 0 ${categoryWhere}`;
     const totalResult = db.prepare(countSql).get(...params);
     const total = totalResult ? totalResult.total : 0;
     
-    // 获取游戏列表（排除草稿状态的游戏）
+    // 获取游戏列表
     const sql = `
       SELECT id, title, prompt, author_name, play_count, like_count, favorite_count, created_at,
              (play_count + like_count * 5 + favorite_count * 3) as hot_score
       FROM games 
-      WHERE is_hidden = 0 AND (status IS NULL OR status != 'draft') ${categoryWhere}
+      WHERE is_hidden = 0 ${categoryWhere}
       ORDER BY ${orderBy}
       LIMIT ? OFFSET ?
     `;
@@ -4413,32 +4658,102 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// ==================== 启动时生成静态游戏文件 ====================
+
+// 生成所有已发布游戏的静态文件
+async function generateAllStaticFiles() {
+  try {
+    console.log('[INFO] 开始检查并生成游戏静态文件...');
+    
+    // 确保基础目录存在
+    if (!fs.existsSync(GAMES_STATIC_DIR)) {
+      fs.mkdirSync(GAMES_STATIC_DIR, { recursive: true });
+    }
+    
+    // 获取所有已发布的游戏
+    const games = db.prepare(`
+      SELECT id, title, prompt, code, author_name 
+      FROM games 
+      WHERE COALESCE(status, 'published') = 'published'
+      ORDER BY created_at DESC
+    `).all();
+    
+    console.log(`[INFO] 找到 ${games.length} 个已发布游戏`);
+    
+    let generated = 0;
+    let skipped = 0;
+    
+    for (const game of games) {
+      const filePath = getGameFilePath(game.id);
+      
+      // 只生成不存在的文件
+      if (!fs.existsSync(filePath)) {
+        saveGameStaticFile(game.id, game.code, {
+          title: game.title,
+          authorName: game.author_name,
+          prompt: game.prompt
+        });
+        generated++;
+      } else {
+        skipped++;
+      }
+    }
+    
+    console.log(`[INFO] 静态文件生成完成: 新生成 ${generated} 个, 跳过 ${skipped} 个`);
+  } catch (error) {
+    console.error('[ERROR] 生成静态文件失败:', error.message);
+  }
+}
+
+// 管理API：手动触发生成所有静态文件
+app.post('/api/admin/generate-static-files', (req, res) => {
+  try {
+    generateAllStaticFiles();
+    res.json({ success: true, message: '静态文件生成任务已启动' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 管理API：获取静态文件统计
+app.get('/api/admin/static-files-stats', (req, res) => {
+  try {
+    let totalFiles = 0;
+    
+    if (fs.existsSync(GAMES_STATIC_DIR)) {
+      const subdirs = fs.readdirSync(GAMES_STATIC_DIR);
+      for (const subdir of subdirs) {
+        const subdirPath = path.join(GAMES_STATIC_DIR, subdir);
+        if (fs.statSync(subdirPath).isDirectory()) {
+          const files = fs.readdirSync(subdirPath).filter(f => f.endsWith('.html'));
+          totalFiles += files.length;
+        }
+      }
+    }
+    
+    const totalGames = db.prepare(`
+      SELECT COUNT(*) as count FROM games 
+      WHERE COALESCE(status, 'published') = 'published'
+    `).get().count;
+    
+    res.json({ 
+      success: true, 
+      stats: {
+        totalStaticFiles: totalFiles,
+        totalPublishedGames: totalGames,
+        coverage: totalGames > 0 ? ((totalFiles / totalGames) * 100).toFixed(1) + '%' : '0%'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`服务器运行在 http://localhost:${PORT}`);
   
-  // 启动时清理一次过期草稿
-  cleanupStaleDrafts();
-  
-  // 每5分钟清理一次过期草稿
-  setInterval(cleanupStaleDrafts, 5 * 60 * 1000);
+  // 启动后延迟生成静态文件（避免阻塞启动）
+  setTimeout(() => {
+    generateAllStaticFiles();
+  }, 3000);
 });
-
-// 清理过期草稿（超过10分钟仍为draft状态的游戏）
-function cleanupStaleDrafts() {
-  try {
-    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-    
-    // 删除超过10分钟仍为draft状态的游戏（这些是生成失败或被中断的）
-    const result = db.prepare(`
-      DELETE FROM games 
-      WHERE status = 'draft' 
-      AND created_at < ?
-    `).run(tenMinutesAgo);
-    
-    if (result.changes > 0) {
-      console.log(`[Cleanup] 已清理 ${result.changes} 个过期草稿`);
-    }
-  } catch (error) {
-    console.error('[Cleanup] 清理过期草稿失败:', error);
-  }
-}
