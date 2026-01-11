@@ -469,18 +469,67 @@ const backgroundTask = {
   error: null           // 错误信息
 };
 
-// 保存生成状态到localStorage
-function saveGeneratingState() {
+// 保存生成状态到localStorage，并在服务器端创建草稿
+// 返回 draftId 供 generate API 使用
+async function saveGeneratingState() {
   if (state.isGenerating && backgroundTask.isActive && backgroundTask.prompt) {
+    // 检查是否已存在草稿ID（避免重复创建）
+    const existingState = localStorage.getItem('aigame-generating-state');
+    let existingDraftId = null;
+    if (existingState) {
+      try {
+        const parsed = JSON.parse(existingState);
+        if (parsed.draftId && parsed.prompt === backgroundTask.prompt) {
+          existingDraftId = parsed.draftId;
+        }
+      } catch (e) {}
+    }
+    
     const generatingState = {
       isGenerating: true,
       prompt: backgroundTask.prompt,
       startTime: generatingStartTime || Date.now(),
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      draftId: existingDraftId
     };
+    
+    // 只有没有草稿ID时才在服务器端创建草稿记录
+    if (!existingDraftId) {
+      try {
+        const authorToken = getAuthorToken();
+        const authorName = state.settings.authorName || state.account.nickname || '匿名';
+        
+        const response = await fetch('/api/games', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: backgroundTask.prompt.slice(0, 50),
+            prompt: backgroundTask.prompt,
+            authorName,
+            authorToken,
+            status: 'draft'
+          })
+        });
+        
+        const data = await response.json();
+        if (data.success && data.id) {
+          generatingState.draftId = data.id;
+          // 保存草稿ID的作者令牌映射
+          saveGameAuthorToken(data.id, authorToken);
+          log('草稿已保存到服务器: ' + data.id, 'info');
+        }
+      } catch (e) {
+        console.error('创建草稿失败:', e);
+      }
+    }
+    
     localStorage.setItem('aigame-generating-state', JSON.stringify(generatingState));
     log('保存生成状态到本地存储', 'info');
+    
+    // 返回草稿ID供后续使用
+    return generatingState.draftId;
   }
+  return null;
 }
 
 // 清除生成状态
@@ -488,7 +537,7 @@ function clearGeneratingState() {
   localStorage.removeItem('aigame-generating-state');
 }
 
-// 检查并恢复生成状态
+// 检查并恢复生成状态（不再弹出确认框，草稿已保存在服务器端"我的作品"中）
 function checkAndRestoreGeneratingState() {
   const savedState = localStorage.getItem('aigame-generating-state');
   if (!savedState) return;
@@ -496,34 +545,13 @@ function checkAndRestoreGeneratingState() {
   try {
     const generatingState = JSON.parse(savedState);
     
-    // 检查是否过期（超过10分钟认为已过期）
-    const elapsed = Date.now() - generatingState.timestamp;
-    if (elapsed > 10 * 60 * 1000) {
-      clearGeneratingState();
-      return;
-    }
+    // 清除本地保存的生成状态
+    clearGeneratingState();
     
-    // 有未完成的生成任务，提示用户
-    if (generatingState.isGenerating && generatingState.prompt) {
-      // 清除保存的状态
-      clearGeneratingState();
-      
-      // 延迟显示提示，等页面加载完成
-      setTimeout(() => {
-        const promptPreview = generatingState.prompt.length > 30 
-          ? generatingState.prompt.substring(0, 30) + '...' 
-          : generatingState.prompt;
-        
-        // 使用确认框询问用户
-        if (confirm(`检测到上次有未完成的游戏生成任务：\n\n"${promptPreview}"\n\n是否重新开始生成？`)) {
-          // 恢复prompt并重新生成
-          const promptInput = document.getElementById('prompt-input');
-          if (promptInput) {
-            promptInput.value = generatingState.prompt;
-          }
-          generateGame();
-        }
-      }, 1000);
+    // 草稿已保存到服务器端，用户可以在"我的作品"中查看制作中的游戏
+    // 不再弹出确认框打扰用户
+    if (generatingState.draftId) {
+      log('检测到未完成的草稿游戏，可在"我的作品"中查看', 'info');
     }
   } catch (e) {
     console.error('恢复生成状态失败:', e);
@@ -714,16 +742,58 @@ function initBetaBanner() {
   const dismissed = localStorage.getItem('aigame-beta-banner-dismissed');
   if (betaBanner && !dismissed) {
     betaBanner.style.display = 'flex';
+    
+    // 使用JS绑定事件，更可靠
+    betaBanner.addEventListener('click', function(e) {
+      // 检查是否点击的是关闭按钮
+      if (e.target.classList.contains('beta-close') || e.target.closest('.beta-close')) {
+        e.stopPropagation();
+        e.preventDefault();
+        closeBetaBanner();
+        return;
+      }
+      // 点击其他区域，显示公众号
+      showBrandPromo();
+    });
+    
+    // 触摸事件（移动端）
+    betaBanner.addEventListener('touchend', function(e) {
+      if (e.target.classList.contains('beta-close') || e.target.closest('.beta-close')) {
+        e.stopPropagation();
+        e.preventDefault();
+        closeBetaBanner();
+        return;
+      }
+      e.preventDefault(); // 防止触发click
+      showBrandPromo();
+    }, { passive: false });
   }
 }
 
 // 关闭内测横幅
-function closeBetaBanner() {
+function closeBetaBanner(event) {
+  // 阻止事件冒泡和默认行为
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
   const betaBanner = document.getElementById('beta-banner');
   if (betaBanner) {
     betaBanner.style.display = 'none';
     localStorage.setItem('aigame-beta-banner-dismissed', 'true');
   }
+}
+
+// 点击内测横幅（显示公众号）
+function showBetaFeedback(event) {
+  // 如果点击的是关闭按钮，不处理（通过检测target和其父元素）
+  if (event) {
+    const target = event.target;
+    if (target.classList.contains('beta-close') || target.closest('.beta-close')) {
+      return;
+    }
+  }
+  showBrandPromo();
 }
 
 // ==================== 积分初始化 ====================
@@ -1283,7 +1353,7 @@ function initMainTabs() {
   loadTabData('recent');
 }
 
-// 下拉刷新功能
+// 下拉刷新功能（支持触摸和鼠标）
 function initPullToRefresh(pageId, indicatorId, refreshCallback) {
   const page = document.getElementById(pageId);
   const indicator = document.getElementById(indicatorId);
@@ -1295,26 +1365,39 @@ function initPullToRefresh(pageId, indicatorId, refreshCallback) {
   let isRefreshing = false;
   const threshold = 60; // 触发刷新的阈值
 
-  page.addEventListener('touchstart', (e) => {
-    // 只有在页面顶部才能下拉刷新
-    if (window.scrollY > 0 || isRefreshing) return;
-    startY = e.touches[0].clientY;
-    isPulling = true;
-  }, { passive: true });
+  // 获取页面实际滚动位置
+  function getScrollTop() {
+    // 检查页面本身是否可滚动
+    if (page.scrollTop > 0) return page.scrollTop;
+    // 检查main-content
+    const mainContent = page.querySelector('.main-content');
+    if (mainContent && mainContent.scrollTop > 0) return mainContent.scrollTop;
+    // 检查window滚动
+    return window.scrollY || document.documentElement.scrollTop || 0;
+  }
 
-  page.addEventListener('touchmove', (e) => {
+  // 开始拖动
+  function handleStart(clientY) {
+    if (getScrollTop() > 0 || isRefreshing) return;
+    startY = clientY;
+    currentY = clientY;
+    isPulling = true;
+  }
+
+  // 拖动中
+  function handleMove(clientY, preventDefault) {
     if (!isPulling || isRefreshing) return;
-    if (window.scrollY > 0) {
+    if (getScrollTop() > 0) {
       isPulling = false;
       return;
     }
 
-    currentY = e.touches[0].clientY;
+    currentY = clientY;
     const pullDistance = currentY - startY;
 
     if (pullDistance > 0) {
       // 阻止默认滚动
-      e.preventDefault();
+      if (preventDefault) preventDefault();
       // 计算实际移动距离（带阻尼效果）
       const moveDistance = Math.min(pullDistance * 0.5, 100);
       indicator.style.transform = `translateY(${moveDistance}px)`;
@@ -1328,9 +1411,10 @@ function initPullToRefresh(pageId, indicatorId, refreshCallback) {
         indicator.querySelector('.pull-refresh-text').textContent = '下拉刷新';
       }
     }
-  }, { passive: false });
+  }
 
-  page.addEventListener('touchend', async () => {
+  // 结束拖动
+  async function handleEnd() {
     if (!isPulling || isRefreshing) return;
     isPulling = false;
 
@@ -1362,10 +1446,43 @@ function initPullToRefresh(pageId, indicatorId, refreshCallback) {
       indicator.style.transform = 'translateY(0)';
       indicator.classList.remove('pulling', 'ready');
     }
+  }
 
+  // ===== 触摸事件（移动端） =====
+  page.addEventListener('touchstart', (e) => {
+    handleStart(e.touches[0].clientY);
+  }, { passive: true });
+
+  page.addEventListener('touchmove', (e) => {
+    handleMove(e.touches[0].clientY, () => e.preventDefault());
+  }, { passive: false });
+
+  page.addEventListener('touchend', handleEnd, { passive: true });
+
+  // ===== 鼠标事件（PC端） =====
+  page.addEventListener('mousedown', (e) => {
+    // 只响应左键
+    if (e.button !== 0) return;
+    handleStart(e.clientY);
+  });
+
+  page.addEventListener('mousemove', (e) => {
+    if (!isPulling) return;
+    handleMove(e.clientY, () => e.preventDefault());
+  });
+
+  page.addEventListener('mouseup', handleEnd);
+  
+  // 鼠标离开页面时也要结束
+  page.addEventListener('mouseleave', () => {
+    if (isPulling && !isRefreshing) {
+      isPulling = false;
+      indicator.style.transform = 'translateY(0)';
+      indicator.classList.remove('pulling', 'ready');
+    }
     startY = 0;
     currentY = 0;
-  }, { passive: true });
+  });
 }
 
 // ==================== 底部导航切换 ====================
@@ -1744,12 +1861,26 @@ function closeFullGameList() {
   }
 }
 
-// 加载我的作品列表（横向布局 - 只显示一行4个）
+// 根据屏幕宽度计算一行可显示的卡片数
+function getProfileCardLimit() {
+  // 获取实际容器宽度（减去padding）
+  const container = document.querySelector('.profile-horizontal-list');
+  const containerWidth = container ? container.offsetWidth : (window.innerWidth - 32);
+  
+  // 卡片最小宽度约80px，加上gap 12px
+  const cardWidth = 92; // 80px min-width + 12px gap
+  const maxCards = Math.floor(containerWidth / cardWidth);
+  
+  // 限制在合理范围内: 最少2个，最多8个
+  return Math.max(2, Math.min(8, maxCards));
+}
+
+// 加载我的作品列表（横向布局 - 根据屏幕宽度只显示一行）
 async function loadProfilePageGames() {
   const container = document.getElementById('profile-games-list');
   const countEl = document.getElementById('profile-games-count');
   const moreBtn = document.getElementById('profile-games-more');
-  const DISPLAY_LIMIT = 3; // 只显示3个
+  const DISPLAY_LIMIT = getProfileCardLimit(); // 根据屏幕宽度动态计算
   if (!container) return;
   
   container.innerHTML = '<div class="loading-games">加载中...</div>';
@@ -1870,11 +2001,11 @@ function formatNumber(num) {
   return num.toString();
 }
 
-// 加载我的点赞（横向布局 - 只显示一行4个）
+// 加载我的点赞（横向布局 - 根据屏幕宽度只显示一行）
 async function loadProfilePageLikes() {
   const container = document.getElementById('profile-likes-list');
   const moreBtn = document.getElementById('profile-likes-more');
-  const DISPLAY_LIMIT = 3;
+  const DISPLAY_LIMIT = getProfileCardLimit();
   if (!container) return;
   
   container.innerHTML = '<div class="loading-games">加载中...</div>';
@@ -1904,11 +2035,11 @@ async function loadProfilePageLikes() {
   }
 }
 
-// 加载我的收藏（横向布局 - 只显示一行4个）
+// 加载我的收藏（横向布局 - 根据屏幕宽度只显示一行）
 async function loadProfilePageFavorites() {
   const container = document.getElementById('profile-favs-list');
   const moreBtn = document.getElementById('profile-favs-more');
-  const DISPLAY_LIMIT = 3;
+  const DISPLAY_LIMIT = getProfileCardLimit();
   if (!container) return;
   
   container.innerHTML = '<div class="loading-games">加载中...</div>';
@@ -2051,6 +2182,87 @@ function showGamePage() {
   document.querySelectorAll('.bottom-nav .nav-item').forEach(item => {
     item.classList.remove('active');
   });
+  // 隐藏草稿操作按钮（如果有）
+  hideDraftActions();
+}
+
+// 显示草稿操作按钮（重新生成 / 删除）
+function showDraftActions(gameId, prompt) {
+  // 先移除已有的
+  hideDraftActions();
+  
+  const container = document.querySelector('.game-frame-container');
+  if (!container) return;
+  
+  const actionsDiv = document.createElement('div');
+  actionsDiv.id = 'draft-actions';
+  actionsDiv.className = 'draft-actions-overlay';
+  actionsDiv.innerHTML = `
+    <div class="draft-actions-buttons">
+      <button class="btn btn-primary" onclick="regenerateDraft('${escapeHtml(prompt)}', '${gameId}')">
+        🔄 重新生成
+      </button>
+      <button class="btn btn-danger" onclick="deleteDraft('${gameId}')">
+        🗑️ 删除
+      </button>
+    </div>
+  `;
+  container.appendChild(actionsDiv);
+}
+
+// 隐藏草稿操作按钮
+function hideDraftActions() {
+  const existing = document.getElementById('draft-actions');
+  if (existing) existing.remove();
+}
+
+// 重新生成草稿
+async function regenerateDraft(prompt, draftId) {
+  // 先删除旧草稿
+  try {
+    await fetch(`/api/games/${draftId}`, {
+      method: 'DELETE',
+      headers: { 'X-Author-Token': getAuthorToken() }
+    });
+  } catch (e) {
+    console.error('删除旧草稿失败:', e);
+  }
+  
+  // 返回首页并触发生成
+  showHome();
+  
+  // 填入prompt并生成
+  const input = document.getElementById('prompt-input');
+  if (input) {
+    input.value = prompt;
+  }
+  
+  // 延迟一下再生成，确保页面已切换
+  setTimeout(() => {
+    generateGame();
+  }, 100);
+}
+
+// 删除草稿
+async function deleteDraft(draftId) {
+  if (!confirm('确定要删除这个未完成的游戏吗？')) return;
+  
+  try {
+    const response = await fetch(`/api/games/${draftId}`, {
+      method: 'DELETE',
+      headers: { 'X-Author-Token': getAuthorToken() }
+    });
+    
+    const data = await response.json();
+    if (data.success) {
+      showToast('已删除', 'success');
+      showHome();
+    } else {
+      showToast(data.error || '删除失败', 'error');
+    }
+  } catch (e) {
+    showToast('删除失败: ' + e.message, 'error');
+  }
 }
 
 // 加载设置
@@ -2799,7 +3011,8 @@ function viewGeneratedGame() {
       title: backgroundTask.result.title,
       prompt: backgroundTask.prompt,
       code: backgroundTask.result.code,
-      isNew: true
+      isNew: true,
+      draftId: backgroundTask.result.draftId
     };
     state.currentGameId = null;
     
@@ -2877,8 +3090,10 @@ async function generateGame() {
   
   startGeneratingTimer();
   
-  // 保存生成状态到本地存储（防止关闭浏览器丢失）
-  saveGeneratingState();
+  // 保存生成状态到本地存储，并创建草稿（防止关闭浏览器丢失）
+  // 这里必须 await，确保草稿已创建，后端可以在生成完成后更新它
+  const createdDraftId = await saveGeneratingState();
+  log(`草稿ID: ${createdDraftId || '无'}`);
   
   log(`开始生成游戏: "${prompt}"`);
   updateGeneratingStatus('正在连接 AI 服务...');
@@ -2929,16 +3144,22 @@ async function generateGame() {
     
     const startTime = Date.now();
     
-    // 获取用户token
+    // 获取用户token和作者token
     const userToken = getUserToken();
+    const authorToken = getAuthorToken();
     
     const response = await fetch('/api/generate', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'X-User-Token': userToken || ''
+        'X-User-Token': userToken || '',
+        'X-Author-Token': authorToken || ''
       },
-      body: JSON.stringify({ prompt, llmConfig }),
+      body: JSON.stringify({ 
+        prompt, 
+        llmConfig,
+        draftId: createdDraftId  // 传递草稿ID，后端生成完成后会自动更新
+      }),
       signal: state.abortController.signal
     });
     
@@ -3000,12 +3221,58 @@ async function generateGame() {
       return;
     }
     
+    // 获取草稿ID（如果有）
+    let draftId = null;
+    try {
+      const savedState = localStorage.getItem('aigame-generating-state');
+      if (savedState) {
+        const generatingState = JSON.parse(savedState);
+        draftId = generatingState.draftId;
+      }
+    } catch (e) {
+      console.error('获取草稿ID失败:', e);
+    }
+    
+    // 如果有草稿ID，自动更新草稿状态为已完成
+    if (draftId) {
+      try {
+        const authorToken = getAuthorToken();
+        console.log('[DEBUG] 更新草稿状态:', { draftId, authorToken: authorToken?.slice(0,8) + '...' });
+        
+        const updateResponse = await fetch(`/api/games/${draftId}`, {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Author-Token': authorToken
+          },
+          body: JSON.stringify({
+            title: data.title,
+            prompt: prompt,
+            code: data.code,
+            authorToken: authorToken,  // 也在body中传递token
+            status: 'published'  // 生成完成后自动发布
+          })
+        });
+        
+        const updateResult = await updateResponse.json();
+        if (updateResult.success) {
+          log('草稿已自动更新为已发布', 'success');
+          console.log('[INFO] 草稿更新成功:', draftId);
+        } else {
+          console.error('[ERROR] 草稿更新失败:', updateResult.error);
+        }
+      } catch (e) {
+        console.error('[ERROR] 自动更新草稿异常:', e);
+      }
+    }
+    
     // 判断是否在后台模式
     if (backgroundTask.isMinimized) {
       // 后台模式：保存结果，显示通知
       backgroundTask.result = {
         title: data.title,
-        code: data.code
+        code: data.code,
+        draftId: draftId
       };
       
       document.getElementById('generating-float').classList.remove('active');
@@ -3019,13 +3286,14 @@ async function generateGame() {
         title: data.title,
         prompt: prompt,
         code: data.code,
-        isNew: true
+        isNew: true,
+        draftId: draftId
       };
-      state.currentGameId = null;
+      state.currentGameId = draftId || null;  // 如果有草稿ID，设置为当前游戏ID
       
       // 隐藏生成遮罩和浮动提示
       document.getElementById('generating-overlay').classList.remove('active');
-  document.body.classList.remove('overlay-open');
+      document.body.classList.remove('overlay-open');
       document.getElementById('generating-float').classList.remove('active');
       
       // 显示保存弹窗并预览
@@ -3140,12 +3408,16 @@ async function confirmSaveGame() {
     // 获取或生成作者令牌
     let authorToken = getAuthorToken();
     
-    // 检查是否为编辑模式
+    // 检查是否为编辑模式（有currentGameId就是编辑/更新模式）
     const isEditing = state.currentGame?.isEditing && state.currentGameId;
+    
+    // 检查是否有草稿ID或已有游戏ID需要更新
+    const draftId = state.currentGame?.draftId;
+    const existingGameId = draftId || state.currentGameId;
     
     let response;
     if (isEditing) {
-      // 更新现有游戏
+      // 编辑模式：更新现有游戏
       response = await fetch(`/api/games/${state.currentGameId}`, {
         method: 'PUT',
         headers: { 
@@ -3157,6 +3429,25 @@ async function confirmSaveGame() {
           code: state.currentGame.code
         })
       });
+    } else if (existingGameId) {
+      // 更新已有游戏（草稿或已发布的游戏）
+      response = await fetch(`/api/games/${existingGameId}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Author-Token': authorToken
+        },
+        body: JSON.stringify({
+          title,
+          prompt: state.currentGame.prompt,
+          code: state.currentGame.code,
+          authorName,
+          authorToken,
+          status: 'published'
+        })
+      });
+      // 确保当前游戏ID正确
+      state.currentGameId = existingGameId;
     } else {
       // 创建新游戏
       response = await fetch('/api/games', {
@@ -3259,6 +3550,96 @@ async function loadGameById(gameId) {
     
     state.currentGame = data.game;
     state.currentGameId = gameId;
+    
+    // 检查是否是草稿（制作中的游戏）
+    if (data.game.status === 'draft') {
+      showGameLoading(false);
+      
+      // 检查草稿是否已过期（超过2分钟可能是失败了）
+      const createdAt = new Date(data.game.created_at).getTime();
+      const now = Date.now();
+      const isStale = (now - createdAt) > 2 * 60 * 1000; // 2分钟
+      
+      // 检查是否是当前用户的草稿
+      const authorToken = getAuthorToken();
+      const isOwner = data.game.author_token === authorToken;
+      
+      // 显示制作中提示
+      const gameFrame = document.getElementById('game-frame');
+      if (gameFrame) {
+        const statusIcon = isStale ? '⚠️' : '🎨';
+        const statusTitle = isStale ? '生成可能已中断' : '游戏制作中...';
+        const statusDesc = isStale 
+          ? '这个游戏的生成可能已经中断<br>请尝试重新生成或删除'
+          : 'AI正在努力创作这个游戏<br>完成后即可游玩';
+        const loaderHtml = isStale ? '' : '<div class="loader"></div>';
+        const hintText = isStale ? '💡 点击下方按钮处理' : '💡 稍后刷新页面查看';
+        
+        const draftHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                color: white;
+                text-align: center;
+                padding: 20px;
+                box-sizing: border-box;
+              }
+              .draft-icon { font-size: 64px; margin-bottom: 20px; ${isStale ? '' : 'animation: pulse 2s infinite;'} }
+              @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+              .draft-title { font-size: 24px; font-weight: bold; margin-bottom: 10px; color: ${isStale ? '#ff6b6b' : 'white'}; }
+              .draft-desc { font-size: 16px; color: rgba(255,255,255,0.7); max-width: 300px; line-height: 1.5; }
+              .draft-prompt { font-size: 14px; color: #ffa500; margin-top: 20px; padding: 12px 20px; background: rgba(255,165,0,0.1); border-radius: 8px; max-width: 280px; word-break: break-all; }
+              .draft-hint { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 30px; }
+              .loader { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.2); border-top-color: #ffa500; border-radius: 50%; animation: spin 1s linear infinite; margin-top: 20px; }
+              @keyframes spin { to { transform: rotate(360deg); } }
+            </style>
+          </head>
+          <body>
+            <div class="draft-icon">${statusIcon}</div>
+            <div class="draft-title">${statusTitle}</div>
+            <div class="draft-desc">${statusDesc}</div>
+            <div class="draft-prompt">"${escapeHtml(data.game.prompt || data.game.title)}"</div>
+            ${loaderHtml}
+            <div class="draft-hint">${hintText}</div>
+          </body>
+          </html>
+        `;
+        // 使用 Blob URL 方式加载，兼容微信浏览器
+        const blob = new Blob([draftHtml], { type: 'text/html' });
+        const blobUrl = URL.createObjectURL(blob);
+        gameFrame.src = blobUrl;
+        // 清理旧的 blob URL
+        gameFrame.onload = () => {
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+        };
+      }
+      // 更新页面标题
+      const titleEl = document.getElementById('game-title');
+      if (titleEl) titleEl.textContent = data.game.title + (isStale ? ' (生成中断)' : ' (制作中)');
+      
+      // 隐藏互动按钮（制作中的游戏不能互动）
+      const sidebar = document.getElementById('tiktok-sidebar');
+      if (sidebar) sidebar.style.display = 'none';
+      const authorInfo = document.getElementById('tiktok-author-info');
+      if (authorInfo) authorInfo.style.display = 'none';
+      
+      // 如果是作者且草稿已过期，显示操作按钮
+      if (isOwner && isStale) {
+        showDraftActions(gameId, data.game.prompt || data.game.title);
+      }
+      return;
+    }
     
     log(`游戏加载成功: ${data.game.title}`, 'success');
     log(`代码长度: ${data.game.code?.length || 0} 字符`);
@@ -3424,7 +3805,28 @@ ${processedCode}
   // 保存原始代码用于调试
   state.currentGameCode = processedCode;
   
-  iframe.srcdoc = processedCode;
+  // 检测是否是微信浏览器
+  const isWechat = /MicroMessenger/i.test(navigator.userAgent);
+  
+  if (isWechat) {
+    // 微信浏览器使用Blob URL方式加载，更好的兼容性
+    try {
+      const blob = new Blob([processedCode], { type: 'text/html;charset=utf-8' });
+      const blobUrl = URL.createObjectURL(blob);
+      iframe.src = blobUrl;
+      // 清理之前的blob URL
+      iframe.onload = () => {
+        showGameLoading(false);
+        URL.revokeObjectURL(blobUrl);
+      };
+    } catch (e) {
+      log('Blob URL创建失败，回退到srcdoc', 'warn');
+      iframe.srcdoc = processedCode;
+    }
+  } else {
+    // 其他浏览器使用srcdoc
+    iframe.srcdoc = processedCode;
+  }
 }
 
 // 查看游戏源代码（改进版 - 支持返回和编辑）
@@ -3586,12 +3988,33 @@ function closeShareModal() {
   document.getElementById('share-modal').classList.remove('active');
 }
 
-// 复制分享链接
-function copyShareUrl() {
-  const input = document.getElementById('share-url');
-  input.select();
-  document.execCommand('copy');
-  showToast('链接已复制', 'success');
+// 复制分享链接（直接使用预览区的文字）
+async function copyShareUrl() {
+  // 直接获取预览区显示的分享文案
+  const textPreview = document.getElementById('share-text-preview');
+  const shareText = textPreview ? textPreview.value : '';
+  
+  if (!shareText) {
+    showToast('分享内容为空', 'error');
+    return;
+  }
+  
+  // 复制到剪贴板
+  try {
+    await navigator.clipboard.writeText(shareText);
+    showToast('分享内容已复制', 'success');
+  } catch (e) {
+    // 降级方案
+    const textarea = document.createElement('textarea');
+    textarea.value = shareText;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    showToast('分享内容已复制', 'success');
+  }
 }
 
 // 复制文本到剪贴板
@@ -4375,28 +4798,63 @@ async function loadMyGames() {
       
       // 渲染游戏列表
       if (data.games && data.games.length > 0) {
-        listContainer.innerHTML = data.games.map(game => `
-          <div class="my-game-item" data-id="${game.id}">
-            <div class="my-game-info">
-              <div class="my-game-title">${escapeHtml(game.title)}</div>
-              <div class="my-game-prompt">${escapeHtml(game.prompt || '')}</div>
-              <div class="my-game-meta">
-                <span>▶️ ${game.play_count || 0}</span>
-                <span>❤️ ${game.like_count || 0}</span>
-                <span>📅 ${formatDate(game.created_at)}</span>
+        listContainer.innerHTML = data.games.map(game => {
+          const isDraft = game.status === 'draft';
+          const createdTime = new Date(game.created_at).getTime();
+          const now = Date.now();
+          const ageMinutes = (now - createdTime) / 1000 / 60;
+          const isStale = isDraft && ageMinutes > 2; // 超过2分钟可能失败
+          
+          if (isDraft) {
+            // 制作中的游戏 - 特殊UI
+            return `
+              <div class="my-game-item my-game-draft ${isStale ? 'stale' : ''}" data-id="${game.id}">
+                <div class="my-game-info">
+                  <div class="my-game-title">
+                    ${isStale ? '⚠️' : '⏳'} ${escapeHtml(game.title)}
+                    <span class="draft-badge">${isStale ? '可能失败' : '制作中'}</span>
+                  </div>
+                  <div class="my-game-prompt">${escapeHtml(game.prompt || '')}</div>
+                  <div class="my-game-meta">
+                    <span>📅 ${formatDate(game.created_at)}</span>
+                    ${isStale ? '<span class="stale-hint">生成超时，请重试或删除</span>' : '<span class="making-hint">正在生成中...</span>'}
+                  </div>
+                </div>
+                <div class="my-game-actions">
+                  <button class="btn btn-small btn-primary" onclick="regenerateDraft('${escapeHtml(game.prompt || game.title)}', '${game.id}')">
+                    🔄 重试
+                  </button>
+                  <button class="btn btn-small btn-danger" onclick="deleteDraft('${game.id}')">
+                    🗑️ 删除
+                  </button>
+                </div>
               </div>
-            </div>
-            <div class="my-game-actions">
-              <button class="btn btn-small btn-primary" onclick="playMyGame('${game.id}')">
-                ▶️ 游玩
-              </button>
-              <!-- 编辑按钮已移除：已生成的游戏无法继续对话编辑 -->
-              <button class="btn btn-small btn-danger" onclick="deleteMyGame('${game.id}', '${escapeHtml(game.title)}')">
-                🗑️ 删除
-              </button>
-            </div>
-          </div>
-        `).join('');
+            `;
+          } else {
+            // 已完成的游戏 - 正常UI
+            return `
+              <div class="my-game-item" data-id="${game.id}">
+                <div class="my-game-info">
+                  <div class="my-game-title">${escapeHtml(game.title)}</div>
+                  <div class="my-game-prompt">${escapeHtml(game.prompt || '')}</div>
+                  <div class="my-game-meta">
+                    <span>▶️ ${game.play_count || 0}</span>
+                    <span>❤️ ${game.like_count || 0}</span>
+                    <span>📅 ${formatDate(game.created_at)}</span>
+                  </div>
+                </div>
+                <div class="my-game-actions">
+                  <button class="btn btn-small btn-primary" onclick="playMyGame('${game.id}')">
+                    ▶️ 游玩
+                  </button>
+                  <button class="btn btn-small btn-danger" onclick="deleteMyGame('${game.id}', '${escapeHtml(game.title)}')">
+                    🗑️ 删除
+                  </button>
+                </div>
+              </div>
+            `;
+          }
+        }).join('');
       } else {
         listContainer.innerHTML = `
           <div class="empty-games">
@@ -4816,7 +5274,7 @@ function updateTrialBanner() {
 }
 
 // 使用游客模式生成
-async function generateWithTrial() {
+async function generateWithTrial(draftId = null) {
   const prompt = document.getElementById('prompt-input').value.trim();
   
   if (!prompt) {
@@ -4825,13 +5283,15 @@ async function generateWithTrial() {
   }
   
   try {
+    const authorToken = getAuthorToken();
     const response = await fetch('/api/trial/generate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-User-Token': getUserToken()
+        'X-User-Token': getUserToken(),
+        'X-Author-Token': authorToken || ''
       },
-      body: JSON.stringify({ prompt })
+      body: JSON.stringify({ prompt, draftId })
     });
     
     const data = await response.json();
@@ -5191,17 +5651,18 @@ async function generateGame() {
       
       clearGeneratingLog();
       document.getElementById('generating-overlay').classList.add('active');
-  document.body.classList.add('overlay-open');
+      document.body.classList.add('overlay-open');
       startGeneratingTimer(); // 启动计时器
       
-      // 保存生成状态
-      saveGeneratingState();
+      // 保存生成状态，获取草稿ID
+      const trialDraftId = await saveGeneratingState();
+      log(`草稿ID: ${trialDraftId || '无'}`);
       
       log(`生成游戏: "${prompt}"`);
       updateGeneratingStatus('🎮 AI 正在创作中...');
       
       try {
-        const data = await generateWithTrial();
+        const data = await generateWithTrial(trialDraftId);
         
         if (data && data.code) {
           log(`游戏生成成功: ${data.title}`, 'success');
@@ -5301,13 +5762,19 @@ async function generateGame() {
     
     const startTime = Date.now();
     
+    const authorToken = getAuthorToken();
     const response = await fetch('/api/generate', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'X-User-Token': getUserToken()
+        'X-User-Token': getUserToken(),
+        'X-Author-Token': authorToken || ''
       },
-      body: JSON.stringify({ prompt, llmConfig }),
+      body: JSON.stringify({ 
+        prompt, 
+        llmConfig,
+        draftId: trialDraftId  // 传递草稿ID，后端生成完成后会自动更新
+      }),
       signal: state.abortController.signal
     });
     
@@ -5594,7 +6061,7 @@ function generateShareUrl(gameId) {
 }
 
 // 打开分享面板
-function openSharePanel() {
+async function openSharePanel() {
   if (!state.currentGameId) {
     showToast('请先保存游戏', 'error');
     return;
@@ -5620,6 +6087,23 @@ function openSharePanel() {
   const url = generateShareUrl(state.currentGameId);
   document.getElementById('share-url').value = url;
 
+  // 生成完整分享文案并显示在预览区
+  let shareTemplate = '🎮 我用一句话免费做了个游戏《{title}》，太好玩了！你也来试试吧👇\n{url}';
+  try {
+    const response = await fetch('/api/config/share-text');
+    const data = await response.json();
+    if (data.success && data.shareConfig && data.shareConfig.template) {
+      shareTemplate = data.shareConfig.template + '\n{url}';
+    }
+  } catch (e) {
+    console.error('获取分享文案配置失败:', e);
+  }
+  const shareText = shareTemplate.replace('{title}', gameTitle).replace('{url}', url);
+  const textPreview = document.getElementById('share-text-preview');
+  if (textPreview) {
+    textPreview.value = shareText;
+  }
+
   modal.classList.add('active');
   document.body.classList.add('modal-open');
 }
@@ -5633,8 +6117,8 @@ async function shareToChannel(platform) {
 
   // 获取分享文案配置
   let shareConfig = {
-    template: '我用一句话做了个游戏《{title}》，快来玩！',
-    weibo: '我用一句话做了个游戏：{title} 快来玩！#AI游戏# #一句话生成游戏#',
+    template: '🎮 我用一句话免费做了个游戏《{title}》，太好玩了！你也来试试吧👇',
+    weibo: '🎮 我用一句话免费做了个游戏：{title}，你也来试试吧！#AI游戏# #一句话生成游戏#',
     qq: '一句话生成的AI游戏，快来玩！'
   };
   try {

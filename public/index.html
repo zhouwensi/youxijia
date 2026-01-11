@@ -22,7 +22,7 @@
     <div class="beta-banner" id="beta-banner">
       <span class="beta-icon">🧪</span>
       <span class="beta-text">内测版本 - 有问题或建议欢迎反馈</span>
-      <button class="beta-close" onclick="closeBetaBanner()">×</button>
+      <button class="beta-close">×</button>
     </div>
     
     <!-- 主页内容 -->
@@ -333,14 +333,12 @@
             </div>
             <div class="tiktok-action" id="stat-fav-btn" onclick="toggleFavorite()">
               <div class="tiktok-icon" id="stat-fav-icon">☆</div>
-              <span class="tiktok-count">收藏</span>
             </div>
             <div class="tiktok-action" onclick="openSharePanel()">
               <div class="tiktok-icon">🔗</div>
-              <span class="tiktok-count" id="stat-shares">0</span>
             </div>
             <div class="tiktok-action tiktok-info" title="游玩次数">
-              <div class="tiktok-icon">🎮</div>
+              <div class="tiktok-icon">👁️</div>
               <span class="tiktok-count" id="stat-plays">0</span>
             </div>
           </div>
@@ -369,16 +367,10 @@
             </button>
           </div>
           
-          <!-- 品牌水印浮层（不可交互） -->
-          <div class="brand-watermark" id="brand-watermark">
-            <span class="watermark-logo">🎮</span>
-            <span class="watermark-text">游戏开发技术教程</span>
-          </div>
-          
           <!-- 右下角公众号按钮 -->
           <div class="game-promo-float" id="game-promo-float" onclick="showBrandPromo()">
             <span class="promo-float-icon">📱</span>
-            <span class="promo-float-text">公众号</span>
+            <span class="promo-float-text">关注公众号"游戏开发技术教程"，一句话免费做游戏</span>
           </div>
         </div>
         <!-- 调试面板 -->
@@ -705,19 +697,19 @@
             </div>
           </div>
 
-          <!-- 链接复制区域 -->
+          <!-- 分享内容预览区域 -->
           <div class="share-link-section">
-            <label class="share-link-label">游戏链接</label>
-            <div class="share-link-box">
-              <input type="text" id="share-url" readonly class="share-link-input">
-              <button class="btn btn-primary share-copy-btn" onclick="copyShareUrl()">
-                <span>📋</span> 复制链接
-              </button>
+            <label class="share-link-label">分享内容预览</label>
+            <div class="share-content-preview">
+              <textarea id="share-text-preview" readonly class="share-text-area"></textarea>
+              <input type="hidden" id="share-url">
             </div>
+            <button class="btn btn-primary share-copy-btn-full" onclick="copyShareUrl()">
+              <span>📋</span> 一键复制
+            </button>
           </div>
 
           <div class="share-tips">
-            <p>📱 分享给朋友一起来玩吧！</p>
             <p class="share-reward-hint">💡 分享游戏可获得积分奖励</p>
           </div>
         </div>
@@ -948,7 +940,7 @@
     <div id="brand-promo-modal" class="modal">
       <div class="modal-content modal-small">
         <div class="modal-header">
-          <h3>📱 关注公众号</h3>
+          <h3>📱 一句话做游戏</h3>
           <button class="btn btn-icon btn-close" onclick="closeBrandPromo()">×</button>
         </div>
         <div class="modal-body brand-promo-body">
@@ -956,15 +948,11 @@
             <img src="/images/wechat-qrcode.png" alt="微信搜一搜：游戏开发技术教程" class="promo-banner-modal">
           </div>
           <div class="promo-modal-info">
-            <p style="text-align:center;color:var(--text-secondary);margin-bottom:0.75rem;">微信搜索【<strong>游戏开发技术教程</strong>】</p>
-            <ul class="promo-list">
-              <li>🎁 关注即送 <strong>3次</strong> 免费生成</li>
-              <li>📚 Unity/UE4/UE5 实战干货</li>
-              <li>💼 大厂内推 & 职业规划</li>
-            </ul>
+            <p style="text-align:center;color:var(--text-secondary);margin-bottom:0.75rem;">长按识别二维码关注公众号</p>
+            <p style="text-align:center;font-size:0.875rem;color:var(--text-primary);font-weight:500;">🎮 一句话，AI帮你写游戏</p>
           </div>
           <div class="promo-verify-section" id="promo-verify-section">
-            <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:0.5rem;">关注后回复"<strong>积分</strong>"获取验证码</p>
+            <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:0.5rem;">关注后回复"<strong>积分</strong>"获取验证码，免费领3次生成机会</p>
             <div class="verify-input" style="display:flex;gap:0.5rem;">
               <input type="text" id="promo-verify-code" placeholder="输入验证码" maxlength="20" style="flex:1;">
               <button class="btn btn-primary" onclick="verifyWechatFromPromo()">领取</button>

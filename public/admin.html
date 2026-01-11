@@ -779,16 +779,25 @@
         <h2>💡 提示语配置 (Tips)</h2>
         <div class="config-grid" style="grid-template-columns: 1fr;">
           <div class="config-item" style="grid-column: 1 / -1;">
-            <label>首页Tips（每行一条，会随机滚动显示）</label>
-            <textarea id="config-tips_home" rows="4" placeholder="每行一条提示&#10;例如：尝试描述游戏的核心玩法&#10;简单的指令往往效果更好" style="width: 100%; padding: 0.75rem; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 4px; resize: vertical;"></textarea>
-          </div>
-          <div class="config-item" style="grid-column: 1 / -1;">
-            <label>生成页Tips（每行一条，会随机滚动显示）</label>
-            <textarea id="config-tips_generate" rows="4" placeholder="每行一条提示&#10;例如：描述越具体，游戏质量越高&#10;可以指定游戏风格：像素风、卡通风等" style="width: 100%; padding: 0.75rem; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 4px; resize: vertical;"></textarea>
+            <label>创作提示语（每行一条，会随机滚动显示）</label>
+            <textarea id="config-tips_create" rows="5" placeholder="每行一条提示&#10;例如：描述越具体，游戏质量越高&#10;可以指定游戏风格：像素风、卡通风等&#10;尝试描述游戏的核心玩法" style="width: 100%; padding: 0.75rem; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 4px; resize: vertical;"></textarea>
           </div>
         </div>
         <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.75rem;">
           💡 每行一条提示，用于引导用户更好地使用系统。留空则使用默认提示。
+        </p>
+      </div>
+
+      <div class="config-section">
+        <h2>🔗 分享文案配置</h2>
+        <div class="config-grid" style="grid-template-columns: 1fr;">
+          <div class="config-item" style="grid-column: 1 / -1;">
+            <label>分享文案模板（支持变量：{title}=游戏标题）</label>
+            <textarea id="config-share_text_template" rows="2" placeholder="🎮 我用一句话免费做了个游戏《{title}》，太好玩了！你也来试试吧👇" style="width: 100%; padding: 0.75rem; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 4px; resize: vertical;"></textarea>
+          </div>
+        </div>
+        <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.75rem;">
+          💡 用户分享游戏时复制的文案。链接会自动追加在文案后面。
         </p>
       </div>
 
@@ -1169,8 +1178,9 @@
         'llm_time_kimi-k2',
         'llm_time_default',
         // Tips提示配置
-        'tips_home',
-        'tips_generate'
+        'tips_create',
+        // 分享文案配置
+        'share_text_template'
       ];
       
       const configs = configKeys.map(key => ({
