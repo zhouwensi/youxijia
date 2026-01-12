@@ -46,6 +46,7 @@
 .yxj-promo-qr img {
   width: 100% !important;
   height: 100% !important;
+  object-fit: cover !important;
   display: block !important;
 }
 .yxj-promo-info {
@@ -97,26 +98,148 @@
   align-items: center !important;
   gap: 4px !important;
 }
-/* 顶部作者信息 */
-.yxj-author-info {
+/* TikTok 风格组件 */
+.tiktok-author-info {
   position: fixed !important;
-  top: 10px !important;
-  right: 10px !important;
-  background: rgba(0,0,0,0.5) !important;
-  color: #fff !important;
-  padding: 6px 12px !important;
-  border-radius: 20px !important;
-  font-size: 12px !important;
+  left: 16px !important;
+  bottom: 80px !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  flex-direction: column !important;
+  gap: 8px !important;
   z-index: 999998 !important;
+  padding: 0 !important;
+  pointer-events: auto !important;
+}
+.tiktok-author-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+.tiktok-author-avatar {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.5rem !important;
+  border: 2px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+  cursor: pointer !important;
+  transition: transform 0.2s, box-shadow 0.2s !important;
+  text-decoration: none !important;
+}
+.tiktok-author-avatar:hover {
+  transform: scale(1.05) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}
+.tiktok-author-details {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+.tiktok-author-name {
+  color: white !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8) !important;
+  cursor: pointer !important;
+  transition: opacity 0.2s !important;
+}
+.tiktok-author-name:hover {
+  opacity: 0.8 !important;
+}
+.tiktok-follow-btn {
+  background: #fe2c55 !important;
+  color: white !important;
+  border: none !important;
+  padding: 6px 16px !important;
+  border-radius: 4px !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
   display: flex !important;
   align-items: center !important;
   gap: 4px !important;
-  max-width: 45% !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
+  transition: all 0.2s ease !important;
+  text-shadow: none !important;
+}
+.tiktok-follow-btn:hover {
+  background: #e6284d !important;
+  transform: scale(1.02) !important;
+}
+.tiktok-follow-btn:active {
+  transform: scale(0.95) !important;
+}
+.tiktok-sidebar {
+  position: fixed !important;
+  right: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  z-index: 999998 !important;
+  pointer-events: auto !important;
+}
+.tiktok-action {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 4px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+.tiktok-action:active {
+  transform: scale(0.9) !important;
+}
+.tiktok-icon {
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 50% !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(8px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 24px !important;
+  transition: all 0.2s ease !important;
+  border: 2px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  color: #fff !important;
+}
+.tiktok-action:hover .tiktok-icon {
+  transform: scale(1.1) !important;
+  background: rgba(0, 0, 0, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+.tiktok-count {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
   white-space: nowrap !important;
 }
-.yxj-author-info span {
+.tiktok-action.liked .tiktok-icon {
+  background: rgba(239, 68, 68, 0.8) !important;
+  border-color: #ef4444 !important;
+  animation: likePopTiktok 0.3s ease !important;
+}
+@keyframes likePopTiktok {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+.tiktok-action.favorited .tiktok-icon {
+  background: rgba(251, 191, 36, 0.8) !important;
+  border-color: #fbbf24 !important;
+}
+.tiktok-action.tiktok-info {
+  cursor: default !important;
   opacity: 0.8 !important;
 }
 /* 为推广栏预留底部空间 */
@@ -380,55 +503,16 @@ body {
     </style>
 <style>
 /* AI游戏工坊品牌水印 - 请勿删除 */
-.aigame-watermark {
-  position: fixed;
-  bottom: 10px;
-  right: 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
-  border-radius: 20px;
-  z-index: 99999;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-.aigame-watermark:hover {
-  background: rgba(99, 102, 241, 0.9);
-  transform: scale(1.05);
-}
-.aigame-watermark-logo {
-  font-size: 14px;
-}
-.aigame-watermark-text {
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-  letter-spacing: 0.02em;
-}
-.aigame-watermark-sub {
-  font-size: 9px;
-  color: rgba(255, 255, 255, 0.6);
-}
+
+
+
+
+
 @media (max-width: 480px) {
-  .aigame-watermark {
-    padding: 4px 8px;
-    bottom: 5px;
-    right: 5px;
-  }
-  .aigame-watermark-logo {
-    font-size: 12px;
-  }
-  .aigame-watermark-text {
-    font-size: 10px;
-  }
-  .aigame-watermark-sub {
-    display: none;
-  }
+  
+  
+  
+  
 }
 </style>
 
@@ -1525,31 +1609,484 @@ body {
                     const rect = canvas.getBoundingClientRect();
                     x = touch.clientX - rect
 <!-- 游戏开发技术教程 - 品牌水印 -->
-<a class="aigame-watermark" href="javascript:void(0)" onclick="alert('关注公众号「游戏开发技术教程」(微信号: GameDevLearning)\n\n网易十年游戏开发老兵｜聚焦Unity3D/UE4/UE5引擎\n\n你也可以用AI一句话生成游戏！')">
-  <span class="aigame-watermark-logo">🎮</span>
-  <span class="aigame-watermark-text">游戏开发技术教程</span>
-  <span class="aigame-watermark-sub">一句话，AI帮你写游戏</span>
-</a>
+
 
   <!-- 推广栏 -->
   
 <!-- 游戏家顶部导航 -->
 <a class="yxj-promo-home" href="/" title="更多游戏">🏠 更多游戏</a>
-<div class="yxj-author-info">👤 <span>作者:</span> MarsZhou</div>
+
+<!-- 抖音风格左下角作者信息 -->
+<div class="tiktok-author-info" id="tiktok-author-info">
+  <div class="tiktok-author-row">
+    <div class="tiktok-author-avatar" id="author-avatar" onclick="openAuthorProfile()">👤</div>
+    <div class="tiktok-author-details">
+      <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">MarsZhou</span>
+      <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="ec27c2f8-1e74-4417-9a0c-4169d4baa83e" onclick="toggleFollow()">
+        <span class="follow-icon">+</span> 关注
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TikTok风格右侧互动栏 -->
+<div class="tiktok-sidebar">
+  <div class="tiktok-action" id="stat-like-btn" onclick="likeGame()">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+    </div>
+    <span class="tiktok-count" id="stat-likes">0</span>
+  </div>
+  <div class="tiktok-action" id="stat-fav-btn" onclick="toggleFavorite()">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+    </div>
+  </div>
+  <div class="tiktok-action" onclick="openSharePanel()">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+    </div>
+  </div>
+  <div class="tiktok-action tiktok-info" title="游玩次数">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+    </div>
+    <span class="tiktok-count" id="stat-plays">0</span>
+  </div>
+</div>
+
+<!-- 关注弹窗 -->
+<div id="promo-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999999;align-items:center;justify-content:center;" onclick="document.getElementById('promo-modal').style.display='none'">
+  <div style="background:transparent;border-radius:12px;padding:10px;width:90%;max-width:400px;text-align:center;position:relative;" onclick="event.stopPropagation()">
+    <button onclick="document.getElementById('promo-modal').style.display='none'" style="position:absolute;right:0;top:0;border:none;background:rgba(0,0,0,0.5);width:28px;height:28px;border-radius:50%;font-size:18px;cursor:pointer;color:#fff;z-index:1;">×</button>
+    <img src="/images/wechat-qrcode.png" style="width:100%;height:auto;display:block;border-radius:12px;">
+  </div>
+</div>
+
 <!-- 游戏家推广栏 -->
-<div class="yxj-promo-bar" id="yxj-promo">
-  <button class="yxj-promo-close" onclick="document.getElementById('yxj-promo').classList.add('yxj-hidden');document.body.style.paddingBottom='0';">×</button>
+<div class="yxj-promo-bar" id="yxj-promo" onclick="showPromoModal()" style="cursor:pointer;">
+  <button class="yxj-promo-close" onclick="event.stopPropagation();document.getElementById('yxj-promo').classList.add('yxj-hidden');document.body.style.paddingBottom='0';">×</button>
   <div class="yxj-promo-qr">
-    <img src="/images/wechat-qrcode.png" alt="公众号" onerror="this.src='/images/wechat-qrcode.svg'">
+    <img src="/images/getqrcode.png" alt="公众号">
   </div>
   <div class="yxj-promo-info">
     <strong>🎮 关注「游戏开发技术教程」</strong>
     <span>一句话免费生成你的专属游戏！</span>
   </div>
 </div>
+
+<!-- 分享面板 -->
+<div id="share-panel" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999999;align-items:flex-end;justify-content:center;" onclick="closeSharePanel()">
+  <div style="background:#fff;border-radius:16px 16px 0 0;padding:20px;width:100%;max-width:500px;text-align:center;position:relative;max-height:80vh;overflow-y:auto;" onclick="event.stopPropagation()">
+    <div style="width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 15px;"></div>
+    <h3 style="margin:0 0 15px;font-size:18px;">📤 分享游戏</h3>
+    <div style="background:#f5f5f5;border-radius:8px;padding:12px;margin-bottom:15px;">
+      <textarea id="share-text" readonly style="width:100%;border:none;background:transparent;font-size:14px;resize:none;min-height:80px;outline:none;"></textarea>
+    </div>
+    <button onclick="copyShareText()" style="width:100%;padding:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;margin-bottom:10px;">📋 复制分享内容</button>
+    <button onclick="closeSharePanel()" style="width:100%;padding:12px;background:#f0f0f0;color:#666;border:none;border-radius:8px;font-size:14px;cursor:pointer;">取消</button>
+  </div>
+</div>
+
+<!-- 作者主页弹窗 -->
+<div id="author-profile-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999999;align-items:center;justify-content:center;" onclick="closeAuthorProfile()">
+  <div style="background:#fff;border-radius:12px;padding:20px;width:90%;max-width:360px;text-align:center;position:relative;" onclick="event.stopPropagation()">
+    <button onclick="closeAuthorProfile()" style="position:absolute;right:10px;top:10px;border:none;background:none;font-size:24px;cursor:pointer;color:#999;">×</button>
+    <div id="author-profile-content" style="min-height:150px;"></div>
+  </div>
+</div>
+
 <script>
+// 获取游戏ID和作者信息
+const gameId = '6323b14d-a74a-4a09-b26d-a905cbcb457d';
+const gameTitle = '愤怒的小鸟 - HTML5版';
+const authorToken = 'ec27c2f8-1e74-4417-9a0c-4169d4baa83e';
+const authorName = 'MarsZhou';
+const API_BASE = '/api/games';
+
+// 调试日志
+console.log('[DEBUG] 游戏页面初始化');
+console.log('[DEBUG] gameId:', gameId);
+console.log('[DEBUG] authorToken:', authorToken);
+console.log('[DEBUG] authorName:', authorName);
+
+// 辅助函数
+function showPromoModal() {
+  console.log('[DEBUG] showPromoModal 被调用');
+  document.getElementById('promo-modal').style.display = 'flex';
+}
+
+function getUserToken() {
+  return localStorage.getItem('aigame-user-token') || '';
+}
+
+function getAuthHeaders() {
+  const headers = { 'Content-Type': 'application/json' };
+  const token = getUserToken();
+  if (token) {
+    headers['X-User-Token'] = token;
+  }
+  return headers;
+}
+
 // 记录游玩
-(function(){try{fetch('/api/games/6323b14d-a74a-4a09-b26d-a905cbcb457d/play',{method:'POST'}).catch(function(){});}catch(e){}})();
+(function(){
+  try {
+    fetch(API_BASE + '/' + gameId + '/play', { method: 'POST', headers: getAuthHeaders() }).catch(function(){});
+  } catch(e) {}
+})();
+
+// 获取统计数据和用户状态
+function loadStats() {
+  // 获取游戏统计
+  fetch(API_BASE + '/' + gameId, { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        const likesEl = document.getElementById('stat-likes');
+        const count = data.game.likes_count || data.game.like_count || 0;
+        likesEl.innerText = count;
+        document.getElementById('stat-plays').innerText = data.game.play_count || 0;
+      }
+    })
+    .catch(err => console.error('加载统计失败', err));
+  
+  // 获取用户点赞状态
+  const userToken = getUserToken();
+  if (userToken) {
+    fetch(API_BASE + '/' + gameId + '/like-status', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.liked) {
+          document.getElementById('stat-like-btn').classList.add('liked');
+        }
+      })
+      .catch(() => {});
+    
+    // 获取用户收藏状态
+    fetch(API_BASE + '/' + gameId + '/favorite-status', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.favorited) {
+          document.getElementById('stat-fav-btn').classList.add('favorited');
+        }
+      })
+      .catch(() => {});
+    
+    // 检查关注状态
+    if (authorToken && authorToken !== userToken) {
+      checkFollowStatus();
+    } else if (authorToken === userToken) {
+      // 隐藏自己的关注按钮
+      const followBtn = document.getElementById('tiktok-follow-btn');
+      if (followBtn) followBtn.style.display = 'none';
+    }
+  }
+}
+
+// 点赞（支持取消）
+function likeGame() {
+  const btn = document.getElementById('stat-like-btn');
+  const isLiked = btn.classList.contains('liked');
+  const countEl = document.getElementById('stat-likes');
+  let count = parseInt(countEl.innerText) || 0;
+  
+  // 乐观UI更新
+  if (isLiked) {
+    btn.classList.remove('liked');
+    countEl.innerText = Math.max(0, count - 1);
+  } else {
+    btn.classList.add('liked');
+    countEl.innerText = count + 1;
+  }
+  
+  fetch(API_BASE + '/' + gameId + '/like', { 
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        // 更新实际数量
+        countEl.innerText = data.like_count || data.likeCount || countEl.innerText;
+        if (data.liked !== undefined) {
+          btn.classList.toggle('liked', data.liked);
+        }
+      } else {
+        // 失败回滚
+        btn.classList.toggle('liked', isLiked);
+        countEl.innerText = count;
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      btn.classList.toggle('liked', isLiked);
+      countEl.innerText = count;
+    });
+}
+
+// 收藏
+function toggleFavorite() {
+  const btn = document.getElementById('stat-fav-btn');
+  const isFav = btn.classList.contains('favorited');
+  
+  // 乐观UI切换
+  btn.classList.toggle('favorited', !isFav);
+  
+  fetch(API_BASE + '/' + gameId + '/favorite', { 
+    method: 'POST', 
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.favorited !== undefined) {
+        btn.classList.toggle('favorited', data.favorited);
+      }
+    })
+    .catch(() => {
+      // 失败回滚
+      btn.classList.toggle('favorited', isFav);
+    });
+}
+
+// 打开分享面板
+function openSharePanel() {
+  const url = window.location.href;
+  const shareText = '🎮 我发现了一个有趣的AI游戏：「' + gameTitle + '」\n\n👆 点击链接立即游玩：\n' + url + '\n\n💡 关注公众号「游戏开发技术教程」，一句话免费生成你的专属游戏！';
+  document.getElementById('share-text').value = shareText;
+  document.getElementById('share-panel').style.display = 'flex';
+}
+
+// 关闭分享面板
+function closeSharePanel() {
+  document.getElementById('share-panel').style.display = 'none';
+}
+
+// 复制分享内容
+function copyShareText() {
+  const text = document.getElementById('share-text').value;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('分享内容已复制，快去分享给好友吧！');
+      closeSharePanel();
+    }).catch(() => {
+      fallbackCopy(text);
+    });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textarea);
+  alert('分享内容已复制，快去分享给好友吧！');
+  closeSharePanel();
+}
+
+// 打开作者主页
+function openAuthorProfile() {
+  console.log('[DEBUG] openAuthorProfile 被调用, authorToken:', authorToken);
+  if (!authorToken) {
+    console.log('[DEBUG] authorToken为空，显示推广弹窗');
+    showPromoModal();
+    return;
+  }
+  
+  console.log('[DEBUG] 显示作者主页弹窗');
+  const modal = document.getElementById('author-profile-modal');
+  const content = document.getElementById('author-profile-content');
+  content.innerHTML = '<div style="padding:20px;color:#999;">加载中...</div>';
+  modal.style.display = 'flex';
+  
+  // 加载作者信息
+  Promise.all([
+    fetch('/api/users/' + authorToken + '/profile', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/users/' + authorToken + '/follow-stats', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/users/' + authorToken + '/games?limit=4', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({ games: [] }))
+  ]).then(([profileData, statsData, gamesData]) => {
+    const nickname = (profileData.profile && profileData.profile.nickname) || authorName || '游戏创作者';
+    const followers = statsData.followerCount || statsData.followers || 0;
+    const following = statsData.followingCount || statsData.following || 0;
+    const games = gamesData.games || [];
+    
+    let gamesHtml = '';
+    if (games.length > 0) {
+      gamesHtml = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:15px;">' +
+        games.slice(0, 4).map(g => '<a href="/g/' + g.id.substring(0,2) + '/' + g.id + '.html" style="background:#f5f5f5;border-radius:8px;padding:10px;text-decoration:none;color:#333;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎮 ' + (g.title || '未命名').substring(0, 10) + '</a>').join('') +
+        '</div>';
+    }
+    
+    content.innerHTML = 
+      '<div style="margin-bottom:15px;">' +
+        '<div style="width:60px;height:60px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:28px;">👤</div>' +
+        '<div style="font-size:18px;font-weight:600;color:#333;">' + nickname + '</div>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:center;gap:30px;margin-bottom:15px;">' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + following + '</strong><span style="color:#999;font-size:12px;">关注</span></div>' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + followers + '</strong><span style="color:#999;font-size:12px;">粉丝</span></div>' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + games.length + '</strong><span style="color:#999;font-size:12px;">作品</span></div>' +
+      '</div>' +
+      '<button id="profile-follow-btn" onclick="toggleFollowFromProfile()" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>' +
+      gamesHtml;
+    
+    // 检查关注状态
+    checkFollowStatusForProfile();
+  }).catch(() => {
+    content.innerHTML = '<div style="padding:20px;color:#999;">加载失败</div>';
+  });
+}
+
+// 关闭作者主页
+function closeAuthorProfile() {
+  document.getElementById('author-profile-modal').style.display = 'none';
+}
+
+// 检查关注状态
+function checkFollowStatus() {
+  if (!authorToken) return;
+  fetch('/api/users/' + authorToken + '/follow-status', { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.following) {
+        const btn = document.getElementById('tiktok-follow-btn');
+        if (btn) {
+          btn.classList.add('following');
+          btn.innerHTML = '✓ 已关注';
+        }
+      }
+    })
+    .catch(() => {});
+}
+
+// 检查关注状态（主页弹窗）
+function checkFollowStatusForProfile() {
+  if (!authorToken) return;
+  fetch('/api/users/' + authorToken + '/follow-status', { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(data => {
+      const btn = document.getElementById('profile-follow-btn');
+      if (btn && data.success && data.following) {
+        btn.style.background = '#eee';
+        btn.style.color = '#666';
+        btn.innerHTML = '✓ 已关注';
+      }
+    })
+    .catch(() => {});
+}
+
+// 切换关注状态
+function toggleFollow() {
+  console.log('[DEBUG] toggleFollow 被调用, authorToken:', authorToken);
+  if (!authorToken) {
+    console.log('[DEBUG] authorToken为空，显示推广弹窗');
+    showPromoModal();
+    return;
+  }
+  
+  const userToken = getUserToken();
+  console.log('[DEBUG] userToken:', userToken);
+  if (!userToken) {
+    alert('请先登录');
+    return;
+  }
+  if (authorToken === userToken) {
+    alert('不能关注自己哦');
+    return;
+  }
+  
+  const btn = document.getElementById('tiktok-follow-btn');
+  const isFollowing = btn.classList.contains('following');
+  
+  // 乐观更新
+  if (isFollowing) {
+    btn.classList.remove('following');
+    btn.innerHTML = '<span class="follow-icon">+</span> 关注';
+  } else {
+    btn.classList.add('following');
+    btn.innerHTML = '✓ 已关注';
+  }
+  
+  fetch('/api/users/' + authorToken + '/follow', {
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        btn.classList.toggle('following', data.following);
+        btn.innerHTML = data.following ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+      } else {
+        // 回滚
+        btn.classList.toggle('following', isFollowing);
+        btn.innerHTML = isFollowing ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+      }
+    })
+    .catch(() => {
+      btn.classList.toggle('following', isFollowing);
+      btn.innerHTML = isFollowing ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+    });
+}
+
+// 从主页弹窗切换关注
+function toggleFollowFromProfile() {
+  if (!authorToken) return;
+  
+  const userToken = getUserToken();
+  if (!userToken) {
+    alert('请先登录');
+    return;
+  }
+  
+  const btn = document.getElementById('profile-follow-btn');
+  const isFollowing = btn.innerHTML.includes('已关注');
+  
+  // 乐观更新
+  if (isFollowing) {
+    btn.style.background = '#fe2c55';
+    btn.style.color = '#fff';
+    btn.innerHTML = '+ 关注';
+  } else {
+    btn.style.background = '#eee';
+    btn.style.color = '#666';
+    btn.innerHTML = '✓ 已关注';
+  }
+  
+  fetch('/api/users/' + authorToken + '/follow', {
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (data.following) {
+          btn.style.background = '#eee';
+          btn.style.color = '#666';
+          btn.innerHTML = '✓ 已关注';
+        } else {
+          btn.style.background = '#fe2c55';
+          btn.style.color = '#fff';
+          btn.innerHTML = '+ 关注';
+        }
+        // 同步更新底部的关注按钮
+        const tikBtn = document.getElementById('tiktok-follow-btn');
+        if (tikBtn) {
+          tikBtn.classList.toggle('following', data.following);
+          tikBtn.innerHTML = data.following ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+        }
+      }
+    })
+    .catch(() => {});
+}
+
+// 初始化
+window.addEventListener('load', loadStats);
 </script>
 
 </body>

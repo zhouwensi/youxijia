@@ -321,6 +321,10 @@ async function initAccount() {
         showToast('欢迎回来！已自动恢复您的账号', 'success');
       }
 
+      // 账号初始化后，重新加载积分和游客模式信息
+      loadCredits();
+      loadTrialInfo();
+
       return data.userToken;
     } else {
       console.error('账号初始化失败');
@@ -381,6 +385,8 @@ async function recoverAccount(accountId, password = null) {
       // 重新加载关注统计和我的页面数据
       loadUserFollowStats();
       loadProfilePageData();
+      // 刷新游客模式信息
+      loadTrialInfo();
 
       return true;
     } else {
@@ -537,7 +543,80 @@ function clearGeneratingState() {
   localStorage.removeItem('aigame-generating-state');
 }
 
-// 检查并恢复生成状态（不再弹出确认框，草稿已保存在服务器端"我的作品"中）
+// 草稿状态轮询定时器
+let draftPollingTimer = null;
+let draftPollingId = null;
+
+// 开始轮询草稿状态（用于页面刷新后检测草稿是否已完成）
+function startDraftPolling(draftId) {
+  if (draftPollingTimer) {
+    clearInterval(draftPollingTimer);
+  }
+  
+  draftPollingId = draftId;
+  let pollCount = 0;
+  const maxPolls = 60; // 最多轮询60次（约5分钟）
+  
+  console.log(`[轮询] 开始轮询草稿状态: ${draftId}`);
+  
+  draftPollingTimer = setInterval(async () => {
+    pollCount++;
+    
+    if (pollCount > maxPolls) {
+      console.log('[轮询] 已超过最大轮询次数，停止轮询');
+      stopDraftPolling();
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/games/${draftId}`);
+      const data = await response.json();
+      
+      if (data.success && data.game) {
+        if (data.game.status !== 'draft') {
+          // 草稿已完成！
+          console.log('[轮询] 草稿已完成生成！', draftId);
+          stopDraftPolling();
+          
+          // 关闭草稿进度弹窗（如果打开）
+          const draftModal = document.getElementById('draft-progress-modal');
+          if (draftModal) {
+            draftModal.remove();
+            document.body.classList.remove('modal-open');
+          }
+          
+          showToast('🎮 游戏生成完成！点击查看', 'success');
+          
+          // 如果当前在"我的"页面，刷新列表
+          if (document.getElementById('profile-page')?.classList.contains('active')) {
+            loadProfilePageGames();
+          }
+          
+          // 刷新主页列表（最新标签）
+          if (state.mainTab.loaded['recent']) {
+            state.mainTab.loaded['recent'] = false;
+            if (state.mainTab.current === 'recent') {
+              loadTabData('recent');
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error('[轮询] 检查草稿状态失败:', e);
+    }
+  }, 5000); // 每5秒检查一次
+}
+
+// 停止轮询草稿状态
+function stopDraftPolling() {
+  if (draftPollingTimer) {
+    clearInterval(draftPollingTimer);
+    draftPollingTimer = null;
+    draftPollingId = null;
+  }
+}
+
+// 检查并恢复生成状态（页面刷新后检测未完成的草稿）
 function checkAndRestoreGeneratingState() {
   const savedState = localStorage.getItem('aigame-generating-state');
   if (!savedState) return;
@@ -548,10 +627,13 @@ function checkAndRestoreGeneratingState() {
     // 清除本地保存的生成状态
     clearGeneratingState();
     
-    // 草稿已保存到服务器端，用户可以在"我的作品"中查看制作中的游戏
-    // 不再弹出确认框打扰用户
+    // 如果有草稿ID，开始轮询检查草稿状态
     if (generatingState.draftId) {
-      log('检测到未完成的草稿游戏，可在"我的作品"中查看', 'info');
+      log('检测到未完成的草稿游戏，开始后台轮询检查状态...', 'info');
+      showToast('🎨 有一个游戏正在生成中...', 'info');
+      
+      // 开始轮询，检测服务端是否已完成生成
+      startDraftPolling(generatingState.draftId);
     }
   } catch (e) {
     console.error('恢复生成状态失败:', e);
@@ -732,6 +814,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
   });
+  
 });
 
 // ==================== 内测横幅 ====================
@@ -743,8 +826,19 @@ function initBetaBanner() {
   if (betaBanner && !dismissed) {
     betaBanner.style.display = 'flex';
     
-    // 使用JS绑定事件，更可靠
-    betaBanner.addEventListener('click', function(e) {
+    // 防抖标志，避免 touch 和 click 重复触发
+    let lastTapTime = 0;
+    const TAP_DELAY = 300;
+    
+    // 统一处理点击逻辑
+    function handleBannerTap(e) {
+      const now = Date.now();
+      // 防止短时间内重复触发
+      if (now - lastTapTime < TAP_DELAY) {
+        return;
+      }
+      lastTapTime = now;
+      
       // 检查是否点击的是关闭按钮
       if (e.target.classList.contains('beta-close') || e.target.closest('.beta-close')) {
         e.stopPropagation();
@@ -754,19 +848,25 @@ function initBetaBanner() {
       }
       // 点击其他区域，显示公众号
       showBrandPromo();
-    });
+    }
     
-    // 触摸事件（移动端）
-    betaBanner.addEventListener('touchend', function(e) {
-      if (e.target.classList.contains('beta-close') || e.target.closest('.beta-close')) {
+    // 使用 click 事件，在移动端和桌面端都能可靠工作
+    betaBanner.addEventListener('click', handleBannerTap);
+    
+    // 关闭按钮单独处理，确保更可靠
+    const closeBtn = betaBanner.querySelector('.beta-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         e.preventDefault();
         closeBetaBanner();
-        return;
-      }
-      e.preventDefault(); // 防止触发click
-      showBrandPromo();
-    }, { passive: false });
+      });
+      closeBtn.addEventListener('touchend', function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        closeBetaBanner();
+      }, { passive: false });
+    }
   }
 }
 
@@ -1168,16 +1268,27 @@ function handleRouting() {
   }
 }
 
-// 显示首页
+// 显示首页（或返回上一层级）
 function showHome() {
   // 如果在全屏模式，先退出
   if (isGameFullscreen) {
     exitFullscreenMode();
   }
   
-  document.getElementById('home-page').classList.add('active');
+  // 隐藏游戏页面
   document.getElementById('game-page').classList.remove('active');
   document.body.classList.remove('fullscreen');
+  
+  // 如果列表页面是打开的，返回列表页面
+  const listPage = document.getElementById('game-list-page');
+  if (listPage && listPage.classList.contains('active')) {
+    // 列表页面已打开，保持在列表页面
+    document.getElementById('bottom-nav').style.display = 'none';
+    return;
+  }
+  
+  // 否则返回首页
+  document.getElementById('home-page').classList.add('active');
   // 显示底部导航
   document.getElementById('bottom-nav').style.display = 'flex';
   // 只在当前不是首页时才更新URL
@@ -1186,108 +1297,106 @@ function showHome() {
   }
 }
 
-// ==================== 主标签页切换 ====================
+// ==================== 首页分类展示 ====================
 
-// 切换主标签页
-function switchMainTab(tabName) {
-  if (tabName === state.mainTab.current) return;
+// 首页每个分类显示的游戏数量（3行2列=6个）
+const HOME_SECTION_LIMIT = 6;
+
+// 加载首页所有分类数据
+async function loadHomeSections() {
+  const sections = ['recent', 'featured', 'hot', 'likes', 'favorites'];
   
-  state.mainTab.current = tabName;
-  
-  // 更新标签样式
-  document.querySelectorAll('.tab-item').forEach(tab => {
-    tab.classList.toggle('active', tab.dataset.tab === tabName);
-  });
-  
-  // 切换面板
-  document.querySelectorAll('.tab-panel').forEach(panel => {
-    panel.classList.toggle('active', panel.id === `panel-${tabName}`);
-  });
-  
-  // 如果该标签页还没有加载过数据，则加载
-  if (!state.mainTab.loaded[tabName]) {
-    loadTabData(tabName);
-  }
+  // 并行加载所有分类
+  await Promise.all(sections.map(section => loadHomeSection(section)));
 }
 
-// 加载标签页数据
-async function loadTabData(tabName, append = false) {
-  const list = document.getElementById(`list-${tabName}`);
-  const loading = document.getElementById(`loading-${tabName}`);
+// 加载单个分类数据
+async function loadHomeSection(sectionName) {
+  const list = document.getElementById(`list-${sectionName}`);
   if (!list) return;
   
-  // 如果正在加载或没有更多数据，则返回
-  if (state.mainTab.isLoading[tabName]) return;
-  if (append && !state.mainTab.hasMore[tabName]) return;
-  
-  state.mainTab.isLoading[tabName] = true;
-  
-  if (!append) {
-    list.innerHTML = '<div class="list-loading"><div class="loading-spinner-small"></div><span>加载中...</span></div>';
-    state.mainTab.offsets[tabName] = 0;
-    state.mainTab.hasMore[tabName] = true;
-  } else if (loading) {
-    loading.style.display = 'flex';
-  }
+  list.innerHTML = '<div class="list-loading"><div class="loading-spinner-small"></div><span>加载中...</span></div>';
   
   try {
-    const offset = state.mainTab.offsets[tabName];
-    const limit = state.mainTab.pageSize;
-    
-    // 根据标签类型构建API请求
+    // 根据分类类型构建API请求，只请求6个
     let apiUrl;
-    switch(tabName) {
+    switch(sectionName) {
       case 'recent':
-        apiUrl = `/api/games?sort=newest&limit=${limit}&offset=${offset}`;
+        apiUrl = `/api/games?sort=newest&limit=${HOME_SECTION_LIMIT}&offset=0`;
         break;
       case 'hot':
-        apiUrl = `/api/leaderboard/hot?limit=${limit}&offset=${offset}`;
+        apiUrl = `/api/leaderboard/hot?limit=${HOME_SECTION_LIMIT}&offset=0`;
         break;
       case 'likes':
-        apiUrl = `/api/leaderboard/likes?limit=${limit}&offset=${offset}`;
+        apiUrl = `/api/leaderboard/likes?limit=${HOME_SECTION_LIMIT}&offset=0`;
         break;
       case 'favorites':
-        apiUrl = `/api/leaderboard/favorites?limit=${limit}&offset=${offset}`;
+        apiUrl = `/api/leaderboard/favorites?limit=${HOME_SECTION_LIMIT}&offset=0`;
         break;
       case 'featured':
-        apiUrl = `/api/games/featured?limit=${limit}&offset=${offset}`;
+        apiUrl = `/api/games/featured?limit=${HOME_SECTION_LIMIT}&offset=0`;
         break;
       default:
-        apiUrl = `/api/games?sort=newest&limit=${limit}&offset=${offset}`;
+        apiUrl = `/api/games?sort=newest&limit=${HOME_SECTION_LIMIT}&offset=0`;
     }
     
     const res = await fetch(apiUrl);
     const data = await res.json();
     
     if (data.success && data.games && data.games.length > 0) {
-      renderGameList(list, data.games, tabName, append, offset);
-      state.mainTab.offsets[tabName] += data.games.length;
-      state.mainTab.loaded[tabName] = true;
-      
-      // 如果返回的数据少于请求的数量，说明没有更多了
-      if (data.games.length < limit) {
-        state.mainTab.hasMore[tabName] = false;
-      }
+      renderHomeGameList(list, data.games);
     } else {
-      if (!append) {
-        list.innerHTML = '<div class="list-empty"><div class="list-empty-icon">📭</div><p>暂无数据</p></div>';
-      }
-      state.mainTab.hasMore[tabName] = false;
+      list.innerHTML = '<div class="list-empty"><div class="list-empty-icon">📭</div><p>暂无数据</p></div>';
     }
   } catch (error) {
-    console.error(`加载${tabName}列表失败:`, error);
-    if (!append) {
-      list.innerHTML = '<div class="list-empty"><div class="list-empty-icon">😢</div><p>加载失败</p></div>';
-    }
-  } finally {
-    state.mainTab.isLoading[tabName] = false;
-    if (loading) {
-      loading.style.display = 'none';
-    }
+    console.error(`加载${sectionName}列表失败:`, error);
+    list.innerHTML = '<div class="list-empty"><div class="list-empty-icon">😢</div><p>加载失败</p></div>';
   }
 }
 
-// 渲染游戏列表（卡片式）
+// 渲染首页游戏列表（紧凑卡片式，3行2列）
+function renderHomeGameList(container, games) {
+  container.innerHTML = '';
+  
+  games.forEach((game) => {
+    const card = document.createElement('div');
+    card.className = 'game-card-home';
+    card.onclick = () => openGame(game.id);
+    
+    // 提取游戏标题中的 emoji 作为图标
+    const titleEmoji = extractEmoji(game.title) || '🎮';
+    
+    card.innerHTML = `
+      <div class="game-card-icon">${titleEmoji}</div>
+      <div class="game-card-info">
+        <div class="game-card-name">${escapeHtml(game.title)}</div>
+        <div class="game-card-author">👤 ${escapeHtml(game.author_name || '匿名')}</div>
+        <div class="game-card-stats">
+          <span>🎮 ${game.play_count || 0}</span>
+          <span>❤️ ${game.like_count || 0}</span>
+        </div>
+      </div>
+    `;
+    
+    container.appendChild(card);
+  });
+}
+
+// 兼容旧版调用
+function switchMainTab(tabName) {
+  // 新版首页不需要切换，直接跳转到更多页面
+  showMoreGames(tabName);
+}
+
+// 兼容旧版调用
+async function loadTabData(tabName, append = false) {
+  // 新版首页使用 loadHomeSection
+  if (!append) {
+    await loadHomeSection(tabName);
+  }
+}
+
+// 渲染游戏列表（用于弹窗等场景）
 function renderGameList(container, games, tabName, append = false, startOffset = 0) {
   if (!append) {
     container.innerHTML = '';
@@ -1328,29 +1437,16 @@ function extractEmoji(text) {
   return match ? match[0] : null;
 }
 
-// 初始化主标签页
+// 初始化首页分类
 function initMainTabs() {
-  // 监听页面滚动加载更多
-  window.addEventListener('scroll', () => {
-    // 检查是否滚动到底部附近
-    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
-      loadTabData(state.mainTab.current, true);
-    }
-  });
-
   // 初始化下拉刷新
   initPullToRefresh('home-page', 'pull-refresh-indicator', async () => {
-    // 重置当前标签页的offset
-    state.mainTab.offsets[state.mainTab.current] = 0;
-    state.mainTab.hasMore[state.mainTab.current] = true;
-    // 清空列表并重新加载
-    const listEl = document.getElementById(`list-${state.mainTab.current}`);
-    if (listEl) listEl.innerHTML = '';
-    await loadTabData(state.mainTab.current);
+    // 刷新所有分类
+    await loadHomeSections();
   });
 
-  // 加载第一个标签页（最新）
-  loadTabData('recent');
+  // 加载首页所有分类
+  loadHomeSections();
 }
 
 // 下拉刷新功能（支持触摸和鼠标）
@@ -1786,79 +1882,304 @@ async function loadProfilePageData() {
   loadProfilePageFavorites();
 }
 
-// 显示更多游戏（打开全部列表）
+// ==================== 游戏列表页面 ====================
+
+// 当前列表页面状态
+let currentListCategory = '';
+let currentListApiUrl = '';
+let currentListHeaders = {};
+let currentListIsMyGames = false;
+let currentListOffset = 0;
+const LIST_PAGE_LIMIT = 20;
+
+// 显示更多游戏（打开独立列表页面）
 function showMoreGames(category) {
-  // 根据类别切换到对应的完整列表视图
-  // 可以打开一个模态框或者新页面
   let title = '';
-  let loadFunc = null;
+  let apiUrl = '';
+  let headers = {};
+  let isMyGames = false;
   
   switch(category) {
+    // 首页分类
+    case 'recent':
+      title = '🆕 最新游戏';
+      apiUrl = '/api/games?sort=newest';
+      break;
+    case 'featured':
+      title = '✨ 推荐游戏';
+      apiUrl = '/api/games/featured';
+      break;
+    case 'hot':
+      title = '🔥 热门游戏';
+      apiUrl = '/api/leaderboard/hot';
+      break;
+    case 'likes':
+      title = '❤️ 点赞榜';
+      apiUrl = '/api/leaderboard/likes';
+      break;
+    case 'favorites':
+      title = '⭐ 收藏榜';
+      apiUrl = '/api/leaderboard/favorites';
+      break;
+    // 个人页面分类
     case 'my-games':
-      title = '我的作品';
-      openFullGameList(title, '/api/my-games', { 'X-Author-Token': getAuthorToken() });
+      title = '🎨 我的作品';
+      apiUrl = '/api/my-games';
+      headers = { 'X-Author-Token': getAuthorToken() };
+      isMyGames = true;
       break;
     case 'my-likes':
-      title = '我点赞的';
-      openFullGameList(title, '/api/my-likes', { 'X-User-Token': getUserToken() });
+      title = '❤️ 我点赞的';
+      apiUrl = '/api/my-likes';
+      headers = { 'X-User-Token': getUserToken() };
       break;
     case 'my-favs':
-      title = '我的收藏';
-      openFullGameList(title, '/api/my-favorites', { 'X-User-Token': getUserToken() });
+      title = '⭐ 我的收藏';
+      apiUrl = '/api/my-favorites';
+      headers = { 'X-User-Token': getUserToken() };
       break;
+    default:
+      return;
   }
+  
+  openGameListPage(title, apiUrl, headers, isMyGames, category);
 }
 
-// 打开完整游戏列表的弹窗
-async function openFullGameList(title, apiUrl, headers) {
-  // 创建模态框 - 使用正确的 modal class
-  let modal = document.getElementById('full-game-list-modal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'full-game-list-modal';
-    modal.className = 'modal'; // 使用正确的class
-    modal.innerHTML = `
-      <div class="modal-content full-game-list-content">
-        <div class="modal-header">
-          <h3 class="modal-title" id="full-list-title"></h3>
-          <button class="modal-close" onclick="closeFullGameList()">×</button>
-        </div>
-        <div class="modal-body">
-          <div class="full-game-list-grid" id="full-game-list-grid"></div>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(modal);
+// 打开游戏列表页面
+async function openGameListPage(title, apiUrl, headers, isMyGames, category) {
+  // 保存当前状态
+  currentListCategory = category;
+  currentListApiUrl = apiUrl;
+  currentListHeaders = headers;
+  currentListIsMyGames = isMyGames;
+  currentListOffset = 0;
+  
+  // 设置标题
+  document.getElementById('list-page-title').textContent = title;
+  
+  // 显示页面
+  const listPage = document.getElementById('game-list-page');
+  listPage.classList.add('active');
+  document.getElementById('bottom-nav').style.display = 'none';
+  
+  // 初始化下拉刷新
+  initListPagePullRefresh();
+  
+  // 初始化滚动监听（回到顶部按钮）
+  initListScrollListener();
+  
+  // 加载数据
+  await loadGameListData(true);
+}
+
+// 列表是否还有更多数据
+let listHasMore = true;
+let listIsLoading = false;
+
+// 加载游戏列表数据
+async function loadGameListData(isRefresh = false) {
+  const grid = document.getElementById('game-list-grid');
+  const loadingMore = document.getElementById('list-loading-more');
+  const noMore = document.getElementById('list-no-more');
+  
+  if (listIsLoading) return;
+  listIsLoading = true;
+  
+  if (isRefresh) {
+    currentListOffset = 0;
+    listHasMore = true;
+    grid.innerHTML = '<div class="loading-games">加载中...</div>';
+    if (noMore) noMore.style.display = 'none';
+  } else {
+    if (loadingMore) loadingMore.style.display = 'flex';
   }
   
-  document.getElementById('full-list-title').textContent = title;
-  const grid = document.getElementById('full-game-list-grid');
-  grid.innerHTML = '<div class="loading-games">加载中...</div>';
-  
-  modal.classList.add('active');
-  document.body.style.overflow = 'hidden';
-  
   try {
-    const response = await fetch(apiUrl, { headers });
+    const separator = currentListApiUrl.includes('?') ? '&' : '?';
+    const url = `${currentListApiUrl}${separator}limit=${LIST_PAGE_LIMIT}&offset=${currentListOffset}`;
+    const response = await fetch(url, { headers: currentListHeaders });
     const data = await response.json();
     
     if (data.success && data.games && data.games.length > 0) {
-      grid.innerHTML = data.games.map(game => renderTiktokCard(game)).join('');
+      const cardsHtml = data.games.map(game => renderListGameCard(game, currentListIsMyGames)).join('');
+      
+      if (isRefresh) {
+        grid.innerHTML = cardsHtml;
+      } else {
+        grid.insertAdjacentHTML('beforeend', cardsHtml);
+      }
+      
+      // 初始化长按事件（仅我的作品）
+      if (currentListIsMyGames) {
+        initLongPressMenu(grid);
+      }
+      
+      currentListOffset += data.games.length;
+      listHasMore = data.games.length >= LIST_PAGE_LIMIT;
+      
+      // 如果没有更多了，显示提示
+      if (!listHasMore && noMore) {
+        noMore.style.display = 'block';
+      }
     } else {
-      grid.innerHTML = '<div class="empty-games">暂无内容</div>';
+      if (isRefresh) {
+        grid.innerHTML = '<div class="empty-games">暂无内容</div>';
+      }
+      listHasMore = false;
+      if (noMore) noMore.style.display = 'block';
     }
   } catch(e) {
-    grid.innerHTML = '<div class="error-games">加载失败</div>';
+    console.error('加载游戏列表失败:', e);
+    if (isRefresh) {
+      grid.innerHTML = '<div class="error-games">加载失败，下拉刷新重试</div>';
+    }
+  } finally {
+    listIsLoading = false;
+    if (loadingMore) loadingMore.style.display = 'none';
   }
 }
 
-// 关闭完整游戏列表弹窗
-function closeFullGameList() {
-  const modal = document.getElementById('full-game-list-modal');
-  if (modal) {
-    modal.classList.remove('active');
-    document.body.style.overflow = '';
+// 渲染列表页面的游戏卡片（统一每行2个）
+function renderListGameCard(game, isMyGames = false) {
+  const emoji = getGameEmoji(game.title);
+  const plays = game.plays || game.play_count || 0;
+  const likes = game.likes || game.like_count || 0;
+  const isPrivate = game.visibility === 'private';
+  
+  // 长按数据属性（仅我的作品）
+  const longPressData = isMyGames ? `data-game-id="${game.id}" data-game-title="${escapeHtml(game.title)}" data-game-visibility="${game.visibility || 'public'}"` : '';
+  
+  return `
+    <div class="list-game-card ${isPrivate ? 'private-card' : ''}" 
+         onclick="openGame('${game.id}')" ${longPressData}>
+      ${isPrivate ? '<div class="private-badge">🔒</div>' : ''}
+      <div class="list-card-cover">${emoji}</div>
+      <div class="list-card-info">
+        <div class="list-card-title">${escapeHtml(game.title)}</div>
+        <div class="list-card-stats">
+          <span>🎮 ${formatNumber(plays)}</span>
+          <span>❤️ ${formatNumber(likes)}</span>
+        </div>
+        ${!isMyGames && game.author_name ? `<div class="list-card-author">👤 ${escapeHtml(game.author_name)}</div>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+// 加载更多列表游戏
+function loadMoreListGames() {
+  loadGameListData(false);
+}
+
+// 关闭游戏列表页面
+function closeGameListPage() {
+  const listPage = document.getElementById('game-list-page');
+  listPage.classList.remove('active');
+  document.getElementById('bottom-nav').style.display = '';
+  
+  // 刷新对应的数据
+  if (currentListCategory.startsWith('my-')) {
+    loadProfilePageData();
   }
+}
+
+// 初始化列表页面下拉刷新（简化版：直接拉到顶再下拉时刷新）
+function initListPagePullRefresh() {
+  const content = document.getElementById('list-page-content');
+  if (!content) return;
+  
+  // 避免重复绑定
+  if (content.dataset.pullRefreshInitialized) return;
+  content.dataset.pullRefreshInitialized = 'true';
+  
+  let startY = 0;
+  let isPulling = false;
+  let pullDistance = 0;
+  const PULL_THRESHOLD = 60;
+  
+  content.addEventListener('touchstart', (e) => {
+    if (content.scrollTop <= 0) {
+      startY = e.touches[0].pageY;
+      isPulling = true;
+      pullDistance = 0;
+    }
+  }, { passive: true });
+  
+  content.addEventListener('touchmove', (e) => {
+    if (!isPulling || content.scrollTop > 0) return;
+    
+    const currentY = e.touches[0].pageY;
+    pullDistance = currentY - startY;
+    
+    if (pullDistance > 0) {
+      // 视觉反馈：稍微偏移内容
+      content.style.transform = `translateY(${Math.min(pullDistance * 0.4, 50)}px)`;
+    }
+  }, { passive: true });
+  
+  content.addEventListener('touchend', async () => {
+    if (!isPulling) return;
+    isPulling = false;
+    
+    // 复位
+    content.style.transform = '';
+    content.style.transition = 'transform 0.2s ease';
+    setTimeout(() => { content.style.transition = ''; }, 200);
+    
+    // 检查是否达到刷新阈值
+    if (pullDistance > PULL_THRESHOLD) {
+      showToast('刷新中...', 'info');
+      await loadGameListData(true);
+      showToast('刷新完成', 'success');
+    }
+    
+    pullDistance = 0;
+  });
+}
+
+// 初始化列表滚动监听（含自动加载更多）
+function initListScrollListener() {
+  const content = document.getElementById('list-page-content');
+  const scrollTopBtn = document.getElementById('list-scroll-top-btn');
+  
+  if (!content || !scrollTopBtn) return;
+  
+  // 避免重复绑定
+  if (content.dataset.scrollInitialized) return;
+  content.dataset.scrollInitialized = 'true';
+  
+  content.addEventListener('scroll', () => {
+    // 显示/隐藏回到顶部按钮
+    if (content.scrollTop > 300) {
+      scrollTopBtn.classList.add('visible');
+    } else {
+      scrollTopBtn.classList.remove('visible');
+    }
+    
+    // 自动加载更多：距离底部 100px 时触发
+    const scrollHeight = content.scrollHeight;
+    const clientHeight = content.clientHeight;
+    const scrollTop = content.scrollTop;
+    
+    if (scrollHeight - scrollTop - clientHeight < 100) {
+      if (listHasMore && !listIsLoading) {
+        loadGameListData(false);
+      }
+    }
+  });
+}
+
+// 滚动到列表顶部
+function scrollListToTop() {
+  const content = document.getElementById('list-page-content');
+  if (content) {
+    content.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+// 兼容旧的关闭函数
+function closeFullGameList() {
+  closeGameListPage();
 }
 
 // 根据屏幕宽度计算一行可显示的卡片数
@@ -1896,11 +2217,13 @@ async function loadProfilePageGames() {
       // 更新section标题的数量
       const sectionCount = document.getElementById('section-count-games');
       if (sectionCount) sectionCount.textContent = total;
-      // 只显示前4个
+      // 只显示前N个
       const displayGames = data.games.slice(0, DISPLAY_LIMIT);
-      container.innerHTML = displayGames.map(game => renderHorizontalCard(game)).join('');
-      // 超过4个显示更多按钮
+      container.innerHTML = displayGames.map(game => renderHorizontalCard(game, true)).join('');
+      // 超过N个显示更多按钮
       if (moreBtn) moreBtn.style.display = total > DISPLAY_LIMIT ? 'inline-flex' : 'none';
+      // 初始化长按事件
+      initLongPressMenu(container);
     } else {
       container.innerHTML = '<div class="empty-games">还没有作品，去创作吧！</div>';
       const sectionCount = document.getElementById('section-count-games');
@@ -1934,30 +2257,135 @@ function renderTiktokCard(game, type = 'works') {
   `;
 }
 
-// 渲染横向小卡片（用于我的页面）- 带统计数据
-function renderHorizontalCard(game) {
+// 渲染横向小卡片（用于我的页面）- 带统计数据和长按菜单
+function renderHorizontalCard(game, enableLongPress = true) {
   const emoji = getGameEmoji(game.title);
   const plays = game.plays || game.play_count || 0;
   const likes = game.likes || game.like_count || 0;
   const isDraft = game.status === 'draft';
+  const isPrivate = game.visibility === 'private';
+  
+  // 草稿点击处理方式不同
+  const clickHandler = isDraft ? `handleDraftClick('${game.id}', '${escapeHtml(game.title || game.prompt)}')` : `openGame('${game.id}')`;
+  
+  // 长按事件数据（非草稿才支持长按操作）
+  const longPressData = (!isDraft && enableLongPress) ? `data-game-id="${game.id}" data-game-title="${escapeHtml(game.title)}" data-game-visibility="${game.visibility || 'public'}"` : '';
 
   return `
-    <div class="profile-game-card-h ${isDraft ? 'draft-card' : ''}" onclick="openGame('${game.id}')">
-      ${isDraft ? '<div class="draft-badge">创作中</div>' : ''}
-      <div class="card-cover">${emoji}</div>
+    <div class="profile-game-card-h ${isDraft ? 'draft-card' : ''} ${isPrivate ? 'private-card' : ''}" 
+         onclick="${clickHandler}" ${longPressData}>
+      ${isDraft ? '<div class="draft-badge"><span class="draft-spinner"></span>生成中</div>' : ''}
+      ${isPrivate ? '<div class="private-badge">🔒</div>' : ''}
+      <div class="card-cover">${isDraft ? '🎨' : emoji}</div>
       <div class="card-title">${escapeHtml(game.title)}</div>
-      <div class="card-stats">
-        <span class="card-stat">
-          <span class="stat-icon">🎮</span>
-          <span>${formatNumber(plays)}</span>
-        </span>
-        <span class="card-stat">
-          <span class="stat-icon">❤️</span>
-          <span>${formatNumber(likes)}</span>
-        </span>
+      ${isDraft ? `
+        <div class="card-draft-status">
+          <span class="draft-dots">正在生成<span class="dots"></span></span>
+        </div>
+      ` : `
+        <div class="card-stats">
+          <span class="card-stat">
+            <span class="stat-icon">🎮</span>
+            <span>${formatNumber(plays)}</span>
+          </span>
+          <span class="card-stat">
+            <span class="stat-icon">❤️</span>
+            <span>${formatNumber(likes)}</span>
+          </span>
+        </div>
+      `}
+    </div>
+  `;
+}
+
+// 处理草稿点击事件
+function handleDraftClick(draftId, title) {
+  // 显示生成中提示弹窗
+  showDraftInProgressModal(draftId, title);
+}
+
+// 显示草稿生成中弹窗
+function showDraftInProgressModal(draftId, title) {
+  // 移除旧弹窗
+  const oldModal = document.getElementById('draft-progress-modal');
+  if (oldModal) oldModal.remove();
+  
+  const modal = document.createElement('div');
+  modal.id = 'draft-progress-modal';
+  modal.className = 'modal active';
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  
+  modal.innerHTML = `
+    <div class="modal-content modal-small" style="text-align: center;">
+      <div class="modal-header">
+        <h3>🎨 游戏生成中</h3>
+        <button class="btn btn-icon btn-close" onclick="document.getElementById('draft-progress-modal').remove()">×</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size: 48px; margin-bottom: 16px; animation: pulse 2s infinite;">🎮</div>
+        <div style="font-size: 1rem; color: var(--text-primary); margin-bottom: 8px; word-break: break-all;">
+          "${title}"
+        </div>
+        <div style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 20px;">
+          AI 正在努力创作这个游戏，请稍等...
+        </div>
+        <div class="draft-progress-loader" style="margin: 20px auto;">
+          <div class="progress-spinner"></div>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 16px;">
+          💡 生成完成后会自动通知您，也可稍后刷新页面查看
+        </p>
+      </div>
+      <div class="modal-footer" style="justify-content: center; gap: 12px;">
+        <button class="btn btn-secondary" onclick="document.getElementById('draft-progress-modal').remove()">知道了</button>
+        <button class="btn btn-danger-outline" onclick="confirmDeleteDraft('${draftId}')">取消生成</button>
       </div>
     </div>
   `;
+  
+  document.body.appendChild(modal);
+  document.body.classList.add('modal-open');
+  
+  // 如果还没有轮询这个草稿，开始轮询
+  if (draftPollingId !== draftId) {
+    startDraftPolling(draftId);
+  }
+}
+
+// 确认删除草稿
+function confirmDeleteDraft(draftId) {
+  if (confirm('确定要取消生成吗？这将删除该草稿。')) {
+    deleteDraft(draftId);
+  }
+}
+
+// 删除草稿
+async function deleteDraft(draftId) {
+  try {
+    const response = await fetch(`/api/games/${draftId}`, {
+      method: 'DELETE',
+      headers: { 'X-Author-Token': getAuthorToken() }
+    });
+    
+    const data = await response.json();
+    if (data.success) {
+      showToast('已取消生成', 'success');
+      // 关闭弹窗
+      const modal = document.getElementById('draft-progress-modal');
+      if (modal) modal.remove();
+      document.body.classList.remove('modal-open');
+      // 停止轮询
+      if (draftPollingId === draftId) {
+        stopDraftPolling();
+      }
+      // 刷新列表
+      loadProfilePageGames();
+    } else {
+      showToast(data.error || '删除失败', 'error');
+    }
+  } catch (e) {
+    showToast('删除失败: ' + e.message, 'error');
+  }
 }
 
 // 根据游戏标题获取代表性emoji
@@ -3317,6 +3745,8 @@ async function generateGame() {
     stopGeneratingTimer();
     // 清除保存的生成状态
     clearGeneratingState();
+    // 停止草稿轮询（如果有）
+    stopDraftPolling();
     // setGenerateButtonLoading(false);
   }
 }
@@ -3347,10 +3777,121 @@ function openSaveModal() {
   // 在预览iframe中加载游戏（完整加载，可直接玩）
   const previewFrame = document.getElementById('preview-frame');
   if (previewFrame && state.currentGame?.code) {
+    // 先验证代码是否有语法错误
+    const codeError = validateGameCode(state.currentGame.code);
+    if (codeError) {
+      // 显示错误提示，让用户选择如何处理
+      showCodeErrorModal(codeError);
+      return;
+    }
+    
     // 直接加载游戏代码，不做缩放处理，让用户可以直接玩
     previewFrame.srcdoc = state.currentGame.code;
     // 保存原始代码用于调试
     state.currentGameCode = state.currentGame.code;
+  }
+}
+
+// 验证游戏代码是否有语法错误
+function validateGameCode(code) {
+  if (!code) return '代码为空';
+  
+  // 提取所有 <script> 标签中的 JavaScript 代码
+  const scriptRegex = /<script[^>]*>([\s\S]*?)<\/script>/gi;
+  let match;
+  let allScripts = '';
+  
+  while ((match = scriptRegex.exec(code)) !== null) {
+    allScripts += match[1] + '\n';
+  }
+  
+  if (!allScripts.trim()) {
+    // 没有脚本，检查是否至少有HTML结构
+    if (!code.includes('<body') && !code.includes('<div')) {
+      return 'HTML结构不完整';
+    }
+    return null; // 纯HTML，没有JS
+  }
+  
+  // 尝试解析 JavaScript 代码
+  try {
+    // 使用 Function 构造器来检测语法错误
+    new Function(allScripts);
+    return null; // 没有错误
+  } catch (error) {
+    // 返回错误信息
+    return error.message;
+  }
+}
+
+// 显示代码错误弹窗
+function showCodeErrorModal(errorMessage) {
+  // 移除旧弹窗
+  const oldModal = document.getElementById('code-error-modal');
+  if (oldModal) oldModal.remove();
+  
+  const modal = document.createElement('div');
+  modal.id = 'code-error-modal';
+  modal.className = 'modal active';
+  modal.innerHTML = `
+    <div class="modal-content modal-small">
+      <div class="modal-header">
+        <h3>⚠️ 游戏代码有问题</h3>
+        <button class="btn btn-icon btn-close" onclick="closeCodeErrorModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="error-info" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+          <p style="color: #f87171; font-size: 0.875rem; margin: 0;">
+            <strong>错误详情：</strong><br>
+            <code style="font-size: 0.8rem; word-break: break-all;">${escapeHtml(errorMessage)}</code>
+          </p>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 16px;">
+          AI 生成的游戏代码存在语法错误，无法正常运行。你可以：
+        </p>
+        <ul style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 16px; padding-left: 20px;">
+          <li>🔄 重新生成（推荐）</li>
+          <li>✏️ 换个描述词试试</li>
+          <li>🤖 尝试其他 AI 模型</li>
+          <li>💾 仍然保存（可能无法游玩）</li>
+        </ul>
+      </div>
+      <div class="modal-footer" style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button class="btn btn-secondary" onclick="closeCodeErrorModal(); closeSaveModal();">取消</button>
+        <button class="btn btn-warning" onclick="closeCodeErrorModal(); forceOpenSaveModal();">仍然保存</button>
+        <button class="btn btn-primary" onclick="closeCodeErrorModal(); closeSaveModal(); regenerateGame();">🔄 重新生成</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+// 关闭代码错误弹窗
+function closeCodeErrorModal() {
+  const modal = document.getElementById('code-error-modal');
+  if (modal) modal.remove();
+}
+
+// 强制打开保存弹窗（忽略代码错误）
+function forceOpenSaveModal() {
+  const modal = document.getElementById('save-modal');
+  modal.classList.add('active');
+  
+  const previewFrame = document.getElementById('preview-frame');
+  if (previewFrame && state.currentGame?.code) {
+    previewFrame.srcdoc = state.currentGame.code;
+    state.currentGameCode = state.currentGame.code;
+  }
+}
+
+// 重新生成游戏
+function regenerateGame() {
+  const prompt = state.currentGame?.prompt || document.getElementById('prompt-input').value;
+  if (prompt) {
+    document.getElementById('prompt-input').value = prompt;
+    generateGame();
+  } else {
+    showToast('请输入游戏描述', 'error');
   }
 }
 
@@ -3538,12 +4079,11 @@ function reloadGame() {
 async function loadGameById(gameId) {
   log(`加载游戏: ${gameId}`);
   
-  // 检测微信环境 - 直接跳转到静态页面以获得最佳体验
-  const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
-  if (isWeChat && !window.location.pathname.startsWith('/g/')) {
-    // 微信浏览器中，如果不是已经在静态页面，则跳转到静态页面
+  // 统一使用静态页面来获得最佳体验（微信和其他浏览器均使用独立HTML页面）
+  if (!window.location.pathname.startsWith('/g/')) {
+    // 如果不是已经在静态页面，则跳转到静态页面
     const staticUrl = `/g/${gameId.substring(0, 2)}/${gameId}.html`;
-    log(`微信环境检测到，跳转到静态页面: ${staticUrl}`);
+    log(`跳转到静态游戏页面: ${staticUrl}`);
     window.location.href = staticUrl;
     return;
   }
@@ -4877,10 +5417,14 @@ async function loadMyGames() {
             `;
           } else {
             // 已完成的游戏 - 正常UI
+            const isPrivate = game.visibility === 'private';
             return `
-              <div class="my-game-item" data-id="${game.id}">
+              <div class="my-game-item ${isPrivate ? 'private-game' : ''}" data-id="${game.id}">
                 <div class="my-game-info">
-                  <div class="my-game-title">${escapeHtml(game.title)}</div>
+                  <div class="my-game-title">
+                    ${isPrivate ? '🔒' : ''} ${escapeHtml(game.title)}
+                    ${isPrivate ? '<span class="private-badge">仅自己可见</span>' : ''}
+                  </div>
                   <div class="my-game-prompt">${escapeHtml(game.prompt || '')}</div>
                   <div class="my-game-meta">
                     <span>▶️ ${game.play_count || 0}</span>
@@ -4891,6 +5435,9 @@ async function loadMyGames() {
                 <div class="my-game-actions">
                   <button class="btn btn-small btn-primary" onclick="playMyGame('${game.id}')">
                     ▶️ 游玩
+                  </button>
+                  <button class="btn btn-small btn-secondary" onclick="toggleGameVisibility('${game.id}', '${game.visibility || 'public'}')" title="${isPrivate ? '设为公开' : '设为私密'}">
+                    ${isPrivate ? '👁️ 公开' : '🔒 私密'}
                   </button>
                   <button class="btn btn-small btn-danger" onclick="deleteMyGame('${game.id}', '${escapeHtml(game.title)}')">
                     🗑️ 删除
@@ -5218,28 +5765,317 @@ async function editMyGame(gameId) {
   }
 }
 
-// 删除我的游戏
-async function deleteMyGame(gameId, title) {
-  if (!confirm(`确定要删除游戏「${title}」吗？\n\n此操作不可恢复！`)) {
-    return;
+// ==================== 长按菜单功能 ====================
+
+// 长按菜单状态
+let longPressTimer = null;
+let longPressTarget = null;
+let longPressTriggered = false; // 标记是否触发了长按菜单
+const LONG_PRESS_DURATION = 500; // 长按触发时间（毫秒）
+
+// 初始化长按菜单事件
+function initLongPressMenu(container) {
+  if (!container) return;
+  
+  // 支持多种卡片类型
+  const cards = container.querySelectorAll('.profile-game-card-h[data-game-id], .list-game-card[data-game-id]');
+  cards.forEach(card => {
+    // 移除旧的事件监听器（通过克隆节点）
+    const newCard = card.cloneNode(true);
+    card.parentNode.replaceChild(newCard, card);
+    
+    // 保存原始的 onclick 处理
+    const originalOnclick = newCard.getAttribute('onclick');
+    newCard.removeAttribute('onclick');
+    
+    // 添加自定义点击处理（检查长按标志）
+    newCard.addEventListener('click', function(e) {
+      if (longPressTriggered) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      // 执行原始的 onclick
+      if (originalOnclick) {
+        eval(originalOnclick);
+      }
+    });
+    
+    // 触摸开始
+    newCard.addEventListener('touchstart', handleLongPressStart, { passive: true });
+    newCard.addEventListener('touchend', handleLongPressEnd);
+    newCard.addEventListener('touchmove', handleLongPressCancel);
+    newCard.addEventListener('touchcancel', handleLongPressCancel);
+    
+    // 鼠标事件（桌面端）
+    newCard.addEventListener('mousedown', handleLongPressStart);
+    newCard.addEventListener('mouseup', handleLongPressEnd);
+    newCard.addEventListener('mouseleave', handleLongPressCancel);
+    
+    // 右键菜单（桌面端替代方案）
+    newCard.addEventListener('contextmenu', handleContextMenu);
+  });
+}
+
+// 长按开始
+function handleLongPressStart(e) {
+  const card = e.currentTarget;
+  const gameId = card.dataset.gameId;
+  if (!gameId) return;
+  
+  longPressTriggered = false;
+  longPressTarget = card;
+  longPressTimer = setTimeout(() => {
+    // 触发长按
+    longPressTriggered = true;
+    showGameActionMenu(card, e);
+  }, LONG_PRESS_DURATION);
+  
+  // 添加按压效果
+  card.classList.add('pressing');
+}
+
+// 长按结束
+function handleLongPressEnd(e) {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+  if (longPressTarget) {
+    longPressTarget.classList.remove('pressing');
+    longPressTarget = null;
   }
   
-  try {
-    const response = await fetch(`/api/games/${gameId}`, {
-      method: 'DELETE',
-      headers: { 'X-Author-Token': getAuthorToken() }
-    });
-    const data = await response.json();
-    
-    if (data.success) {
-      showToast('游戏已删除', 'success');
-      loadMyGames(); // 刷新列表
-    } else {
-      showToast(data.error || '删除失败', 'error');
+  // 如果触发了长按菜单，阻止后续的 click 事件
+  if (longPressTriggered) {
+    e.preventDefault();
+    e.stopPropagation();
+    // 延迟重置标志，确保 click 事件被阻止
+    setTimeout(() => {
+      longPressTriggered = false;
+    }, 100);
+  }
+}
+
+// 长按取消
+function handleLongPressCancel() {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+  if (longPressTarget) {
+    longPressTarget.classList.remove('pressing');
+    longPressTarget = null;
+  }
+  longPressTriggered = false;
+}
+
+// 右键菜单处理（桌面端）
+function handleContextMenu(e) {
+  e.preventDefault();
+  const card = e.currentTarget;
+  if (card.dataset.gameId) {
+    showGameActionMenu(card, e);
+  }
+}
+
+// 显示游戏操作菜单
+function showGameActionMenu(card, event) {
+  const gameId = card.dataset.gameId;
+  const gameTitle = card.dataset.gameTitle;
+  const visibility = card.dataset.gameVisibility || 'public';
+  const isPrivate = visibility === 'private';
+  
+  // 阻止点击事件
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  
+  // 清除长按状态
+  handleLongPressCancel();
+  
+  // 震动反馈（如果支持）
+  if (navigator.vibrate) {
+    navigator.vibrate(50);
+  }
+  
+  // 创建或获取菜单
+  let menu = document.getElementById('game-action-menu');
+  if (!menu) {
+    menu = document.createElement('div');
+    menu.id = 'game-action-menu';
+    menu.className = 'game-action-menu';
+    menu.innerHTML = `
+      <div class="action-menu-overlay" onclick="closeGameActionMenu()"></div>
+      <div class="action-menu-content">
+        <div class="action-menu-header">
+          <span class="action-menu-title">游戏操作</span>
+          <button class="action-menu-close" onclick="closeGameActionMenu()">×</button>
+        </div>
+        <div class="action-menu-items"></div>
+        <div class="action-menu-cancel" onclick="closeGameActionMenu()">取消</div>
+      </div>
+    `;
+    document.body.appendChild(menu);
+  }
+  
+  // 设置菜单项
+  const menuItems = menu.querySelector('.action-menu-items');
+  menuItems.innerHTML = `
+    <button class="action-menu-item" onclick="toggleGameVisibility('${gameId}', '${visibility}'); closeGameActionMenu();">
+      <span class="action-icon">${isPrivate ? '🔓' : '🔒'}</span>
+      <span class="action-text">${isPrivate ? '设为公开' : '设为私密'}</span>
+    </button>
+    <button class="action-menu-item action-danger" onclick="deleteMyGame('${gameId}', '${gameTitle}'); closeGameActionMenu();">
+      <span class="action-icon">🗑️</span>
+      <span class="action-text">删除游戏</span>
+    </button>
+  `;
+  
+  // 更新标题
+  menu.querySelector('.action-menu-title').textContent = gameTitle || '游戏操作';
+  
+  // 显示菜单
+  menu.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+// 关闭游戏操作菜单
+function closeGameActionMenu() {
+  const menu = document.getElementById('game-action-menu');
+  if (menu) {
+    menu.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+}
+
+// 删除我的游戏
+async function deleteMyGame(gameId, title) {
+  // 使用自定义确认弹窗
+  showConfirmDialog(
+    '删除游戏',
+    `确定要删除游戏「${title}」吗？\n\n删除后将无法在公开列表显示，但管理员仍可查看。`,
+    async () => {
+      try {
+        const response = await fetch(`/api/games/${gameId}`, {
+          method: 'DELETE',
+          headers: { 'X-Author-Token': getAuthorToken() }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          showToast('游戏已删除', 'success');
+          // 刷新列表页面（如果打开的话）
+          if (document.getElementById('game-list-page').classList.contains('active')) {
+            loadGameListData(true);
+          }
+          loadProfilePageData(); // 刷新个人页
+          loadHomeSections(); // 刷新首页
+        } else {
+          showToast(data.error || '删除失败', 'error');
+        }
+      } catch (error) {
+        console.error('删除游戏失败:', error);
+        showToast('删除失败', 'error');
+      }
+    },
+    '删除',
+    'danger'
+  );
+}
+
+// 切换游戏可见性
+async function toggleGameVisibility(gameId, currentVisibility) {
+  const newVisibility = currentVisibility === 'public' ? 'private' : 'public';
+  const actionText = newVisibility === 'private' ? '设为仅自己可见' : '设为公开';
+  const confirmText = newVisibility === 'private' 
+    ? '设为私密后，其他人将无法看到这个游戏。确定继续吗？'
+    : '设为公开后，所有人都可以看到这个游戏。确定继续吗？';
+  
+  showConfirmDialog(
+    actionText,
+    confirmText,
+    async () => {
+      try {
+        const response = await fetch(`/api/games/${gameId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Author-Token': getAuthorToken()
+          },
+          body: JSON.stringify({ visibility: newVisibility })
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          showToast(newVisibility === 'private' ? '已设为仅自己可见' : '已设为公开', 'success');
+          // 刷新列表页面（如果打开的话）
+          if (document.getElementById('game-list-page').classList.contains('active')) {
+            loadGameListData(true);
+          }
+          loadProfilePageData(); // 刷新个人页
+          loadHomeSections(); // 刷新首页
+        } else {
+          showToast(data.error || '设置失败', 'error');
+        }
+      } catch (error) {
+        console.error('设置可见性失败:', error);
+        showToast('设置失败', 'error');
+      }
     }
-  } catch (error) {
-    console.error('删除游戏失败:', error);
-    showToast('删除失败', 'error');
+  );
+}
+
+// 显示确认对话框
+function showConfirmDialog(title, message, onConfirm, confirmText = '确定', confirmType = 'primary') {
+  // 创建或获取确认对话框元素
+  let dialog = document.getElementById('confirm-dialog');
+  if (!dialog) {
+    dialog = document.createElement('div');
+    dialog.id = 'confirm-dialog';
+    dialog.className = 'modal';
+    dialog.innerHTML = `
+      <div class="modal-content modal-small">
+        <div class="modal-header">
+          <h3 id="confirm-dialog-title">确认</h3>
+          <button class="btn btn-icon btn-close" onclick="closeConfirmDialog()">×</button>
+        </div>
+        <div class="modal-body">
+          <p id="confirm-dialog-message" style="margin: 1rem 0; line-height: 1.6; white-space: pre-wrap;"></p>
+        </div>
+        <div class="modal-footer" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+          <button class="btn btn-secondary" onclick="closeConfirmDialog()">取消</button>
+          <button class="btn" id="confirm-dialog-btn">确定</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(dialog);
+  }
+  
+  // 设置内容
+  document.getElementById('confirm-dialog-title').textContent = title;
+  document.getElementById('confirm-dialog-message').textContent = message;
+  
+  const confirmBtn = document.getElementById('confirm-dialog-btn');
+  confirmBtn.textContent = confirmText;
+  confirmBtn.className = `btn btn-${confirmType}`;
+  
+  // 绑定确认事件
+  confirmBtn.onclick = () => {
+    closeConfirmDialog();
+    if (onConfirm) onConfirm();
+  };
+  
+  // 显示对话框
+  dialog.classList.add('active');
+}
+
+// 关闭确认对话框
+function closeConfirmDialog() {
+  const dialog = document.getElementById('confirm-dialog');
+  if (dialog) {
+    dialog.classList.remove('active');
   }
 }
 
@@ -5677,10 +6513,11 @@ async function generateGame() {
     showToast(`💎 消耗1积分，剩余: ${state.credits}`, 'info');
   }
   
-  // 如果没有API Key，尝试使用游客模式
+  // 如果没有API Key，使用游客模式（积分已在上面扣除）
   if (!state.settings.llmApiKey) {
-    // 检查游客模式是否可用
-    if (state.trialInfo && state.trialInfo.enabled && state.trialInfo.userRemaining > 0) {
+    // 有积分就可以使用游客模式生成
+    // 注意：积分检查已在前面完成，这里直接进入生成流程
+    if (true) { // 积分已检查通过，直接进入
       state.isGenerating = true;
       state.abortController = new AbortController();
       
@@ -5747,11 +6584,6 @@ async function generateGame() {
       }
       return;
     }
-    
-    // 游客模式不可用，引导获取积分或配置API Key
-    showToast('生成次数已用完，获取更多积分或配置自己的API Key', 'error');
-    openCreditsModal();
-    return;
   }
   
   // 有API Key，使用原版逻辑

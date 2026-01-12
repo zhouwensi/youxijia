@@ -7,6 +7,7 @@ const { kv } = require('@vercel/kv');
 const GAME_PREFIX = 'game:';
 const RECENT_GAMES_KEY = 'games:recent';
 const FEATURED_GAMES_KEY = 'games:featured';
+const DELETED_GAMES_KEY = 'games:deleted'; // 已删除游戏列表
 
 // 生成游戏ID
 function generateId() {
@@ -32,6 +33,10 @@ async function createGame(gameData) {
     play_count: 0,
     like_count: 0,
     is_featured: 0,
+    is_hidden: 0,           // 是否隐藏（仅自己可见）
+    is_deleted: 0,          // 是否已删除（软删除）
+    deleted_at: null,       // 删除时间
+    visibility: 'public',   // 可见性: public/private
     created_at: now,
     updated_at: now
   };
@@ -77,6 +82,8 @@ async function getRecentGames(limit = 12, offset = 0) {
     ids.map(async (id) => {
       const game = await getGame(id);
       if (!game) return null;
+      // 过滤已删除和设为私密的游戏
+      if (game.is_deleted || game.visibility === 'private') return null;
       // 返回不含代码的摘要
       const { code, author_token, ...summary } = game;
       return summary;
@@ -96,6 +103,8 @@ async function getFeaturedGames(limit = 12) {
     ids.map(async (id) => {
       const game = await getGame(id);
       if (!game) return null;
+      // 过滤已删除和设为私密的游戏
+      if (game.is_deleted || game.visibility === 'private') return null;
       const { code, author_token, ...summary } = game;
       return summary;
     })
@@ -117,6 +126,9 @@ async function searchGames(keyword, limit = 20) {
     ids.map(async (id) => {
       const game = await getGame(id);
       if (!game) return null;
+      
+      // 过滤已删除和设为私密的游戏
+      if (game.is_deleted || game.visibility === 'private') return null;
       
       // 搜索标题、提示词和作者名
       const matchTitle = game.title?.toLowerCase().includes(lowerKeyword);
@@ -161,6 +173,98 @@ async function verifyAuthor(id, token) {
   return game.author_token === token;
 }
 
+// 软删除游戏（用户删除）
+async function softDeleteGame(id) {
+  const game = await getGame(id);
+  if (!game) return null;
+  
+  const now = new Date().toISOString();
+  game.is_deleted = 1;
+  game.deleted_at = now;
+  game.updated_at = now;
+  
+  await kv.set(`${GAME_PREFIX}${id}`, JSON.stringify(game));
+  
+  // 添加到已删除列表
+  await kv.lpush(DELETED_GAMES_KEY, id);
+  
+  return game;
+}
+
+// 恢复已删除的游戏
+async function restoreGame(id) {
+  const game = await getGame(id);
+  if (!game) return null;
+  
+  game.is_deleted = 0;
+  game.deleted_at = null;
+  game.updated_at = new Date().toISOString();
+  
+  await kv.set(`${GAME_PREFIX}${id}`, JSON.stringify(game));
+  
+  // 从已删除列表移除
+  await kv.lrem(DELETED_GAMES_KEY, 1, id);
+  
+  return game;
+}
+
+// 永久删除游戏（管理员操作）
+async function permanentDeleteGame(id) {
+  // 删除游戏数据
+  await kv.del(`${GAME_PREFIX}${id}`);
+  
+  // 从各个列表中移除
+  await kv.lrem(RECENT_GAMES_KEY, 0, id);
+  await kv.lrem(DELETED_GAMES_KEY, 0, id);
+  
+  return true;
+}
+
+// 设置游戏可见性
+async function setGameVisibility(id, visibility) {
+  const game = await getGame(id);
+  if (!game) return null;
+  
+  game.visibility = visibility; // 'public' or 'private'
+  game.updated_at = new Date().toISOString();
+  
+  await kv.set(`${GAME_PREFIX}${id}`, JSON.stringify(game));
+  return game;
+}
+
+// 获取所有游戏（包括已删除的，管理员用）
+async function getAllGames(options = {}) {
+  const { includeDeleted = false, limit = 100, offset = 0 } = options;
+  
+  // 获取所有游戏ID
+  const recentIds = await kv.lrange(RECENT_GAMES_KEY, 0, 999) || [];
+  const deletedIds = includeDeleted ? (await kv.lrange(DELETED_GAMES_KEY, 0, 999) || []) : [];
+  
+  // 合并并去重
+  const allIds = [...new Set([...recentIds, ...deletedIds])];
+  
+  const games = await Promise.all(
+    allIds.map(async (id) => {
+      const game = await getGame(id);
+      if (!game) return null;
+      // 如果不包含已删除的，则过滤
+      if (!includeDeleted && game.is_deleted) return null;
+      const { code, ...summary } = game;
+      return summary;
+    })
+  );
+  
+  const filtered = games.filter(g => g !== null);
+  
+  // 按创建时间排序（最新在前）
+  filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  
+  return {
+    games: filtered.slice(offset, offset + limit),
+    total: filtered.length
+  };
+}
+
 module.exports = {
   createGame,
   getGame,
@@ -170,5 +274,10 @@ module.exports = {
   searchGames,
   incrementPlayCount,
   incrementLikeCount,
-  verifyAuthor
+  verifyAuthor,
+  softDeleteGame,
+  restoreGame,
+  permanentDeleteGame,
+  setGameVisibility,
+  getAllGames
 };

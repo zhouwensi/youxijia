@@ -63,70 +63,62 @@
           </div>
         </section>
 
-        <!-- 顶部标签栏 -->
-        <header class="top-tabs-header" id="top-tabs-header">
-          <div class="tabs-container">
-            <button class="tab-item active" data-tab="recent" onclick="switchMainTab('recent')">最新</button>
-            <button class="tab-item" data-tab="hot" onclick="switchMainTab('hot')">🔥 热门</button>
-            <button class="tab-item" data-tab="likes" onclick="switchMainTab('likes')">❤️ 点赞</button>
-            <button class="tab-item" data-tab="favorites" onclick="switchMainTab('favorites')">⭐ 收藏</button>
-            <button class="tab-item" data-tab="featured" onclick="switchMainTab('featured')">✨ 推荐</button>
-          </div>
-        </header>
+        <!-- 首页游戏分类展示 -->
+        <div class="home-sections">
+          <!-- 最新游戏 -->
+          <section class="home-section" id="section-recent">
+            <div class="section-header">
+              <h3 class="section-title">🆕 最新</h3>
+              <button class="btn-more" onclick="showMoreGames('recent')">更多 →</button>
+            </div>
+            <div class="games-grid-home" id="list-recent">
+              <!-- 动态加载 -->
+            </div>
+          </section>
 
-        <!-- 最新列表 -->
-        <div class="tab-panel active" id="panel-recent">
-          <div class="games-grid" id="list-recent">
-            <!-- 动态加载 -->
-          </div>
-          <div class="list-loading" id="loading-recent" style="display:none;">
-            <div class="loading-spinner-small"></div>
-            <span>加载中...</span>
-          </div>
-        </div>
-        
-        <!-- 热门列表 -->
-        <div class="tab-panel" id="panel-hot">
-          <div class="games-grid" id="list-hot">
-            <!-- 动态加载 -->
-          </div>
-          <div class="list-loading" id="loading-hot" style="display:none;">
-            <div class="loading-spinner-small"></div>
-            <span>加载中...</span>
-          </div>
-        </div>
-        
-        <!-- 点赞列表 -->
-        <div class="tab-panel" id="panel-likes">
-          <div class="games-grid" id="list-likes">
-            <!-- 动态加载 -->
-          </div>
-          <div class="list-loading" id="loading-likes" style="display:none;">
-            <div class="loading-spinner-small"></div>
-            <span>加载中...</span>
-          </div>
-        </div>
-        
-        <!-- 收藏列表 -->
-        <div class="tab-panel" id="panel-favorites">
-          <div class="games-grid" id="list-favorites">
-            <!-- 动态加载 -->
-          </div>
-          <div class="list-loading" id="loading-favorites" style="display:none;">
-            <div class="loading-spinner-small"></div>
-            <span>加载中...</span>
-          </div>
-        </div>
-        
-        <!-- 推荐列表 -->
-        <div class="tab-panel" id="panel-featured">
-          <div class="games-grid" id="list-featured">
-            <!-- 动态加载 -->
-          </div>
-          <div class="list-loading" id="loading-featured" style="display:none;">
-            <div class="loading-spinner-small"></div>
-            <span>加载中...</span>
-          </div>
+          <!-- 推荐游戏 -->
+          <section class="home-section" id="section-featured">
+            <div class="section-header">
+              <h3 class="section-title">✨ 推荐</h3>
+              <button class="btn-more" onclick="showMoreGames('featured')">更多 →</button>
+            </div>
+            <div class="games-grid-home" id="list-featured">
+              <!-- 动态加载 -->
+            </div>
+          </section>
+
+          <!-- 热门游戏 -->
+          <section class="home-section" id="section-hot">
+            <div class="section-header">
+              <h3 class="section-title">🔥 热门</h3>
+              <button class="btn-more" onclick="showMoreGames('hot')">更多 →</button>
+            </div>
+            <div class="games-grid-home" id="list-hot">
+              <!-- 动态加载 -->
+            </div>
+          </section>
+
+          <!-- 点赞榜 -->
+          <section class="home-section" id="section-likes">
+            <div class="section-header">
+              <h3 class="section-title">❤️ 点赞</h3>
+              <button class="btn-more" onclick="showMoreGames('likes')">更多 →</button>
+            </div>
+            <div class="games-grid-home" id="list-likes">
+              <!-- 动态加载 -->
+            </div>
+          </section>
+
+          <!-- 收藏榜 -->
+          <section class="home-section" id="section-favorites">
+            <div class="section-header">
+              <h3 class="section-title">⭐ 收藏</h3>
+              <button class="btn-more" onclick="showMoreGames('favorites')">更多 →</button>
+            </div>
+            <div class="games-grid-home" id="list-favorites">
+              <!-- 动态加载 -->
+            </div>
+          </section>
         </div>
       </main>
     </div>
@@ -196,6 +188,13 @@
         <span class="pull-refresh-text">下拉刷新</span>
       </div>
       <div class="page-header profile-page-header">
+        <!-- 设置按钮 -->
+        <button class="profile-settings-btn visible" id="profile-settings-btn" onclick="openProfileSettings()" title="设置">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
         <div class="profile-user-section">
           <div class="profile-avatar-large">👤</div>
           <div class="profile-user-details">
@@ -284,6 +283,40 @@
         <span class="nav-badge" id="nav-credits-count">0</span>
       </button>
     </nav>
+
+    <!-- 游戏列表页面（全部游戏/我的作品等） -->
+    <div id="game-list-page" class="page">
+      <div class="list-page-header">
+        <button class="btn btn-back" id="list-page-back-btn" type="button" onclick="closeGameListPage()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M19 12H5M12 19l-7-7 7-7"></path>
+          </svg>
+        </button>
+        <h2 id="list-page-title">游戏列表</h2>
+        <div class="list-page-actions"></div>
+      </div>
+      
+      <div class="list-page-content" id="list-page-content">
+        <div class="game-list-grid" id="game-list-grid">
+          <!-- 动态加载游戏卡片 -->
+        </div>
+        <!-- 加载更多指示器 -->
+        <div class="list-loading-more" id="list-loading-more" style="display:none;">
+          <div class="loading-spinner-small"></div>
+          <span>加载中...</span>
+        </div>
+        <div class="list-no-more" id="list-no-more" style="display:none;">
+          <span>没有更多了</span>
+        </div>
+      </div>
+      
+      <!-- 回到顶部按钮 -->
+      <button class="scroll-to-top-btn" id="list-scroll-top-btn" onclick="scrollListToTop()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 19V5M5 12l7-7 7 7"></path>
+        </svg>
+      </button>
+    </div>
 
     <!-- 游戏预览/编辑页面 -->
     <div id="game-page" class="page">
@@ -948,8 +981,7 @@
             <img src="/images/wechat-qrcode.png" alt="微信搜一搜：游戏开发技术教程" class="promo-banner-modal">
           </div>
           <div class="promo-modal-info">
-            <p style="text-align:center;color:var(--text-secondary);margin-bottom:0.75rem;">长按识别二维码关注公众号</p>
-            <p style="text-align:center;font-size:0.875rem;color:var(--text-primary);font-weight:500;">🎮 一句话，AI帮你写游戏</p>
+            <p style="text-align:center;color:var(--text-secondary);margin-bottom:0.75rem;">长按识别二维码或微信搜一搜</p>
           </div>
           <div class="promo-verify-section" id="promo-verify-section">
             <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:0.5rem;">关注后回复"<strong>积分</strong>"获取验证码，免费领3次生成机会</p>
@@ -989,14 +1021,6 @@
 
     <!-- Toast提示 -->
     <div id="toast" class="toast"></div>
-    
-    <!-- 我的页面设置按钮（固定定位，确保手机端可点击） -->
-    <button class="profile-settings-btn" id="profile-settings-btn" onclick="openProfileSettings()" title="设置">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-      </svg>
-    </button>
   </div>
 
   <script src="/js/app.js"></script>

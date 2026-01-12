@@ -812,6 +812,8 @@
           <option value="all">全部游戏</option>
           <option value="featured">推荐游戏</option>
           <option value="hidden">隐藏游戏</option>
+          <option value="private">私密游戏</option>
+          <option value="deleted">已删除游戏</option>
         </select>
         <button class="btn-search" onclick="loadGames(1)">🔍 搜索</button>
       </div>
@@ -822,7 +824,9 @@
         <button class="btn-action btn-feature" onclick="batchAction('unfeature')">取消推荐</button>
         <button class="btn-action btn-hide" onclick="batchAction('hide')">🙈 隐藏</button>
         <button class="btn-action btn-hide" onclick="batchAction('show')">👁️ 显示</button>
-        <button class="btn-action btn-delete" onclick="batchAction('delete')">🗑️ 删除</button>
+        <button class="btn-action btn-delete" onclick="batchAction('delete')">🗑️ 软删除</button>
+        <button class="btn-action btn-delete" onclick="batchAction('restore')" style="background: rgba(16, 185, 129, 0.2); color: #34d399;">♻️ 恢复</button>
+        <button class="btn-action" onclick="batchAction('permanent_delete')" style="background: rgba(220, 38, 38, 0.3); color: #fca5a5;">💀 永久删除</button>
       </div>
 
       <div class="table-container">
@@ -974,6 +978,38 @@
         </p>
       </div>
 
+      <div class="config-section">
+        <h2>📄 静态游戏文件管理</h2>
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+          <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 1rem; flex: 1;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span style="color: #a5b4fc; font-size: 0.9rem;">已生成静态文件</span>
+                <div style="font-size: 1.5rem; font-weight: bold; color: #fff;" id="static-files-count">-</div>
+              </div>
+              <div>
+                <span style="color: #a5b4fc; font-size: 0.9rem;">已发布游戏总数</span>
+                <div style="font-size: 1.5rem; font-weight: bold; color: #fff;" id="published-games-count">-</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <button class="btn-save" onclick="generateMissingStaticFiles()" style="background: linear-gradient(135deg, #10b981, #059669);">
+            📄 生成缺失的静态文件
+          </button>
+          <button class="btn-save" onclick="regenerateAllStaticFiles()" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+            🔄 强制重新生成所有文件
+          </button>
+          <button class="btn-save" onclick="refreshStaticFilesStats()" style="background: linear-gradient(135deg, #64748b, #475569);">
+            📊 刷新统计
+          </button>
+        </div>
+        <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.75rem;">
+          💡 静态文件用于微信等环境的游戏展示。"生成缺失"只会为没有文件的游戏创建，"强制重新生成"会更新所有游戏文件（如有界面改动时使用）。
+        </p>
+      </div>
+
       <!-- 操作日志 -->
       <div class="config-section">
         <h2>📝 最近操作日志</h2>
@@ -1053,6 +1089,9 @@
           break;
         case 'users':
           loadUsers(1);
+          break;
+        case 'tools':
+          refreshStaticFilesStats();
           break;
       }
     }
@@ -1241,36 +1280,72 @@
         return;
       }
       
-      const html = games.map(game => `
-        <tr>
-          <td class="checkbox-cell">
-            <input type="checkbox" value="${game.id}" onchange="toggleGameSelect('${game.id}')">
-          </td>
-          <td class="title">${escapeHtml(game.title)}</td>
-          <td class="prompt">${escapeHtml(game.prompt)}</td>
-          <td>${escapeHtml(game.author_name || '匿名')}</td>
-          <td>${game.play_count || 0}</td>
-          <td>${game.like_count || 0}</td>
-          <td>
-            ${game.is_featured ? '<span class="badge badge-featured">推荐</span>' : ''}
-            ${game.is_hidden ? '<span class="badge badge-hidden">隐藏</span>' : ''}
-            ${!game.is_featured && !game.is_hidden ? '<span style="color: #64748b;">正常</span>' : ''}
-          </td>
-          <td style="white-space: nowrap;">${formatDate(game.created_at)}</td>
-          <td>
-            <div class="action-btns">
-              <button class="btn-action btn-view" onclick="window.open('/game.html?id=${game.id}', '_blank')">查看</button>
-              <button class="btn-action btn-feature" onclick="toggleFeature('${game.id}', ${!game.is_featured})">
-                ${game.is_featured ? '取消推荐' : '推荐'}
-              </button>
-              <button class="btn-action btn-hide" onclick="toggleHide('${game.id}', ${!game.is_hidden})">
-                ${game.is_hidden ? '显示' : '隐藏'}
-              </button>
-              <button class="btn-action btn-delete" onclick="deleteGame('${game.id}')">删除</button>
-            </div>
-          </td>
-        </tr>
-      `).join('');
+      const html = games.map(game => {
+        const isDeleted = game.is_deleted;
+        const isPrivate = game.visibility === 'private';
+        const rowStyle = isDeleted ? 'background: rgba(239, 68, 68, 0.1);' : '';
+        
+        // 构建状态徽章
+        let statusBadges = '';
+        if (isDeleted) {
+          statusBadges += '<span class="badge" style="background: rgba(239, 68, 68, 0.3); color: #fca5a5;">已删除</span> ';
+        }
+        if (game.is_featured) {
+          statusBadges += '<span class="badge badge-featured">推荐</span> ';
+        }
+        if (game.is_hidden) {
+          statusBadges += '<span class="badge badge-hidden">隐藏</span> ';
+        }
+        if (isPrivate) {
+          statusBadges += '<span class="badge" style="background: rgba(100, 116, 139, 0.3); color: #94a3b8;">私密</span> ';
+        }
+        if (!statusBadges) {
+          statusBadges = '<span style="color: #64748b;">正常</span>';
+        }
+        
+        // 构建操作按钮
+        let actionButtons = '';
+        if (isDeleted) {
+          // 已删除的游戏：恢复或永久删除
+          actionButtons = `
+            <button class="btn-action" style="background: rgba(16, 185, 129, 0.2); color: #34d399;" onclick="restoreGame('${game.id}')">♻️ 恢复</button>
+            <button class="btn-action" style="background: rgba(220, 38, 38, 0.3); color: #fca5a5;" onclick="permanentDeleteGame('${game.id}')">💀 永久删除</button>
+          `;
+        } else {
+          // 正常游戏：标准操作
+          actionButtons = `
+            <button class="btn-action btn-view" onclick="window.open('/?game=${game.id}', '_blank')">查看</button>
+            <button class="btn-action btn-feature" onclick="toggleFeature('${game.id}', ${!game.is_featured})">
+              ${game.is_featured ? '取消推荐' : '推荐'}
+            </button>
+            <button class="btn-action btn-hide" onclick="toggleHide('${game.id}', ${!game.is_hidden})">
+              ${game.is_hidden ? '显示' : '隐藏'}
+            </button>
+            <button class="btn-action btn-delete" onclick="deleteGame('${game.id}')">软删除</button>
+          `;
+        }
+        
+        return `
+          <tr style="${rowStyle}">
+            <td class="checkbox-cell">
+              <input type="checkbox" value="${game.id}" onchange="toggleGameSelect('${game.id}')">
+            </td>
+            <td class="title">${isDeleted ? '🗑️ ' : ''}${escapeHtml(game.title)}</td>
+            <td class="prompt">${escapeHtml(game.prompt)}</td>
+            <td>${escapeHtml(game.author_name || '匿名')}</td>
+            <td>${game.play_count || 0}</td>
+            <td>${game.like_count || 0}</td>
+            <td>${statusBadges}</td>
+            <td style="white-space: nowrap;">
+              ${formatDate(game.created_at)}
+              ${isDeleted && game.deleted_at ? '<br><small style="color: #f87171;">删除于 ' + formatDate(game.deleted_at) + '</small>' : ''}
+            </td>
+            <td>
+              <div class="action-btns">${actionButtons}</div>
+            </td>
+          </tr>
+        `;
+      }).join('');
       
       document.getElementById('games-table-body').innerHTML = html;
     }
@@ -1323,19 +1398,74 @@
       }
     }
 
-    // 删除游戏
+    // 软删除游戏
     async function deleteGame(gameId) {
-      if (!confirm('确定要删除这个游戏吗？此操作不可恢复！')) return;
+      if (!confirm('确定要删除这个游戏吗？\n\n游戏将从公开列表中移除，但管理员仍可在"已删除游戏"中查看和恢复。')) return;
       
       try {
         const response = await fetch(`/api/admin/games/${gameId}`, {
           method: 'DELETE',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey 
+          },
+          body: JSON.stringify({ permanent: false })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast('游戏已移至回收站', 'success');
+          loadGames(currentGamesPage);
+        } else {
+          showToast(data.error || '删除失败', 'error');
+        }
+      } catch (error) {
+        showToast('删除失败', 'error');
+      }
+    }
+
+    // 恢复游戏
+    async function restoreGame(gameId) {
+      if (!confirm('确定要恢复这个游戏吗？\n\n游戏将重新出现在公开列表中。')) return;
+      
+      try {
+        const response = await fetch(`/api/admin/games/${gameId}/restore`, {
+          method: 'POST',
           headers: { 'X-Admin-Key': adminKey }
         });
         
         const data = await response.json();
         if (data.success) {
-          showToast('游戏已删除', 'success');
+          showToast('游戏已恢复', 'success');
+          loadGames(currentGamesPage);
+        } else {
+          showToast(data.error || '恢复失败', 'error');
+        }
+      } catch (error) {
+        showToast('恢复失败', 'error');
+      }
+    }
+
+    // 永久删除游戏
+    async function permanentDeleteGame(gameId) {
+      if (!confirm('⚠️ 警告：永久删除操作不可恢复！\n\n确定要彻底删除这个游戏吗？\n所有相关数据将被永久清除。')) return;
+      
+      // 二次确认
+      if (!confirm('请再次确认：真的要永久删除吗？')) return;
+      
+      try {
+        const response = await fetch(`/api/admin/games/${gameId}`, {
+          method: 'DELETE',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey 
+          },
+          body: JSON.stringify({ permanent: true })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast('游戏已永久删除', 'success');
           loadGames(currentGamesPage);
         } else {
           showToast(data.error || '删除失败', 'error');
@@ -1374,7 +1504,23 @@
         return;
       }
       
-      if (action === 'delete' && !confirm(`确定要删除选中的 ${selectedGames.size} 个游戏吗？`)) {
+      // 不同操作的确认提示
+      const confirmMessages = {
+        'delete': `确定要软删除选中的 ${selectedGames.size} 个游戏吗？\n\n游戏将移至回收站，可以恢复。`,
+        'restore': `确定要恢复选中的 ${selectedGames.size} 个游戏吗？\n\n游戏将重新出现在公开列表中。`,
+        'permanent_delete': `⚠️ 警告：永久删除操作不可恢复！\n\n确定要彻底删除选中的 ${selectedGames.size} 个游戏吗？`,
+        'feature': `确定要将选中的 ${selectedGames.size} 个游戏设为推荐吗？`,
+        'unfeature': `确定要取消选中的 ${selectedGames.size} 个游戏的推荐吗？`,
+        'hide': `确定要隐藏选中的 ${selectedGames.size} 个游戏吗？`,
+        'show': `确定要显示选中的 ${selectedGames.size} 个游戏吗？`
+      };
+      
+      if (confirmMessages[action] && !confirm(confirmMessages[action])) {
+        return;
+      }
+      
+      // 永久删除需要二次确认
+      if (action === 'permanent_delete' && !confirm('请再次确认：真的要永久删除这些游戏吗？')) {
         return;
       }
       
@@ -1395,6 +1541,8 @@
         if (data.success) {
           showToast(data.message, 'success');
           loadGames(currentGamesPage);
+          selectedGames.clear();
+          document.getElementById('select-all-games').checked = false;
         } else {
           showToast(data.error || '操作失败', 'error');
         }
@@ -1883,6 +2031,105 @@
         }
       } catch (error) {
         showToast('操作失败', 'error');
+        addToolsLog(`❌ 网络错误: ${error.message}`, 'error');
+      }
+    }
+
+    // ==================== 静态文件管理 ====================
+    
+    // 刷新静态文件统计
+    async function refreshStaticFilesStats() {
+      try {
+        console.log('[Admin] 刷新静态文件统计, adminKey:', adminKey ? '已设置' : '未设置');
+        const response = await fetch('/api/admin/static-files-stats', {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        
+        console.log('[Admin] 统计API响应状态:', response.status);
+        const data = await response.json();
+        console.log('[Admin] 统计API响应数据:', data);
+        
+        if (data.success) {
+          document.getElementById('static-files-count').textContent = data.staticFiles || 0;
+          document.getElementById('published-games-count').textContent = data.totalGames || 0;
+        } else {
+          showToast(data.error || '获取统计失败', 'error');
+          console.error('[Admin] 获取统计失败:', data.error);
+        }
+      } catch (error) {
+        showToast('获取统计失败: ' + error.message, 'error');
+        console.error('[Admin] 获取统计异常:', error);
+      }
+    }
+
+    // 生成缺失的静态文件
+    async function generateMissingStaticFiles() {
+      if (!confirm('确定要为缺失的游戏生成静态文件吗？')) return;
+      
+      try {
+        addToolsLog('⏳ 开始生成缺失的静态文件...', 'info');
+        showToast('开始生成静态文件，请稍候...', 'info');
+        
+        const response = await fetch('/api/admin/generate-static-files', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ force: false })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          addToolsLog(`✅ ${data.message}`, 'success');
+          if (data.generated !== undefined) {
+            addToolsLog(`📊 新生成: ${data.generated} 个, 跳过: ${data.skipped} 个, 总计: ${data.total} 个`, 'info');
+          }
+          // 立即刷新统计
+          refreshStaticFilesStats();
+        } else {
+          showToast(data.error || '生成失败', 'error');
+          addToolsLog(`❌ ${data.error || '生成失败'}`, 'error');
+        }
+      } catch (error) {
+        showToast('生成失败', 'error');
+        addToolsLog(`❌ 网络错误: ${error.message}`, 'error');
+      }
+    }
+
+    // 强制重新生成所有静态文件
+    async function regenerateAllStaticFiles() {
+      if (!confirm('⚠️ 确定要强制重新生成所有游戏的静态文件吗？\n\n这会覆盖所有现有文件，耗时较长，请耐心等待。')) return;
+      
+      try {
+        addToolsLog('⏳ 开始强制重新生成所有静态文件...', 'info');
+        showToast('正在重新生成所有静态文件，请耐心等待...', 'info');
+        
+        const response = await fetch('/api/admin/generate-static-files', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ force: true })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          addToolsLog(`✅ ${data.message}`, 'success');
+          if (data.generated !== undefined) {
+            addToolsLog(`📊 重新生成: ${data.generated} 个, 跳过: ${data.skipped} 个, 总计: ${data.total} 个`, 'info');
+          }
+          // 立即刷新统计
+          refreshStaticFilesStats();
+        } else {
+          showToast(data.error || '生成失败', 'error');
+          addToolsLog(`❌ ${data.error || '生成失败'}`, 'error');
+        }
+      } catch (error) {
+        showToast('生成失败', 'error');
         addToolsLog(`❌ 网络错误: ${error.message}`, 'error');
       }
     }
