@@ -457,7 +457,8 @@ async function doPasswordRecover(accountId) {
     const dialog = document.getElementById('password-dialog');
     if (dialog) dialog.remove();
     closeLoginDialog();
-    updateProfileUI();
+    updateAccountIdDisplay();
+    updateCreditsDisplay();
     document.body.classList.remove('modal-open');
   }
 }
@@ -1805,6 +1806,86 @@ function setCreatePrompt(text) {
   }
 }
 
+// 切换高级设置面板
+function toggleAdvancedSettings() {
+  const panel = document.getElementById('advanced-settings-panel');
+  const btn = document.querySelector('.btn-advanced-toggle');
+  
+  if (panel && btn) {
+    const isHidden = panel.style.display === 'none';
+    panel.style.display = isHidden ? 'block' : 'none';
+    btn.classList.toggle('active', isHidden);
+  }
+}
+
+// 切换高级设置中的LLM部分
+function toggleAdvancedLLM() {
+  const content = document.getElementById('advanced-llm-content');
+  const header = document.querySelector('.llm-section-header');
+  
+  if (content && header) {
+    const isHidden = content.style.display === 'none';
+    content.style.display = isHidden ? 'block' : 'none';
+    header.classList.toggle('active', isHidden);
+  }
+}
+
+// 获取高级设置参数
+function getAdvancedSettings() {
+  const panel = document.getElementById('advanced-settings-panel');
+  if (!panel || panel.style.display === 'none') {
+    return null; // 未启用高级设置
+  }
+  
+  const settings = {
+    gameName: document.getElementById('adv-game-name')?.value?.trim() || '',
+    gameType: document.getElementById('adv-game-type')?.value || 'auto',
+    artStyle: document.getElementById('adv-art-style')?.value || 'auto',
+    orientation: document.getElementById('adv-orientation')?.value || 'auto',
+    platform: document.getElementById('adv-platform')?.value || 'all',
+    difficulty: document.getElementById('adv-difficulty')?.value || 'medium',
+    soundEffect: document.getElementById('adv-sound')?.value || 'none'
+  };
+  
+  // 检查LLM覆盖设置
+  const llmContent = document.getElementById('advanced-llm-content');
+  if (llmContent && llmContent.style.display !== 'none') {
+    const overrideModel = document.getElementById('adv-llm-model')?.value?.trim();
+    const overrideKey = document.getElementById('adv-llm-key')?.value?.trim();
+    const overrideUrl = document.getElementById('adv-llm-url')?.value?.trim();
+    
+    if (overrideModel || overrideKey || overrideUrl) {
+      settings.llmOverride = {
+        model: overrideModel || null,
+        apiKey: overrideKey || null,
+        apiUrl: overrideUrl || null
+      };
+    }
+  }
+  
+  return settings;
+}
+
+// 重置高级设置
+function resetAdvancedSettings() {
+  document.getElementById('adv-game-name').value = '';
+  document.getElementById('adv-game-type').value = 'auto';
+  document.getElementById('adv-art-style').value = 'auto';
+  document.getElementById('adv-orientation').value = 'auto';
+  document.getElementById('adv-platform').value = 'all';
+  document.getElementById('adv-difficulty').value = 'medium';
+  document.getElementById('adv-sound').value = 'none';
+  document.getElementById('adv-llm-model').value = '';
+  document.getElementById('adv-llm-key').value = '';
+  document.getElementById('adv-llm-url').value = '';
+  
+  // 隐藏LLM内容区
+  const llmContent = document.getElementById('advanced-llm-content');
+  const llmHeader = document.querySelector('.llm-section-header');
+  if (llmContent) llmContent.style.display = 'none';
+  if (llmHeader) llmHeader.classList.remove('active');
+}
+
 // 从创作页面生成游戏
 function generateFromCreatePage() {
   const input = document.getElementById('create-page-input');
@@ -1814,7 +1895,10 @@ function generateFromCreatePage() {
     mainInput.value = input.value;
   }
   
-  generateGame();
+  // 收集高级设置
+  const advancedSettings = getAdvancedSettings();
+  
+  generateGame(advancedSettings);
 }
 
 // ==================== 我的页面 ====================
@@ -2544,7 +2628,7 @@ function loadProfilePageSettings() {
   const modelEl = document.getElementById('settings-model');
   if (modelEl) modelEl.value = state.settings.llmModelId || 'deepseek-v3';
   
-  const apiKeyEl = document.getElementById('settings-api-key');
+  const apiKeyEl = document.getElementById('llm-api-key');
   if (apiKeyEl) apiKeyEl.value = state.settings.llmApiKey || '';
 }
 
@@ -2795,7 +2879,7 @@ function openSettings() {
   // 显示当前账号ID
   const accountIdEl = document.getElementById('settings-account-id');
   if (accountIdEl) {
-    accountIdEl.textContent = getAccountId() || '未登录';
+    accountIdEl.textContent = state.account.visibleId || state.account.visibleToken || getUserToken() || '未登录';
   }
   
   // 填充当前设置
@@ -3156,6 +3240,10 @@ async function loadMoreGames() {
 // 渲染游戏列表
 function renderGamesList(containerId, games) {
   const container = document.getElementById(containerId);
+  if (!container) {
+    console.warn('渲染游戏列表失败: 容器不存在', containerId);
+    return;
+  }
   container.innerHTML = '';
   
   if (games.length === 0) {
@@ -3465,7 +3553,7 @@ function viewGeneratedGame() {
 }
 
 // 生成游戏
-async function generateGame() {
+async function generateGame(advancedSettings = null) {
   const prompt = document.getElementById('prompt-input').value.trim();
   
   if (!prompt) {
@@ -3587,6 +3675,15 @@ async function generateGame() {
     const userToken = getUserToken();
     const authorToken = getAuthorToken();
     
+    // 如果高级设置中有LLM覆盖，应用到llmConfig
+    if (advancedSettings?.llmOverride) {
+      const override = advancedSettings.llmOverride;
+      if (override.model) llmConfig.model = override.model;
+      if (override.apiKey) llmConfig.apiKey = override.apiKey;
+      if (override.apiUrl) llmConfig.baseUrl = override.apiUrl;
+      log(`使用高级设置覆盖: 模型=${override.model || '默认'}, URL=${override.apiUrl || '默认'}`);
+    }
+    
     const response = await fetch('/api/generate', {
       method: 'POST',
       headers: { 
@@ -3597,7 +3694,16 @@ async function generateGame() {
       body: JSON.stringify({ 
         prompt, 
         llmConfig,
-        draftId: createdDraftId  // 传递草稿ID，后端生成完成后会自动更新
+        draftId: createdDraftId,  // 传递草稿ID，后端生成完成后会自动更新
+        advancedSettings: advancedSettings ? {
+          gameName: advancedSettings.gameName,
+          gameType: advancedSettings.gameType,
+          artStyle: advancedSettings.artStyle,
+          orientation: advancedSettings.orientation,
+          platform: advancedSettings.platform,
+          difficulty: advancedSettings.difficulty,
+          soundEffect: advancedSettings.soundEffect
+        } : null
       }),
       signal: state.abortController.signal
     });

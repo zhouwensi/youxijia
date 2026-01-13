@@ -1344,9 +1344,27 @@ function loadStats() {
         likesEl.innerText = count;
         document.getElementById('stat-plays').innerText = data.game.play_count || 0;
         document.getElementById('stat-favs').innerText = data.game.favorite_count || 0;
+        // 更新作者名（从数据库获取最新昵称）
+        if (data.game.author_name) {
+          const authorNameEl = document.getElementById('author-name');
+          if (authorNameEl) authorNameEl.innerText = data.game.author_name;
+        }
       }
     })
     .catch(err => console.error('加载统计失败', err));
+  
+  // 获取作者最新昵称
+  if (authorToken) {
+    fetch('/api/users/' + authorToken + '/profile', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.user && data.user.nickname) {
+          const authorNameEl = document.getElementById('author-name');
+          if (authorNameEl) authorNameEl.innerText = data.user.nickname;
+        }
+      })
+      .catch(() => {});
+  }
   
   // 获取用户点赞状态
   const userToken = getUserToken();

@@ -7,11 +7,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#1a1a2e">
-  <meta name="description" content="超人大战奥特曼 - AI一句话生成的游戏">
-  <meta property="og:title" content="超人大战奥特曼 - AI游戏">
+  <meta name="description" content="翻牌配对 - AI一句话生成的游戏">
+  <meta property="og:title" content="翻牌配对 - AI游戏">
   <meta property="og:description" content="这个游戏由AI一句话生成！关注公众号「游戏开发技术教程」，你也可以免费生成游戏！">
   <meta property="og:type" content="website">
-  <title>超人大战奥特曼 - AI游戏</title>
+  <title>翻牌配对 - AI游戏</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
   <!-- 推广栏样式 -->
   <style>
@@ -257,38 +257,29 @@ body {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            touch-action: manipulation;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
-        
+
         body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #0a0a2a 0%, #1a1a40 100%);
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
             color: #fff;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
-            padding: 10px;
+            align-items: center;
         }
-        
-        #gameContainer {
-            position: relative;
-            width: 100%;
-            max-width: 800px;
-            height: 500px;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
-            background-color: #111;
-        }
-        
-        canvas {
+
+        #gameCanvas {
             display: block;
-            background-color: #0a0a1a;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
-        
+
         .screen {
             position: absolute;
             top: 0;
@@ -297,194 +288,67 @@ body {
             height: 100%;
             display: flex;
             flex-direction: column;
-            align-items: center;
             justify-content: center;
-            text-align: center;
-            padding: 20px;
-            background: rgba(10, 10, 30, 0.95);
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.85);
             z-index: 10;
-            transition: opacity 0.5s;
+            transition: opacity 0.3s;
         }
-        
+
         .hidden {
             display: none;
         }
-        
+
         h1 {
-            font-size: 3.5rem;
+            font-size: clamp(2.5rem, 8vw, 4rem);
             margin-bottom: 20px;
-            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+            text-align: center;
+            background: linear-gradient(to right, #00b4db, #0083b0);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            text-shadow: 0 0 15px rgba(78, 205, 196, 0.5);
+            text-shadow: 0 2px 10px rgba(0, 180, 219, 0.3);
         }
-        
+
         h2 {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
+            font-size: clamp(2rem, 6vw, 3rem);
+            margin-bottom: 30px;
+            text-align: center;
             color: #4ecdc4;
         }
-        
-        p {
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-            max-width: 600px;
-            line-height: 1.6;
-            color: #ccc;
-        }
-        
-        .controls-info {
-            background: rgba(30, 30, 60, 0.7);
-            padding: 15px;
-            border-radius: 10px;
-            margin: 20px 0;
-            max-width: 500px;
-            border-left: 4px solid #ff6b6b;
-        }
-        
-        .controls-info h3 {
-            color: #ff6b6b;
-            margin-bottom: 10px;
-        }
-        
-        .controls-info ul {
-            list-style-type: none;
-            text-align: left;
-        }
-        
-        .controls-info li {
-            margin-bottom: 8px;
-            padding-left: 20px;
-            position: relative;
-        }
-        
-        .controls-info li:before {
-            content: "•";
-            color: #4ecdc4;
-            position: absolute;
-            left: 0;
-        }
-        
+
         .button {
-            background: linear-gradient(90deg, #ff6b6b, #ff8e53);
+            background: linear-gradient(to right, #00b4db, #0083b0);
             color: white;
             border: none;
             padding: 15px 40px;
-            font-size: 1.3rem;
+            font-size: clamp(1.2rem, 4vw, 1.5rem);
             border-radius: 50px;
             cursor: pointer;
             margin-top: 20px;
-            transition: all 0.3s;
-            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
-            font-weight: bold;
-            letter-spacing: 1px;
+            box-shadow: 0 5px 15px rgba(0, 180, 219, 0.4);
+            transition: all 0.2s;
         }
-        
+
         .button:hover, .button:active {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.6);
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 180, 219, 0.6);
         }
-        
-        .score-display {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #4ecdc4;
-            z-index: 5;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 8px 15px;
-            border-radius: 10px;
-        }
-        
-        .health-bar {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            width: 200px;
-            height: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            overflow: hidden;
-            z-index: 5;
-        }
-        
-        .health-fill {
-            height: 100%;
-            width: 100%;
-            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
-            border-radius: 10px;
-            transition: width 0.3s;
-        }
-        
-        .mobile-controls {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 20px;
-            z-index: 5;
-        }
-        
-        .mobile-btn {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.8rem;
-            color: white;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: none;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-        }
-        
-        .mobile-btn:active {
-            background: rgba(255, 255, 255, 0.4);
-        }
-        
-        .instructions {
+
+        .stats {
+            font-size: clamp(1.2rem, 4vw, 1.5rem);
             margin-top: 20px;
-            font-size: 1rem;
-            color: #888;
             text-align: center;
-            max-width: 800px;
+            color: #a8e6cf;
         }
-        
-        @media (max-width: 768px) {
-            #gameContainer {
-                height: 400px;
-            }
-            
-            h1 {
-                font-size: 2.5rem;
-            }
-            
-            h2 {
-                font-size: 2rem;
-            }
-            
-            .button {
-                padding: 12px 30px;
-                font-size: 1.1rem;
-            }
-            
-            .mobile-controls {
-                display: flex;
-            }
-        }
-        
-        @media (min-width: 769px) {
-            .mobile-controls {
-                display: none;
-            }
+
+        .instructions {
+            max-width: 500px;
+            text-align: center;
+            margin: 30px 20px;
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            line-height: 1.5;
+            color: #ccc;
         }
     </style>
 
@@ -492,577 +356,217 @@ body {
 <body>
   <!-- 原游戏body内容 -->
   
-    <div id="gameContainer">
-        <canvas id="gameCanvas"></canvas>
-        
-        <div class="score-display">得分: <span id="score">0</span></div>
-        <div class="health-bar">
-            <div id="healthFill" class="health-fill" style="width: 100%"></div>
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="startScreen" class="screen">
+        <h1>翻牌配对</h1>
+        <div class="instructions">
+            翻开两张相同的牌即可消除！<br>
+            用最短的时间和最少的步数完成所有配对。
         </div>
-        
-        <div id="startScreen" class="screen">
-            <h1>超人大战奥特曼</h1>
-            <p>在宇宙的深处，超人与奥特曼展开了一场史诗级的对决！控制超人躲避奥特曼的攻击并发射热视线反击！</p>
-            
-            <div class="controls-info">
-                <h3>游戏控制</h3>
-                <ul>
-                    <li><strong>键盘控制:</strong> 使用方向键或WASD移动超人，空格键发射热视线</li>
-                    <li><strong>触屏控制:</strong> 使用屏幕下方的虚拟按钮移动和攻击</li>
-                    <li><strong>游戏目标:</strong> 击败尽可能多的奥特曼，获得高分！</li>
-                </ul>
-            </div>
-            
-            <button id="startButton" class="button">开始游戏</button>
-        </div>
-        
-        <div id="gameOverScreen" class="screen hidden">
-            <h2>游戏结束</h2>
-            <p>你的最终得分: <span id="finalScore">0</span></p>
-            <p id="gameOverMessage">超人被奥特曼击败了！</p>
-            <button id="restartButton" class="button">再玩一次</button>
-        </div>
-        
-        <div class="mobile-controls">
-            <div class="mobile-btn" id="leftBtn">←</div>
-            <div class="mobile-btn" id="rightBtn">→</div>
-            <div class="mobile-btn" id="upBtn">↑</div>
-            <div class="mobile-btn" id="downBtn">↓</div>
-            <div class="mobile-btn" id="shootBtn" style="background: rgba(255, 107, 107, 0.7);">🔥</div>
-        </div>
+        <button id="startButton" class="button">开始游戏</button>
     </div>
-    
-    <div class="instructions">
-        游戏提示：奥特曼会从屏幕两侧出现并发射光线，躲避光线并反击！超人每被击中一次会损失生命值。
+
+    <div id="endScreen" class="screen hidden">
+        <h2>游戏结束</h2>
+        <div id="finalStats" class="stats"></div>
+        <button id="restartButton" class="button">再玩一次</button>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // 游戏变量
-            const canvas = document.getElementById('gameCanvas');
-            const ctx = canvas.getContext('2d');
-            const startScreen = document.getElementById('startScreen');
-            const gameOverScreen = document.getElementById('gameOverScreen');
-            const startButton = document.getElementById('startButton');
-            const restartButton = document.getElementById('restartButton');
-            const scoreElement = document.getElementById('score');
-            const finalScoreElement = document.getElementById('finalScore');
-            const healthFill = document.getElementById('healthFill');
-            const gameOverMessage = document.getElementById('gameOverMessage');
-            
-            // 移动控制按钮
-            const leftBtn = document.getElementById('leftBtn');
-            const rightBtn = document.getElementById('rightBtn');
-            const upBtn = document.getElementById('upBtn');
-            const downBtn = document.getElementById('downBtn');
-            const shootBtn = document.getElementById('shootBtn');
-            
-            // 设置画布尺寸
-            function resizeCanvas() {
-                const container = document.getElementById('gameContainer');
-                canvas.width = container.clientWidth;
-                canvas.height = container.clientHeight;
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('startScreen');
+        const endScreen = document.getElementById('endScreen');
+        const startButton = document.getElementById('startButton');
+        const restartButton = document.getElementById('restartButton');
+        const finalStats = document.getElementById('finalStats');
+
+        let gameState = 'start';
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let totalPairs = 8;
+        let moves = 0;
+        let time = 0;
+        let timer = null;
+        let canFlip = true;
+        const cardTypes = ['🍎', '🍌', '🍒', '🍕', '⚽', '🎮', '🚀', '🌟'];
+
+        function resizeCanvas() {
+            const size = Math.min(window.innerWidth, window.innerHeight);
+            canvas.width = size * 0.9;
+            canvas.height = size * 0.9;
+            if (gameState === 'playing') {
+                initCards();
             }
-            
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
-            
-            // 游戏状态
-            let game = {
-                running: false,
-                score: 0,
-                health: 100,
-                level: 1,
-                enemiesDefeated: 0
-            };
-            
-            // 玩家对象
-            const player = {
-                x: 0,
-                y: 0,
-                width: 60,
-                height: 80,
-                speed: 6,
-                color: '#ff6b6b',
-                shooting: false,
-                shootCooldown: 0,
-                shootDelay: 15
-            };
-            
-            // 子弹数组
-            let bullets = [];
-            
-            // 敌人数组
-            let enemies = [];
-            
-            // 粒子效果数组
-            let particles = [];
-            
-            // 控制状态
-            const keys = {};
-            const touchControls = {
-                left: false,
-                right: false,
-                up: false,
-                down: false,
-                shoot: false
-            };
-            
-            // 初始化游戏
-            function initGame() {
-                game.running = true;
-                game.score = 0;
-                game.health = 100;
-                game.level = 1;
-                game.enemiesDefeated = 0;
-                
-                player.x = canvas.width / 2 - player.width / 2;
-                player.y = canvas.height / 2 - player.height / 2;
-                
-                bullets = [];
-                enemies = [];
-                particles = [];
-                
-                scoreElement.textContent = game.score;
-                healthFill.style.width = '100%';
-                
-                // 初始生成几个敌人
-                for (let i = 0; i < 3; i++) {
-                    spawnEnemy();
-                }
-                
-                startScreen.classList.add('hidden');
-                gameOverScreen.classList.add('hidden');
-            }
-            
-            // 生成敌人
-            function spawnEnemy() {
-                const side = Math.random() > 0.5 ? 'left' : 'right';
-                const x = side === 'left' ? -80 : canvas.width + 80;
-                const y = Math.random() * (canvas.height - 100) + 50;
-                
-                enemies.push({
-                    x: x,
-                    y: y,
-                    width: 70,
-                    height: 90,
-                    speed: 1 + Math.random() * 1.5 + game.level * 0.2,
-                    color: '#4ecdc4',
-                    health: 2 + Math.floor(game.level / 2),
-                    maxHealth: 2 + Math.floor(game.level / 2),
-                    direction: side === 'left' ? 1 : -1,
-                    shootCooldown: Math.floor(Math.random() * 100) + 50,
-                    shootDelay: 100 - Math.min(game.level * 5, 60)
-                });
-            }
-            
-            // 创建粒子效果
-            function createParticles(x, y, color, count) {
-                for (let i = 0; i < count; i++) {
-                    particles.push({
-                        x: x,
-                        y: y,
-                        size: Math.random() * 5 + 2,
-                        speedX: Math.random() * 6 - 3,
-                        speedY: Math.random() * 6 - 3,
-                        color: color,
-                        life: 30
+        }
+
+        function initCards() {
+            cards = [];
+            const cols = 4;
+            const rows = 4;
+            const cardWidth = canvas.width / cols;
+            const cardHeight = canvas.height / rows;
+            let cardValues = [...cardTypes, ...cardTypes];
+            cardValues = cardValues.sort(() => Math.random() - 0.5);
+
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    const index = row * cols + col;
+                    cards.push({
+                        x: col * cardWidth,
+                        y: row * cardHeight,
+                        width: cardWidth,
+                        height: cardHeight,
+                        value: cardValues[index],
+                        flipped: false,
+                        matched: false
                     });
                 }
             }
-            
-            // 绘制玩家
-            function drawPlayer() {
-                // 绘制超人身体
-                ctx.fillStyle = player.color;
-                ctx.fillRect(player.x, player.y, player.width, player.height);
-                
-                // 绘制超人标志
-                ctx.fillStyle = '#ffd700';
-                ctx.beginPath();
-                ctx.arc(player.x + player.width/2, player.y + player.height/3, 15, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // 绘制披风
-                ctx.fillStyle = '#8b0000';
-                ctx.beginPath();
-                ctx.moveTo(player.x, player.y + player.height/3);
-                ctx.lineTo(player.x - 20, player.y + player.height);
-                ctx.lineTo(player.x, player.y + player.height);
-                ctx.closePath();
-                ctx.fill();
-                
-                // 绘制热视线（如果正在射击）
-                if (player.shooting && player.shootCooldown <= 0) {
-                    ctx.strokeStyle = '#ff4500';
-                    ctx.lineWidth = 8;
-                    ctx.beginPath();
-                    ctx.moveTo(player.x + player.width/2, player.y);
-                    ctx.lineTo(player.x + player.width/2, 0);
-                    ctx.stroke();
-                    
-                    // 添加热视线粒子效果
-                    for (let i = 0; i < 3; i++) {
-                        createParticles(
-                            player.x + player.width/2, 
-                            Math.random() * player.y, 
-                            '#ff8c00', 
-                            2
-                        );
-                    }
+        }
+
+        function drawCard(card) {
+            ctx.save();
+            ctx.fillStyle = card.flipped || card.matched ? '#2a2d3e' : '#4ecdc4';
+            ctx.fillRect(card.x + 2, card.y + 2, card.width - 4, card.height - 4);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(card.x + 2, card.y + 2, card.width - 4, card.height - 4);
+
+            if (card.flipped || card.matched) {
+                ctx.fillStyle = '#fff';
+                ctx.font = `bold ${card.width * 0.4}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(card.value, card.x + card.width / 2, card.y + card.height / 2);
+            } else {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.font = `bold ${card.width * 0.3}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('?', card.x + card.width / 2, card.y + card.height / 2);
+            }
+            ctx.restore();
+        }
+
+        function drawHUD() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, canvas.width, 50);
+            ctx.fillStyle = '#fff';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(`步数: ${moves}`, 20, 30);
+            ctx.textAlign = 'center';
+            ctx.fillText(`时间: ${time}秒`, canvas.width / 2, 30);
+            ctx.textAlign = 'right';
+            ctx.fillText(`配对: ${matchedPairs}/${totalPairs}`, canvas.width - 20, 30);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            cards.forEach(drawCard);
+            drawHUD();
+        }
+
+        function flipCard(card) {
+            if (!canFlip || card.flipped || card.matched || flippedCards.length >= 2) return;
+            card.flipped = true;
+            flippedCards.push(card);
+            moves++;
+            if (flippedCards.length === 2) {
+                canFlip = false;
+                setTimeout(checkMatch, 800);
+            }
+        }
+
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+            if (card1.value === card2.value) {
+                card1.matched = true;
+                card2.matched = true;
+                matchedPairs++;
+                if (matchedPairs === totalPairs) {
+                    endGame();
+                }
+            } else {
+                card1.flipped = false;
+                card2.flipped = false;
+            }
+            flippedCards = [];
+            canFlip = true;
+        }
+
+        function startGame() {
+            gameState = 'playing';
+            startScreen.classList.add('hidden');
+            endScreen.classList.add('hidden');
+            matchedPairs = 0;
+            moves = 0;
+            time = 0;
+            flippedCards = [];
+            canFlip = true;
+            clearInterval(timer);
+            timer = setInterval(() => { time++; }, 1000);
+            initCards();
+        }
+
+        function endGame() {
+            gameState = 'end';
+            clearInterval(timer);
+            finalStats.innerHTML = `
+                步数: ${moves}<br>
+                时间: ${time}秒
+            `;
+            setTimeout(() => {
+                endScreen.classList.remove('hidden');
+            }, 1000);
+        }
+
+        function handleClick(event) {
+            if (gameState !== 'playing') return;
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const canvasX = x * scaleX;
+            const canvasY = y * scaleY;
+
+            for (const card of cards) {
+                if (canvasX >= card.x && canvasX <= card.x + card.width &&
+                    canvasY >= card.y && canvasY <= card.y + card.height) {
+                    flipCard(card);
+                    break;
                 }
             }
-            
-            // 绘制子弹
-            function drawBullets() {
-                for (let bullet of bullets) {
-                    ctx.fillStyle = bullet.color;
-                    ctx.beginPath();
-                    ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
-                    ctx.fill();
-                    
-                    // 子弹尾迹
-                    ctx.fillStyle = 'rgba(255, 215, 0, 0.5)';
-                    ctx.beginPath();
-                    ctx.arc(bullet.x, bullet.y + 5, bullet.radius * 0.7, 0, Math.PI * 2);
-                    ctx.fill();
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === ' ' || event.key === 'Enter') {
+                if (gameState === 'start') {
+                    startGame();
+                } else if (gameState === 'end') {
+                    startGame();
                 }
             }
-            
-            // 绘制敌人
-            function drawEnemies() {
-                for (let enemy of enemies) {
-                    // 绘制奥特曼身体
-                    ctx.fillStyle = enemy.color;
-                    ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
-                    
-                    // 绘制奥特曼眼睛
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(enemy.x + 15, enemy.y + 20, 15, 10);
-                    ctx.fillRect(enemy.x + enemy.width - 30, enemy.y + 20, 15, 10);
-                    
-                    // 绘制彩色计时器
-                    ctx.fillStyle = '#ff0000';
-                    ctx.beginPath();
-                    ctx.arc(enemy.x + enemy.width/2, enemy.y + enemy.height - 15, 10, 0, Math.PI * 2);
-                    ctx.fill();
-                    
-                    // 绘制生命条
-                    const healthWidth = (enemy.health / enemy.maxHealth) * enemy.width;
-                    ctx.fillStyle = '#ff0000';
-                    ctx.fillRect(enemy.x, enemy.y - 10, enemy.width, 5);
-                    ctx.fillStyle = '#00ff00';
-                    ctx.fillRect(enemy.x, enemy.y - 10, healthWidth, 5);
-                }
-            }
-            
-            // 绘制粒子
-            function drawParticles() {
-                for (let i = particles.length - 1; i >= 0; i--) {
-                    const p = particles[i];
-                    
-                    ctx.fillStyle = p.color;
-                    ctx.globalAlpha = p.life / 30;
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                    ctx.fill();
-                    
-                    ctx.globalAlpha = 1;
-                    
-                    // 更新粒子
-                    p.x += p.speedX;
-                    p.y += p.speedY;
-                    p.life--;
-                    
-                    // 移除死亡粒子
-                    if (p.life <= 0) {
-                        particles.splice(i, 1);
-                    }
-                }
-            }
-            
-            // 更新玩家位置
-            function updatePlayer() {
-                // 处理键盘输入
-                if (keys['ArrowLeft'] || keys['a'] || keys['A'] || touchControls.left) {
-                    player.x -= player.speed;
-                }
-                if (keys['ArrowRight'] || keys['d'] || keys['D'] || touchControls.right) {
-                    player.x += player.speed;
-                }
-                if (keys['ArrowUp'] || keys['w'] || keys['W'] || touchControls.up) {
-                    player.y -= player.speed;
-                }
-                if (keys['ArrowDown'] || keys['s'] || keys['S'] || touchControls.down) {
-                    player.y += player.speed;
-                }
-                
-                // 处理射击
-                if ((keys[' '] || touchControls.shoot) && player.shootCooldown <= 0) {
-                    player.shooting = true;
-                    
-                    // 发射子弹
-                    bullets.push({
-                        x: player.x + player.width/2,
-                        y: player.y,
-                        radius: 8,
-                        speed: 12,
-                        color: '#ff4500'
-                    });
-                    
-                    player.shootCooldown = player.shootDelay;
-                } else {
-                    player.shooting = false;
-                }
-                
-                // 更新射击冷却
-                if (player.shootCooldown > 0) {
-                    player.shootCooldown--;
-                }
-                
-                // 边界检查
-                player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
-                player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
-            }
-            
-            // 更新子弹
-            function updateBullets() {
-                for (let i = bullets.length - 1; i >= 0; i--) {
-                    const bullet = bullets[i];
-                    bullet.y -= bullet.speed;
-                    
-                    // 移除屏幕外的子弹
-                    if (bullet.y < -bullet.radius) {
-                        bullets.splice(i, 1);
-                        continue;
-                    }
-                    
-                    // 检查子弹与敌人的碰撞
-                    for (let j = enemies.length - 1; j >= 0; j--) {
-                        const enemy = enemies[j];
-                        
-                        if (bullet.x > enemy.x && bullet.x < enemy.x + enemy.width &&
-                            bullet.y > enemy.y && bullet.y < enemy.y + enemy.height) {
-                            
-                            // 击中敌人
-                            enemy.health--;
-                            createParticles(bullet.x, bullet.y, '#ff8c00', 10);
-                            bullets.splice(i, 1);
-                            
-                            if (enemy.health <= 0) {
-                                // 敌人被击败
-                                game.score += 100;
-                                game.enemiesDefeated++;
-                                scoreElement.textContent = game.score;
-                                
-                                createParticles(
-                                    enemy.x + enemy.width/2, 
-                                    enemy.y + enemy.height/2, 
-                                    '#4ecdc4', 
-                                    20
-                                );
-                                
-                                enemies.splice(j, 1);
-                                
-                                // 每击败5个敌人升一级
-                                if (game.enemiesDefeated % 5 === 0) {
-                                    game.level++;
-                                }
-                                
-                                // 生成新敌人
-                                spawnEnemy();
-                            }
-                            
-                            break;
-                        }
-                    }
-                }
-            }
-            
-            // 更新敌人
-            function updateEnemies() {
-                for (let i = enemies.length - 1; i >= 0; i--) {
-                    const enemy = enemies[i];
-                    
-                    // 移动敌人
-                    enemy.x += enemy.speed * enemy.direction;
-                    
-                    // 敌人射击
-                    if (enemy.shootCooldown <= 0) {
-                        // 敌人发射光线
-                        createParticles(
-                            enemy.x + enemy.width/2, 
-                            enemy.y + enemy.height, 
-                            '#00ffff', 
-                            5
-                        );
-                        
-                        // 检查是否击中玩家
-                        if (enemy.x + enemy.width/2 > player.x && 
-                            enemy.x + enemy.width/2 < player.x + player.width &&
-                            enemy.y + enemy.height > player.y &&
-                            enemy.y + enemy.height < player.y + player.height) {
-                            
-                            // 玩家被击中
-                            game.health -= 10;
-                            healthFill.style.width = game.health + '%';
-                            
-                            createParticles(
-                                player.x + player.width/2, 
-                                player.y + player.height/2, 
-                                '#ff6b6b', 
-                                15
-                            );
-                            
-                            if (game.health <= 0) {
-                                gameOver();
-                            }
-                        }
-                        
-                        enemy.shootCooldown = enemy.shootDelay;
-                    } else {
-                        enemy.shootCooldown--;
-                    }
-                    
-                    // 移除屏幕外的敌人并生成新敌人
-                    if ((enemy.direction === 1 && enemy.x > canvas.width + 100) ||
-                        (enemy.direction === -1 && enemy.x < -100)) {
-                        enemies.splice(i, 1);
-                        spawnEnemy();
-                    }
-                }
-                
-                // 随机生成新敌人
-                if (enemies.length < 3 + Math.floor(game.level / 2) && Math.random() < 0.01) {
-                    spawnEnemy();
-                }
-            }
-            
-            // 游戏结束
-            function gameOver() {
-                game.running = false;
-                finalScoreElement.textContent = game.score;
-                
-                if (game.score > 1000) {
-                    gameOverMessage.textContent = "太强了！你击败了众多奥特曼！";
-                } else if (game.score > 500) {
-                    gameOverMessage.textContent = "不错的表现！超人需要更多训练！";
-                } else {
-                    gameOverMessage.textContent = "超人被奥特曼击败了！";
-                }
-                
-                gameOverScreen.classList.remove('hidden');
-            }
-            
-            // 游戏循环
-            function gameLoop() {
-                // 清空画布
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
-                // 绘制星空背景
-                drawBackground();
-                
-                if (game.running) {
-                    // 更新游戏状态
-                    updatePlayer();
-                    updateBullets();
-                    updateEnemies();
-                    
-                    // 绘制游戏元素
-                    drawEnemies();
-                    drawBullets();
-                    drawPlayer();
-                    drawParticles();
-                }
-                
-                // 继续游戏循环
-                requestAnimationFrame(gameLoop);
-            }
-            
-            // 绘制星空背景
-            function drawBackground() {
-                // 绘制深色背景
-                ctx.fillStyle = '#0a0a1a';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                // 绘制星星
-                ctx.fillStyle = '#ffffff';
-                for (let i = 0; i < 100; i++) {
-                    const x = (i * 7.9) % canvas.width;
-                    const y = (i * 5.3) % canvas.height;
-                    const size = Math.random() * 2;
-                    
-                    ctx.beginPath();
-                    ctx.arc(x, y, size, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-                
-                // 绘制远处行星
-                ctx.fillStyle = 'rgba(30, 30, 80, 0.3)';
-                ctx.beginPath();
-                ctx.arc(canvas.width * 0.8, canvas.height * 0.2, 50, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.fillStyle = 'rgba(80, 30, 100, 0.3)';
-                ctx.beginPath();
-                ctx.arc(canvas.width * 0.2, canvas.height * 0.7, 40, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            
-            // 事件监听器
-            startButton.addEventListener('click', initGame);
-            restartButton.addEventListener('click', initGame);
-            
-            // 键盘控制
-            window.addEventListener('keydown', function(e) {
-                keys[e.key] = true;
-                
-                // 防止空格键滚动页面
-                if (e.key === ' ') {
-                    e.preventDefault();
-                }
-            });
-            
-            window.addEventListener('keyup', function(e) {
-                keys[e.key] = false;
-            });
-            
-            // 移动端触摸控制
-            function setupTouchControl(button, control) {
-                button.addEventListener('touchstart', function(e) {
-                    touchControls[control] = true;
-                    e.preventDefault();
-                });
-                
-                button.addEventListener('touchend', function(e) {
-                    touchControls[control] = false;
-                    e.preventDefault();
-                });
-                
-                button.addEventListener('touchcancel', function(e) {
-                    touchControls[control] = false;
-                    e.preventDefault();
-                });
-            }
-            
-            setupTouchControl(leftBtn, 'left');
-            setupTouchControl(rightBtn, 'right');
-            setupTouchControl(upBtn, 'up');
-            setupTouchControl(downBtn, 'down');
-            setupTouchControl(shootBtn, 'shoot');
-            
-            // 防止游戏区域滚动
-            canvas.addEventListener('touchstart', function(e) {
-                e.preventDefault();
-            }, { passive: false });
-            
-            canvas.addEventListener('touchmove', function(e) {
-                e.preventDefault();
-            }, { passive: false });
-            
-            // 开始游戏循环
-            gameLoop();
-        });
+        }
+
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', startGame);
+        canvas.addEventListener('click', handleClick);
+        document.addEventListener('keydown', handleKeyPress);
+        window.addEventListener('resize', resizeCanvas);
+
+        resizeCanvas();
+        draw();
+
+        function gameLoop() {
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        gameLoop();
     </script>
 
   <!-- 推广栏 -->
@@ -1075,8 +579,8 @@ body {
   <div class="tiktok-author-row">
     <div class="tiktok-author-avatar" id="author-avatar" onclick="openAuthorProfile()">👤</div>
     <div class="tiktok-author-details">
-      <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">游戏玩家</span>
-      <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="9f1d8efa-3256-44c1-ab40-832876e9e2f8" onclick="toggleFollow()">
+      <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">test4</span>
+      <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="a9e31c30-e95f-4c24-b560-3cbf23517cd9" onclick="toggleFollow()">
         <span class="follow-icon">+</span> 关注
       </button>
     </div>
@@ -1153,10 +657,10 @@ body {
 
 <script>
 // 获取游戏ID和作者信息
-const gameId = '115cb439-0e98-4c75-aaef-3e6496c9ba9a';
-const gameTitle = '超人大战奥特曼';
-const authorToken = '9f1d8efa-3256-44c1-ab40-832876e9e2f8';
-const authorName = '游戏玩家';
+const gameId = 'b86d4254-73f7-4e9f-b766-253f71d7f8b9';
+const gameTitle = '翻牌配对';
+const authorToken = 'a9e31c30-e95f-4c24-b560-3cbf23517cd9';
+const authorName = 'test4';
 const API_BASE = '/api/games';
 
 // 调试日志

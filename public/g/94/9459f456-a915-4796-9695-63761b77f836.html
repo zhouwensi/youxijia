@@ -865,7 +865,7 @@ body {
   <div class="tiktok-author-row">
     <div class="tiktok-author-avatar" id="author-avatar" onclick="openAuthorProfile()">👤</div>
     <div class="tiktok-author-details">
-      <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">匿名</span>
+      <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">MarsZhou</span>
       <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="854e9951-0f87-4d3e-b1cc-f6b8559fbe9c" onclick="toggleFollow()">
         <span class="follow-icon">+</span> 关注
       </button>
@@ -946,7 +946,7 @@ body {
 const gameId = '9459f456-a915-4796-9695-63761b77f836';
 const gameTitle = '流星蝴蝶剑';
 const authorToken = '854e9951-0f87-4d3e-b1cc-f6b8559fbe9c';
-const authorName = '匿名';
+const authorName = 'MarsZhou';
 const API_BASE = '/api/games';
 
 // 调试日志
@@ -993,9 +993,27 @@ function loadStats() {
         likesEl.innerText = count;
         document.getElementById('stat-plays').innerText = data.game.play_count || 0;
         document.getElementById('stat-favs').innerText = data.game.favorite_count || 0;
+        // 更新作者名（从数据库获取最新昵称）
+        if (data.game.author_name) {
+          const authorNameEl = document.getElementById('author-name');
+          if (authorNameEl) authorNameEl.innerText = data.game.author_name;
+        }
       }
     })
     .catch(err => console.error('加载统计失败', err));
+  
+  // 获取作者最新昵称
+  if (authorToken) {
+    fetch('/api/users/' + authorToken + '/profile', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.user && data.user.nickname) {
+          const authorNameEl = document.getElementById('author-name');
+          if (authorNameEl) authorNameEl.innerText = data.user.nickname;
+        }
+      })
+      .catch(() => {});
+  }
   
   // 获取用户点赞状态
   const userToken = getUserToken();

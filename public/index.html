@@ -150,6 +150,132 @@
             maxlength="500"
             rows="3"
           ></textarea>
+          <!-- 高级设置切换 -->
+          <button class="btn-advanced-toggle" id="btn-advanced-toggle" onclick="toggleAdvancedSettings()">
+            <span class="toggle-icon">⚙️</span>
+            <span class="toggle-text">高级设置</span>
+            <span class="toggle-arrow" id="advanced-arrow">▼</span>
+          </button>
+          <!-- 高级设置面板 -->
+          <div class="advanced-settings-panel" id="advanced-settings-panel" style="display:none;">
+            <div class="advanced-settings-grid">
+              <!-- 游戏名称 -->
+              <div class="setting-group">
+                <label>🏷️ 游戏名称</label>
+                <input type="text" id="adv-game-name" placeholder="留空则自动生成" maxlength="50">
+              </div>
+              <!-- 游戏类型 -->
+              <div class="setting-group">
+                <label>🎮 游戏类型</label>
+                <select id="adv-game-type">
+                  <option value="">自动识别</option>
+                  <option value="action">动作游戏</option>
+                  <option value="puzzle">益智解谜</option>
+                  <option value="arcade">街机休闲</option>
+                  <option value="strategy">策略经营</option>
+                  <option value="adventure">冒险探索</option>
+                  <option value="sports">体育竞技</option>
+                  <option value="shooting">射击游戏</option>
+                  <option value="card">卡牌棋牌</option>
+                </select>
+              </div>
+              <!-- 画风 -->
+              <div class="setting-group">
+                <label>🎨 画风风格</label>
+                <select id="adv-art-style">
+                  <option value="">默认</option>
+                  <option value="pixel">像素复古</option>
+                  <option value="cartoon">卡通可爱</option>
+                  <option value="minimalist">简约极简</option>
+                  <option value="neon">霓虹赛博</option>
+                  <option value="handdrawn">手绘涂鸦</option>
+                  <option value="realistic">写实风格</option>
+                  <option value="retro">复古怀旧</option>
+                  <option value="dark">暗黑哥特</option>
+                </select>
+              </div>
+              <!-- 屏幕方向 -->
+              <div class="setting-group">
+                <label>📱 屏幕方向</label>
+                <select id="adv-orientation">
+                  <option value="">自适应</option>
+                  <option value="portrait">竖屏优先</option>
+                  <option value="landscape">横屏优先</option>
+                </select>
+              </div>
+              <!-- 目标平台 -->
+              <div class="setting-group">
+                <label>💻 目标平台</label>
+                <select id="adv-platform">
+                  <option value="">全平台</option>
+                  <option value="mobile">移动端优先</option>
+                  <option value="desktop">桌面端优先</option>
+                  <option value="touch">纯触屏</option>
+                </select>
+              </div>
+              <!-- 游戏难度 -->
+              <div class="setting-group">
+                <label>📊 游戏难度</label>
+                <select id="adv-difficulty">
+                  <option value="">适中</option>
+                  <option value="easy">简单轻松</option>
+                  <option value="hard">困难挑战</option>
+                  <option value="progressive">渐进式</option>
+                </select>
+              </div>
+              <!-- 音效 -->
+              <div class="setting-group">
+                <label>🔊 音效设置</label>
+                <select id="adv-sound">
+                  <option value="">无音效</option>
+                  <option value="basic">基础音效</option>
+                  <option value="rich">丰富音效</option>
+                </select>
+              </div>
+              <!-- 色调 -->
+              <div class="setting-group">
+                <label>🌈 主色调</label>
+                <select id="adv-color-theme">
+                  <option value="">自动</option>
+                  <option value="dark">深色主题</option>
+                  <option value="light">浅色主题</option>
+                  <option value="colorful">多彩鲜艳</option>
+                  <option value="pastel">柔和淡雅</option>
+                </select>
+              </div>
+            </div>
+            <!-- LLM设置（本次生成） -->
+            <div class="advanced-llm-section">
+              <div class="llm-section-header" onclick="toggleAdvancedLLM()">
+                <span>🤖 AI模型设置（仅本次生成）</span>
+                <span class="toggle-arrow" id="adv-llm-arrow">▶</span>
+              </div>
+              <div class="advanced-llm-content" id="advanced-llm-content" style="display:none;">
+                <div class="setting-group">
+                  <label>选择模型</label>
+                  <select id="adv-llm-model" onchange="onAdvModelChange()">
+                    <option value="">使用全局设置</option>
+                    <optgroup label="🚀 DeepSeek">
+                      <option value="deepseek-v3">DeepSeek V3 ⭐推荐</option>
+                      <option value="deepseek-r1">DeepSeek R1</option>
+                    </optgroup>
+                    <optgroup label="🌟 OpenAI">
+                      <option value="gpt-4o">GPT-4o</option>
+                      <option value="gpt-4o-mini">GPT-4o Mini</option>
+                    </optgroup>
+                    <optgroup label="🎭 Claude">
+                      <option value="claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+                      <option value="claude-3-opus">Claude 3 Opus</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="setting-group" id="adv-api-key-group" style="display:none;">
+                  <label>API Key（本次使用）</label>
+                  <input type="password" id="adv-api-key" placeholder="留空则使用全局设置">
+                </div>
+              </div>
+            </div>
+          </div>
           <button class="btn btn-primary btn-create-generate btn-generate" id="btn-create-generate" onclick="generateFromCreatePage()">
             <span class="btn-text">✨ 开始生成</span>
             <span class="btn-loading">

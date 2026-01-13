@@ -528,9 +528,27 @@ function loadStats() {
         likesEl.innerText = count;
         document.getElementById('stat-plays').innerText = data.game.play_count || 0;
         document.getElementById('stat-favs').innerText = data.game.favorite_count || 0;
+        // 更新作者名（从数据库获取最新昵称）
+        if (data.game.author_name) {
+          const authorNameEl = document.getElementById('author-name');
+          if (authorNameEl) authorNameEl.innerText = data.game.author_name;
+        }
       }
     })
     .catch(err => console.error('加载统计失败', err));
+  
+  // 获取作者最新昵称
+  if (authorToken) {
+    fetch('/api/users/' + authorToken + '/profile', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.user && data.user.nickname) {
+          const authorNameEl = document.getElementById('author-name');
+          if (authorNameEl) authorNameEl.innerText = data.user.nickname;
+        }
+      })
+      .catch(() => {});
+  }
   
   // 获取用户点赞状态
   const userToken = getUserToken();
@@ -2610,10 +2628,10 @@ app.post('/api/generate', async (req, res) => {
   console.log('\n========== 开始生成游戏 ==========');
   
   try {
-    const { prompt, llmConfig, draftId } = req.body;
+    const { prompt, llmConfig, draftId, advancedSettings } = req.body;
     const userToken = req.headers['x-user-token'] || null;
     const authorToken = req.headers['x-author-token'] || null;
-    console.log('[INFO] 收到生成请求:', { prompt, provider: llmConfig?.provider, user: userToken, draftId });
+    console.log('[INFO] 收到生成请求:', { prompt, provider: llmConfig?.provider, user: userToken, draftId, advancedSettings });
     
     if (!prompt || prompt.trim().length === 0) {
       console.log('[ERROR] 游戏描述为空');
@@ -2723,6 +2741,86 @@ app.post('/api/generate', async (req, res) => {
       console.log('[WARN] DeepSeek API Key格式可能不正确，通常应以sk-开头');
     }
 
+    // 构建高级设置描述
+    let advancedHint = '';
+    if (advancedSettings) {
+      const hints = [];
+      
+      // 游戏类型
+      const gameTypeMap = {
+        'action': '动作游戏',
+        'puzzle': '益智解谜游戏',
+        'casual': '休闲游戏',
+        'racing': '竞速游戏',
+        'shooting': '射击游戏',
+        'platform': '平台跳跃游戏',
+        'rpg': 'RPG角色扮演游戏',
+        'strategy': '策略游戏'
+      };
+      if (advancedSettings.gameType && advancedSettings.gameType !== 'auto') {
+        hints.push(`游戏类型: ${gameTypeMap[advancedSettings.gameType] || advancedSettings.gameType}`);
+      }
+      
+      // 画风
+      const artStyleMap = {
+        'pixel': '像素风格',
+        'cartoon': '卡通风格',
+        'minimalist': '极简风格',
+        'retro': '复古风格',
+        'neon': '霓虹赛博风格',
+        'handdrawn': '手绘风格'
+      };
+      if (advancedSettings.artStyle && advancedSettings.artStyle !== 'auto') {
+        hints.push(`美术风格: ${artStyleMap[advancedSettings.artStyle] || advancedSettings.artStyle}，请在视觉设计上体现这种风格`);
+      }
+      
+      // 横竖屏
+      if (advancedSettings.orientation && advancedSettings.orientation !== 'auto') {
+        if (advancedSettings.orientation === 'landscape') {
+          hints.push('屏幕方向: 横屏优化，适合PC和横向握持手机');
+        } else if (advancedSettings.orientation === 'portrait') {
+          hints.push('屏幕方向: 竖屏优化，适合手机垂直握持');
+        }
+      }
+      
+      // 平台
+      if (advancedSettings.platform && advancedSettings.platform !== 'all') {
+        if (advancedSettings.platform === 'mobile') {
+          hints.push('目标平台: 移动端优化，强化触屏操作体验');
+        } else if (advancedSettings.platform === 'pc') {
+          hints.push('目标平台: PC端优化，强化键鼠操作体验');
+        }
+      }
+      
+      // 难度
+      const difficultyMap = {
+        'easy': '简单难度，适合休闲玩家',
+        'medium': '中等难度，适度挑战',
+        'hard': '困难难度，需要较高技巧'
+      };
+      if (advancedSettings.difficulty && advancedSettings.difficulty !== 'medium') {
+        hints.push(`难度设定: ${difficultyMap[advancedSettings.difficulty] || advancedSettings.difficulty}`);
+      }
+      
+      // 音效
+      if (advancedSettings.soundEffect && advancedSettings.soundEffect !== '' && advancedSettings.soundEffect !== 'none') {
+        if (advancedSettings.soundEffect === 'basic') {
+          hints.push('音效: 添加基础音效，使用Web Audio API生成简单的游戏音效（如点击音、得分音、碰撞音）');
+        } else if (advancedSettings.soundEffect === 'rich') {
+          hints.push('音效: 添加丰富音效，使用Web Audio API生成多样的游戏音效（包括背景音乐循环、多种交互音效、成功/失败音效等）');
+        }
+      }
+      
+      if (hints.length > 0) {
+        advancedHint = `\n【用户高级设置】：\n${hints.map(h => `- ${h}`).join('\n')}\n请在生成游戏时参考以上设置。`;
+      }
+    }
+    
+    // 如果用户指定了游戏名称
+    const gameNameHint = advancedSettings?.gameName 
+      ? `\n【游戏名称】：请将游戏标题设置为"${advancedSettings.gameName}"`
+      : '';
+
     const systemPrompt = `你是一个专业的HTML5游戏开发专家。用户会给你一句话描述，你需要生成一个完整的、可直接运行的HTML5游戏。
 
 【最重要 - 代码必须完整】：
@@ -2754,7 +2852,7 @@ app.post('/api/generate', async (req, res) => {
 3. Canvas尺寸动态适配：使用 window.innerWidth 和 window.innerHeight
 4. 所有UI元素使用绝对定位或flex布局，不要超出视口范围
 5. 监听 resize 事件，窗口大小变化时自动调整Canvas尺寸
-
+${advancedHint}${gameNameHint}
 只返回完整的HTML代码，用\`\`\`html和\`\`\`包裹，不要解释。`;
 
     console.log('[INFO] 开始调用LLM API...');
