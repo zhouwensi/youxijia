@@ -1,0 +1,2052 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="description" content="松鼠快递员赵灏冒险记 - AI一句话生成的游戏">
+  <meta property="og:title" content="松鼠快递员赵灏冒险记 - AI游戏">
+  <meta property="og:description" content="这个游戏由AI一句话生成！关注公众号「游戏开发技术教程」，你也可以免费生成游戏！">
+  <meta property="og:type" content="website">
+  <title>松鼠快递员赵灏冒险记 - AI游戏</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+  <!-- 推广栏样式 -->
+  <style>
+/* 游戏家推广栏 - 固定在底部 */
+.yxj-promo-bar {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 60px !important;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+  padding: 8px 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  z-index: 999999 !important;
+  box-shadow: 0 -2px 15px rgba(99, 102, 241, 0.4) !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+.yxj-promo-bar.yxj-hidden {
+  display: none !important;
+}
+.yxj-promo-qr {
+  width: 44px !important;
+  height: 44px !important;
+  background: #fff !important;
+  border-radius: 6px !important;
+  padding: 2px !important;
+  flex-shrink: 0 !important;
+}
+.yxj-promo-qr img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+.yxj-promo-info {
+  color: #fff !important;
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+  text-align: left !important;
+}
+.yxj-promo-info strong {
+  display: block !important;
+  font-size: 13px !important;
+  margin-bottom: 2px !important;
+}
+.yxj-promo-info span {
+  opacity: 0.9 !important;
+  font-size: 11px !important;
+}
+.yxj-promo-close {
+  position: absolute !important;
+  right: 6px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  background: rgba(255,255,255,0.2) !important;
+  border: none !important;
+  color: #fff !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+.yxj-promo-home {
+  position: fixed !important;
+  top: 10px !important;
+  left: 10px !important;
+  background: rgba(0,0,0,0.5) !important;
+  color: #fff !important;
+  text-decoration: none !important;
+  padding: 6px 12px !important;
+  border-radius: 20px !important;
+  font-size: 12px !important;
+  z-index: 999998 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+/* TikTok 风格组件 */
+.tiktok-author-info {
+  position: fixed !important;
+  left: 16px !important;
+  bottom: 80px !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  z-index: 999998 !important;
+  padding: 0 !important;
+  pointer-events: auto !important;
+}
+.tiktok-author-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+.tiktok-author-avatar {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.5rem !important;
+  border: 2px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+  cursor: pointer !important;
+  transition: transform 0.2s, box-shadow 0.2s !important;
+  text-decoration: none !important;
+}
+.tiktok-author-avatar:hover {
+  transform: scale(1.05) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}
+.tiktok-author-details {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+.tiktok-author-name {
+  color: white !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8) !important;
+  cursor: pointer !important;
+  transition: opacity 0.2s !important;
+}
+.tiktok-author-name:hover {
+  opacity: 0.8 !important;
+}
+.tiktok-follow-btn {
+  background: #fe2c55 !important;
+  color: white !important;
+  border: none !important;
+  padding: 6px 16px !important;
+  border-radius: 4px !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  transition: all 0.2s ease !important;
+  text-shadow: none !important;
+}
+.tiktok-follow-btn:hover {
+  background: #e6284d !important;
+  transform: scale(1.02) !important;
+}
+.tiktok-follow-btn:active {
+  transform: scale(0.95) !important;
+}
+.tiktok-sidebar {
+  position: fixed !important;
+  right: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  z-index: 999998 !important;
+  pointer-events: auto !important;
+}
+.tiktok-action {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 4px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+.tiktok-action:active {
+  transform: scale(0.9) !important;
+}
+.tiktok-icon {
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 50% !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(8px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 24px !important;
+  transition: all 0.2s ease !important;
+  border: 2px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  color: #fff !important;
+}
+.tiktok-action:hover .tiktok-icon {
+  transform: scale(1.1) !important;
+  background: rgba(0, 0, 0, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+.tiktok-count {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+  white-space: nowrap !important;
+}
+.tiktok-action.liked .tiktok-icon {
+  background: rgba(239, 68, 68, 0.8) !important;
+  border-color: #ef4444 !important;
+  animation: likePopTiktok 0.3s ease !important;
+}
+@keyframes likePopTiktok {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+.tiktok-action.favorited .tiktok-icon {
+  background: rgba(251, 191, 36, 0.8) !important;
+  border-color: #fbbf24 !important;
+}
+.tiktok-action.tiktok-info {
+  cursor: default !important;
+  opacity: 0.8 !important;
+}
+/* 为推广栏预留底部空间 */
+body {
+  padding-bottom: 65px !important;
+}
+</style>
+  <!-- 原游戏head内容 -->
+  
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0c2461 0%, #1e3799 100%);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            padding: 10px;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        canvas {
+            display: block;
+            background-color: #1a1a2e;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            height: auto;
+            max-height: 80vh;
+        }
+        
+        #uiOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+        }
+        
+        .gameInfo {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            pointer-events: none;
+            font-size: 1.2rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        }
+        
+        .score {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 2px solid #f6b93b;
+        }
+        
+        .deliveries {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 2px solid #4a69bd;
+        }
+        
+        .time {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 2px solid #e55039;
+        }
+        
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(26, 26, 46, 0.95);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            pointer-events: all;
+        }
+        
+        .title {
+            font-size: 2.8rem;
+            margin-bottom: 20px;
+            color: #f6b93b;
+            text-shadow: 0 0 10px rgba(246, 185, 59, 0.5);
+        }
+        
+        .subtitle {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            color: #4a69bd;
+        }
+        
+        .instructions {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            max-width: 600px;
+            line-height: 1.6;
+            border: 2px solid #78e08f;
+        }
+        
+        .instructions h3 {
+            color: #78e08f;
+            margin-bottom: 10px;
+        }
+        
+        .instructions p {
+            margin-bottom: 8px;
+        }
+        
+        .btn {
+            background: linear-gradient(to bottom, #f6b93b, #e58e26);
+            color: #000;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.2s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            pointer-events: all;
+        }
+        
+        .btn:hover, .btn:active {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+            width: 100%;
+            pointer-events: all;
+        }
+        
+        .control-btn {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+            cursor: pointer;
+            user-select: none;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            touch-action: manipulation;
+        }
+        
+        .control-btn:active {
+            background: rgba(255, 255, 255, 0.4);
+        }
+        
+        .mobile-controls {
+            display: none;
+            width: 100%;
+            justify-content: space-between;
+            position: absolute;
+            bottom: 30px;
+            padding: 0 30px;
+            pointer-events: none;
+        }
+        
+        .mobile-controls .controls {
+            pointer-events: all;
+        }
+        
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2rem;
+            }
+            
+            .subtitle {
+                font-size: 1.2rem;
+            }
+            
+            .instructions {
+                padding: 15px;
+                font-size: 0.9rem;
+            }
+            
+            .btn {
+                padding: 12px 30px;
+                font-size: 1.1rem;
+            }
+            
+            .gameInfo {
+                font-size: 1rem;
+            }
+            
+            .mobile-controls {
+                display: flex;
+            }
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .gameOverMsg {
+            font-size: 2.5rem;
+            color: #e55039;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(229, 80, 57, 0.5);
+        }
+        
+        .finalScore {
+            font-size: 2rem;
+            color: #f6b93b;
+            margin-bottom: 30px;
+        }
+        
+        .hint {
+            color: #78e08f;
+            font-size: 0.9rem;
+            margin-top: 20px;
+            opacity: 0.8;
+        }
+    </style>
+
+</head>
+<body>
+  <!-- 原游戏body内容 -->
+  <!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>松鼠快递员赵灏冒险记</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0c2461 0%, #1e3799 100%);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            padding: 10px;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        canvas {
+            display: block;
+            background-color: #1a1a2e;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            height: auto;
+            max-height: 80vh;
+        }
+        
+        #uiOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+        }
+        
+        .gameInfo {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            pointer-events: none;
+            font-size: 1.2rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        }
+        
+        .score {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 2px solid #f6b93b;
+        }
+        
+        .deliveries {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 2px solid #4a69bd;
+        }
+        
+        .time {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 2px solid #e55039;
+        }
+        
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(26, 26, 46, 0.95);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            pointer-events: all;
+        }
+        
+        .title {
+            font-size: 2.8rem;
+            margin-bottom: 20px;
+            color: #f6b93b;
+            text-shadow: 0 0 10px rgba(246, 185, 59, 0.5);
+        }
+        
+        .subtitle {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            color: #4a69bd;
+        }
+        
+        .instructions {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            max-width: 600px;
+            line-height: 1.6;
+            border: 2px solid #78e08f;
+        }
+        
+        .instructions h3 {
+            color: #78e08f;
+            margin-bottom: 10px;
+        }
+        
+        .instructions p {
+            margin-bottom: 8px;
+        }
+        
+        .btn {
+            background: linear-gradient(to bottom, #f6b93b, #e58e26);
+            color: #000;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.2s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            pointer-events: all;
+        }
+        
+        .btn:hover, .btn:active {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+            width: 100%;
+            pointer-events: all;
+        }
+        
+        .control-btn {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+            cursor: pointer;
+            user-select: none;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            touch-action: manipulation;
+        }
+        
+        .control-btn:active {
+            background: rgba(255, 255, 255, 0.4);
+        }
+        
+        .mobile-controls {
+            display: none;
+            width: 100%;
+            justify-content: space-between;
+            position: absolute;
+            bottom: 30px;
+            padding: 0 30px;
+            pointer-events: none;
+        }
+        
+        .mobile-controls .controls {
+            pointer-events: all;
+        }
+        
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2rem;
+            }
+            
+            .subtitle {
+                font-size: 1.2rem;
+            }
+            
+            .instructions {
+                padding: 15px;
+                font-size: 0.9rem;
+            }
+            
+            .btn {
+                padding: 12px 30px;
+                font-size: 1.1rem;
+            }
+            
+            .gameInfo {
+                font-size: 1rem;
+            }
+            
+            .mobile-controls {
+                display: flex;
+            }
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .gameOverMsg {
+            font-size: 2.5rem;
+            color: #e55039;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(229, 80, 57, 0.5);
+        }
+        
+        .finalScore {
+            font-size: 2rem;
+            color: #f6b93b;
+            margin-bottom: 30px;
+        }
+        
+        .hint {
+            color: #78e08f;
+            font-size: 0.9rem;
+            margin-top: 20px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="uiOverlay">
+            <div class="gameInfo">
+                <div class="score">得分: <span id="scoreValue">0</span></div>
+                <div class="deliveries">快递: <span id="deliveriesValue">0/10</span></div>
+                <div class="time">时间: <span id="timeValue">60</span>秒</div>
+            </div>
+            
+            <div id="startScreen" class="screen">
+                <h1 class="title">松鼠快递员赵灏冒险记</h1>
+                <h2 class="subtitle">穿越森林，准时送达！</h2>
+                
+                <div class="instructions">
+                    <h3>游戏说明</h3>
+                    <p>你是松鼠快递员赵灏，需要在森林中收集松果并送到指定地点。</p>
+                    <p>收集10个松果即可完成今天的快递任务！</p>
+                    <p>小心避开狐狸和猫头鹰，它们会抢走你的松果！</p>
+                    <p><strong>电脑控制：</strong> 使用方向键或WASD移动</p>
+                    <p><strong>手机控制：</strong> 使用屏幕下方的虚拟按钮</p>
+                </div>
+                
+                <button id="startBtn" class="btn">开始冒险</button>
+                <p class="hint">提示：收集金色松果可以获得额外分数！</p>
+            </div>
+            
+            <div id="gameOverScreen" class="screen hidden">
+                <h1 class="gameOverMsg">任务完成！</h1>
+                <h2 class="finalScore">最终得分: <span id="finalScoreValue">0</span></h2>
+                <p>松鼠快递员赵灏成功完成了今天的快递任务！</p>
+                <p id="gameOverMessage">森林居民们非常感谢你的服务！</p>
+                <button id="restartBtn" class="btn">再次冒险</button>
+            </div>
+        </div>
+        
+        <div class="mobile-controls">
+            <div class="controls">
+                <div class="control-btn" id="leftBtn">←</div>
+                <div class="control-btn" id="upBtn">↑</div>
+                <div class="control-btn" id="downBtn">↓</div>
+                <div class="control-btn" id="rightBtn">→</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 游戏变量
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            const startScreen = document.getElementById('startScreen');
+            const gameOverScreen = document.getElementById('gameOverScreen');
+            const startBtn = document.getElementById('startBtn');
+            const restartBtn = document.getElementById('restartBtn');
+            const scoreValue = document.getElementById('scoreValue');
+            const deliveriesValue = document.getElementById('deliveriesValue');
+            const timeValue = document.getElementById('timeValue');
+            const finalScoreValue = document.getElementById('finalScoreValue');
+            const gameOverMessage = document.getElementById('gameOverMessage');
+            
+            // 移动控制按钮
+            const leftBtn = document.getElementById('leftBtn');
+            const upBtn = document.getElementById('upBtn');
+            const downBtn = document.getElementById('downBtn');
+            const rightBtn = document.getElementById('rightBtn');
+            
+            // 游戏状态
+            let gameState = 'start'; // start, playing, gameOver
+            let score = 0;
+            let deliveries = 0;
+            let timeLeft = 60;
+            let gameTime = 0;
+            let gameTimer;
+            
+            // 玩家属性
+            const player = {
+                x: 0,
+                y: 0,
+                width: 40,
+                height: 40,
+                speed: 5,
+                color: '#f6b93b',
+                direction: 'right'
+            };
+            
+            // 松果数组
+            let pinecones = [];
+            let enemies = [];
+            let deliveryPoints = [];
+            
+            // 按键状态
+            const keys = {
+                ArrowLeft: false,
+                ArrowRight: false,
+                ArrowUp: false,
+                ArrowDown: false,
+                a: false,
+                d: false,
+                w: false,
+                s: false
+            };
+            
+            // 触摸控制状态
+            let touchControls = {
+                left: false,
+                right: false,
+                up: false,
+                down: false
+            };
+            
+            // 初始化画布大小
+            function initCanvas() {
+                const container = document.getElementById('gameContainer');
+                canvas.width = container.clientWidth;
+                canvas.height = Math.min(container.clientWidth * 0.7, window.innerHeight * 0.8);
+                
+                // 设置玩家初始位置
+                player.x = canvas.width / 2 - player.width / 2;
+                player.y = canvas.height / 2 - player.height / 2;
+            }
+            
+            // 初始化游戏对象
+            function initGameObjects() {
+                pinecones = [];
+                enemies = [];
+                deliveryPoints = [];
+                
+                // 创建松果
+                for (let i = 0; i < 15; i++) {
+                    pinecones.push({
+                        x: Math.random() * (canvas.width - 30),
+                        y: Math.random() * (canvas.height - 30),
+                        width: 25,
+                        height: 25,
+                        color: Math.random() > 0.8 ? '#FFD700' : '#8B4513', // 金色或棕色
+                        collected: false,
+                        value: Math.random() > 0.8 ? 50 : 10 // 金色松果价值更高
+                    });
+                }
+                
+                // 创建敌人
+                for (let i = 0; i < 4; i++) {
+                    enemies.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        width: 45,
+                        height: 45,
+                        color: i % 2 === 0 ? '#E74C3C' : '#8E44AD', // 狐狸和猫头鹰
+                        speedX: (Math.random() - 0.5) * 3,
+                        speedY: (Math.random() - 0.5) * 3,
+                        type: i % 2 === 0 ? 'fox' : 'owl'
+                    });
+                }
+                
+                // 创建快递点
+                for (let i = 0; i < 3; i++) {
+                    deliveryPoints.push({
+                        x: Math.random() * (canvas.width - 40),
+                        y: Math.random() * (canvas.height - 40),
+                        width: 50,
+                        height: 50,
+                        color: '#4a69bd',
+                        active: true
+                    });
+                }
+            }
+            
+            // 绘制玩家
+            function drawPlayer() {
+                ctx.save();
+                ctx.fillStyle = player.color;
+                
+                // 绘制松鼠身体
+                ctx.beginPath();
+                ctx.ellipse(
+                    player.x + player.width/2, 
+                    player.y + player.height/2, 
+                    player.width/2, 
+                    player.height/2, 
+                    0, 0, Math.PI * 2
+                );
+                ctx.fill();
+                
+                // 绘制松鼠尾巴
+                ctx.fillStyle = '#8B4513';
+                ctx.beginPath();
+                if (player.direction === 'right') {
+                    ctx.ellipse(
+                        player.x + player.width * 0.8, 
+                        player.y + player.height/2, 
+                        player.width/3, 
+                        player.height/2, 
+                        0, 0, Math.PI * 2
+                    );
+                } else {
+                    ctx.ellipse(
+                        player.x + player.width * 0.2, 
+                        player.y + player.height/2, 
+                        player.width/3, 
+                        player.height/2, 
+                        0, 0, Math.PI * 2
+                    );
+                }
+                ctx.fill();
+                
+                // 绘制松鼠耳朵
+                ctx.fillStyle = '#f6b93b';
+                ctx.beginPath();
+                ctx.ellipse(
+                    player.x + player.width * 0.3, 
+                    player.y + player.height * 0.2, 
+                    player.width/6, 
+                    player.height/6, 
+                    0, 0, Math.PI * 2
+                );
+                ctx.ellipse(
+                    player.x + player.width * 0.7, 
+                    player.y + player.height * 0.2, 
+                    player.width/6, 
+                    player.height/6, 
+                    0, 0, Math.PI * 2
+                );
+                ctx.fill();
+                
+                // 绘制快递包裹
+                ctx.fillStyle = '#78e08f';
+                ctx.fillRect(
+                    player.x + player.width/2 - 10, 
+                    player.y + player.height/2 - 5, 
+                    20, 15
+                );
+                ctx.fillStyle = '#000';
+                ctx.font = '10px Arial';
+                ctx.fillText('快递', player.x + player.width/2 - 8, player.y + player.height/2 + 5);
+                
+                ctx.restore();
+            }
+            
+            // 绘制松果
+            function drawPinecones() {
+                pinecones.forEach(pinecone => {
+                    if (!pinecone.collected) {
+                        ctx.save();
+                        ctx.fillStyle = pinecone.color;
+                        
+                        // 绘制松果主体
+                        ctx.beginPath();
+                        ctx.ellipse(
+                            pinecone.x + pinecone.width/2, 
+                            pinecone.y + pinecone.height/2, 
+                            pinecone.width/2, 
+                            pinecone.height/2, 
+                            0, 0, Math.PI * 2
+                        );
+                        ctx.fill();
+                        
+                        // 绘制松果纹理
+                        ctx.fillStyle = pinecone.color === '#FFD700' ? '#FFA500' : '#654321';
+                        for (let i = 0; i < 5; i++) {
+                            const angle = (i / 5) * Math.PI * 2;
+                            const x = pinecone.x + pinecone.width/2 + Math.cos(angle) * pinecone.width/3;
+                            const y = pinecone.y + pinecone.height/2 + Math.sin(angle) * pinecone.height/3;
+                            ctx.beginPath();
+                            ctx.arc(x, y, 2, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                        
+                        // 如果是金色松果，添加发光效果
+                        if (pinecone.color === '#FFD700') {
+                            ctx.shadowColor = '#FFD700';
+                            ctx.shadowBlur = 10;
+                            ctx.beginPath();
+                            ctx.ellipse(
+                                pinecone.x + pinecone.width/2, 
+                                pinecone.y + pinecone.height/2, 
+                                pinecone.width/2, 
+                                pinecone.height/2, 
+                                0, 0, Math.PI * 2
+                            );
+                            ctx.fill();
+                        }
+                        
+                        ctx.restore();
+                    }
+                });
+            }
+            
+            // 绘制敌人
+            function drawEnemies() {
+                enemies.forEach(enemy => {
+                    ctx.save();
+                    ctx.fillStyle = enemy.color;
+                    
+                    if (enemy.type === 'fox') {
+                        // 绘制狐狸
+                        ctx.beginPath();
+                        ctx.ellipse(
+                            enemy.x + enemy.width/2, 
+                            enemy.y + enemy.height/2, 
+                            enemy.width/2, 
+                            enemy.height/2, 
+                            0, 0, Math.PI * 2
+                        );
+                        ctx.fill();
+                        
+                        // 狐狸耳朵
+                        ctx.beginPath();
+                        ctx.moveTo(enemy.x + enemy.width * 0.3, enemy.y + enemy.height * 0.2);
+                        ctx.lineTo(enemy.x + enemy.width * 0.2, enemy.y);
+                        ctx.lineTo(enemy.x + enemy.width * 0.4, enemy.y + enemy.height * 0.1);
+                        ctx.fill();
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(enemy.x + enemy.width * 0.7, enemy.y + enemy.height * 0.2);
+                        ctx.lineTo(enemy.x + enemy.width * 0.8, enemy.y);
+                        ctx.lineTo(enemy.x + enemy.width * 0.6, enemy.y + enemy.height * 0.1);
+                        ctx.fill();
+                        
+                        // 狐狸尾巴
+                        ctx.beginPath();
+                        ctx.ellipse(
+                            enemy.x + enemy.width * 0.9, 
+                            enemy.y + enemy.height * 0.7, 
+                            enemy.width/4, 
+                            enemy.height/3, 
+                            0, 0, Math.PI * 2
+                        );
+                        ctx.fill();
+                    } else {
+                        // 绘制猫头鹰
+                        ctx.beginPath();
+                        ctx.arc(
+                            enemy.x + enemy.width/2, 
+                            enemy.y + enemy.height/2, 
+                            enemy.width/2, 
+                            0, Math.PI * 2
+                        );
+                        ctx.fill();
+                        
+                        // 猫头鹰眼睛
+                        ctx.fillStyle = '#FFF';
+                        ctx.beginPath();
+                        ctx.arc(
+                            enemy.x + enemy.width * 0.35, 
+                            enemy.y + enemy.height * 0.4, 
+                            enemy.width/6, 
+                            0, Math.PI * 2
+                        );
+                        ctx.arc(
+                            enemy.x + enemy.width * 0.65, 
+                            enemy.y + enemy.height * 0.4, 
+                            enemy.width/6, 
+                            0, Math.PI * 2
+                        );
+                        ctx.fill();
+                        
+                        ctx.fillStyle = '#000';
+                        ctx.beginPath();
+                        ctx.arc(
+                            enemy.x + enemy.width * 0.35, 
+                            enemy.y + enemy.height * 0.4, 
+                            enemy.width/12, 
+                            0, Math.PI * 2
+                        );
+                        ctx.arc(
+                            enemy.x + enemy.width * 0.65, 
+                            enemy.y + enemy.height * 0.4, 
+                            enemy.width/12, 
+                            0, Math.PI * 2
+                        );
+                        ctx.fill();
+                        
+                        // 猫头鹰喙
+                        ctx.fillStyle = '#F39C12';
+                        ctx.beginPath();
+                        ctx.moveTo(enemy.x + enemy.width/2, enemy.y + enemy.height * 0.6);
+                        ctx.lineTo(enemy.x + enemy.width * 0.45, enemy.y + enemy.height * 0.7);
+                        ctx.lineTo(enemy.x + enemy.width * 0.55, enemy.y + enemy.height * 0.7);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                    
+                    ctx.restore();
+                });
+            }
+            
+            // 绘制快递点
+            function drawDeliveryPoints() {
+                deliveryPoints.forEach(point => {
+                    if (point.active) {
+                        ctx.save();
+                        ctx.fillStyle = point.color;
+                        
+                        // 绘制房子
+                        ctx.fillRect(point.x, point.y + point.height/2, point.width, point.height/2);
+                        
+                        // 绘制屋顶
+                        ctx.beginPath();
+                        ctx.moveTo(point.x - 5, point.y + point.height/2);
+                        ctx.lineTo(point.x + point.width/2, point.y);
+                        ctx.lineTo(point.x + point.width + 5, point.y + point.height/2);
+                        ctx.closePath();
+                        ctx.fill();
+                        
+                        // 绘制门
+                        ctx.fillStyle = '#8B4513';
+                        ctx.fillRect(point.x + point.width/2 - 8, point.y + point.height - 20, 16, 20);
+                        
+                        // 绘制窗户
+                        ctx.fillStyle = '#f6b93b';
+                        ctx.fillRect(point.x + 10, point.y + point.height/2 + 10, 10, 10);
+                        ctx.fillRect(point.x + point.width - 20, point.y + point.height/2 + 10, 10, 10);
+                        
+                        // 绘制标志
+                        ctx.fillStyle = '#FFF';
+                        ctx.font = 'bold 12px Arial';
+                        ctx.fillText('快递', point.x + point.width/2 - 12, point.y + point.height/2 - 5);
+                        
+                        ctx.restore();
+                    }
+                });
+            }
+            
+            // 更新玩家位置
+            function updatePlayer() {
+                let moveX = 0;
+                let moveY = 0;
+                
+                // 键盘控制
+                if (keys.ArrowLeft || keys.a || touchControls.left) {
+                    moveX = -player.speed;
+                    player.direction = 'left';
+                }
+                if (keys.ArrowRight || keys.d || touchControls.right) {
+                    moveX = player.speed;
+                    player.direction = 'right';
+                }
+                if (keys.ArrowUp || keys.w || touchControls.up) {
+                    moveY = -player.speed;
+                }
+                if (keys.ArrowDown || keys.s || touchControls.down) {
+                    moveY = player.speed;
+                }
+                
+                // 对角线移动速度修正
+                if (moveX !== 0 && moveY !== 0) {
+                    moveX *= 0.707;
+                    moveY *= 0.707;
+                }
+                
+                // 更新位置并限制在画布内
+                player.x = Math.max(0, Math.min(canvas.width - player.width, player.x + moveX));
+                player.y = Math.max(0, Math.min(canvas.height - player.height, player.y + moveY));
+            }
+            
+            // 更新敌人位置
+            function updateEnemies() {
+                enemies.forEach(enemy => {
+                    enemy.x += enemy.speedX;
+                    enemy.y += enemy.speedY;
+                    
+                    // 边界反弹
+                    if (enemy.x <= 0 || enemy.x >= canvas.width - enemy.width) {
+                        enemy.speedX *= -1;
+                    }
+                    if (enemy.y <= 0 || enemy.y >= canvas.height - enemy.height) {
+                        enemy.speedY *= -1;
+                    }
+                    
+                    // 确保敌人在画布内
+                    enemy.x = Math.max(0, Math.min(canvas.width - enemy.width, enemy.x));
+                    enemy.y = Math.max(0, Math.min(canvas.height - enemy.height, enemy.y));
+                });
+            }
+            
+            // 检测碰撞
+            function checkCollisions() {
+                // 玩家与松果碰撞
+                pinecones.forEach(pinecone => {
+                    if (!pinecone.collected && 
+                        player.x < pinecone.x + pinecone.width &&
+                        player.x + player.width > pinecone.x &&
+                        player.y < pinecone.y + pinecone.height &&
+                        player.y + player.height > pinecone.y) {
+                        
+                        pinecone.collected = true;
+                        score += pinecone.value;
+                        scoreValue.textContent = score;
+                    }
+                });
+                
+                // 玩家与敌人碰撞
+                enemies.forEach(enemy => {
+                    if (player.x < enemy.x + enemy.width &&
+                        player.x + player.width > enemy.x &&
+                        player.y < enemy.y + enemy.height &&
+                        player.y + player.height > enemy.y) {
+                        
+                        // 被敌人碰到，减少分数
+                        score = Math.max(0, score - 20);
+                        scoreValue.textContent = score;
+                        
+                        // 玩家被弹开
+                        if (player.x < enemy.x) {
+                            player.x -= 30;
+                        } else {
+                            player.x += 30;
+                        }
+                        
+                        if (player.y < enemy.y) {
+                            player.y -= 30;
+                        } else {
+                            player.y += 30;
+                        }
+                        
+                        // 确保玩家仍在画布内
+                        player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+                        player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
+                    }
+                });
+                
+                // 玩家与快递点碰撞
+                deliveryPoints.forEach(point => {
+                    if (point.active && 
+                        player.x < point.x + point.width &&
+                        player.x + player.width > point.x &&
+                        player.y < point.y + point.height &&
+                        player.y + player.height > point.y) {
+                        
+                        // 计算收集到的松果数量
+                        const collectedPinecones = pinecones.filter(p => p.collected).length;
+                        if (collectedPinecones > 0) {
+                            // 交付松果
+                            deliveries += collectedPinecones;
+                            deliveriesValue.textContent = `${deliveries}/10`;
+                            
+                            // 增加分数
+                            score += collectedPinecones * 5;
+                            scoreValue.textContent = score;
+                            
+                            // 重置松果
+                            pinecones.forEach(p => {
+                                if (p.collected) {
+                                    p.x = Math.random() * (canvas.width - 30);
+                                    p.y = Math.random() * (canvas.height - 30);
+                                    p.collected = false;
+                                }
+                            });
+                            
+                            // 检查是否完成任务
+                            if (deliveries >= 10) {
+                                endGame(true);
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // 更新游戏时间
+            function updateTime() {
+                timeLeft = Math.max(0, 60 - Math.floor(gameTime));
+                timeValue.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    endGame(false);
+                }
+            }
+            
+            // 游戏主循环
+            function gameLoop() {
+                // 清除画布
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // 绘制背景
+                ctx.fillStyle = '#1a1a2e';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // 绘制网格背景
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+                ctx.lineWidth = 1;
+                const gridSize = 40;
+                for (let x = 0; x < canvas.width; x += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, canvas.height);
+                    ctx.stroke();
+                }
+                for (let y = 0; y < canvas.height; y += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+                
+                // 绘制树木
+                drawTrees();
+                
+                // 更新和绘制游戏对象
+                updatePlayer();
+                updateEnemies();
+                drawDeliveryPoints();
+                drawPinecones();
+                drawEnemies();
+                drawPlayer();
+                
+                // 检测碰撞
+                checkCollisions();
+                
+                // 更新游戏时间
+                gameTime += 1/60;
+                updateTime();
+                
+                // 继续游戏循环
+                if (gameState === 'playing') {
+                    requestAnimationFrame(gameLoop);
+                }
+            }
+            
+            // 绘制树木背景
+            function drawTrees() {
+                const trees = [
+                    {x: 50, y: 50, size: 30},
+                    {x: canvas.width - 80, y: 70, size: 40},
+                    {x: 100, y: canvas.height - 100, size: 35},
+                    {x: canvas.width - 120, y: canvas.height - 80, size: 45},
+                    {x: canvas.width/2, y: 100, size: 25}
+                ];
+                
+                trees.forEach(tree => {
+                    // 树干
+                    ctx.fillStyle = '#8B4513';
+                    ctx.fillRect(tree.x - 5, tree.y + tree.size, 10, 40);
+                    
+                    // 树冠
+                    ctx.fillStyle = '#2d5a27';
+                    ctx.beginPath();
+                    ctx.arc(tree.x, tree.y, tree.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+            
+            // 开始游戏
+            function startGame() {
+                gameState = 'playing';
+                score = 0;
+                deliveries = 0;
+                timeLeft = 60;
+                gameTime = 0;
+                
+                scoreValue.textContent = score;
+                deliveriesValue.textContent = `${deliveries}/10`;
+                timeValue.textContent = timeLeft;
+                
+                initCanvas();
+                initGameObjects();
+                
+                startScreen.classList.add('hidden');
+                gameOverScreen.classList.add('hidden');
+                
+                // 开始游戏循环
+                requestAnimationFrame(gameLoop);
+            }
+            
+            // 结束游戏
+            function endGame(success) {
+                gameState = 'gameOver';
+                
+                finalScoreValue.textContent = score;
+                
+                if (success) {
+                    gameOverMessage.textContent = "恭喜！松鼠快递员赵灏成功完成了今天的快递任务！森林居民们非常感谢你的服务！";
+                    document.querySelector('.gameOverMsg').textContent = "任务完成！";
+                    document.querySelector('.gameOverMsg').style.color = "#78e08f";
+                } else {
+                    gameOverMessage.textContent = "时间到了！赵灏今天没能完成所有快递任务，明天要继续努力哦！";
+                    document.querySelector('.gameOverMsg').textContent = "时间到！";
+                    document.querySelector('.gameOverMsg').style.color = "#e55039";
+                }
+                
+                gameOverScreen.classList.remove('hidden');
+            }
+            
+            // 事件监听器
+            startBtn.addEventListener('click', startGame);
+            restartBtn.addEventListener('click', startGame);
+            
+            // 键盘控制
+            window.addEventListener('keydown', function(e) {
+                if (keys.hasOwnProperty(e.key)) {
+                    keys[e.key] = true;
+                }
+            });
+            
+            window.addEventListener('keyup', function(e) {
+                if (keys.hasOwnProperty(e.key)) {
+                    keys[e.key] = false;
+                }
+            });
+            
+            // 触摸控制
+            function setupTouchControls() {
+                // 左按钮
+                leftBtn.addEventListener('touchstart', function(e) {
+                    touchControls.left = true;
+                    e.preventDefault();
+                });
+                leftBtn.addEventListener('touchend', function(e) {
+                    touchControls.left = false;
+                    e.preventDefault();
+                });
+                leftBtn.addEventListener('mousedown', function() {
+                    touchControls.left = true;
+                });
+                leftBtn.addEventListener('mouseup', function() {
+                    touchControls.left = false;
+                });
+                leftBtn.addEventListener('mouseleave', function() {
+                    touchControls.left = false;
+                });
+                
+                // 右按钮
+                rightBtn.addEventListener('touchstart', function(e) {
+                    touchControls.right = true;
+                    e.preventDefault();
+                });
+                rightBtn.addEventListener('touchend', function(e) {
+                    touchControls.right = false;
+                    e.preventDefault();
+                });
+                rightBtn.addEventListener('mousedown', function() {
+                    touchControls.right = true;
+                });
+                rightBtn.addEventListener('mouseup', function() {
+                    touchControls.right = false;
+                });
+                rightBtn.addEventListener('mouseleave', function() {
+                    touchControls.right = false;
+                });
+                
+                // 上按钮
+                upBtn.addEventListener('touchstart', function(e) {
+                    touchControls.up = true;
+                    e.preventDefault();
+                });
+                upBtn.addEventListener('touchend', function(e) {
+                    touchControls.up = false;
+                    e.preventDefault();
+                });
+                upBtn.addEventListener('mousedown', function() {
+                    touchControls.up = true;
+                });
+                upBtn.addEventListener('mouseup', function() {
+                    touchControls.up = false;
+                });
+                upBtn.addEventListener('mouseleave', function() {
+                    touchControls.up = false;
+                });
+                
+                // 下按钮
+                downBtn.addEventListener('touchstart', function(e) {
+                    touchControls.down = true;
+                    e.preventDefault();
+                });
+                downBtn.addEventListener('touchend', function(e) {
+                    touchControls.down = false;
+                    e.preventDefault();
+                });
+                downBtn.addEventListener('mousedown', function() {
+                    touchControls.down = true;
+                });
+                downBtn.addEventListener('mouseup', function() {
+                    touchControls.down = false;
+                });
+                downBtn.addEventListener('mouseleave', function() {
+                    touchControls.down = false;
+                });
+                
+                // 防止游戏区域滚动
+                canvas.addEventListener('touchstart', function(e) {
+                    if (e.target === canvas) {
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+                
+                canvas.addEventListener('touchmove', function(e) {
+                    if (e.target === canvas) {
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+            }
+            
+            // 窗口大小调整
+            window.addEventListener('resize', function() {
+                if (gameState === 'playing') {
+                    initCanvas();
+                }
+            });
+            
+            // 初始化
+            initCanvas();
+            setupTouchControls();
+            
+            // 初始绘制
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas
+  <!-- 推广栏 -->
+  
+<!-- 游戏家顶部导航 -->
+<a class="yxj-promo-home" href="/" title="更多游戏">🏠 更多游戏</a>
+
+<!-- 抖音风格左下角作者信息 -->
+<div class="tiktok-author-info" id="tiktok-author-info">
+  <div class="tiktok-author-row">
+    <div class="tiktok-author-avatar" id="author-avatar" onclick="openAuthorProfile()">👤</div>
+    <div class="tiktok-author-details">
+      <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">游戏玩家</span>
+      <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="f8d81358-f7db-499b-b703-2fd1117dc3e6" onclick="toggleFollow()">
+        <span class="follow-icon">+</span> 关注
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TikTok风格右侧互动栏 -->
+<div class="tiktok-sidebar">
+  <div class="tiktok-action" id="stat-like-btn" onclick="likeGame()">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+    </div>
+    <span class="tiktok-count" id="stat-likes">0</span>
+  </div>
+  <div class="tiktok-action" id="stat-fav-btn" onclick="toggleFavorite()">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+    </div>
+  </div>
+  <div class="tiktok-action" onclick="openSharePanel()">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+    </div>
+  </div>
+  <div class="tiktok-action tiktok-info" title="游玩次数">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+    </div>
+    <span class="tiktok-count" id="stat-plays">0</span>
+  </div>
+</div>
+
+<!-- 关注弹窗 -->
+<div id="promo-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999999;align-items:center;justify-content:center;" onclick="document.getElementById('promo-modal').style.display='none'">
+  <div style="background:transparent;border-radius:12px;padding:10px;width:90%;max-width:400px;text-align:center;position:relative;" onclick="event.stopPropagation()">
+    <button onclick="document.getElementById('promo-modal').style.display='none'" style="position:absolute;right:0;top:0;border:none;background:rgba(0,0,0,0.5);width:28px;height:28px;border-radius:50%;font-size:18px;cursor:pointer;color:#fff;z-index:1;">×</button>
+    <img src="/images/wechat-qrcode.png" style="width:100%;height:auto;display:block;border-radius:12px;">
+  </div>
+</div>
+
+<!-- 游戏家推广栏 -->
+<div class="yxj-promo-bar" id="yxj-promo" onclick="showPromoModal()" style="cursor:pointer;">
+  <button class="yxj-promo-close" onclick="event.stopPropagation();document.getElementById('yxj-promo').classList.add('yxj-hidden');document.body.style.paddingBottom='0';">×</button>
+  <div class="yxj-promo-qr">
+    <img src="/images/getqrcode.png" alt="公众号">
+  </div>
+  <div class="yxj-promo-info">
+    <strong>🎮 关注「游戏开发技术教程」</strong>
+    <span>一句话免费生成你的专属游戏！</span>
+  </div>
+</div>
+
+<!-- 分享面板 -->
+<div id="share-panel" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999999;align-items:flex-end;justify-content:center;" onclick="closeSharePanel()">
+  <div style="background:#fff;border-radius:16px 16px 0 0;padding:20px;width:100%;max-width:500px;text-align:center;position:relative;max-height:80vh;overflow-y:auto;" onclick="event.stopPropagation()">
+    <div style="width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 15px;"></div>
+    <h3 style="margin:0 0 15px;font-size:18px;">📤 分享游戏</h3>
+    <div style="background:#f5f5f5;border-radius:8px;padding:12px;margin-bottom:15px;">
+      <textarea id="share-text" readonly style="width:100%;border:none;background:transparent;font-size:14px;resize:none;min-height:80px;outline:none;"></textarea>
+    </div>
+    <button onclick="copyShareText()" style="width:100%;padding:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;margin-bottom:10px;">📋 复制分享内容</button>
+    <button onclick="closeSharePanel()" style="width:100%;padding:12px;background:#f0f0f0;color:#666;border:none;border-radius:8px;font-size:14px;cursor:pointer;">取消</button>
+  </div>
+</div>
+
+<!-- 作者主页弹窗 -->
+<div id="author-profile-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999999;align-items:center;justify-content:center;" onclick="closeAuthorProfile()">
+  <div style="background:#fff;border-radius:12px;padding:20px;width:90%;max-width:360px;text-align:center;position:relative;" onclick="event.stopPropagation()">
+    <button onclick="closeAuthorProfile()" style="position:absolute;right:10px;top:10px;border:none;background:none;font-size:24px;cursor:pointer;color:#999;">×</button>
+    <div id="author-profile-content" style="min-height:150px;"></div>
+  </div>
+</div>
+
+<script>
+// 获取游戏ID和作者信息
+const gameId = '9ddb4e63-b57e-43df-bab4-814fa4c897c4';
+const gameTitle = '松鼠快递员赵灏冒险记';
+const authorToken = 'f8d81358-f7db-499b-b703-2fd1117dc3e6';
+const authorName = '游戏玩家';
+const API_BASE = '/api/games';
+
+// 调试日志
+console.log('[DEBUG] 游戏页面初始化');
+console.log('[DEBUG] gameId:', gameId);
+console.log('[DEBUG] authorToken:', authorToken);
+console.log('[DEBUG] authorName:', authorName);
+
+// 辅助函数
+function showPromoModal() {
+  console.log('[DEBUG] showPromoModal 被调用');
+  document.getElementById('promo-modal').style.display = 'flex';
+}
+
+function getUserToken() {
+  return localStorage.getItem('aigame-user-token') || '';
+}
+
+function getAuthHeaders() {
+  const headers = { 'Content-Type': 'application/json' };
+  const token = getUserToken();
+  if (token) {
+    headers['X-User-Token'] = token;
+  }
+  return headers;
+}
+
+// 记录游玩
+(function(){
+  try {
+    fetch(API_BASE + '/' + gameId + '/play', { method: 'POST', headers: getAuthHeaders() }).catch(function(){});
+  } catch(e) {}
+})();
+
+// 获取统计数据和用户状态
+function loadStats() {
+  // 获取游戏统计
+  fetch(API_BASE + '/' + gameId, { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        const likesEl = document.getElementById('stat-likes');
+        const count = data.game.likes_count || data.game.like_count || 0;
+        likesEl.innerText = count;
+        document.getElementById('stat-plays').innerText = data.game.play_count || 0;
+      }
+    })
+    .catch(err => console.error('加载统计失败', err));
+  
+  // 获取用户点赞状态
+  const userToken = getUserToken();
+  if (userToken) {
+    fetch(API_BASE + '/' + gameId + '/like-status', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.liked) {
+          document.getElementById('stat-like-btn').classList.add('liked');
+        }
+      })
+      .catch(() => {});
+    
+    // 获取用户收藏状态
+    fetch(API_BASE + '/' + gameId + '/favorite-status', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.favorited) {
+          document.getElementById('stat-fav-btn').classList.add('favorited');
+        }
+      })
+      .catch(() => {});
+    
+    // 检查关注状态
+    if (authorToken && authorToken !== userToken) {
+      checkFollowStatus();
+    } else if (authorToken === userToken) {
+      // 隐藏自己的关注按钮
+      const followBtn = document.getElementById('tiktok-follow-btn');
+      if (followBtn) followBtn.style.display = 'none';
+    }
+  }
+}
+
+// 点赞（支持取消）
+function likeGame() {
+  const btn = document.getElementById('stat-like-btn');
+  const isLiked = btn.classList.contains('liked');
+  const countEl = document.getElementById('stat-likes');
+  let count = parseInt(countEl.innerText) || 0;
+  
+  // 乐观UI更新
+  if (isLiked) {
+    btn.classList.remove('liked');
+    countEl.innerText = Math.max(0, count - 1);
+  } else {
+    btn.classList.add('liked');
+    countEl.innerText = count + 1;
+  }
+  
+  fetch(API_BASE + '/' + gameId + '/like', { 
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        // 更新实际数量
+        countEl.innerText = data.like_count || data.likeCount || countEl.innerText;
+        if (data.liked !== undefined) {
+          btn.classList.toggle('liked', data.liked);
+        }
+      } else {
+        // 失败回滚
+        btn.classList.toggle('liked', isLiked);
+        countEl.innerText = count;
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      btn.classList.toggle('liked', isLiked);
+      countEl.innerText = count;
+    });
+}
+
+// 收藏
+function toggleFavorite() {
+  const btn = document.getElementById('stat-fav-btn');
+  const isFav = btn.classList.contains('favorited');
+  
+  // 乐观UI切换
+  btn.classList.toggle('favorited', !isFav);
+  
+  fetch(API_BASE + '/' + gameId + '/favorite', { 
+    method: 'POST', 
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.favorited !== undefined) {
+        btn.classList.toggle('favorited', data.favorited);
+      }
+    })
+    .catch(() => {
+      // 失败回滚
+      btn.classList.toggle('favorited', isFav);
+    });
+}
+
+// 打开分享面板
+function openSharePanel() {
+  const url = window.location.href;
+  const shareText = '🎮 我发现了一个有趣的AI游戏：「' + gameTitle + '」\n\n👆 点击链接立即游玩：\n' + url + '\n\n💡 关注公众号「游戏开发技术教程」，一句话免费生成你的专属游戏！';
+  document.getElementById('share-text').value = shareText;
+  document.getElementById('share-panel').style.display = 'flex';
+}
+
+// 关闭分享面板
+function closeSharePanel() {
+  document.getElementById('share-panel').style.display = 'none';
+}
+
+// 复制分享内容
+function copyShareText() {
+  const text = document.getElementById('share-text').value;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('分享内容已复制，快去分享给好友吧！');
+      closeSharePanel();
+    }).catch(() => {
+      fallbackCopy(text);
+    });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textarea);
+  alert('分享内容已复制，快去分享给好友吧！');
+  closeSharePanel();
+}
+
+// 打开作者主页
+function openAuthorProfile() {
+  console.log('[DEBUG] openAuthorProfile 被调用, authorToken:', authorToken);
+  if (!authorToken) {
+    console.log('[DEBUG] authorToken为空，显示推广弹窗');
+    showPromoModal();
+    return;
+  }
+  
+  console.log('[DEBUG] 显示作者主页弹窗');
+  const modal = document.getElementById('author-profile-modal');
+  const content = document.getElementById('author-profile-content');
+  content.innerHTML = '<div style="padding:20px;color:#999;">加载中...</div>';
+  modal.style.display = 'flex';
+  
+  // 加载作者信息
+  Promise.all([
+    fetch('/api/users/' + authorToken + '/profile', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/users/' + authorToken + '/follow-stats', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/users/' + authorToken + '/games?limit=4', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({ games: [] }))
+  ]).then(([profileData, statsData, gamesData]) => {
+    const nickname = (profileData.profile && profileData.profile.nickname) || authorName || '游戏创作者';
+    const followers = statsData.followerCount || statsData.followers || 0;
+    const following = statsData.followingCount || statsData.following || 0;
+    const games = gamesData.games || [];
+    
+    let gamesHtml = '';
+    if (games.length > 0) {
+      gamesHtml = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:15px;">' +
+        games.slice(0, 4).map(g => '<a href="/g/' + g.id.substring(0,2) + '/' + g.id + '.html" style="background:#f5f5f5;border-radius:8px;padding:10px;text-decoration:none;color:#333;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎮 ' + (g.title || '未命名').substring(0, 10) + '</a>').join('') +
+        '</div>';
+    }
+    
+    content.innerHTML = 
+      '<div style="margin-bottom:15px;">' +
+        '<div style="width:60px;height:60px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:28px;">👤</div>' +
+        '<div style="font-size:18px;font-weight:600;color:#333;">' + nickname + '</div>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:center;gap:30px;margin-bottom:15px;">' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + following + '</strong><span style="color:#999;font-size:12px;">关注</span></div>' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + followers + '</strong><span style="color:#999;font-size:12px;">粉丝</span></div>' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + games.length + '</strong><span style="color:#999;font-size:12px;">作品</span></div>' +
+      '</div>' +
+      '<button id="profile-follow-btn" onclick="toggleFollowFromProfile()" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>' +
+      gamesHtml;
+    
+    // 检查关注状态
+    checkFollowStatusForProfile();
+  }).catch(() => {
+    content.innerHTML = '<div style="padding:20px;color:#999;">加载失败</div>';
+  });
+}
+
+// 关闭作者主页
+function closeAuthorProfile() {
+  document.getElementById('author-profile-modal').style.display = 'none';
+}
+
+// 检查关注状态
+function checkFollowStatus() {
+  if (!authorToken) return;
+  fetch('/api/users/' + authorToken + '/follow-status', { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.following) {
+        const btn = document.getElementById('tiktok-follow-btn');
+        if (btn) {
+          btn.classList.add('following');
+          btn.innerHTML = '✓ 已关注';
+        }
+      }
+    })
+    .catch(() => {});
+}
+
+// 检查关注状态（主页弹窗）
+function checkFollowStatusForProfile() {
+  if (!authorToken) return;
+  fetch('/api/users/' + authorToken + '/follow-status', { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(data => {
+      const btn = document.getElementById('profile-follow-btn');
+      if (btn && data.success && data.following) {
+        btn.style.background = '#eee';
+        btn.style.color = '#666';
+        btn.innerHTML = '✓ 已关注';
+      }
+    })
+    .catch(() => {});
+}
+
+// 切换关注状态
+function toggleFollow() {
+  console.log('[DEBUG] toggleFollow 被调用, authorToken:', authorToken);
+  if (!authorToken) {
+    console.log('[DEBUG] authorToken为空，显示推广弹窗');
+    showPromoModal();
+    return;
+  }
+  
+  const userToken = getUserToken();
+  console.log('[DEBUG] userToken:', userToken);
+  if (!userToken) {
+    alert('请先登录');
+    return;
+  }
+  if (authorToken === userToken) {
+    alert('不能关注自己哦');
+    return;
+  }
+  
+  const btn = document.getElementById('tiktok-follow-btn');
+  const isFollowing = btn.classList.contains('following');
+  
+  // 乐观更新
+  if (isFollowing) {
+    btn.classList.remove('following');
+    btn.innerHTML = '<span class="follow-icon">+</span> 关注';
+  } else {
+    btn.classList.add('following');
+    btn.innerHTML = '✓ 已关注';
+  }
+  
+  fetch('/api/users/' + authorToken + '/follow', {
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        btn.classList.toggle('following', data.following);
+        btn.innerHTML = data.following ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+      } else {
+        // 回滚
+        btn.classList.toggle('following', isFollowing);
+        btn.innerHTML = isFollowing ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+      }
+    })
+    .catch(() => {
+      btn.classList.toggle('following', isFollowing);
+      btn.innerHTML = isFollowing ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+    });
+}
+
+// 从主页弹窗切换关注
+function toggleFollowFromProfile() {
+  if (!authorToken) return;
+  
+  const userToken = getUserToken();
+  if (!userToken) {
+    alert('请先登录');
+    return;
+  }
+  
+  const btn = document.getElementById('profile-follow-btn');
+  const isFollowing = btn.innerHTML.includes('已关注');
+  
+  // 乐观更新
+  if (isFollowing) {
+    btn.style.background = '#fe2c55';
+    btn.style.color = '#fff';
+    btn.innerHTML = '+ 关注';
+  } else {
+    btn.style.background = '#eee';
+    btn.style.color = '#666';
+    btn.innerHTML = '✓ 已关注';
+  }
+  
+  fetch('/api/users/' + authorToken + '/follow', {
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (data.following) {
+          btn.style.background = '#eee';
+          btn.style.color = '#666';
+          btn.innerHTML = '✓ 已关注';
+        } else {
+          btn.style.background = '#fe2c55';
+          btn.style.color = '#fff';
+          btn.innerHTML = '+ 关注';
+        }
+        // 同步更新底部的关注按钮
+        const tikBtn = document.getElementById('tiktok-follow-btn');
+        if (tikBtn) {
+          tikBtn.classList.toggle('following', data.following);
+          tikBtn.innerHTML = data.following ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+        }
+      }
+    })
+    .catch(() => {});
+}
+
+// 初始化
+window.addEventListener('load', loadStats);
+</script>
+
+</body>
+</html>
