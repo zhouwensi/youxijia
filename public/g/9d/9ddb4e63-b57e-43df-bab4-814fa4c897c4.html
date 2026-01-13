@@ -249,8 +249,8 @@ body {
 </style>
   <!-- 原游戏head内容 -->
   
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    
     
     <style>
         * {
@@ -506,264 +506,10 @@ body {
 </head>
 <body>
   <!-- 原游戏body内容 -->
-  <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>松鼠快递员赵灏冒险记</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        body {
-            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
-            background: linear-gradient(135deg, #0c2461 0%, #1e3799 100%);
-            color: #fff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
-            padding: 10px;
-        }
-        
-        #gameContainer {
-            position: relative;
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        
-        canvas {
-            display: block;
-            background-color: #1a1a2e;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            width: 100%;
-            height: auto;
-            max-height: 80vh;
-        }
-        
-        #uiOverlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 20px;
-        }
-        
-        .gameInfo {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            pointer-events: none;
-            font-size: 1.2rem;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-        }
-        
-        .score {
-            background: rgba(0, 0, 0, 0.6);
-            padding: 8px 16px;
-            border-radius: 20px;
-            border: 2px solid #f6b93b;
-        }
-        
-        .deliveries {
-            background: rgba(0, 0, 0, 0.6);
-            padding: 8px 16px;
-            border-radius: 20px;
-            border: 2px solid #4a69bd;
-        }
-        
-        .time {
-            background: rgba(0, 0, 0, 0.6);
-            padding: 8px 16px;
-            border-radius: 20px;
-            border: 2px solid #e55039;
-        }
-        
-        .screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: rgba(26, 26, 46, 0.95);
-            border-radius: 12px;
-            padding: 30px;
-            text-align: center;
-            pointer-events: all;
-        }
-        
-        .title {
-            font-size: 2.8rem;
-            margin-bottom: 20px;
-            color: #f6b93b;
-            text-shadow: 0 0 10px rgba(246, 185, 59, 0.5);
-        }
-        
-        .subtitle {
-            font-size: 1.5rem;
-            margin-bottom: 30px;
-            color: #4a69bd;
-        }
-        
-        .instructions {
-            background: rgba(0, 0, 0, 0.7);
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            max-width: 600px;
-            line-height: 1.6;
-            border: 2px solid #78e08f;
-        }
-        
-        .instructions h3 {
-            color: #78e08f;
-            margin-bottom: 10px;
-        }
-        
-        .instructions p {
-            margin-bottom: 8px;
-        }
-        
-        .btn {
-            background: linear-gradient(to bottom, #f6b93b, #e58e26);
-            color: #000;
-            border: none;
-            padding: 15px 40px;
-            font-size: 1.3rem;
-            font-weight: bold;
-            border-radius: 50px;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: all 0.2s;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            pointer-events: all;
-        }
-        
-        .btn:hover, .btn:active {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-        }
-        
-        .btn:active {
-            transform: translateY(1px);
-        }
-        
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 20px;
-            width: 100%;
-            pointer-events: all;
-        }
-        
-        .control-btn {
-            width: 70px;
-            height: 70px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            color: white;
-            cursor: pointer;
-            user-select: none;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            touch-action: manipulation;
-        }
-        
-        .control-btn:active {
-            background: rgba(255, 255, 255, 0.4);
-        }
-        
-        .mobile-controls {
-            display: none;
-            width: 100%;
-            justify-content: space-between;
-            position: absolute;
-            bottom: 30px;
-            padding: 0 30px;
-            pointer-events: none;
-        }
-        
-        .mobile-controls .controls {
-            pointer-events: all;
-        }
-        
-        @media (max-width: 768px) {
-            .title {
-                font-size: 2rem;
-            }
-            
-            .subtitle {
-                font-size: 1.2rem;
-            }
-            
-            .instructions {
-                padding: 15px;
-                font-size: 0.9rem;
-            }
-            
-            .btn {
-                padding: 12px 30px;
-                font-size: 1.1rem;
-            }
-            
-            .gameInfo {
-                font-size: 1rem;
-            }
-            
-            .mobile-controls {
-                display: flex;
-            }
-        }
-        
-        .hidden {
-            display: none !important;
-        }
-        
-        .gameOverMsg {
-            font-size: 2.5rem;
-            color: #e55039;
-            margin-bottom: 20px;
-            text-shadow: 0 0 10px rgba(229, 80, 57, 0.5);
-        }
-        
-        .finalScore {
-            font-size: 2rem;
-            color: #f6b93b;
-            margin-bottom: 30px;
-        }
-        
-        .hint {
-            color: #78e08f;
-            font-size: 0.9rem;
-            margin-top: 20px;
-            opacity: 0.8;
-        }
-    </style>
-</head>
-<body>
+  
+
+
+
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
         
@@ -1600,6 +1346,7 @@ body {
     <div class="tiktok-icon">
       <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
     </div>
+    <span class="tiktok-count" id="stat-favs">0</span>
   </div>
   <div class="tiktok-action" onclick="openSharePanel()">
     <div class="tiktok-icon">
@@ -1706,6 +1453,7 @@ function loadStats() {
         const count = data.game.likes_count || data.game.like_count || 0;
         likesEl.innerText = count;
         document.getElementById('stat-plays').innerText = data.game.play_count || 0;
+        document.getElementById('stat-favs').innerText = data.game.favorite_count || 0;
       }
     })
     .catch(err => console.error('加载统计失败', err));
@@ -1787,10 +1535,17 @@ function likeGame() {
 // 收藏
 function toggleFavorite() {
   const btn = document.getElementById('stat-fav-btn');
+  const countEl = document.getElementById('stat-favs');
   const isFav = btn.classList.contains('favorited');
+  let count = parseInt(countEl.innerText) || 0;
   
   // 乐观UI切换
   btn.classList.toggle('favorited', !isFav);
+  if (isFav) {
+    countEl.innerText = Math.max(0, count - 1);
+  } else {
+    countEl.innerText = count + 1;
+  }
   
   fetch(API_BASE + '/' + gameId + '/favorite', { 
     method: 'POST', 
@@ -1798,13 +1553,24 @@ function toggleFavorite() {
   })
     .then(res => res.json())
     .then(data => {
-      if (data.success && data.favorited !== undefined) {
-        btn.classList.toggle('favorited', data.favorited);
+      if (data.success) {
+        if (data.favorited !== undefined) {
+          btn.classList.toggle('favorited', data.favorited);
+        }
+        // 更新实际数量
+        if (data.favorite_count !== undefined) {
+          countEl.innerText = data.favorite_count;
+        }
+      } else {
+        // 失败回滚
+        btn.classList.toggle('favorited', isFav);
+        countEl.innerText = count;
       }
     })
     .catch(() => {
       // 失败回滚
       btn.classList.toggle('favorited', isFav);
+      countEl.innerText = count;
     });
 }
 
@@ -1874,6 +1640,8 @@ function openAuthorProfile() {
     const followers = statsData.followerCount || statsData.followers || 0;
     const following = statsData.followingCount || statsData.following || 0;
     const games = gamesData.games || [];
+    const userToken = getUserToken();
+    const isSelf = authorToken === userToken;
     
     let gamesHtml = '';
     if (games.length > 0) {
@@ -1881,6 +1649,9 @@ function openAuthorProfile() {
         games.slice(0, 4).map(g => '<a href="/g/' + g.id.substring(0,2) + '/' + g.id + '.html" style="background:#f5f5f5;border-radius:8px;padding:10px;text-decoration:none;color:#333;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎮 ' + (g.title || '未命名').substring(0, 10) + '</a>').join('') +
         '</div>';
     }
+    
+    // 如果是自己，不显示关注按钮
+    const followBtnHtml = isSelf ? '' : '<button id="profile-follow-btn" onclick="toggleFollowFromProfile()" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>';
     
     content.innerHTML = 
       '<div style="margin-bottom:15px;">' +
@@ -1892,11 +1663,13 @@ function openAuthorProfile() {
         '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + followers + '</strong><span style="color:#999;font-size:12px;">粉丝</span></div>' +
         '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + games.length + '</strong><span style="color:#999;font-size:12px;">作品</span></div>' +
       '</div>' +
-      '<button id="profile-follow-btn" onclick="toggleFollowFromProfile()" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>' +
+      followBtnHtml +
       gamesHtml;
     
-    // 检查关注状态
-    checkFollowStatusForProfile();
+    // 检查关注状态（只有不是自己时才检查）
+    if (!isSelf) {
+      checkFollowStatusForProfile();
+    }
   }).catch(() => {
     content.innerHTML = '<div style="padding:20px;color:#999;">加载失败</div>';
   });
@@ -2000,6 +1773,11 @@ function toggleFollowFromProfile() {
   const userToken = getUserToken();
   if (!userToken) {
     alert('请先登录');
+    return;
+  }
+  
+  if (authorToken === userToken) {
+    alert('不能关注自己哦');
     return;
   }
   

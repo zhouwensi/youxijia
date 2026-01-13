@@ -420,6 +420,7 @@ body {
     <div class="tiktok-icon">
       <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
     </div>
+    <span class="tiktok-count" id="stat-favs">0</span>
   </div>
   <div class="tiktok-action" onclick="openSharePanel()">
     <div class="tiktok-icon">
@@ -526,6 +527,7 @@ function loadStats() {
         const count = data.game.likes_count || data.game.like_count || 0;
         likesEl.innerText = count;
         document.getElementById('stat-plays').innerText = data.game.play_count || 0;
+        document.getElementById('stat-favs').innerText = data.game.favorite_count || 0;
       }
     })
     .catch(err => console.error('加载统计失败', err));
@@ -607,10 +609,17 @@ function likeGame() {
 // 收藏
 function toggleFavorite() {
   const btn = document.getElementById('stat-fav-btn');
+  const countEl = document.getElementById('stat-favs');
   const isFav = btn.classList.contains('favorited');
+  let count = parseInt(countEl.innerText) || 0;
   
   // 乐观UI切换
   btn.classList.toggle('favorited', !isFav);
+  if (isFav) {
+    countEl.innerText = Math.max(0, count - 1);
+  } else {
+    countEl.innerText = count + 1;
+  }
   
   fetch(API_BASE + '/' + gameId + '/favorite', { 
     method: 'POST', 
@@ -618,13 +627,24 @@ function toggleFavorite() {
   })
     .then(res => res.json())
     .then(data => {
-      if (data.success && data.favorited !== undefined) {
-        btn.classList.toggle('favorited', data.favorited);
+      if (data.success) {
+        if (data.favorited !== undefined) {
+          btn.classList.toggle('favorited', data.favorited);
+        }
+        // 更新实际数量
+        if (data.favorite_count !== undefined) {
+          countEl.innerText = data.favorite_count;
+        }
+      } else {
+        // 失败回滚
+        btn.classList.toggle('favorited', isFav);
+        countEl.innerText = count;
       }
     })
     .catch(() => {
       // 失败回滚
       btn.classList.toggle('favorited', isFav);
+      countEl.innerText = count;
     });
 }
 
@@ -694,6 +714,8 @@ function openAuthorProfile() {
     const followers = statsData.followerCount || statsData.followers || 0;
     const following = statsData.followingCount || statsData.following || 0;
     const games = gamesData.games || [];
+    const userToken = getUserToken();
+    const isSelf = authorToken === userToken;
     
     let gamesHtml = '';
     if (games.length > 0) {
@@ -701,6 +723,9 @@ function openAuthorProfile() {
         games.slice(0, 4).map(g => '<a href="/g/' + g.id.substring(0,2) + '/' + g.id + '.html" style="background:#f5f5f5;border-radius:8px;padding:10px;text-decoration:none;color:#333;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎮 ' + (g.title || '未命名').substring(0, 10) + '</a>').join('') +
         '</div>';
     }
+    
+    // 如果是自己，不显示关注按钮
+    const followBtnHtml = isSelf ? '' : '<button id="profile-follow-btn" onclick="toggleFollowFromProfile()" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>';
     
     content.innerHTML = 
       '<div style="margin-bottom:15px;">' +
@@ -712,11 +737,13 @@ function openAuthorProfile() {
         '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + followers + '</strong><span style="color:#999;font-size:12px;">粉丝</span></div>' +
         '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + games.length + '</strong><span style="color:#999;font-size:12px;">作品</span></div>' +
       '</div>' +
-      '<button id="profile-follow-btn" onclick="toggleFollowFromProfile()" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>' +
+      followBtnHtml +
       gamesHtml;
     
-    // 检查关注状态
-    checkFollowStatusForProfile();
+    // 检查关注状态（只有不是自己时才检查）
+    if (!isSelf) {
+      checkFollowStatusForProfile();
+    }
   }).catch(() => {
     content.innerHTML = '<div style="padding:20px;color:#999;">加载失败</div>';
   });
@@ -820,6 +847,11 @@ function toggleFollowFromProfile() {
   const userToken = getUserToken();
   if (!userToken) {
     alert('请先登录');
+    return;
+  }
+  
+  if (authorToken === userToken) {
+    alert('不能关注自己哦');
     return;
   }
   
@@ -1698,10 +1730,44 @@ app.put('/api/account/nickname', (req, res) => {
       return res.status(400).json({ success: false, error: '昵称不能超过20个字符' });
     }
     
-    db.prepare('UPDATE user_accounts SET nickname = ?, updated_at = CURRENT_TIMESTAMP WHERE user_token = ?')
-      .run(nickname.trim(), userToken);
+    const trimmedNickname = nickname.trim();
     
-    res.json({ success: true, nickname: nickname.trim() });
+    // 更新用户账号表中的昵称
+    db.prepare('UPDATE user_accounts SET nickname = ?, updated_at = CURRENT_TIMESTAMP WHERE user_token = ?')
+      .run(trimmedNickname, userToken);
+    
+    // 同步更新该用户所有游戏的作者名（author_name）
+    const updateResult = db.prepare('UPDATE games SET author_name = ? WHERE author_token = ?')
+      .run(trimmedNickname, userToken);
+    
+    console.log(`[INFO] 更新昵称成功: ${trimmedNickname}, 同步更新了 ${updateResult.changes} 个游戏的作者名`);
+    
+    // 重新生成该用户所有游戏的静态文件（更新游戏页面中的作者名显示）
+    if (updateResult.changes > 0) {
+      try {
+        const userGames = db.prepare('SELECT id, title, prompt, code FROM games WHERE author_token = ? AND status = ?')
+          .all(userToken, 'published');
+        
+        let regeneratedCount = 0;
+        for (const game of userGames) {
+          if (game.code) {
+            saveGameStaticFile(game.id, game.code, {
+              title: game.title,
+              prompt: game.prompt,
+              authorName: trimmedNickname,
+              authorToken: userToken
+            });
+            regeneratedCount++;
+          }
+        }
+        console.log(`[INFO] 重新生成了 ${regeneratedCount} 个游戏的静态文件`);
+      } catch (e) {
+        console.error('[WARN] 重新生成静态文件时出错:', e.message);
+        // 不影响主流程，继续返回成功
+      }
+    }
+    
+    res.json({ success: true, nickname: trimmedNickname, updatedGamesCount: updateResult.changes });
   } catch (error) {
     console.error('[ERROR] 更新昵称失败:', error);
     res.status(500).json({ success: false, error: '服务器错误' });
@@ -2500,7 +2566,7 @@ app.get('/api/games/:id', (req, res) => {
     res.set('Expires', '0');
     
     const game = db.prepare(`
-      SELECT id, title, prompt, code, author_name, author_token, llm_model, play_count, like_count, created_at, status
+      SELECT id, title, prompt, code, author_name, author_token, llm_model, play_count, like_count, favorite_count, created_at, status
       FROM games 
       WHERE id = ?
     `).get(req.params.id);
@@ -2670,10 +2736,24 @@ app.post('/api/generate', async (req, res) => {
 3. 页面加载后立即显示游戏，不能空白
 4. 同时支持键盘和触屏操作
 
+【游戏界面要求 - 非常重要】：
+1. 只有3种界面状态：开始界面、游戏进行中、结束界面
+2. 开始界面：显示游戏标题和"开始游戏"按钮，可以用半透明遮罩层
+3. 游戏进行中：必须隐藏所有遮罩层，只显示Canvas游戏画面。得分、生命值等HUD信息直接用Canvas绑制在画面上，不要用HTML覆盖层
+4. 结束界面：游戏结束时才显示结果，可以用半透明遮罩层
+5. 点击"开始游戏"后，必须立即隐藏开始界面的遮罩，让玩家看到游戏画面
+6. 不要在游戏进行中显示任何全屏或半透明的HTML遮罩层
+
 【游戏要求】：
 1. 游戏有趣、逻辑完整
-2. 有开始画面、游戏画面、结束画面
-3. 深色主题，适配手机和电脑
+2. 深色主题，适配手机和电脑
+
+【布局要求 - 非常重要】：
+1. 游戏必须在一屏内完整显示，禁止出现滚动条
+2. 使用 width:100vw; height:100vh; overflow:hidden 确保全屏且不滚动
+3. Canvas尺寸动态适配：使用 window.innerWidth 和 window.innerHeight
+4. 所有UI元素使用绝对定位或flex布局，不要超出视口范围
+5. 监听 resize 事件，窗口大小变化时自动调整Canvas尺寸
 
 只返回完整的HTML代码，用\`\`\`html和\`\`\`包裹，不要解释。`;
 
@@ -3162,13 +3242,17 @@ app.post('/api/games/:id/favorite', (req, res) => {
       db.prepare('DELETE FROM user_favorites WHERE user_token = ? AND game_id = ?').run(userToken, gameId);
       // 更新游戏的收藏计数
       db.prepare('UPDATE games SET favorite_count = MAX(0, favorite_count - 1) WHERE id = ?').run(gameId);
-      res.json({ success: true, favorited: false });
+      // 获取最新收藏数
+      const updated = db.prepare('SELECT favorite_count FROM games WHERE id = ?').get(gameId);
+      res.json({ success: true, favorited: false, favorite_count: updated?.favorite_count || 0 });
     } else {
       // 未收藏，添加收藏
       db.prepare('INSERT INTO user_favorites (user_token, game_id) VALUES (?, ?)').run(userToken, gameId);
       // 更新游戏的收藏计数
       db.prepare('UPDATE games SET favorite_count = favorite_count + 1 WHERE id = ?').run(gameId);
-      res.json({ success: true, favorited: true });
+      // 获取最新收藏数
+      const updated = db.prepare('SELECT favorite_count FROM games WHERE id = ?').get(gameId);
+      res.json({ success: true, favorited: true, favorite_count: updated?.favorite_count || 0 });
     }
   } catch (error) {
     console.error('[ERROR] 收藏操作失败:', error);
@@ -3683,10 +3767,24 @@ app.post('/api/trial/generate', async (req, res) => {
 3. 页面加载后立即显示游戏，不能空白
 4. 同时支持键盘和触屏操作（监听touch事件）
 
+【游戏界面要求 - 非常重要】：
+1. 只有3种界面状态：开始界面、游戏进行中、结束界面
+2. 开始界面：显示游戏标题和"开始游戏"按钮，可以用半透明遮罩层
+3. 游戏进行中：必须隐藏所有遮罩层，只显示Canvas游戏画面。得分、生命值等HUD信息直接用Canvas绑制在画面上，不要用HTML覆盖层
+4. 结束界面：游戏结束时才显示结果，可以用半透明遮罩层
+5. 点击"开始游戏"后，必须立即隐藏开始界面的遮罩，让玩家看到游戏画面
+6. 不要在游戏进行中显示任何全屏或半透明的HTML遮罩层
+
 【游戏要求】：
 1. 游戏有趣、逻辑完整
-2. 有开始画面、游戏画面、结束画面
-3. 深色主题，适配手机和电脑
+2. 深色主题，适配手机和电脑
+
+【布局要求 - 非常重要】：
+1. 游戏必须在一屏内完整显示，禁止出现滚动条
+2. 使用 width:100vw; height:100vh; overflow:hidden 确保全屏且不滚动
+3. Canvas尺寸动态适配：使用 window.innerWidth 和 window.innerHeight
+4. 所有UI元素使用绝对定位或flex布局，不要超出视口范围
+5. 监听 resize 事件，窗口大小变化时自动调整Canvas尺寸
 
 只返回完整的HTML代码，用\`\`\`html和\`\`\`包裹，不要解释。`;
 
@@ -4754,7 +4852,7 @@ app.get('/api/games/:id/stats', (req, res) => {
     
     // 基础游戏信息
     const game = db.prepare(`
-      SELECT id, title, author_name, play_count, like_count, created_at 
+      SELECT id, title, author_name, play_count, like_count, favorite_count, created_at 
       FROM games WHERE id = ?
     `).get(gameId);
     
@@ -4793,6 +4891,7 @@ app.get('/api/games/:id/stats', (req, res) => {
         // 核心数据
         playCount: game.play_count,
         likeCount: game.like_count,
+        favoriteCount: game.favorite_count || 0,
         shareCount: stats.share_count,
         // 今日数据
         todayPlays,

@@ -249,8 +249,8 @@ body {
 </style>
   <!-- 原游戏head内容 -->
   
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    
     
     <style>
         * {
@@ -1293,6 +1293,7 @@ body {
     <div class="tiktok-icon">
       <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
     </div>
+    <span class="tiktok-count" id="stat-favs">0</span>
   </div>
   <div class="tiktok-action" onclick="openSharePanel()">
     <div class="tiktok-icon">
@@ -1399,6 +1400,7 @@ function loadStats() {
         const count = data.game.likes_count || data.game.like_count || 0;
         likesEl.innerText = count;
         document.getElementById('stat-plays').innerText = data.game.play_count || 0;
+        document.getElementById('stat-favs').innerText = data.game.favorite_count || 0;
       }
     })
     .catch(err => console.error('加载统计失败', err));
@@ -1480,10 +1482,17 @@ function likeGame() {
 // 收藏
 function toggleFavorite() {
   const btn = document.getElementById('stat-fav-btn');
+  const countEl = document.getElementById('stat-favs');
   const isFav = btn.classList.contains('favorited');
+  let count = parseInt(countEl.innerText) || 0;
   
   // 乐观UI切换
   btn.classList.toggle('favorited', !isFav);
+  if (isFav) {
+    countEl.innerText = Math.max(0, count - 1);
+  } else {
+    countEl.innerText = count + 1;
+  }
   
   fetch(API_BASE + '/' + gameId + '/favorite', { 
     method: 'POST', 
@@ -1491,13 +1500,24 @@ function toggleFavorite() {
   })
     .then(res => res.json())
     .then(data => {
-      if (data.success && data.favorited !== undefined) {
-        btn.classList.toggle('favorited', data.favorited);
+      if (data.success) {
+        if (data.favorited !== undefined) {
+          btn.classList.toggle('favorited', data.favorited);
+        }
+        // 更新实际数量
+        if (data.favorite_count !== undefined) {
+          countEl.innerText = data.favorite_count;
+        }
+      } else {
+        // 失败回滚
+        btn.classList.toggle('favorited', isFav);
+        countEl.innerText = count;
       }
     })
     .catch(() => {
       // 失败回滚
       btn.classList.toggle('favorited', isFav);
+      countEl.innerText = count;
     });
 }
 
@@ -1567,6 +1587,8 @@ function openAuthorProfile() {
     const followers = statsData.followerCount || statsData.followers || 0;
     const following = statsData.followingCount || statsData.following || 0;
     const games = gamesData.games || [];
+    const userToken = getUserToken();
+    const isSelf = authorToken === userToken;
     
     let gamesHtml = '';
     if (games.length > 0) {
@@ -1574,6 +1596,9 @@ function openAuthorProfile() {
         games.slice(0, 4).map(g => '<a href="/g/' + g.id.substring(0,2) + '/' + g.id + '.html" style="background:#f5f5f5;border-radius:8px;padding:10px;text-decoration:none;color:#333;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎮 ' + (g.title || '未命名').substring(0, 10) + '</a>').join('') +
         '</div>';
     }
+    
+    // 如果是自己，不显示关注按钮
+    const followBtnHtml = isSelf ? '' : '<button id="profile-follow-btn" onclick="toggleFollowFromProfile()" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>';
     
     content.innerHTML = 
       '<div style="margin-bottom:15px;">' +
@@ -1585,11 +1610,13 @@ function openAuthorProfile() {
         '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + followers + '</strong><span style="color:#999;font-size:12px;">粉丝</span></div>' +
         '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + games.length + '</strong><span style="color:#999;font-size:12px;">作品</span></div>' +
       '</div>' +
-      '<button id="profile-follow-btn" onclick="toggleFollowFromProfile()" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>' +
+      followBtnHtml +
       gamesHtml;
     
-    // 检查关注状态
-    checkFollowStatusForProfile();
+    // 检查关注状态（只有不是自己时才检查）
+    if (!isSelf) {
+      checkFollowStatusForProfile();
+    }
   }).catch(() => {
     content.innerHTML = '<div style="padding:20px;color:#999;">加载失败</div>';
   });
@@ -1693,6 +1720,11 @@ function toggleFollowFromProfile() {
   const userToken = getUserToken();
   if (!userToken) {
     alert('请先登录');
+    return;
+  }
+  
+  if (authorToken === userToken) {
+    alert('不能关注自己哦');
     return;
   }
   

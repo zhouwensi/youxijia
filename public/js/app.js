@@ -995,9 +995,33 @@ async function updateNickname(nickname) {
       body: JSON.stringify({ nickname })
     });
     if (response.ok) {
+      const data = await response.json();
       state.account.nickname = nickname;
       state.settings.authorName = nickname;
-      showToast('昵称更新成功');
+      localStorage.setItem('aigame-author-name', nickname);
+      
+      // 更新"我的"页面的用户名显示
+      const usernameEl = document.getElementById('profile-page-username');
+      if (usernameEl) usernameEl.textContent = nickname || '游戏创作者';
+      
+      // 刷新"我的作品"列表以显示最新的作者名
+      if (typeof loadProfilePageGames === 'function') {
+        loadProfilePageGames();
+      }
+      
+      // 刷新首页游戏列表（确保作者名更新）
+      if (typeof loadHomeSections === 'function') {
+        loadHomeSections();
+      }
+      
+      // 关闭设置弹窗（如果打开）
+      const settingsModal = document.getElementById('settings-modal');
+      if (settingsModal && settingsModal.classList.contains('active')) {
+        closeSettings();
+      }
+      
+      const updatedCount = data.updatedGamesCount || 0;
+      showToast(`昵称更新成功${updatedCount > 0 ? '，已同步更新' + updatedCount + '个游戏' : ''}`);
       return true;
     } else {
       const data = await response.json();
@@ -1882,6 +1906,7 @@ async function loadProfilePageData() {
   loadProfilePageFavorites();
 }
 
+
 // ==================== 游戏列表页面 ====================
 
 // 当前列表页面状态
@@ -2671,28 +2696,6 @@ async function regenerateDraft(prompt, draftId) {
   }, 100);
 }
 
-// 删除草稿
-async function deleteDraft(draftId) {
-  if (!confirm('确定要删除这个未完成的游戏吗？')) return;
-  
-  try {
-    const response = await fetch(`/api/games/${draftId}`, {
-      method: 'DELETE',
-      headers: { 'X-Author-Token': getAuthorToken() }
-    });
-    
-    const data = await response.json();
-    if (data.success) {
-      showToast('已删除', 'success');
-      showHome();
-    } else {
-      showToast(data.error || '删除失败', 'error');
-    }
-  } catch (e) {
-    showToast('删除失败: ' + e.message, 'error');
-  }
-}
-
 // 加载设置
 function loadSettings() {
   const saved = localStorage.getItem('aigame-settings');
@@ -2710,7 +2713,7 @@ function loadSettings() {
 }
 
 // 保存设置
-function saveSettings() {
+async function saveSettings() {
   try {
     // 获取模型选择
     const modelSelect = document.getElementById('llm-model-select');
@@ -2719,12 +2722,14 @@ function saveSettings() {
     // 获取模型配置信息
     const modelConfig = MODEL_REGISTRY[selectedModel] || {};
     
+    const newNickname = document.getElementById('author-name')?.value?.trim() || '';
+    
     const settings = {
       llmProvider: selectedModel,  // 使用模型ID作为provider
       llmApiKey: document.getElementById('llm-api-key')?.value || '',
       llmBaseUrl: document.getElementById('llm-base-url')?.value || modelConfig.baseUrl || '',
       llmModel: document.getElementById('llm-model')?.value || modelConfig.model || selectedModel,
-      authorName: document.getElementById('author-name')?.value || ''
+      authorName: newNickname
     };
     
     state.settings = settings;
@@ -2734,8 +2739,14 @@ function saveSettings() {
     state.debugMode = document.getElementById('debug-mode')?.checked || false;
     localStorage.setItem('aigame-debug', state.debugMode);
     
-    closeSettings();
-    showToast('设置已保存', 'success');
+    // 如果昵称发生变化，同步更新到服务器
+    if (newNickname && newNickname !== state.account.nickname) {
+      await updateNickname(newNickname);
+    } else {
+      closeSettings();
+      showToast('设置已保存', 'success');
+    }
+    
     log('设置已保存', 'success');
   } catch (error) {
     console.error('保存设置失败:', error);
@@ -5629,8 +5640,13 @@ async function toggleFavorite() {
       // 更新统计条收藏按钮状态
       const statFavIcon = document.getElementById('stat-fav-icon');
       const statFavBtn = document.getElementById('stat-fav-btn');
+      const statFavsCount = document.getElementById('stat-favs');
       if (statFavIcon) statFavIcon.textContent = data.favorited ? '⭐' : '☆';
       if (statFavBtn) statFavBtn.classList.toggle('favorited', data.favorited);
+      // 更新收藏数量
+      if (statFavsCount && data.favorite_count !== undefined) {
+        statFavsCount.textContent = data.favorite_count;
+      }
       
       showToast(data.favorited ? '已添加到收藏 ⭐' : '已取消收藏', data.favorited ? 'success' : 'info');
     } else {
@@ -6474,262 +6490,6 @@ async function loadLeaderboard(type = 'games') {
   return [];
 }
 
-// ==================== 增强版生成游戏 ====================
-
-// 重写生成游戏函数，支持游客模式
-const originalGenerateGame = generateGame;
-
-async function generateGame() {
-  const prompt = document.getElementById('prompt-input').value.trim();
-  
-  if (!prompt) {
-    showToast('请输入游戏描述', 'error');
-    return;
-  }
-  
-  // 允许多任务生成：只要有积分就可以，不检查 state.isGenerating
-  // 用户体验：刷新页面后也可以继续生成
-  
-  // 确保账号已初始化
-  if (!state.account.loaded || !getUserToken()) {
-    showToast('账号正在初始化，请稍候...', 'info');
-    await initAccount();
-    updateAccountIdDisplay();
-    return;
-  }
-  
-  // 检查积分
-  if (state.credits <= 0 && !state.settings.llmApiKey) {
-    showToast('积分不足，请获取更多积分', 'error');
-    openCreditsModal();
-    return;
-  }
-  
-  // 立即扣除积分并刷新显示（在发起请求前）
-  if (state.credits > 0) {
-    state.credits--;
-    saveCredits();
-    updateCreditsDisplay();
-    showToast(`💎 消耗1积分，剩余: ${state.credits}`, 'info');
-  }
-  
-  // 如果没有API Key，使用游客模式（积分已在上面扣除）
-  if (!state.settings.llmApiKey) {
-    // 有积分就可以使用游客模式生成
-    // 注意：积分检查已在前面完成，这里直接进入生成流程
-    if (true) { // 积分已检查通过，直接进入
-      state.isGenerating = true;
-      state.abortController = new AbortController();
-      
-      // 初始化后台任务状态
-      backgroundTask.isActive = true;
-      backgroundTask.isMinimized = false;
-      backgroundTask.isCancelled = false;
-      backgroundTask.prompt = prompt;
-      backgroundTask.result = null;
-      
-      // 不再禁用按钮，允许多任务生成
-      // setGenerateButtonLoading(true);
-      
-      clearGeneratingLog();
-      document.getElementById('generating-overlay').classList.add('active');
-      document.body.classList.add('overlay-open');
-      startGeneratingTimer(); // 启动计时器
-      
-      // 保存生成状态，获取草稿ID
-      const trialDraftId = await saveGeneratingState();
-      log(`草稿ID: ${trialDraftId || '无'}`);
-      
-      log(`生成游戏: "${prompt}"`);
-      updateGeneratingStatus('🎮 AI 正在创作中...');
-      
-      try {
-        const data = await generateWithTrial(trialDraftId);
-        
-        if (data && data.code) {
-          log(`游戏生成成功: ${data.title}`, 'success');
-          
-          state.currentGame = {
-            title: data.title,
-            prompt: prompt,
-            code: data.code,
-            isNew: true
-          };
-          state.currentGameId = null;
-          
-          document.getElementById('generating-overlay').classList.remove('active');
-  document.body.classList.remove('overlay-open');
-          document.getElementById('generating-float').classList.remove('active'); // 关闭浮动提示
-          stopGeneratingTimer(); // 停止计时器
-          openSaveModal();
-        } else {
-          document.getElementById('generating-overlay').classList.remove('active');
-  document.body.classList.remove('overlay-open');
-          document.getElementById('generating-float').classList.remove('active');
-          stopGeneratingTimer();
-        }
-      } catch (error) {
-        log('游客模式生成失败: ' + error.message, 'error');
-        document.getElementById('generating-overlay').classList.remove('active');
-  document.body.classList.remove('overlay-open');
-        document.getElementById('generating-float').classList.remove('active');
-        stopGeneratingTimer();
-      } finally {
-        state.isGenerating = false;
-        state.abortController = null;
-        backgroundTask.isActive = false;
-        // 清除保存的生成状态
-        clearGeneratingState();
-        // setGenerateButtonLoading(false);
-      }
-      return;
-    }
-  }
-  
-  // 有API Key，使用原版逻辑
-  state.isGenerating = true;
-  state.abortController = new AbortController();
-  
-  // 不再禁用按钮，允许多任务生成
-  // setGenerateButtonLoading(true);
-  
-  clearGeneratingLog();
-  document.getElementById('generating-overlay').classList.add('active');
-  document.body.classList.add('overlay-open');
-  
-  log(`开始生成游戏: "${prompt}"`);
-  updateGeneratingStatus('正在连接 AI 服务...');
-  
-  try {
-    // 构建LLM配置
-    const llmConfig = {
-      apiKey: state.settings.llmApiKey,
-      modelId: state.settings.llmModelId || 'deepseek-v3'
-    };
-    
-    // 根据模型ID确定provider和baseUrl
-    const modelId = state.settings.llmModelId || 'deepseek-v3';
-    if (modelId.startsWith('deepseek')) {
-      llmConfig.provider = 'deepseek';
-      llmConfig.baseUrl = 'https://api.deepseek.com';
-      llmConfig.model = modelId === 'deepseek-r1' ? 'deepseek-reasoner' : 'deepseek-chat';
-    } else if (modelId.startsWith('gpt')) {
-      llmConfig.provider = 'openai';
-      llmConfig.baseUrl = 'https://api.openai.com/v1';
-      llmConfig.model = modelId;
-    } else if (modelId.startsWith('claude')) {
-      llmConfig.provider = 'anthropic';
-      llmConfig.baseUrl = 'https://api.anthropic.com';
-      llmConfig.model = modelId;
-    } else if (modelId.startsWith('gemini')) {
-      llmConfig.provider = 'google';
-      llmConfig.model = modelId;
-    } else if (modelId === 'custom') {
-      llmConfig.provider = 'custom';
-      llmConfig.baseUrl = state.settings.llmBaseUrl;
-      llmConfig.model = state.settings.llmModel;
-    } else {
-      // 国产模型默认走代理
-      llmConfig.provider = 'custom';
-      llmConfig.model = modelId;
-    }
-    
-    log(`使用 ${llmConfig.provider} (${llmConfig.model})`);
-    updateGeneratingStatus('AI 正在思考创意...');
-    
-    const startTime = Date.now();
-    
-    const authorToken = getAuthorToken();
-    const response = await fetch('/api/generate', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'X-User-Token': getUserToken(),
-        'X-Author-Token': authorToken || ''
-      },
-      body: JSON.stringify({ 
-        prompt, 
-        llmConfig,
-        draftId: trialDraftId  // 传递草稿ID，后端生成完成后会自动更新
-      }),
-      signal: state.abortController.signal
-    });
-    
-    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-    log(`API 响应完成，耗时 ${elapsed}秒`);
-    
-    const data = await response.json();
-    
-    if (!data.success) {
-      // 检查是否是 API Key 相关错误
-      const errorMsg = data.error || '生成失败';
-      const isApiKeyError = errorMsg.toLowerCase().includes('401') || 
-                           errorMsg.toLowerCase().includes('authentication') || 
-                           errorMsg.toLowerCase().includes('invalid') ||
-                           errorMsg.toLowerCase().includes('api key') ||
-                           errorMsg.toLowerCase().includes('unauthorized') ||
-                           errorMsg.toLowerCase().includes('apikey');
-      
-      if (isApiKeyError && state.settings.llmApiKey) {
-        // 用户配置了自己的 Key 但出错了，提示使用游客模式
-        document.getElementById('generating-overlay').classList.remove('active');
-  document.body.classList.remove('overlay-open');
-        showApiKeyErrorModal(errorMsg);
-        throw new Error('API Key 验证失败');
-      }
-      
-      throw new Error(errorMsg);
-    }
-    
-    log(`游戏生成成功: ${data.title}`, 'success');
-    
-    // 显示调试信息
-    if (data.debug) {
-      log(`代码长度: ${data.debug.codeLength} 字符`);
-      if (data.debug.apiTime) {
-        log(`服务端耗时: ${data.debug.apiTime}ms`);
-      }
-      if (data.debug.tokens) {
-        log(`Token使用: 输入${data.debug.tokens.prompt_tokens}, 输出${data.debug.tokens.completion_tokens}`);
-      }
-    }
-    
-    // 保存游戏数据到状态
-    state.currentGame = {
-      title: data.title,
-      prompt: prompt,
-      code: data.code,
-      isNew: true
-    };
-    state.currentGameId = null;
-    
-    // 隐藏生成遮罩和浮动提示
-    document.getElementById('generating-overlay').classList.remove('active');
-  document.body.classList.remove('overlay-open');
-    document.getElementById('generating-float').classList.remove('active');
-    stopGeneratingTimer();
-    
-    // 显示保存弹窗并预览
-    openSaveModal();
-    
-  } catch (error) {
-    if (error.name === 'AbortError') {
-      log('生成被用户取消', 'warn');
-    } else {
-      log('生成失败: ' + error.message, 'error');
-      showToast(error.message || '生成失败，请重试', 'error');
-    }
-    document.getElementById('generating-overlay').classList.remove('active');
-  document.body.classList.remove('overlay-open');
-    document.getElementById('generating-float').classList.remove('active');
-    stopGeneratingTimer();
-  } finally {
-    state.isGenerating = false;
-    state.abortController = null;
-    // setGenerateButtonLoading(false);
-  }
-}
-
 // ==================== 社交统计系统 ====================
 
 // 当前游戏统计缓存
@@ -6768,6 +6528,7 @@ function updateStatsDisplay(data) {
   animateStatValue('stat-plays', stats.playCount || stats.plays || 0);
   animateStatValue('stat-likes', stats.likeCount || stats.likes || 0);
   animateStatValue('stat-shares', stats.shareCount || stats.shares || 0);
+  animateStatValue('stat-favs', stats.favoriteCount || stats.favorites || 0);
   animateStatValue('stat-hot', stats.hotScore || 0);
   
   // 更新点赞按钮状态

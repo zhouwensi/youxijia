@@ -249,8 +249,8 @@ body {
 </style>
   <!-- 原游戏head内容 -->
   
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    
+    
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -520,316 +520,10 @@ body {
 <body>
   <!-- 原游戏body内容 -->
   ```html
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>愤怒的小鸟 - HTML5版</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            overflow: hidden;
-            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
-            color: #fff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            touch-action: none;
-        }
-        
-        #gameContainer {
-            position: relative;
-            width: 100%;
-            max-width: 800px;
-            height: 600px;
-            margin: 0 auto;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        
-        canvas {
-            display: block;
-            background: linear-gradient(to bottom, #87CEEB 0%, #98D8E8 100%);
-            border-radius: 10px;
-        }
-        
-        #uiContainer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 10;
-        }
-        
-        .screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 20;
-            padding: 20px;
-            text-align: center;
-            transition: opacity 0.5s;
-        }
-        
-        .hidden {
-            display: none !important;
-        }
-        
-        h1 {
-            font-size: 3.5rem;
-            margin-bottom: 20px;
-            color: #FFD700;
-            text-shadow: 3px 3px 0 #FF4500, 6px 6px 0 rgba(0, 0, 0, 0.5);
-            letter-spacing: 2px;
-        }
-        
-        h2 {
-            font-size: 2.2rem;
-            margin-bottom: 15px;
-            color: #FFD700;
-        }
-        
-        p {
-            font-size: 1.2rem;
-            margin-bottom: 15px;
-            max-width: 600px;
-            line-height: 1.5;
-        }
-        
-        .instructions {
-            background: rgba(255, 69, 0, 0.2);
-            border: 2px solid #FF4500;
-            border-radius: 10px;
-            padding: 15px;
-            margin: 20px 0;
-            max-width: 500px;
-        }
-        
-        .key {
-            display: inline-block;
-            background: #333;
-            padding: 5px 10px;
-            border-radius: 5px;
-            margin: 0 5px;
-            font-weight: bold;
-            color: #FFD700;
-        }
-        
-        .btn {
-            background: linear-gradient(to bottom, #FF4500 0%, #FF6347 100%);
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 1.3rem;
-            border-radius: 50px;
-            cursor: pointer;
-            margin-top: 20px;
-            font-weight: bold;
-            letter-spacing: 1px;
-            box-shadow: 0 5px 0 #8B0000;
-            transition: all 0.1s;
-            pointer-events: auto;
-        }
-        
-        .btn:hover, .btn:active {
-            transform: translateY(2px);
-            box-shadow: 0 3px 0 #8B0000;
-        }
-        
-        .btn:active {
-            transform: translateY(5px);
-            box-shadow: none;
-        }
-        
-        #gameUI {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            right: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .score {
-            font-size: 1.8rem;
-            font-weight: bold;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px 20px;
-            border-radius: 10px;
-            border: 2px solid #FFD700;
-        }
-        
-        .birdsLeft {
-            font-size: 1.8rem;
-            font-weight: bold;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px 20px;
-            border-radius: 10px;
-            border: 2px solid #FF4500;
-        }
-        
-        .level {
-            font-size: 1.8rem;
-            font-weight: bold;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px 20px;
-            border-radius: 10px;
-            border: 2px solid #1E90FF;
-        }
-        
-        #powerIndicator {
-            position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 200px;
-            height: 20px;
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 10px;
-            overflow: hidden;
-            border: 2px solid #333;
-        }
-        
-        #powerBar {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(to right, #00FF00, #FFFF00, #FF0000);
-            transition: width 0.1s;
-        }
-        
-        #touchControls {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
-            display: flex;
-            justify-content: space-between;
-            display: none;
-        }
-        
-        .touchBtn {
-            width: 70px;
-            height: 70px;
-            background: rgba(255, 69, 0, 0.7);
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: white;
-            pointer-events: auto;
-            touch-action: manipulation;
-            user-select: none;
-        }
-        
-        @media (max-width: 768px) {
-            #gameContainer {
-                height: 100vh;
-                max-width: 100%;
-                border-radius: 0;
-            }
-            
-            canvas {
-                border-radius: 0;
-            }
-            
-            h1 {
-                font-size: 2.5rem;
-            }
-            
-            h2 {
-                font-size: 1.8rem;
-            }
-            
-            #touchControls {
-                display: flex;
-            }
-        }
-        
-        @media (max-height: 700px) {
-            h1 {
-                font-size: 2rem;
-            }
-            
-            h2 {
-                font-size: 1.5rem;
-            }
-            
-            p {
-                font-size: 1rem;
-            }
-        }
-    </style>
-<style>
-/* AI游戏工坊品牌水印 - 请勿删除 */
-.aigame-watermark {
-  position: fixed;
-  bottom: 10px;
-  right: 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
-  border-radius: 20px;
-  z-index: 99999;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-.aigame-watermark:hover {
-  background: rgba(99, 102, 241, 0.9);
-  transform: scale(1.05);
-}
-.aigame-watermark-logo {
-  font-size: 14px;
-}
-.aigame-watermark-text {
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-  letter-spacing: 0.02em;
-}
-.aigame-watermark-sub {
-  font-size: 9px;
-  color: rgba(255, 255, 255, 0.6);
-}
-@media (max-width: 480px) {
-  .aigame-watermark {
-    padding: 4px 8px;
-    bottom: 5px;
-    right: 5px;
-  }
-  .aigame-watermark-logo {
-    font-size: 12px;
-  }
-  .aigame-watermark-text {
-    font-size: 10px;
-  }
-  .aigame-watermark-sub {
-    display: none;
-  }
-}
-</style>
-</head>
-<body>
+
+
+
+
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
         
@@ -1641,6 +1335,7 @@ body {
     <div class="tiktok-icon">
       <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
     </div>
+    <span class="tiktok-count" id="stat-favs">0</span>
   </div>
   <div class="tiktok-action" onclick="openSharePanel()">
     <div class="tiktok-icon">
@@ -1747,6 +1442,7 @@ function loadStats() {
         const count = data.game.likes_count || data.game.like_count || 0;
         likesEl.innerText = count;
         document.getElementById('stat-plays').innerText = data.game.play_count || 0;
+        document.getElementById('stat-favs').innerText = data.game.favorite_count || 0;
       }
     })
     .catch(err => console.error('加载统计失败', err));
@@ -1828,10 +1524,17 @@ function likeGame() {
 // 收藏
 function toggleFavorite() {
   const btn = document.getElementById('stat-fav-btn');
+  const countEl = document.getElementById('stat-favs');
   const isFav = btn.classList.contains('favorited');
+  let count = parseInt(countEl.innerText) || 0;
   
   // 乐观UI切换
   btn.classList.toggle('favorited', !isFav);
+  if (isFav) {
+    countEl.innerText = Math.max(0, count - 1);
+  } else {
+    countEl.innerText = count + 1;
+  }
   
   fetch(API_BASE + '/' + gameId + '/favorite', { 
     method: 'POST', 
@@ -1839,13 +1542,24 @@ function toggleFavorite() {
   })
     .then(res => res.json())
     .then(data => {
-      if (data.success && data.favorited !== undefined) {
-        btn.classList.toggle('favorited', data.favorited);
+      if (data.success) {
+        if (data.favorited !== undefined) {
+          btn.classList.toggle('favorited', data.favorited);
+        }
+        // 更新实际数量
+        if (data.favorite_count !== undefined) {
+          countEl.innerText = data.favorite_count;
+        }
+      } else {
+        // 失败回滚
+        btn.classList.toggle('favorited', isFav);
+        countEl.innerText = count;
       }
     })
     .catch(() => {
       // 失败回滚
       btn.classList.toggle('favorited', isFav);
+      countEl.innerText = count;
     });
 }
 
@@ -1915,6 +1629,8 @@ function openAuthorProfile() {
     const followers = statsData.followerCount || statsData.followers || 0;
     const following = statsData.followingCount || statsData.following || 0;
     const games = gamesData.games || [];
+    const userToken = getUserToken();
+    const isSelf = authorToken === userToken;
     
     let gamesHtml = '';
     if (games.length > 0) {
@@ -1922,6 +1638,9 @@ function openAuthorProfile() {
         games.slice(0, 4).map(g => '<a href="/g/' + g.id.substring(0,2) + '/' + g.id + '.html" style="background:#f5f5f5;border-radius:8px;padding:10px;text-decoration:none;color:#333;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎮 ' + (g.title || '未命名').substring(0, 10) + '</a>').join('') +
         '</div>';
     }
+    
+    // 如果是自己，不显示关注按钮
+    const followBtnHtml = isSelf ? '' : '<button id="profile-follow-btn" onclick="toggleFollowFromProfile()" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>';
     
     content.innerHTML = 
       '<div style="margin-bottom:15px;">' +
@@ -1933,11 +1652,13 @@ function openAuthorProfile() {
         '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + followers + '</strong><span style="color:#999;font-size:12px;">粉丝</span></div>' +
         '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + games.length + '</strong><span style="color:#999;font-size:12px;">作品</span></div>' +
       '</div>' +
-      '<button id="profile-follow-btn" onclick="toggleFollowFromProfile()" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>' +
+      followBtnHtml +
       gamesHtml;
     
-    // 检查关注状态
-    checkFollowStatusForProfile();
+    // 检查关注状态（只有不是自己时才检查）
+    if (!isSelf) {
+      checkFollowStatusForProfile();
+    }
   }).catch(() => {
     content.innerHTML = '<div style="padding:20px;color:#999;">加载失败</div>';
   });
@@ -2041,6 +1762,11 @@ function toggleFollowFromProfile() {
   const userToken = getUserToken();
   if (!userToken) {
     alert('请先登录');
+    return;
+  }
+  
+  if (authorToken === userToken) {
+    alert('不能关注自己哦');
     return;
   }
   

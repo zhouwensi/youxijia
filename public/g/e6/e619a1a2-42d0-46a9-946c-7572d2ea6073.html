@@ -249,8 +249,8 @@ body {
 </style>
   <!-- 原游戏head内容 -->
   
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -585,343 +585,10 @@ body {
 </head>
 <body>
   <!-- 原游戏body内容 -->
-  <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2048 数字合并游戏</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
+  
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: #f0f0f0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            overflow-x: hidden;
-        }
 
-        .container {
-            width: 100%;
-            max-width: 500px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-        }
 
-        .header {
-            text-align: center;
-            width: 100%;
-        }
-
-        h1 {
-            font-size: 3.5rem;
-            margin-bottom: 5px;
-            background: linear-gradient(90deg, #ff9a00, #ff0058);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            text-shadow: 0 2px 10px rgba(255, 90, 0, 0.3);
-        }
-
-        .subtitle {
-            font-size: 1.1rem;
-            opacity: 0.8;
-            margin-bottom: 15px;
-        }
-
-        .game-info {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            margin-bottom: 10px;
-        }
-
-        .score-container, .best-container {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 15px 20px;
-            text-align: center;
-            min-width: 120px;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .score-label, .best-label {
-            font-size: 0.9rem;
-            opacity: 0.8;
-            margin-bottom: 5px;
-        }
-
-        .score, .best {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #ffcc00;
-        }
-
-        .controls {
-            display: flex;
-            gap: 15px;
-            margin-top: 10px;
-        }
-
-        button {
-            background: linear-gradient(135deg, #4a00e0, #8e2de2);
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 50px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 5px 15px rgba(142, 45, 226, 0.3);
-        }
-
-        button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(142, 45, 226, 0.4);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        .game-container {
-            position: relative;
-            width: 100%;
-            max-width: 500px;
-            aspect-ratio: 1/1;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 15px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
-            overflow: hidden;
-        }
-
-        #gameCanvas {
-            width: 100%;
-            height: 100%;
-            border-radius: 10px;
-        }
-
-        .instructions {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 20px;
-            width: 100%;
-            margin-top: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .instructions h3 {
-            margin-bottom: 15px;
-            color: #4cc9f0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .instructions p {
-            margin-bottom: 10px;
-            line-height: 1.5;
-            opacity: 0.9;
-        }
-
-        .key-controls, .touch-controls {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .key {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 8px 15px;
-            border-radius: 8px;
-            font-weight: bold;
-            min-width: 40px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .touch-controls {
-            display: none;
-        }
-
-        .mobile-controls {
-            display: none;
-            width: 100%;
-            margin-top: 20px;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .dpad {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            gap: 10px;
-            width: 180px;
-            height: 180px;
-        }
-
-        .dpad-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            color: #4cc9f0;
-            transition: all 0.2s;
-        }
-
-        .dpad-btn:active {
-            background: rgba(76, 201, 240, 0.3);
-            transform: scale(0.95);
-        }
-
-        .dpad-up {
-            grid-column: 2;
-            grid-row: 1;
-        }
-
-        .dpad-left {
-            grid-column: 1;
-            grid-row: 2;
-        }
-
-        .dpad-center {
-            grid-column: 2;
-            grid-row: 2;
-            background: transparent;
-            border: none;
-        }
-
-        .dpad-right {
-            grid-column: 3;
-            grid-row: 2;
-        }
-
-        .dpad-down {
-            grid-column: 2;
-            grid-row: 3;
-        }
-
-        .game-over, .game-win, .start-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            border-radius: 10px;
-            z-index: 10;
-            text-align: center;
-            padding: 30px;
-            backdrop-filter: blur(5px);
-        }
-
-        .game-over h2, .game-win h2, .start-screen h2 {
-            font-size: 3rem;
-            margin-bottom: 20px;
-            color: #ff0058;
-        }
-
-        .game-win h2 {
-            color: #00ff88;
-        }
-
-        .start-screen h2 {
-            color: #4cc9f0;
-        }
-
-        .game-over p, .game-win p, .start-screen p {
-            font-size: 1.2rem;
-            margin-bottom: 30px;
-            max-width: 80%;
-            line-height: 1.5;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        .footer {
-            margin-top: 20px;
-            text-align: center;
-            opacity: 0.7;
-            font-size: 0.9rem;
-        }
-
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2.8rem;
-            }
-            
-            .game-container {
-                max-width: 95vw;
-            }
-            
-            .key-controls {
-                display: none;
-            }
-            
-            .touch-controls {
-                display: flex;
-            }
-            
-            .mobile-controls {
-                display: flex;
-            }
-            
-            .instructions {
-                padding: 15px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            h1 {
-                font-size: 2.2rem;
-            }
-            
-            .score, .best {
-                font-size: 1.7rem;
-            }
-            
-            .game-over h2, .game-win h2, .start-screen h2 {
-                font-size: 2.5rem;
-            }
-        }
-    </style>
-</head>
-<body>
     <div class="container">
         <div class="header">
             <h1>2048</h1>
@@ -1682,6 +1349,7 @@ body {
     <div class="tiktok-icon">
       <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
     </div>
+    <span class="tiktok-count" id="stat-favs">0</span>
   </div>
   <div class="tiktok-action" onclick="openSharePanel()">
     <div class="tiktok-icon">
@@ -1788,6 +1456,7 @@ function loadStats() {
         const count = data.game.likes_count || data.game.like_count || 0;
         likesEl.innerText = count;
         document.getElementById('stat-plays').innerText = data.game.play_count || 0;
+        document.getElementById('stat-favs').innerText = data.game.favorite_count || 0;
       }
     })
     .catch(err => console.error('加载统计失败', err));
@@ -1869,10 +1538,17 @@ function likeGame() {
 // 收藏
 function toggleFavorite() {
   const btn = document.getElementById('stat-fav-btn');
+  const countEl = document.getElementById('stat-favs');
   const isFav = btn.classList.contains('favorited');
+  let count = parseInt(countEl.innerText) || 0;
   
   // 乐观UI切换
   btn.classList.toggle('favorited', !isFav);
+  if (isFav) {
+    countEl.innerText = Math.max(0, count - 1);
+  } else {
+    countEl.innerText = count + 1;
+  }
   
   fetch(API_BASE + '/' + gameId + '/favorite', { 
     method: 'POST', 
@@ -1880,13 +1556,24 @@ function toggleFavorite() {
   })
     .then(res => res.json())
     .then(data => {
-      if (data.success && data.favorited !== undefined) {
-        btn.classList.toggle('favorited', data.favorited);
+      if (data.success) {
+        if (data.favorited !== undefined) {
+          btn.classList.toggle('favorited', data.favorited);
+        }
+        // 更新实际数量
+        if (data.favorite_count !== undefined) {
+          countEl.innerText = data.favorite_count;
+        }
+      } else {
+        // 失败回滚
+        btn.classList.toggle('favorited', isFav);
+        countEl.innerText = count;
       }
     })
     .catch(() => {
       // 失败回滚
       btn.classList.toggle('favorited', isFav);
+      countEl.innerText = count;
     });
 }
 
@@ -1956,6 +1643,8 @@ function openAuthorProfile() {
     const followers = statsData.followerCount || statsData.followers || 0;
     const following = statsData.followingCount || statsData.following || 0;
     const games = gamesData.games || [];
+    const userToken = getUserToken();
+    const isSelf = authorToken === userToken;
     
     let gamesHtml = '';
     if (games.length > 0) {
@@ -1963,6 +1652,9 @@ function openAuthorProfile() {
         games.slice(0, 4).map(g => '<a href="/g/' + g.id.substring(0,2) + '/' + g.id + '.html" style="background:#f5f5f5;border-radius:8px;padding:10px;text-decoration:none;color:#333;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎮 ' + (g.title || '未命名').substring(0, 10) + '</a>').join('') +
         '</div>';
     }
+    
+    // 如果是自己，不显示关注按钮
+    const followBtnHtml = isSelf ? '' : '<button id="profile-follow-btn" onclick="toggleFollowFromProfile()" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>';
     
     content.innerHTML = 
       '<div style="margin-bottom:15px;">' +
@@ -1974,11 +1666,13 @@ function openAuthorProfile() {
         '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + followers + '</strong><span style="color:#999;font-size:12px;">粉丝</span></div>' +
         '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + games.length + '</strong><span style="color:#999;font-size:12px;">作品</span></div>' +
       '</div>' +
-      '<button id="profile-follow-btn" onclick="toggleFollowFromProfile()" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>' +
+      followBtnHtml +
       gamesHtml;
     
-    // 检查关注状态
-    checkFollowStatusForProfile();
+    // 检查关注状态（只有不是自己时才检查）
+    if (!isSelf) {
+      checkFollowStatusForProfile();
+    }
   }).catch(() => {
     content.innerHTML = '<div style="padding:20px;color:#999;">加载失败</div>';
   });
@@ -2082,6 +1776,11 @@ function toggleFollowFromProfile() {
   const userToken = getUserToken();
   if (!userToken) {
     alert('请先登录');
+    return;
+  }
+  
+  if (authorToken === userToken) {
+    alert('不能关注自己哦');
     return;
   }
   
