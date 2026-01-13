@@ -95,7 +95,7 @@ DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxx
 DEEPSEEK_BASE_URL=https://api.deepseek.com
 
 # 服务器端口（可选）
-PORT=3000
+PORT=80
 ```
 
 ### Vercel 部署

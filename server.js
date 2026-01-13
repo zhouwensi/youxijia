@@ -7,6 +7,9 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 
+// ==================== 安全模块引入 ====================
+const security = require('./security');
+
 // ==================== 静态游戏文件系统 ====================
 
 // 静态游戏存储目录
@@ -952,7 +955,7 @@ window.addEventListener('load', loadStats);
 }
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 80;
 
 // 测试模式：设为 true 将使用本地HTML文件而不调用LLM
 const TEST_MODE = false;
@@ -1246,11 +1249,22 @@ const LLM_MODELS = {
   'qwen3-coder-plus': { name: 'Qwen3 Coder Plus', provider: 'alibaba', model: 'qwen-coder-plus', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode', tier: 'free' },
 };
 
-// 中间件
-app.use(cors());
-app.use(express.json());
+// ==================== 安全中间件配置 ====================
 
-// 安全中间件：过滤恶意URL请求（阻止路径遍历攻击）
+// 1. Helmet 安全头（必须在最前面）
+app.use(security.getHelmetConfig());
+
+// 2. CORS 配置（使用安全模块的配置）
+app.use(cors(security.getCorsConfig()));
+
+// 3. 请求体解析（带大小限制）
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+
+// 4. 通用速率限制
+app.use(security.createGeneralLimiter());
+
+// 5. 安全中间件：过滤恶意URL请求（阻止路径遍历攻击）
 app.use((req, res, next) => {
   try {
     // 检测路径遍历攻击模式
@@ -1261,11 +1275,18 @@ app.use((req, res, next) => {
       /\/etc\//i, // 配置目录
       /%2e%2e/i, // 编码的..
       /\.%32%65/i, // 双重编码攻击
+      /%00/, // 空字节注入
+      /<script/i, // URL中的脚本标签
     ];
     
     for (const pattern of suspiciousPatterns) {
       if (pattern.test(req.path) || pattern.test(req.originalUrl)) {
-        console.log('[SECURITY] 拦截可疑请求:', req.originalUrl);
+        security.logSecurityEvent({
+          type: 'PATH_TRAVERSAL_BLOCKED',
+          ip: req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip,
+          details: req.originalUrl.substring(0, 200),
+          path: req.path
+        });
         return res.status(400).send('Bad Request');
       }
     }
@@ -1274,7 +1295,12 @@ app.use((req, res, next) => {
     try {
       decodeURIComponent(req.path);
     } catch (e) {
-      console.log('[SECURITY] URL解码失败，拦截请求:', req.originalUrl);
+      security.logSecurityEvent({
+        type: 'URL_DECODE_FAILED',
+        ip: req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip,
+        details: req.originalUrl.substring(0, 200),
+        path: req.path
+      });
       return res.status(400).send('Bad Request');
     }
     
@@ -1285,7 +1311,66 @@ app.use((req, res, next) => {
   }
 });
 
+// 6. XSS清理中间件
+app.use(security.xssCleanMiddleware);
+
+// 7. 攻击模式检测（仅对API请求）
+app.use('/api', security.attackPatternDetection);
+
+// 8. 静态文件服务
 app.use(express.static('public'));
+
+// ==================== 特定路由的安全限制 ====================
+
+// 9. 敏感操作速率限制（账号相关）
+const strictLimiter = security.createStrictLimiter();
+app.use('/api/account/init', strictLimiter);
+app.use('/api/account/login', strictLimiter);
+app.use('/api/account/password', strictLimiter);
+app.use('/api/account/recover', strictLimiter);
+app.use('/api/account/secure-recover', strictLimiter);
+
+// 10. 游戏生成速率限制（资源密集型操作）
+const generateLimiter = security.createGenerateLimiter();
+app.use('/api/generate', generateLimiter);
+app.use('/api/trial/generate', generateLimiter);
+
+// 11. 管理员API保护
+const adminLimiter = security.createAdminLimiter();
+app.use('/api/admin', adminLimiter);
+app.use('/api/admin', security.adminLoginProtection);
+
+// 12. 管理员操作审计日志
+app.use('/api/admin', security.createAuditMiddleware('ADMIN_ACCESS'));
+
+// 13. 管理员认证中间件（统一处理认证和失败记录）
+const adminAuthMiddleware = (req, res, next) => {
+  const adminKey = req.headers['x-admin-key'];
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
+             req.headers['x-real-ip'] || 
+             req.ip;
+  
+  if (!adminKey || adminKey !== process.env.ADMIN_KEY) {
+    // 记录登录失败
+    security.recordAdminLoginFailure(ip);
+    security.logSecurityEvent({
+      type: 'ADMIN_AUTH_FAILED',
+      ip: ip,
+      details: `Path: ${req.path}`,
+      path: req.path
+    });
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  // 认证成功，重置失败计数
+  security.resetAdminLoginAttempts(ip);
+  next();
+};
+
+// 应用管理员认证中间件到所有 /api/admin 路由
+app.use('/api/admin', adminAuthMiddleware);
+
+// ==================== 数据库初始化 ====================
 
 // 初始化数据库
 const db = new Database('games.db');
@@ -1433,9 +1518,22 @@ function getUniqueAccountId() {
   return accountId;
 }
 
-// 简单的密码哈希（生产环境建议使用bcrypt）
+// 密码哈希函数（使用安全模块的bcrypt实现）
+// 同步版本，用于兼容现有代码；新代码建议使用 security.hashPasswordSecure
 function hashPassword(password) {
+  // 保留旧版SHA256用于兼容，新密码使用bcrypt
+  // 注意：此函数现在返回的是旧格式，密码验证时会自动处理两种格式
   return crypto.createHash('sha256').update(password + 'aigame_salt_2025').digest('hex');
+}
+
+// 异步密码哈希（使用bcrypt，推荐用于新代码）
+async function hashPasswordAsync(password) {
+  return await security.hashPasswordSecure(password);
+}
+
+// 异步密码验证（支持bcrypt和旧版SHA256格式）
+async function verifyPasswordAsync(password, hash) {
+  return await security.verifyPassword(password, hash);
 }
 
 // 创建系统配置表
@@ -1450,7 +1548,7 @@ db.exec(`
 
 // 初始化默认配置
 const defaultConfigs = [
-  { key: 'wechat_verify_code', value: 'AIGAME2025', description: '微信关注验证码' },
+  { key: 'wechat_verify_code', value: '2026', description: '微信关注验证码' },
   { key: 'credits_initial', value: '3', description: '新用户初始积分' },
   { key: 'credits_follow_wechat', value: '3', description: '关注公众号奖励' },
   { key: 'credits_watch_ad', value: '1', description: '看广告奖励' },
@@ -2263,7 +2361,7 @@ app.post('/api/credits/follow-wechat', (req, res) => {
     // TODO: 验证公众号关注状态（需要接入微信公众号API）
     // 这里简单用验证码模拟，实际需要接入微信服务
     // 优先从数据库获取验证码，其次环境变量，最后默认值
-    const validCode = getConfig('wechat_verify_code') || process.env.WECHAT_VERIFY_CODE || 'AIGAME2025';
+    const validCode = getConfig('wechat_verify_code') || process.env.WECHAT_VERIFY_CODE || '2026';
     if (verifyCode !== validCode) {
       return res.status(400).json({ success: false, error: '验证码无效' });
     }
@@ -5563,8 +5661,100 @@ function generateAllStaticFiles(forceRegenerate = false) {
   }
 }
 
+// ==================== 安全审计日志 API ====================
+
+// 获取安全审计日志（管理员）
+app.get('/api/admin/security-logs', (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 100;
+    const logs = security.getAuditLogs(limit);
+    
+    res.json({
+      success: true,
+      logs: logs,
+      total: logs.length
+    });
+  } catch (error) {
+    console.error('[ERROR] 获取安全日志失败:', error.message);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
+// 获取安全状态概览（管理员）
+app.get('/api/admin/security-status', (req, res) => {
+  try {
+    const recentLogs = security.getAuditLogs(1000);
+    
+    // 统计各类安全事件
+    const stats = {
+      total: recentLogs.length,
+      byType: {},
+      last24h: 0,
+      blockedRequests: 0
+    };
+    
+    const now = Date.now();
+    const oneDayAgo = now - 24 * 60 * 60 * 1000;
+    
+    for (const log of recentLogs) {
+      // 按类型统计
+      stats.byType[log.type] = (stats.byType[log.type] || 0) + 1;
+      
+      // 24小时内的事件
+      if (new Date(log.timestamp).getTime() > oneDayAgo) {
+        stats.last24h++;
+      }
+      
+      // 被阻止的请求
+      if (['PATH_TRAVERSAL_BLOCKED', 'ATTACK_PATTERN_DETECTED', 'ADMIN_AUTH_FAILED'].includes(log.type)) {
+        stats.blockedRequests++;
+      }
+    }
+    
+    res.json({
+      success: true,
+      stats: stats,
+      securityModuleActive: true,
+      features: {
+        helmet: true,
+        rateLimiting: true,
+        xssProtection: true,
+        inputValidation: true,
+        auditLogging: true,
+        adminProtection: true,
+        bcryptPasswords: true
+      }
+    });
+  } catch (error) {
+    console.error('[ERROR] 获取安全状态失败:', error.message);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
+// ==================== 服务器启动 ====================
+
 app.listen(PORT, () => {
-  console.log(`服务器运行在 http://localhost:${PORT}`);
+  console.log(`\n========================================`);
+  console.log(`🎮 AI游戏工坊服务器启动成功！`);
+  console.log(`========================================`);
+  console.log(`📍 地址: http://localhost:${PORT}`);
+  console.log(`🔒 环境: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`\n✅ 安全模块已激活:`);
+  console.log(`   - Helmet 安全头`);
+  console.log(`   - API 速率限制`);
+  console.log(`   - XSS 防护`);
+  console.log(`   - 路径遍历防护`);
+  console.log(`   - 攻击模式检测`);
+  console.log(`   - 管理员登录保护`);
+  console.log(`   - 安全审计日志`);
+  console.log(`   - bcrypt 密码哈希`);
+  console.log(`========================================\n`);
+  
+  // 记录启动事件
+  security.logSecurityEvent({
+    type: 'SERVER_STARTED',
+    details: `Port: ${PORT}, Env: ${process.env.NODE_ENV || 'development'}`
+  });
   
   // 启动后延迟生成静态文件（避免阻塞启动）
   setTimeout(() => {

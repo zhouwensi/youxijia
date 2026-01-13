@@ -19,7 +19,7 @@
 在 Railway 项目设置中添加：
 - `ADMIN_KEY`: 管理员密钥
 - `TRIAL_API_KEY`: 体验模式 API Key（可选，可在后台配置）
-- `PORT`: 3000（Railway 会自动设置）
+- `PORT`: 80（Railway 会自动设置）
 
 ### 4. 持久化存储
 Railway 提供持久化存储，SQLite 数据库会自动保存。
@@ -49,14 +49,14 @@ npm install
 npm start
 
 # 访问
-open http://localhost:3000
+open http://localhost:80
 ```
 
 ## 环境变量说明
 
 | 变量名 | 说明 | 默认值 |
 |--------|------|--------|
-| `PORT` | 服务端口 | 3000 |
+| `PORT` | 服务端口 | 80 |
 | `ADMIN_KEY` | 管理员密钥 | - |
 | `TRIAL_API_KEY` | 体验模式 API Key | - |
 | `DEEPSEEK_API_KEY` | 备用 API Key | - |
