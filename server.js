@@ -109,22 +109,43 @@ function generateStandaloneGameHtml(gameCode, gameInfo) {
   let bodyContent = '';
   let bodyAttrs = '';
   
-  // 提取<head>内容
-  const headMatch = gameCode.match(/<head[^>]*>([\s\S]*?)<\/head>/i);
+  // 提取<head>内容 - 使用贪婪匹配找到最后一个</head>
+  const headMatch = gameCode.match(/<head[^>]*>([\s\S]*)<\/head>/i);
   if (headMatch) {
     headContent = headMatch[1];
-    // 移除原有的title标签，我们会添加自己的
+    // 移除原有的title、meta和其他不需要重复的标签
     headContent = headContent.replace(/<title[^>]*>[\s\S]*?<\/title>/gi, '');
+    headContent = headContent.replace(/<meta[^>]*charset[^>]*>/gi, '');
+    headContent = headContent.replace(/<meta[^>]*viewport[^>]*>/gi, '');
+    headContent = headContent.replace(/<!DOCTYPE[^>]*>/gi, '');
+    headContent = headContent.replace(/<html[^>]*>/gi, '');
+    headContent = headContent.replace(/<\/html>/gi, '');
+    headContent = headContent.replace(/<head[^>]*>/gi, '');
+    headContent = headContent.replace(/<\/head>/gi, '');
   }
   
-  // 提取<body>内容和属性
-  const bodyMatch = gameCode.match(/<body([^>]*)>([\s\S]*?)<\/body>/i);
+  // 提取<body>内容和属性 - 使用贪婪匹配找到最后一个</body>
+  const bodyMatch = gameCode.match(/<body([^>]*)>([\s\S]*)<\/body>/i);
   if (bodyMatch) {
     bodyAttrs = bodyMatch[1] || '';
     bodyContent = bodyMatch[2];
+    // 清理可能嵌套的HTML结构
+    bodyContent = bodyContent.replace(/<!DOCTYPE[^>]*>/gi, '');
+    bodyContent = bodyContent.replace(/<html[^>]*>/gi, '');
+    bodyContent = bodyContent.replace(/<\/html>/gi, '');
+    bodyContent = bodyContent.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
+    bodyContent = bodyContent.replace(/<body[^>]*>/gi, '');
+    bodyContent = bodyContent.replace(/<\/body>/gi, '');
   } else {
-    // 如果没有body标签，使用整个代码
+    // 如果没有body标签，尝试提取有效内容
     bodyContent = gameCode;
+    // 清理HTML结构标签
+    bodyContent = bodyContent.replace(/<!DOCTYPE[^>]*>/gi, '');
+    bodyContent = bodyContent.replace(/<html[^>]*>/gi, '');
+    bodyContent = bodyContent.replace(/<\/html>/gi, '');
+    bodyContent = bodyContent.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
+    bodyContent = bodyContent.replace(/<body[^>]*>/gi, '');
+    bodyContent = bodyContent.replace(/<\/body>/gi, '');
   }
   
   // 移除游戏代码中原有的 aigame-watermark 水印按钮（我们已有自己的推广栏）
@@ -2638,47 +2659,23 @@ app.post('/api/generate', async (req, res) => {
 
     const systemPrompt = `你是一个专业的HTML5游戏开发专家。用户会给你一句话描述，你需要生成一个完整的、可直接运行的HTML5游戏。
 
-【重要要求】：
-1. 必须生成完整的HTML文件，包含<!DOCTYPE html>、<html>、<head>、<body>标签
-2. 所有CSS样式写在<style>标签内，所有JavaScript写在<script>标签内
-3. 游戏画面必须在页面加载后立即可见，不能是空白
-4. 使用Canvas绑定要在DOM加载完成后进行
-5. 必须包含游戏初始化代码，确保游戏元素正确渲染
+【最重要 - 代码必须完整】：
+- 代码必须完整，确保有</script></body></html>结束标签
+- 代码要精简高效，避免冗余，控制在800行以内
+- 不要写过多注释，保持代码简洁
+
+【基本要求】：
+1. 完整HTML文件：<!DOCTYPE html>、<html>、<head>、<body>，必须正确闭合
+2. CSS写在<style>内，JS写在<script>内
+3. 页面加载后立即显示游戏，不能空白
+4. 同时支持键盘和触屏操作
 
 【游戏要求】：
-1. 游戏要有趣、可玩性强，逻辑完整
-2. 必须有清晰的游戏界面：开始画面、游戏画面、结束画面
-3. 包含操作说明（支持键盘和触屏）
-4. 界面美观，使用现代化深色主题设计
-5. 适配手机和电脑屏幕
+1. 游戏有趣、逻辑完整
+2. 有开始画面、游戏画面、结束画面
+3. 深色主题，适配手机和电脑
 
-【代码结构】：
-\`\`\`html
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>游戏名称</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #1a1a2e; overflow: hidden; }
-        /* 其他样式 */
-    </style>
-</head>
-<body>
-    <!-- 游戏容器 -->
-    <script>
-        // 确保DOM加载完成后初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            // 游戏初始化代码
-        });
-    </script>
-</body>
-</html>
-\`\`\`
-
-只返回完整的HTML代码，用\`\`\`html和\`\`\`包裹，不要有任何解释文字。`;
+只返回完整的HTML代码，用\`\`\`html和\`\`\`包裹，不要解释。`;
 
     console.log('[INFO] 开始调用LLM API...');
     const apiStartTime = Date.now();
@@ -2696,7 +2693,7 @@ app.post('/api/generate', async (req, res) => {
           { role: 'user', content: `请生成游戏：${prompt}` }
         ],
         temperature: 0.7,
-        max_tokens: 8000
+        max_tokens: 8192
       })
     });
 
@@ -2724,9 +2721,26 @@ app.post('/api/generate', async (req, res) => {
     const hasHtml = code.includes('<html');
     const hasBody = code.includes('<body');
     const hasScript = code.includes('<script');
+    const hasClosingBody = code.includes('</body>');
+    const hasClosingHtml = code.includes('</html>');
+    const hasClosingScript = code.includes('</script>');
     
-    console.log('[INFO] HTML结构检查:', { hasDoctype, hasHtml, hasBody, hasScript });
+    console.log('[INFO] HTML结构检查:', { hasDoctype, hasHtml, hasBody, hasScript, hasClosingBody, hasClosingHtml, hasClosingScript });
     console.log('[INFO] 最终代码长度:', code.length);
+    
+    // 检查代码是否被截断
+    if (hasScript && !hasClosingScript) {
+      console.log('[WARN] 代码可能被截断：缺少</script>标签');
+      throw new Error('生成的游戏代码不完整，请重试或尝试简化游戏描述');
+    }
+    if (hasBody && !hasClosingBody) {
+      console.log('[WARN] 代码可能被截断：缺少</body>标签');
+      throw new Error('生成的游戏代码不完整，请重试或尝试简化游戏描述');
+    }
+    if (hasHtml && !hasClosingHtml) {
+      console.log('[WARN] 代码可能被截断：缺少</html>标签');
+      throw new Error('生成的游戏代码不完整，请重试或尝试简化游戏描述');
+    }
 
     // 生成标题
     const titleMatch = code.match(/<title>(.*?)<\/title>/i);
@@ -3658,26 +3672,23 @@ app.post('/api/trial/generate', async (req, res) => {
     
     const systemPrompt = `你是一个专业的HTML5游戏开发专家。用户会给你一句话描述，你需要生成一个完整的、可直接运行的HTML5游戏。
 
-【重要要求】：
-1. 必须生成完整的HTML文件，包含<!DOCTYPE html>、<html>、<head>、<body>标签
-2. 所有CSS样式写在<style>标签内，所有JavaScript写在<script>标签内
-3. 游戏画面必须在页面加载后立即可见，不能是空白
-4. 使用Canvas绑定要在DOM加载完成后进行
-5. 必须包含游戏初始化代码，确保游戏元素正确渲染
+【最重要 - 代码必须完整】：
+- 代码必须完整，确保有</script></body></html>结束标签
+- 代码要精简高效，避免冗余，控制在800行以内
+- 不要写过多注释，保持代码简洁
+
+【基本要求】：
+1. 完整HTML文件：<!DOCTYPE html>、<html>、<head>、<body>，必须正确闭合
+2. CSS写在<style>内，JS写在<script>内
+3. 页面加载后立即显示游戏，不能空白
+4. 同时支持键盘和触屏操作（监听touch事件）
 
 【游戏要求】：
-1. 游戏要有趣、可玩性强，逻辑完整
-2. 必须有清晰的游戏界面：开始画面、游戏画面、结束画面
-3. 包含操作说明（支持键盘和触屏）
-4. 界面美观，使用现代化深色主题设计
-5. 适配手机和电脑屏幕
+1. 游戏有趣、逻辑完整
+2. 有开始画面、游戏画面、结束画面
+3. 深色主题，适配手机和电脑
 
-【移动端适配】：
-1. 添加触屏控制支持（虚拟摇杆或触屏按钮）
-2. 监听 touchstart/touchmove/touchend 事件
-3. 防止页面滚动：在游戏区域阻止默认触摸行为
-
-只返回完整的HTML代码，用\`\`\`html和\`\`\`包裹，不要有任何解释文字。`;
+只返回完整的HTML代码，用\`\`\`html和\`\`\`包裹，不要解释。`;
 
     // 获取API配置（支持环境变量或管理后台配置）
     const apiConfig = getTrialApiConfig();
@@ -3710,7 +3721,7 @@ app.post('/api/trial/generate', async (req, res) => {
               { role: 'user', content: `请生成游戏：${enhancedPrompt}` }
             ],
             temperature: 0.7,
-            max_tokens: 8000
+            max_tokens: 8192
           }),
           signal: controller.signal
         });
@@ -3783,6 +3794,30 @@ app.post('/api/trial/generate', async (req, res) => {
     
     // 提取HTML代码 - 使用增强版提取函数
     code = extractHtmlFromResponse(code);
+    
+    // 检查代码完整性
+    const hasScript = code.includes('<script');
+    const hasBody = code.includes('<body');
+    const hasHtml = code.includes('<html');
+    const hasClosingScript = code.includes('</script>');
+    const hasClosingBody = code.includes('</body>');
+    const hasClosingHtml = code.includes('</html>');
+    
+    console.log('[TRIAL] HTML结构检查:', { hasScript, hasBody, hasHtml, hasClosingScript, hasClosingBody, hasClosingHtml });
+    
+    // 检查代码是否被截断
+    if (hasScript && !hasClosingScript) {
+      console.log('[TRIAL WARN] 代码可能被截断：缺少</script>标签');
+      throw new Error('生成的游戏代码不完整，请重试或尝试简化游戏描述');
+    }
+    if (hasBody && !hasClosingBody) {
+      console.log('[TRIAL WARN] 代码可能被截断：缺少</body>标签');
+      throw new Error('生成的游戏代码不完整，请重试或尝试简化游戏描述');
+    }
+    if (hasHtml && !hasClosingHtml) {
+      console.log('[TRIAL WARN] 代码可能被截断：缺少</html>标签');
+      throw new Error('生成的游戏代码不完整，请重试或尝试简化游戏描述');
+    }
     
     // 生成标题
     const titleMatch = code.match(/<title>(.*?)<\/title>/i);

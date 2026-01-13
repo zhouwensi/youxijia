@@ -124,7 +124,7 @@ function handleTouch(e) { e.preventDefault(); const touch = e.touches[0]; /* 处
           { role: 'user', content: `请生成游戏：${prompt}` }
         ],
         temperature: 0.7,
-        max_tokens: 8000
+        max_tokens: 8192
       })
     });
 

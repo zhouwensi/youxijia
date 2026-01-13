@@ -1,0 +1,2021 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="description" content="生成最终幻想xway - AI一句话生成的游戏">
+  <meta property="og:title" content="最终幻想X-Way - AI游戏">
+  <meta property="og:description" content="这个游戏由AI一句话生成！关注公众号「游戏开发技术教程」，你也可以免费生成游戏！">
+  <meta property="og:type" content="website">
+  <title>最终幻想X-Way - AI游戏</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+  <!-- 推广栏样式 -->
+  <style>
+/* 游戏家推广栏 - 固定在底部 */
+.yxj-promo-bar {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 60px !important;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+  padding: 8px 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  z-index: 999999 !important;
+  box-shadow: 0 -2px 15px rgba(99, 102, 241, 0.4) !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+.yxj-promo-bar.yxj-hidden {
+  display: none !important;
+}
+.yxj-promo-qr {
+  width: 44px !important;
+  height: 44px !important;
+  background: #fff !important;
+  border-radius: 6px !important;
+  padding: 2px !important;
+  flex-shrink: 0 !important;
+}
+.yxj-promo-qr img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+.yxj-promo-info {
+  color: #fff !important;
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+  text-align: left !important;
+}
+.yxj-promo-info strong {
+  display: block !important;
+  font-size: 13px !important;
+  margin-bottom: 2px !important;
+}
+.yxj-promo-info span {
+  opacity: 0.9 !important;
+  font-size: 11px !important;
+}
+.yxj-promo-close {
+  position: absolute !important;
+  right: 6px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  background: rgba(255,255,255,0.2) !important;
+  border: none !important;
+  color: #fff !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+.yxj-promo-home {
+  position: fixed !important;
+  top: 10px !important;
+  left: 10px !important;
+  background: rgba(0,0,0,0.5) !important;
+  color: #fff !important;
+  text-decoration: none !important;
+  padding: 6px 12px !important;
+  border-radius: 20px !important;
+  font-size: 12px !important;
+  z-index: 999998 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+/* TikTok 风格组件 */
+.tiktok-author-info {
+  position: fixed !important;
+  left: 16px !important;
+  bottom: 80px !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  z-index: 999998 !important;
+  padding: 0 !important;
+  pointer-events: auto !important;
+}
+.tiktok-author-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+.tiktok-author-avatar {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.5rem !important;
+  border: 2px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+  cursor: pointer !important;
+  transition: transform 0.2s, box-shadow 0.2s !important;
+  text-decoration: none !important;
+}
+.tiktok-author-avatar:hover {
+  transform: scale(1.05) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}
+.tiktok-author-details {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+.tiktok-author-name {
+  color: white !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8) !important;
+  cursor: pointer !important;
+  transition: opacity 0.2s !important;
+}
+.tiktok-author-name:hover {
+  opacity: 0.8 !important;
+}
+.tiktok-follow-btn {
+  background: #fe2c55 !important;
+  color: white !important;
+  border: none !important;
+  padding: 6px 16px !important;
+  border-radius: 4px !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  transition: all 0.2s ease !important;
+  text-shadow: none !important;
+}
+.tiktok-follow-btn:hover {
+  background: #e6284d !important;
+  transform: scale(1.02) !important;
+}
+.tiktok-follow-btn:active {
+  transform: scale(0.95) !important;
+}
+.tiktok-sidebar {
+  position: fixed !important;
+  right: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  z-index: 999998 !important;
+  pointer-events: auto !important;
+}
+.tiktok-action {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 4px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+.tiktok-action:active {
+  transform: scale(0.9) !important;
+}
+.tiktok-icon {
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 50% !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(8px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 24px !important;
+  transition: all 0.2s ease !important;
+  border: 2px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  color: #fff !important;
+}
+.tiktok-action:hover .tiktok-icon {
+  transform: scale(1.1) !important;
+  background: rgba(0, 0, 0, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+.tiktok-count {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+  white-space: nowrap !important;
+}
+.tiktok-action.liked .tiktok-icon {
+  background: rgba(239, 68, 68, 0.8) !important;
+  border-color: #ef4444 !important;
+  animation: likePopTiktok 0.3s ease !important;
+}
+@keyframes likePopTiktok {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+.tiktok-action.favorited .tiktok-icon {
+  background: rgba(251, 191, 36, 0.8) !important;
+  border-color: #fbbf24 !important;
+}
+.tiktok-action.tiktok-info {
+  cursor: default !important;
+  opacity: 0.8 !important;
+}
+/* 为推广栏预留底部空间 */
+body {
+  padding-bottom: 65px !important;
+}
+</style>
+  <!-- 原游戏head内容 -->
+  
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0a0a2a 0%, #1a1a3a 100%);
+            color: #e0e0ff;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 100vh;
+            max-height: 600px;
+            margin: 0 auto;
+            border: 2px solid #4a4aff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(74, 74, 255, 0.5);
+            background: #0f0f1f;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            background: rgba(10, 10, 30, 0.95);
+            z-index: 10;
+            transition: opacity 0.5s;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            color: #4a4aff;
+            text-shadow: 0 0 15px rgba(74, 74, 255, 0.8);
+            letter-spacing: 3px;
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            color: #ffcc00;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.7);
+        }
+
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        .highlight {
+            color: #4affff;
+            font-weight: bold;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .control-group {
+            background: rgba(30, 30, 60, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #4a4aff;
+            min-width: 200px;
+        }
+
+        .control-group h3 {
+            color: #ffcc00;
+            margin-bottom: 10px;
+        }
+
+        .button {
+            background: linear-gradient(to bottom, #4a4aff, #2a2a9a);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.3rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(74, 74, 255, 0.4);
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .button:hover {
+            background: linear-gradient(to bottom, #5a5aff, #3a3aaa);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(74, 74, 255, 0.6);
+        }
+
+        .button:active {
+            transform: translateY(1px);
+        }
+
+        .score-display {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 1.5rem;
+            color: #ffcc00;
+            z-index: 5;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 1px solid #4a4aff;
+        }
+
+        .health-bar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 200px;
+            height: 25px;
+            background: rgba(100, 0, 0, 0.7);
+            border-radius: 12px;
+            border: 2px solid #ff0000;
+            overflow: hidden;
+            z-index: 5;
+        }
+
+        .health-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(to right, #ff0000, #ff9900);
+            transition: width 0.3s;
+        }
+
+        .mobile-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            padding: 0 20px;
+            z-index: 5;
+        }
+
+        .mobile-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(74, 74, 255, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            color: white;
+            border: 3px solid #4a4aff;
+            touch-action: manipulation;
+            user-select: none;
+            opacity: 0.8;
+        }
+
+        .mobile-btn:active {
+            background: rgba(74, 74, 255, 1);
+            transform: scale(0.95);
+        }
+
+        .joystick {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            width: 120px;
+            height: 120px;
+            background: rgba(30, 30, 60, 0.7);
+            border-radius: 50%;
+            border: 3px solid #4a4aff;
+            touch-action: manipulation;
+        }
+
+        .joystick-handle {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: rgba(74, 74, 255, 0.9);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px solid #ffffff;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            h2 {
+                font-size: 2rem;
+            }
+            
+            p {
+                font-size: 1rem;
+            }
+            
+            .button {
+                padding: 12px 30px;
+                font-size: 1.1rem;
+            }
+            
+            .mobile-controls {
+                display: flex;
+            }
+            
+            .joystick {
+                display: block;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .mobile-controls {
+                display: none;
+            }
+            
+            .joystick {
+                display: none;
+            }
+        }
+    </style>
+
+</head>
+<body>
+  <!-- 原游戏body内容 -->
+  <!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>最终幻想X-Way</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0a0a2a 0%, #1a1a3a 100%);
+            color: #e0e0ff;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 100vh;
+            max-height: 600px;
+            margin: 0 auto;
+            border: 2px solid #4a4aff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(74, 74, 255, 0.5);
+            background: #0f0f1f;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            background: rgba(10, 10, 30, 0.95);
+            z-index: 10;
+            transition: opacity 0.5s;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            color: #4a4aff;
+            text-shadow: 0 0 15px rgba(74, 74, 255, 0.8);
+            letter-spacing: 3px;
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            color: #ffcc00;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.7);
+        }
+
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        .highlight {
+            color: #4affff;
+            font-weight: bold;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .control-group {
+            background: rgba(30, 30, 60, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #4a4aff;
+            min-width: 200px;
+        }
+
+        .control-group h3 {
+            color: #ffcc00;
+            margin-bottom: 10px;
+        }
+
+        .button {
+            background: linear-gradient(to bottom, #4a4aff, #2a2a9a);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.3rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(74, 74, 255, 0.4);
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .button:hover {
+            background: linear-gradient(to bottom, #5a5aff, #3a3aaa);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(74, 74, 255, 0.6);
+        }
+
+        .button:active {
+            transform: translateY(1px);
+        }
+
+        .score-display {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 1.5rem;
+            color: #ffcc00;
+            z-index: 5;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 1px solid #4a4aff;
+        }
+
+        .health-bar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 200px;
+            height: 25px;
+            background: rgba(100, 0, 0, 0.7);
+            border-radius: 12px;
+            border: 2px solid #ff0000;
+            overflow: hidden;
+            z-index: 5;
+        }
+
+        .health-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(to right, #ff0000, #ff9900);
+            transition: width 0.3s;
+        }
+
+        .mobile-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            padding: 0 20px;
+            z-index: 5;
+        }
+
+        .mobile-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(74, 74, 255, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            color: white;
+            border: 3px solid #4a4aff;
+            touch-action: manipulation;
+            user-select: none;
+            opacity: 0.8;
+        }
+
+        .mobile-btn:active {
+            background: rgba(74, 74, 255, 1);
+            transform: scale(0.95);
+        }
+
+        .joystick {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            width: 120px;
+            height: 120px;
+            background: rgba(30, 30, 60, 0.7);
+            border-radius: 50%;
+            border: 3px solid #4a4aff;
+            touch-action: manipulation;
+        }
+
+        .joystick-handle {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: rgba(74, 74, 255, 0.9);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px solid #ffffff;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            h2 {
+                font-size: 2rem;
+            }
+            
+            p {
+                font-size: 1rem;
+            }
+            
+            .button {
+                padding: 12px 30px;
+                font-size: 1.1rem;
+            }
+            
+            .mobile-controls {
+                display: flex;
+            }
+            
+            .joystick {
+                display: block;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .mobile-controls {
+                display: none;
+            }
+            
+            .joystick {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="startScreen" class="screen">
+            <h1>最终幻想 X-Way</h1>
+            <p class="highlight">穿越时空的冒险之旅</p>
+            <p>在多元宇宙的裂缝中，黑暗势力正在侵蚀各个世界。作为最后的守护者，你必须穿越X-Way通道，击败敌人，拯救濒临毁灭的宇宙。</p>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <h3>键盘控制</h3>
+                    <p>← → : 左右移动</p>
+                    <p>↑ : 跳跃</p>
+                    <p>空格 : 攻击</p>
+                    <p>A/D : 切换魔法</p>
+                </div>
+                <div class="control-group">
+                    <h3>触屏控制</h3>
+                    <p>左侧摇杆 : 移动</p>
+                    <p>右侧按钮 : 跳跃/攻击</p>
+                    <p>滑动 : 切换魔法</p>
+                </div>
+            </div>
+            
+            <button id="startButton" class="button">开始冒险</button>
+            <p style="margin-top: 30px; font-size: 0.9rem; color: #8888cc;">支持键盘和触屏操作 | 适配手机和电脑</p>
+        </div>
+        
+        <div id="gameScreen" class="screen hidden">
+            <canvas id="gameCanvas"></canvas>
+            <div class="score-display">分数: <span id="score">0</span></div>
+            <div class="health-bar">
+                <div id="healthFill" class="health-fill"></div>
+            </div>
+            
+            <div class="mobile-controls">
+                <div class="joystick" id="joystickArea">
+                    <div class="joystick-handle" id="joystickHandle"></div>
+                </div>
+                <div class="mobile-btn" id="jumpBtn">↑</div>
+                <div class="mobile-btn" id="attackBtn">⚔️</div>
+                <div class="mobile-btn" id="magicBtn">🔮</div>
+            </div>
+        </div>
+        
+        <div id="endScreen" class="screen hidden">
+            <h2>游戏结束</h2>
+            <p>你的最终得分: <span id="finalScore" class="highlight">0</span></p>
+            <p id="gameResult">宇宙的命运掌握在你的手中</p>
+            <button id="restartButton" class="button">再次挑战</button>
+            <button id="menuButton" class="button" style="margin-top: 15px;">返回主菜单</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 游戏状态
+            const gameState = {
+                current: 'start', // start, playing, ended
+                score: 0,
+                health: 100,
+                level: 1,
+                player: {
+                    x: 400,
+                    y: 300,
+                    width: 40,
+                    height: 60,
+                    speed: 5,
+                    jumpForce: 15,
+                    velocityY: 0,
+                    isJumping: false,
+                    facing: 'right',
+                    attackCooldown: 0,
+                    magicType: 'fire'
+                },
+                enemies: [],
+                platforms: [],
+                particles: [],
+                keys: {},
+                touch: {
+                    joystickActive: false,
+                    joystickX: 0,
+                    joystickY: 0,
+                    jumpPressed: false,
+                    attackPressed: false,
+                    magicPressed: false
+                }
+            };
+
+            // DOM元素
+            const startScreen = document.getElementById('startScreen');
+            const gameScreen = document.getElementById('gameScreen');
+            const endScreen = document.getElementById('endScreen');
+            const startButton = document.getElementById('startButton');
+            const restartButton = document.getElementById('restartButton');
+            const menuButton = document.getElementById('menuButton');
+            const scoreElement = document.getElementById('score');
+            const finalScoreElement = document.getElementById('finalScore');
+            const healthFill = document.getElementById('healthFill');
+            const gameResult = document.getElementById('gameResult');
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 移动控制元素
+            const joystickArea = document.getElementById('joystickArea');
+            const joystickHandle = document.getElementById('joystickHandle');
+            const jumpBtn = document.getElementById('jumpBtn');
+            const attackBtn = document.getElementById('attackBtn');
+            const magicBtn = document.getElementById('magicBtn');
+
+            // 初始化Canvas尺寸
+            function resizeCanvas() {
+                const container = document.getElementById('gameContainer');
+                canvas.width = container.clientWidth;
+                canvas.height = container.clientHeight;
+                
+                // 重新生成平台
+                generatePlatforms();
+            }
+
+            // 生成平台
+            function generatePlatforms() {
+                gameState.platforms = [];
+                const platformCount = Math.floor(canvas.width / 200);
+                
+                for (let i = 0; i < platformCount; i++) {
+                    gameState.platforms.push({
+                        x: i * 200 + 50,
+                        y: canvas.height - 100 - (i % 3) * 50,
+                        width: 150,
+                        height: 20,
+                        color: i % 2 === 0 ? '#4a4aff' : '#ff4a4a'
+                    });
+                }
+                
+                // 添加起始平台
+                gameState.platforms.push({
+                    x: 350,
+                    y: canvas.height - 150,
+                    width: 100,
+                    height: 20,
+                    color: '#4aff4a'
+                });
+            }
+
+            // 初始化游戏
+            function initGame() {
+                gameState.score = 0;
+                gameState.health = 100;
+                gameState.level = 1;
+                gameState.enemies = [];
+                gameState.particles = [];
+                
+                gameState.player.x = 400;
+                gameState.player.y = 300;
+                gameState.player.velocityY = 0;
+                gameState.player.isJumping = false;
+                gameState.player.attackCooldown = 0;
+                gameState.player.magicType = 'fire';
+                
+                updateScore();
+                updateHealth();
+                
+                // 生成初始敌人
+                for (let i = 0; i < 5; i++) {
+                    spawnEnemy();
+                }
+            }
+
+            // 生成敌人
+            function spawnEnemy() {
+                const types = ['goblin', 'skeleton', 'wizard'];
+                const type = types[Math.floor(Math.random() * types.length)];
+                
+                gameState.enemies.push({
+                    x: Math.random() * (canvas.width - 50) + 25,
+                    y: Math.random() * (canvas.height - 200) + 50,
+                    width: 40,
+                    height: 40,
+                    speed: 1 + Math.random() * 2,
+                    type: type,
+                    health: type === 'goblin' ? 30 : type === 'skeleton' ? 50 : 70,
+                    maxHealth: type === 'goblin' ? 30 : type === 'skeleton' ? 50 : 70,
+                    attackCooldown: 0
+                });
+            }
+
+            // 切换屏幕
+            function showScreen(screenName) {
+                startScreen.classList.add('hidden');
+                gameScreen.classList.add('hidden');
+                endScreen.classList.add('hidden');
+                
+                gameState.current = screenName;
+                
+                if (screenName === 'start') {
+                    startScreen.classList.remove('hidden');
+                } else if (screenName === 'playing') {
+                    gameScreen.classList.remove('hidden');
+                    initGame();
+                    requestAnimationFrame(gameLoop);
+                } else if (screenName === 'ended') {
+                    endScreen.classList.remove('hidden');
+                    finalScoreElement.textContent = gameState.score;
+                    
+                    if (gameState.score >= 1000) {
+                        gameResult.textContent = "太棒了！你拯救了宇宙！";
+                    } else if (gameState.score >= 500) {
+                        gameResult.textContent = "干得好！但战斗还未结束...";
+                    } else {
+                        gameResult.textContent = "黑暗势力暂时获胜...";
+                    }
+                }
+            }
+
+            // 更新分数显示
+            function updateScore() {
+                scoreElement.textContent = gameState.score;
+            }
+
+            // 更新生命值显示
+            function updateHealth() {
+                healthFill.style.width = `${gameState.health}%`;
+            }
+
+            // 玩家攻击
+            function playerAttack() {
+                if (gameState.player.attackCooldown > 0) return;
+                
+                gameState.player.attackCooldown = 20;
+                
+                // 创建攻击效果
+                for (let i = 0; i < 10; i++) {
+                    gameState.particles.push({
+                        x: gameState.player.x + (gameState.player.facing === 'right' ? 30 : -30),
+                        y: gameState.player.y + 10,
+                        vx: (gameState.player.facing === 'right' ? 10 : -10) + (Math.random() * 4 - 2),
+                        vy: Math.random() * 4 - 2,
+                        size: Math.random() * 5 + 3,
+                        color: '#ffcc00',
+                        life: 30
+                    });
+                }
+                
+                // 检测敌人命中
+                for (let i = gameState.enemies.length - 1; i >= 0; i--) {
+                    const enemy = gameState.enemies[i];
+                    const dx = enemy.x - gameState.player.x;
+                    const dy = enemy.y - gameState.player.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 80) {
+                        enemy.health -= 20;
+                        
+                        if (enemy.health <= 0) {
+                            gameState.score += enemy.type === 'goblin' ? 50 : enemy.type === 'skeleton' ? 75 : 100;
+                            gameState.enemies.splice(i, 1);
+                            spawnEnemy(); // 生成新敌人
+                            updateScore();
+                        }
+                    }
+                }
+            }
+
+            // 使用魔法
+            function useMagic() {
+                const magicColors = {
+                    fire: '#ff3300',
+                    ice: '#00ccff',
+                    lightning: '#ffcc00'
+                };
+                
+                // 创建魔法效果
+                for (let i = 0; i < 20; i++) {
+                    gameState.particles.push({
+                        x: gameState.player.x,
+                        y: gameState.player.y + 10,
+                        vx: (Math.random() * 10 - 5) * 2,
+                        vy: (Math.random() * 10 - 5) * 2,
+                        size: Math.random() * 8 + 4,
+                        color: magicColors[gameState.player.magicType],
+                        life: 40
+                    });
+                }
+                
+                // 魔法攻击所有敌人
+                gameState.enemies.forEach(enemy => {
+                    const dx = enemy.x - gameState.player.x;
+                    const dy = enemy.y - gameState.player.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 150) {
+                        enemy.health -= 30;
+                        
+                        if (enemy.health <= 0) {
+                            gameState.score += enemy.type === 'goblin' ? 50 : enemy.type === 'skeleton' ? 75 : 100;
+                            spawnEnemy();
+                            updateScore();
+                        }
+                    }
+                });
+                
+                // 切换魔法类型
+                const magicTypes = ['fire', 'ice', 'lightning'];
+                const currentIndex = magicTypes.indexOf(gameState.player.magicType);
+                gameState.player.magicType = magicTypes[(currentIndex + 1) % magicTypes.length];
+            }
+
+            // 游戏主循环
+            function gameLoop() {
+                if (gameState.current !== 'playing') return;
+                
+                // 清空画布
+                ctx.fillStyle = '#0f0f1f';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // 绘制背景
+                drawBackground();
+                
+                // 更新游戏状态
+                updateGame();
+                
+                // 绘制游戏元素
+                drawPlatforms();
+                drawPlayer();
+                drawEnemies();
+                drawParticles();
+                
+                // 继续循环
+                requestAnimationFrame(gameLoop);
+            }
+
+            // 绘制背景
+            function drawBackground() {
+                // 星空
+                ctx.fillStyle = '#1a1a3a';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // 星星
+                ctx.fillStyle = '#ffffff';
+                for (let i = 0; i < 100; i++) {
+                    const x = (i * 7.3) % canvas.width;
+                    const y = (i * 5.7) % canvas.height;
+                    const size = Math.sin(Date.now() / 1000 + i) * 1 + 1;
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // X-Way通道效果
+                ctx.strokeStyle = 'rgba(74, 74, 255, 0.3)';
+                ctx.lineWidth = 2;
+                for (let i = 0; i < 5; i++) {
+                    const offset = (Date.now() / 100 + i * 100) % canvas.width;
+                    ctx.beginPath();
+                    ctx.moveTo(offset, 0);
+                    ctx.lineTo(offset - 100, canvas.height);
+                    ctx.stroke();
+                }
+            }
+
+            // 更新游戏逻辑
+            function updateGame() {
+                // 更新玩家
+                updatePlayer();
+                
+                // 更新敌人
+                updateEnemies();
+                
+                // 更新粒子
+                updateParticles();
+                
+                // 更新冷却时间
+                if (gameState.player.attackCooldown > 0) {
+                    gameState.player.attackCooldown--;
+                }
+                
+                // 检查游戏结束
+                if (gameState.health <= 0) {
+                    showScreen('ended');
+                }
+                
+                // 每1000分升一级
+                if (gameState.score >= gameState.level * 1000) {
+                    gameState.level++;
+                    gameState.health = Math.min(100, gameState.health + 20);
+                    updateHealth();
+                }
+            }
+
+            // 更新玩家
+            function updatePlayer() {
+                // 移动输入
+                let moveX = 0;
+                
+                if (gameState.keys['ArrowLeft'] || gameState.keys['a'] || gameState.keys['A']) {
+                    moveX = -1;
+                    gameState.player.facing = 'left';
+                }
+                if (gameState.keys['ArrowRight'] || gameState.keys['d'] || gameState.keys['D']) {
+                    moveX = 1;
+                    gameState.player.facing = 'right';
+                }
+                
+                // 触屏摇杆控制
+                if (gameState.touch.joystickActive) {
+                    moveX = gameState.touch.joystickX;
+                    if (moveX > 0) gameState.player.facing = 'right';
+                    if (moveX < 0) gameState.player.facing = 'left';
+                }
+                
+                // 应用移动
+                gameState.player.x += moveX * gameState.player.speed;
+                
+                // 边界检查
+                if (gameState.player.x < gameState.player.width / 2) {
+                    gameState.player.x = gameState.player.width / 2;
+                }
+                if (gameState.player.x > canvas.width - gameState.player.width / 2) {
+                    gameState.player.x = canvas.width - gameState.player.width / 2;
+                }
+                
+                // 跳跃
+                if ((gameState.keys['ArrowUp'] || gameState.keys['w'] || gameState.keys['W'] || 
+                     gameState.touch.jumpPressed) && !gameState.player.isJumping) {
+                    gameState.player.velocityY = -gameState.player.jumpForce;
+                    gameState.player.isJumping = true;
+                    gameState.touch.jumpPressed = false;
+                }
+                
+                // 攻击
+                if (gameState.keys[' '] || gameState.touch.attackPressed) {
+                    playerAttack();
+                    gameState.touch.attackPressed = false;
+                }
+                
+                // 魔法
+                if (gameState.keys['a'] || gameState.keys['A'] || gameState.touch.magicPressed) {
+                    useMagic();
+                    gameState.touch.magicPressed = false;
+                }
+                
+                // 重力
+                gameState.player.velocityY += 0.8;
+                gameState.player.y += gameState.player.velocityY;
+                
+                // 平台碰撞
+                let onPlatform = false;
+                for (const platform of gameState.platforms) {
+                    if (gameState.player.x + gameState.player.width / 2 > platform.x &&
+                        gameState.player.x - gameState.player.width / 2 < platform.x + platform.width &&
+                        gameState.player.y + gameState.player.height / 2 > platform.y &&
+                        gameState.player.y + gameState.player.height / 2 < platform.y + platform.height + 10 &&
+                        gameState.player.velocityY > 0) {
+                        
+                        gameState.player.y = platform.y - gameState.player.height / 2;
+                        gameState.player.velocityY = 0;
+                        gameState.player.isJumping = false;
+                        onPlatform = true;
+                        break;
+                    }
+                }
+                
+                // 地面碰撞
+                if (gameState.player.y > canvas.height - gameState.player.height / 2) {
+                    gameState.player.y = canvas.height - gameState.player.height / 2;
+                    gameState.player.velocityY = 0;
+                    gameState.player.isJumping = false;
+                    onPlatform = true;
+                }
+                
+                // 如果没有站在平台上，设置为跳跃状态
+                if (!onPlatform && gameState.player.velocityY !== 0) {
+                    gameState.player.isJumping = true;
+                }
+            }
+
+            // 更新敌人
+            function updateEnemies() {
+                for (let i = gameState.enemies.length - 1; i >= 0; i--) {
+                    const enemy = gameState.enemies[i];
+                    
+                    // 敌人AI：向玩家移动
+                    const dx = gameState.player.x - enemy.x;
+                    const dy = gameState.player.y - enemy.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance > 0) {
+                        enemy.x += (dx / distance) * enemy.speed * 0.5;
+                        enemy.y += (dy / distance) * enemy.speed * 0.5;
+                    }
+                    
+                    // 敌人攻击冷却
+                    if (enemy.attackCooldown > 0) {
+                        enemy.attackCooldown--;
+                    }
+                    
+                    // 敌人攻击玩家
+                    if (distance < 50 && enemy.attackCooldown === 0) {
+                        gameState.health -= enemy.type === 'goblin' ? 5 : enemy.type === 'skeleton' ? 10 : 15;
+                        enemy.attackCooldown = 60;
+                        updateHealth();
+                        
+                        // 创建受伤效果
+                        for (let j = 0; j < 5; j++) {
+                            gameState.particles.push({
+                                x: gameState.player.x,
+                                y: gameState.player.y,
+                                vx: Math.random() * 6 - 3,
+                                vy: Math.random() * 6 - 3,
+                                size: Math.random() * 4 + 2,
+                                color: '#ff0000',
+                                life: 20
+                            });
+                        }
+                    }
+                    
+                    // 敌人死亡
+                    if (enemy.health <= 0) {
+                        gameState.enemies.splice(i, 1);
+                        spawnEnemy();
+                    }
+                }
+            }
+
+            // 更新粒子
+            function updateParticles() {
+                for (let i = gameState.particles.length - 1; i >= 0; i--) {
+                    const particle = gameState.particles[i];
+                    
+                    particle.x += particle.vx;
+                    particle.y += particle.vy;
+                    particle.vy += 0.1; // 重力
+                    particle.life--;
+                    
+                    if (particle.life <= 0) {
+                        gameState.particles.splice(i, 1);
+                    }
+                }
+            }
+
+            // 绘制平台
+            function drawPlatforms() {
+                gameState.platforms.forEach(platform => {
+                    ctx.fillStyle = platform.color;
+                    ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+                    
+                    // 平台边框
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(platform.x, platform.y, platform.width, platform.height);
+                });
+            }
+
+            // 绘制玩家
+            function drawPlayer() {
+                ctx.save();
+                ctx.translate(gameState.player.x, gameState.player.y);
+                
+                // 玩家身体
+                ctx.fillStyle = '#4a4aff';
+                ctx.fillRect(-gameState.player.width / 2, -gameState.player.height / 2, 
+                            gameState.player.width, gameState.player.height);
+                
+                // 玩家细节
+                ctx.fillStyle = '#2a2a9a';
+                ctx.fillRect(-gameState.player.width / 2 + 5, -gameState.player.height / 2 + 5, 
+                            gameState.player.width - 10, 15);
+                
+                // 玩家面部
+                ctx.fillStyle = '#ffcc99';
+                ctx.beginPath();
+                ctx.arc(0, -gameState.player.height / 2 + 20, 10, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 武器
+                ctx.fillStyle = '#cccccc';
+                if (gameState.player.facing === 'right') {
+                    ctx.fillRect(gameState.player.width / 2, -5, 20, 10);
+                } else {
+                    ctx.fillRect(-gameState.player.width / 2 - 20, -5, 20, 10);
+                }
+                
+                // 魔法光环
+                if (gameState.player.attackCooldown > 0) {
+                    const magicColors = {
+                        fire: '#ff3300',
+                        ice: '#00ccff',
+                        lightning: '#ffcc00'
+                    };
+                    
+                    ctx.strokeStyle = magicColors[gameState.player.magicType];
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, gameState.player.width / 2 + 10, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                
+                ctx.restore();
+            }
+
+            // 绘制敌人
+            function drawEnemies() {
+                gameState.enemies.forEach(enemy => {
+                    ctx.save();
+                    ctx.translate(enemy.x, enemy.y);
+                    
+                    // 根据敌人类型设置颜色
+                    if (enemy.type === 'goblin') {
+                        ctx.fillStyle = '#00aa00';
+                    } else if (enemy.type === 'skeleton') {
+                        ctx.fillStyle = '#cccccc';
+                    } else {
+                        ctx.fillStyle = '#aa00aa';
+                    }
+                    
+                    // 敌人身体
+                    ctx.beginPath();
+                    ctx.arc(0, 0, enemy.width / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 敌人眼睛
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(-8, -5, 3, 0, Math.PI * 2);
+                    ctx.arc(8, -5, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 生命条
+                    const healthPercent = enemy.health / enemy.maxHealth;
+                    ctx.fillStyle = '#ff0000';
+                    ctx.fillRect(-enemy.width / 2, -enemy.height / 2 - 10, enemy.width, 5);
+                    ctx.fillStyle = '#00ff00';
+                    ctx.fillRect(-enemy.width / 2, -enemy.height / 2 - 10, enemy.width * healthPercent, 5);
+                    
+                    ctx.restore();
+                });
+            }
+
+            // 绘制粒子
+            function drawParticles() {
+                gameState.particles.forEach(particle => {
+                    ctx.fillStyle = particle.color;
+                    ctx.beginPath();
+                    ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+
+            // 事件监听器
+            startButton.addEventListener('click', () => {
+                showScreen('playing');
+            });
+
+            restartButton.addEventListener('click', () => {
+                showScreen('playing');
+            });
+
+            menuButton.addEventListener('click', () => {
+                showScreen('start');
+            });
+
+            // 键盘控制
+            window.addEventListener('keydown', (e) => {
+                gameState.keys[e.key] = true;
+                
+                // 防止空格键滚动页面
+                if (e.key === ' ' && gameState.current === 'playing') {
+                    e.preventDefault();
+                }
+            });
+
+            window.addEventListener('keyup', (e) => {
+                gameState.keys[e.key] = false;
+            });
+
+            // 触屏控制 - 虚拟摇杆
+            let joystickStartX = 0;
+            let joystickStartY = 0;
+
+            joystickArea.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const rect = joystickArea.getBoundingClientRect();
+                
+                joystickStartX = rect.left + rect.width / 2;
+                joystickStartY = rect.top + rect.height / 2;
+                
+                gameState.touch.joystickActive = true;
+                updateJoystick(touch.clientX, touch.clientY);
+            });
+
+            document.addEventListener('touchmove', (e) => {
+                if (gameState.touch.joystickActive) {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    updateJoystick(touch.clientX, touch.clientY);
+                }
+            }, { passive: false });
+
+            document.addEventListener('touchend', (e) => {
+                if (gameState.touch.joystickActive) {
+                    gameState.touch.joystickActive = false;
+                    gameState.touch.joystickX = 0;
+                    gameState.touch.joystickY = 0;
+                    joystickHandle.style.transform = 'translate(-50%, -50%)';
+                }
+            });
+
+            function updateJoystick(touchX, touchY) {
+                const dx = touchX - joystickStartX;
+                const dy = touchY - joystickStartY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const maxDistance = joystickArea.clientWidth / 2 - joystickHandle.clientWidth / 2;
+                
+                const angle = Math.atan2(dy, dx);
+                const limitedDistance = Math.min(distance, maxDistance);
+                
+                const joyX = Math.cos(angle) * limitedDistance;
+                const joyY = Math.sin(angle) * limitedDistance;
+                
+                joystickHandle.style.transform = `translate(${joyX}px, ${joyY}px)`;
+                
+                // 标准化摇杆输入 (-1 到 1)
+                gameState.touch.joystickX = limitedDistance > 10 ? dx / maxDistance : 0;
+                gameState.touch.joystickY = limitedDistance > 10 ? dy / maxDistance : 0;
+            }
+
+            // 触屏按钮
+            jumpBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                gameState.touch.jumpPressed = true;
+            });
+
+            attackBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                gameState.touch.attackPressed = true;
+            });
+
+            magicBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                gameState.touch.magicPressed = true;
+            });
+
+            // 防止页面滚动
+            document.addEventListener('touchmove', (e) => {
+                if (gameState.current === 'playing') {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+
+            // 窗口大小变化时调整Canvas
+            window.addEventListener('resize', resizeCanvas);
+  <!-- 推广栏 -->
+  
+<!-- 游戏家顶部导航 -->
+<a class="yxj-promo-home" href="/" title="更多游戏">🏠 更多游戏</a>
+
+<!-- 抖音风格左下角作者信息 -->
+<div class="tiktok-author-info" id="tiktok-author-info">
+  <div class="tiktok-author-row">
+    <div class="tiktok-author-avatar" id="author-avatar" onclick="openAuthorProfile()">👤</div>
+    <div class="tiktok-author-details">
+      <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">游戏玩家</span>
+      <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="c1234b72-94c4-4512-bb3f-e61a43244329" onclick="toggleFollow()">
+        <span class="follow-icon">+</span> 关注
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TikTok风格右侧互动栏 -->
+<div class="tiktok-sidebar">
+  <div class="tiktok-action" id="stat-like-btn" onclick="likeGame()">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+    </div>
+    <span class="tiktok-count" id="stat-likes">0</span>
+  </div>
+  <div class="tiktok-action" id="stat-fav-btn" onclick="toggleFavorite()">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+    </div>
+  </div>
+  <div class="tiktok-action" onclick="openSharePanel()">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+    </div>
+  </div>
+  <div class="tiktok-action tiktok-info" title="游玩次数">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+    </div>
+    <span class="tiktok-count" id="stat-plays">0</span>
+  </div>
+</div>
+
+<!-- 关注弹窗 -->
+<div id="promo-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999999;align-items:center;justify-content:center;" onclick="document.getElementById('promo-modal').style.display='none'">
+  <div style="background:transparent;border-radius:12px;padding:10px;width:90%;max-width:400px;text-align:center;position:relative;" onclick="event.stopPropagation()">
+    <button onclick="document.getElementById('promo-modal').style.display='none'" style="position:absolute;right:0;top:0;border:none;background:rgba(0,0,0,0.5);width:28px;height:28px;border-radius:50%;font-size:18px;cursor:pointer;color:#fff;z-index:1;">×</button>
+    <img src="/images/wechat-qrcode.png" style="width:100%;height:auto;display:block;border-radius:12px;">
+  </div>
+</div>
+
+<!-- 游戏家推广栏 -->
+<div class="yxj-promo-bar" id="yxj-promo" onclick="showPromoModal()" style="cursor:pointer;">
+  <button class="yxj-promo-close" onclick="event.stopPropagation();document.getElementById('yxj-promo').classList.add('yxj-hidden');document.body.style.paddingBottom='0';">×</button>
+  <div class="yxj-promo-qr">
+    <img src="/images/getqrcode.png" alt="公众号">
+  </div>
+  <div class="yxj-promo-info">
+    <strong>🎮 关注「游戏开发技术教程」</strong>
+    <span>一句话免费生成你的专属游戏！</span>
+  </div>
+</div>
+
+<!-- 分享面板 -->
+<div id="share-panel" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999999;align-items:flex-end;justify-content:center;" onclick="closeSharePanel()">
+  <div style="background:#fff;border-radius:16px 16px 0 0;padding:20px;width:100%;max-width:500px;text-align:center;position:relative;max-height:80vh;overflow-y:auto;" onclick="event.stopPropagation()">
+    <div style="width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 15px;"></div>
+    <h3 style="margin:0 0 15px;font-size:18px;">📤 分享游戏</h3>
+    <div style="background:#f5f5f5;border-radius:8px;padding:12px;margin-bottom:15px;">
+      <textarea id="share-text" readonly style="width:100%;border:none;background:transparent;font-size:14px;resize:none;min-height:80px;outline:none;"></textarea>
+    </div>
+    <button onclick="copyShareText()" style="width:100%;padding:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;margin-bottom:10px;">📋 复制分享内容</button>
+    <button onclick="closeSharePanel()" style="width:100%;padding:12px;background:#f0f0f0;color:#666;border:none;border-radius:8px;font-size:14px;cursor:pointer;">取消</button>
+  </div>
+</div>
+
+<!-- 作者主页弹窗 -->
+<div id="author-profile-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999999;align-items:center;justify-content:center;" onclick="closeAuthorProfile()">
+  <div style="background:#fff;border-radius:12px;padding:20px;width:90%;max-width:360px;text-align:center;position:relative;" onclick="event.stopPropagation()">
+    <button onclick="closeAuthorProfile()" style="position:absolute;right:10px;top:10px;border:none;background:none;font-size:24px;cursor:pointer;color:#999;">×</button>
+    <div id="author-profile-content" style="min-height:150px;"></div>
+  </div>
+</div>
+
+<script>
+// 获取游戏ID和作者信息
+const gameId = 'f93a6b96-3108-4b12-b241-217f457dca15';
+const gameTitle = '最终幻想X-Way';
+const authorToken = 'c1234b72-94c4-4512-bb3f-e61a43244329';
+const authorName = '游戏玩家';
+const API_BASE = '/api/games';
+
+// 调试日志
+console.log('[DEBUG] 游戏页面初始化');
+console.log('[DEBUG] gameId:', gameId);
+console.log('[DEBUG] authorToken:', authorToken);
+console.log('[DEBUG] authorName:', authorName);
+
+// 辅助函数
+function showPromoModal() {
+  console.log('[DEBUG] showPromoModal 被调用');
+  document.getElementById('promo-modal').style.display = 'flex';
+}
+
+function getUserToken() {
+  return localStorage.getItem('aigame-user-token') || '';
+}
+
+function getAuthHeaders() {
+  const headers = { 'Content-Type': 'application/json' };
+  const token = getUserToken();
+  if (token) {
+    headers['X-User-Token'] = token;
+  }
+  return headers;
+}
+
+// 记录游玩
+(function(){
+  try {
+    fetch(API_BASE + '/' + gameId + '/play', { method: 'POST', headers: getAuthHeaders() }).catch(function(){});
+  } catch(e) {}
+})();
+
+// 获取统计数据和用户状态
+function loadStats() {
+  // 获取游戏统计
+  fetch(API_BASE + '/' + gameId, { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        const likesEl = document.getElementById('stat-likes');
+        const count = data.game.likes_count || data.game.like_count || 0;
+        likesEl.innerText = count;
+        document.getElementById('stat-plays').innerText = data.game.play_count || 0;
+      }
+    })
+    .catch(err => console.error('加载统计失败', err));
+  
+  // 获取用户点赞状态
+  const userToken = getUserToken();
+  if (userToken) {
+    fetch(API_BASE + '/' + gameId + '/like-status', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.liked) {
+          document.getElementById('stat-like-btn').classList.add('liked');
+        }
+      })
+      .catch(() => {});
+    
+    // 获取用户收藏状态
+    fetch(API_BASE + '/' + gameId + '/favorite-status', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.favorited) {
+          document.getElementById('stat-fav-btn').classList.add('favorited');
+        }
+      })
+      .catch(() => {});
+    
+    // 检查关注状态
+    if (authorToken && authorToken !== userToken) {
+      checkFollowStatus();
+    } else if (authorToken === userToken) {
+      // 隐藏自己的关注按钮
+      const followBtn = document.getElementById('tiktok-follow-btn');
+      if (followBtn) followBtn.style.display = 'none';
+    }
+  }
+}
+
+// 点赞（支持取消）
+function likeGame() {
+  const btn = document.getElementById('stat-like-btn');
+  const isLiked = btn.classList.contains('liked');
+  const countEl = document.getElementById('stat-likes');
+  let count = parseInt(countEl.innerText) || 0;
+  
+  // 乐观UI更新
+  if (isLiked) {
+    btn.classList.remove('liked');
+    countEl.innerText = Math.max(0, count - 1);
+  } else {
+    btn.classList.add('liked');
+    countEl.innerText = count + 1;
+  }
+  
+  fetch(API_BASE + '/' + gameId + '/like', { 
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        // 更新实际数量
+        countEl.innerText = data.like_count || data.likeCount || countEl.innerText;
+        if (data.liked !== undefined) {
+          btn.classList.toggle('liked', data.liked);
+        }
+      } else {
+        // 失败回滚
+        btn.classList.toggle('liked', isLiked);
+        countEl.innerText = count;
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      btn.classList.toggle('liked', isLiked);
+      countEl.innerText = count;
+    });
+}
+
+// 收藏
+function toggleFavorite() {
+  const btn = document.getElementById('stat-fav-btn');
+  const isFav = btn.classList.contains('favorited');
+  
+  // 乐观UI切换
+  btn.classList.toggle('favorited', !isFav);
+  
+  fetch(API_BASE + '/' + gameId + '/favorite', { 
+    method: 'POST', 
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.favorited !== undefined) {
+        btn.classList.toggle('favorited', data.favorited);
+      }
+    })
+    .catch(() => {
+      // 失败回滚
+      btn.classList.toggle('favorited', isFav);
+    });
+}
+
+// 打开分享面板
+function openSharePanel() {
+  const url = window.location.href;
+  const shareText = '🎮 我发现了一个有趣的AI游戏：「' + gameTitle + '」\n\n👆 点击链接立即游玩：\n' + url + '\n\n💡 关注公众号「游戏开发技术教程」，一句话免费生成你的专属游戏！';
+  document.getElementById('share-text').value = shareText;
+  document.getElementById('share-panel').style.display = 'flex';
+}
+
+// 关闭分享面板
+function closeSharePanel() {
+  document.getElementById('share-panel').style.display = 'none';
+}
+
+// 复制分享内容
+function copyShareText() {
+  const text = document.getElementById('share-text').value;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('分享内容已复制，快去分享给好友吧！');
+      closeSharePanel();
+    }).catch(() => {
+      fallbackCopy(text);
+    });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textarea);
+  alert('分享内容已复制，快去分享给好友吧！');
+  closeSharePanel();
+}
+
+// 打开作者主页
+function openAuthorProfile() {
+  console.log('[DEBUG] openAuthorProfile 被调用, authorToken:', authorToken);
+  if (!authorToken) {
+    console.log('[DEBUG] authorToken为空，显示推广弹窗');
+    showPromoModal();
+    return;
+  }
+  
+  console.log('[DEBUG] 显示作者主页弹窗');
+  const modal = document.getElementById('author-profile-modal');
+  const content = document.getElementById('author-profile-content');
+  content.innerHTML = '<div style="padding:20px;color:#999;">加载中...</div>';
+  modal.style.display = 'flex';
+  
+  // 加载作者信息
+  Promise.all([
+    fetch('/api/users/' + authorToken + '/profile', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/users/' + authorToken + '/follow-stats', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/users/' + authorToken + '/games?limit=4', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({ games: [] }))
+  ]).then(([profileData, statsData, gamesData]) => {
+    const nickname = (profileData.profile && profileData.profile.nickname) || authorName || '游戏创作者';
+    const followers = statsData.followerCount || statsData.followers || 0;
+    const following = statsData.followingCount || statsData.following || 0;
+    const games = gamesData.games || [];
+    
+    let gamesHtml = '';
+    if (games.length > 0) {
+      gamesHtml = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:15px;">' +
+        games.slice(0, 4).map(g => '<a href="/g/' + g.id.substring(0,2) + '/' + g.id + '.html" style="background:#f5f5f5;border-radius:8px;padding:10px;text-decoration:none;color:#333;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎮 ' + (g.title || '未命名').substring(0, 10) + '</a>').join('') +
+        '</div>';
+    }
+    
+    content.innerHTML = 
+      '<div style="margin-bottom:15px;">' +
+        '<div style="width:60px;height:60px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:28px;">👤</div>' +
+        '<div style="font-size:18px;font-weight:600;color:#333;">' + nickname + '</div>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:center;gap:30px;margin-bottom:15px;">' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + following + '</strong><span style="color:#999;font-size:12px;">关注</span></div>' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + followers + '</strong><span style="color:#999;font-size:12px;">粉丝</span></div>' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + games.length + '</strong><span style="color:#999;font-size:12px;">作品</span></div>' +
+      '</div>' +
+      '<button id="profile-follow-btn" onclick="toggleFollowFromProfile()" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>' +
+      gamesHtml;
+    
+    // 检查关注状态
+    checkFollowStatusForProfile();
+  }).catch(() => {
+    content.innerHTML = '<div style="padding:20px;color:#999;">加载失败</div>';
+  });
+}
+
+// 关闭作者主页
+function closeAuthorProfile() {
+  document.getElementById('author-profile-modal').style.display = 'none';
+}
+
+// 检查关注状态
+function checkFollowStatus() {
+  if (!authorToken) return;
+  fetch('/api/users/' + authorToken + '/follow-status', { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.following) {
+        const btn = document.getElementById('tiktok-follow-btn');
+        if (btn) {
+          btn.classList.add('following');
+          btn.innerHTML = '✓ 已关注';
+        }
+      }
+    })
+    .catch(() => {});
+}
+
+// 检查关注状态（主页弹窗）
+function checkFollowStatusForProfile() {
+  if (!authorToken) return;
+  fetch('/api/users/' + authorToken + '/follow-status', { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(data => {
+      const btn = document.getElementById('profile-follow-btn');
+      if (btn && data.success && data.following) {
+        btn.style.background = '#eee';
+        btn.style.color = '#666';
+        btn.innerHTML = '✓ 已关注';
+      }
+    })
+    .catch(() => {});
+}
+
+// 切换关注状态
+function toggleFollow() {
+  console.log('[DEBUG] toggleFollow 被调用, authorToken:', authorToken);
+  if (!authorToken) {
+    console.log('[DEBUG] authorToken为空，显示推广弹窗');
+    showPromoModal();
+    return;
+  }
+  
+  const userToken = getUserToken();
+  console.log('[DEBUG] userToken:', userToken);
+  if (!userToken) {
+    alert('请先登录');
+    return;
+  }
+  if (authorToken === userToken) {
+    alert('不能关注自己哦');
+    return;
+  }
+  
+  const btn = document.getElementById('tiktok-follow-btn');
+  const isFollowing = btn.classList.contains('following');
+  
+  // 乐观更新
+  if (isFollowing) {
+    btn.classList.remove('following');
+    btn.innerHTML = '<span class="follow-icon">+</span> 关注';
+  } else {
+    btn.classList.add('following');
+    btn.innerHTML = '✓ 已关注';
+  }
+  
+  fetch('/api/users/' + authorToken + '/follow', {
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        btn.classList.toggle('following', data.following);
+        btn.innerHTML = data.following ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+      } else {
+        // 回滚
+        btn.classList.toggle('following', isFollowing);
+        btn.innerHTML = isFollowing ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+      }
+    })
+    .catch(() => {
+      btn.classList.toggle('following', isFollowing);
+      btn.innerHTML = isFollowing ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+    });
+}
+
+// 从主页弹窗切换关注
+function toggleFollowFromProfile() {
+  if (!authorToken) return;
+  
+  const userToken = getUserToken();
+  if (!userToken) {
+    alert('请先登录');
+    return;
+  }
+  
+  const btn = document.getElementById('profile-follow-btn');
+  const isFollowing = btn.innerHTML.includes('已关注');
+  
+  // 乐观更新
+  if (isFollowing) {
+    btn.style.background = '#fe2c55';
+    btn.style.color = '#fff';
+    btn.innerHTML = '+ 关注';
+  } else {
+    btn.style.background = '#eee';
+    btn.style.color = '#666';
+    btn.innerHTML = '✓ 已关注';
+  }
+  
+  fetch('/api/users/' + authorToken + '/follow', {
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (data.following) {
+          btn.style.background = '#eee';
+          btn.style.color = '#666';
+          btn.innerHTML = '✓ 已关注';
+        } else {
+          btn.style.background = '#fe2c55';
+          btn.style.color = '#fff';
+          btn.innerHTML = '+ 关注';
+        }
+        // 同步更新底部的关注按钮
+        const tikBtn = document.getElementById('tiktok-follow-btn');
+        if (tikBtn) {
+          tikBtn.classList.toggle('following', data.following);
+          tikBtn.innerHTML = data.following ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+        }
+      }
+    })
+    .catch(() => {});
+}
+
+// 初始化
+window.addEventListener('load', loadStats);
+</script>
+
+</body>
+</html>
