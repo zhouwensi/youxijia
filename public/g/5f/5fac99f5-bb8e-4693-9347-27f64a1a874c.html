@@ -7,11 +7,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#1a1a2e">
-  <meta name="description" content="搜打撤slg - AI一句话生成的游戏">
-  <meta property="og:title" content="搜打撤SLG - AI游戏">
+  <meta name="description" content="贪吃蛇 - AI一句话生成的游戏">
+  <meta property="og:title" content="贪吃蛇 - AI游戏">
   <meta property="og:description" content="这个游戏由AI一句话生成！关注公众号「游戏开发技术教程」，你也可以免费生成游戏！">
   <meta property="og:type" content="website">
-  <title>搜打撤SLG - AI游戏</title>
+  <title>贪吃蛇 - AI游戏</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
   <!-- 推广栏样式 -->
   <style>
@@ -238,167 +238,13 @@
   background: rgba(251, 191, 36, 0.8) !important;
   border-color: #fbbf24 !important;
 }
-.tiktok-action.tiktok-info-only {
+.tiktok-action.tiktok-info {
   cursor: default !important;
-  opacity: 0.7 !important;
-  pointer-events: none !important;
+  opacity: 0.8 !important;
 }
 /* 为推广栏预留底部空间 */
 body {
   padding-bottom: 65px !important;
-}
-/* ====== 留言板样式 ====== */
-.game-comments-section {
-  position: fixed !important;
-  bottom: 60px !important;
-  left: 0 !important;
-  right: 0 !important;
-  background: #fff !important;
-  z-index: 999997 !important;
-  max-height: 0 !important;
-  overflow: hidden !important;
-  transition: max-height 0.3s ease !important;
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.15) !important;
-  border-radius: 16px 16px 0 0 !important;
-}
-.game-comments-section.expanded {
-  max-height: 60vh !important;
-}
-.comments-header {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  padding: 12px 16px !important;
-  border-bottom: 1px solid #eee !important;
-  background: #f8f9fa !important;
-}
-.comments-title {
-  font-size: 16px !important;
-  font-weight: 600 !important;
-  color: #333 !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-}
-.comments-close-btn {
-  background: none !important;
-  border: none !important;
-  font-size: 20px !important;
-  cursor: pointer !important;
-  color: #999 !important;
-  padding: 4px !important;
-}
-.comments-body {
-  max-height: calc(60vh - 120px) !important;
-  overflow-y: auto !important;
-  padding: 12px 16px !important;
-}
-.comment-item {
-  padding: 12px 0 !important;
-  border-bottom: 1px solid #f0f0f0 !important;
-}
-.comment-item:last-child {
-  border-bottom: none !important;
-}
-.comment-header {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  margin-bottom: 6px !important;
-}
-.comment-author-info {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-}
-.comment-avatar {
-  width: 28px !important;
-  height: 28px !important;
-  border-radius: 50% !important;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
-  color: #fff !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-.comment-author-name {
-  font-weight: 600 !important;
-  color: #333 !important;
-  font-size: 14px !important;
-}
-.comment-time {
-  color: #999 !important;
-  font-size: 12px !important;
-}
-.comment-content {
-  color: #333 !important;
-  font-size: 14px !important;
-  line-height: 1.5 !important;
-  word-break: break-word !important;
-}
-.comment-delete-btn {
-  background: none !important;
-  border: none !important;
-  color: #999 !important;
-  font-size: 12px !important;
-  cursor: pointer !important;
-  padding: 2px 8px !important;
-}
-.comment-delete-btn:hover {
-  color: #ef4444 !important;
-}
-.comments-input-area {
-  display: flex !important;
-  gap: 8px !important;
-  padding: 12px 16px !important;
-  border-top: 1px solid #eee !important;
-  background: #fff !important;
-}
-.comments-input-area textarea {
-  flex: 1 !important;
-  border: 1px solid #ddd !important;
-  border-radius: 8px !important;
-  padding: 10px 12px !important;
-  font-size: 14px !important;
-  resize: none !important;
-  height: 40px !important;
-  min-height: 40px !important;
-}
-.comments-input-area button {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
-  color: #fff !important;
-  border: none !important;
-  padding: 10px 20px !important;
-  border-radius: 8px !important;
-  font-size: 14px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  white-space: nowrap !important;
-}
-.comments-input-area button:disabled {
-  opacity: 0.6 !important;
-  cursor: not-allowed !important;
-}
-.comments-login-hint {
-  text-align: center !important;
-  padding: 12px 16px !important;
-  color: #999 !important;
-  font-size: 14px !important;
-  border-top: 1px solid #eee !important;
-}
-#comments-load-more-btn {
-  display: block !important;
-  width: 100% !important;
-  padding: 10px !important;
-  background: #f5f5f5 !important;
-  border: none !important;
-  color: #666 !important;
-  font-size: 14px !important;
-  cursor: pointer !important;
-  margin-top: 8px !important;
-  border-radius: 8px !important;
 }
 </style>
   <!-- 原游戏head内容 -->
@@ -407,116 +253,125 @@ body {
     
     
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #0a0a2a 0%, #1a1a3a 100%);
-            color: #e0e0ff;
-            overflow: hidden;
-            touch-action: manipulation;
-            user-select: none;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: none;
         }
-        #gameContainer {
+
+        body {
             width: 100vw;
             height: 100vh;
+            overflow: hidden;
+            background: #0a0a14;
+            font-family: 'Arial', sans-serif;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            position: relative;
         }
-        .screen {
+
+        #gameCanvas {
+            display: block;
+            background-color: #111122;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            z-index: 10;
+            color: white;
             text-align: center;
             padding: 20px;
-            display: none;
         }
-        .active { display: flex; }
+
+        .hidden {
+            display: none !important;
+        }
+
         h1 {
-            font-size: 3.5rem;
-            margin-bottom: 30px;
-            text-shadow: 0 0 15px #4a6fff;
-            color: #7a9fff;
+            font-size: min(8vw, 4rem);
+            margin-bottom: 20px;
+            color: #4CAF50;
+            text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
         }
-        h2 { font-size: 2.5rem; margin-bottom: 20px; color: #8ab4ff; }
+
+        h2 {
+            font-size: min(6vw, 3rem);
+            margin-bottom: 30px;
+            color: #FF9800;
+        }
+
         p {
-            font-size: 1.2rem;
-            max-width: 600px;
-            line-height: 1.6;
-            margin-bottom: 30px;
-            color: #b0c4ff;
+            font-size: min(4vw, 1.5rem);
+            margin-bottom: 20px;
+            color: #ccc;
+            max-width: 500px;
         }
+
+        .score {
+            font-size: min(5vw, 2.5rem);
+            color: #FFEB3B;
+            margin: 20px 0;
+        }
+
         .btn {
-            background: linear-gradient(to bottom, #3a5fcf 0%, #2a4fbf 100%);
+            background: linear-gradient(145deg, #4CAF50, #2E7D32);
             color: white;
             border: none;
             padding: 15px 40px;
-            font-size: 1.3rem;
-            border-radius: 10px;
+            font-size: min(4vw, 1.5rem);
+            border-radius: 50px;
             cursor: pointer;
-            margin: 10px;
+            margin-top: 20px;
+            transition: all 0.3s;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            transition: all 0.2s;
         }
+
         .btn:hover, .btn:active {
-            background: linear-gradient(to bottom, #4a6fdf 0%, #3a5fcf 100%);
-            transform: translateY(-2px);
+            background: linear-gradient(145deg, #66BB6A, #388E3C);
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
         }
-        #gameCanvas {
-            background-color: #0f0f2a;
-            border: 3px solid #3a5fcf;
-            border-radius: 10px;
-            box-shadow: 0 0 30px rgba(58, 95, 207, 0.5);
-            max-width: 95%;
-            max-height: 70vh;
-        }
-        #ui {
-            margin-top: 20px;
+
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
             display: flex;
-            justify-content: space-around;
-            width: 90%;
-            max-width: 800px;
-            flex-wrap: wrap;
-        }
-        .ui-item {
-            background: rgba(30, 30, 60, 0.8);
-            padding: 10px 20px;
-            border-radius: 8px;
-            margin: 5px;
-            font-size: 1.2rem;
-            min-width: 150px;
-        }
-        #controls {
-            display: flex;
-            margin-top: 20px;
-            gap: 20px;
-            flex-wrap: wrap;
             justify-content: center;
+            gap: 20px;
+            z-index: 5;
         }
+
         .control-btn {
-            background: rgba(58, 95, 207, 0.7);
+            width: 70px;
+            height: 70px;
+            background-color: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
             color: white;
-            border: none;
-            padding: 12px 25px;
-            font-size: 1.1rem;
-            border-radius: 8px;
+            font-size: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
         }
-        #endScore {
-            font-size: 2rem;
-            color: #ffcc00;
-            margin: 20px 0;
-        }
-        @media (max-width: 768px) {
-            h1 { font-size: 2.5rem; }
-            h2 { font-size: 2rem; }
-            .btn { padding: 12px 30px; font-size: 1.1rem; }
-            .ui-item { font-size: 1rem; min-width: 120px; }
+
+        @media (min-width: 768px) {
+            .controls {
+                display: none;
+            }
         }
     </style>
 
@@ -524,327 +379,271 @@ body {
 <body>
   <!-- 原游戏body内容 -->
   
-    <div id="gameContainer">
-        <div id="startScreen" class="screen active">
-            <h1>搜打撤SLG</h1>
-            <p>指挥你的部队在战场上执行三种核心指令：<br>
-            <strong>搜索</strong> - 探索未知区域，发现敌人<br>
-            <strong>打击</strong> - 攻击发现的敌人<br>
-            <strong>撤退</strong> - 规避危险，保存实力<br>
-            合理运用策略，击败所有敌人！</p>
-            <button id="startBtn" class="btn">开始游戏</button>
-            <p style="margin-top: 30px; font-size: 1rem; color: #8a9fff;">
-                操作：键盘 1/2/3 或 点击下方按钮<br>
-                手机可直接触屏操作
-            </p>
-        </div>
-        <div id="gameScreen" class="screen">
-            <canvas id="gameCanvas"></canvas>
-            <div id="ui">
-                <div class="ui-item">回合: <span id="turnCount">0</span></div>
-                <div class="ui-item">部队: <span id="troopCount">5</span></div>
-                <div class="ui-item">敌人: <span id="enemyCount">8</span></div>
-                <div class="ui-item">指令: <span id="command">无</span></div>
-            </div>
-            <div id="controls">
-                <button id="searchBtn" class="control-btn">搜索 (1)</button>
-                <button id="attackBtn" class="control-btn">打击 (2)</button>
-                <button id="retreatBtn" class="control-btn">撤退 (3)</button>
-            </div>
-        </div>
-        <div id="endScreen" class="screen">
-            <h2>游戏结束</h2>
-            <p id="endMessage"></p>
-            <div id="endScore"></div>
-            <button id="restartBtn" class="btn">重新开始</button>
-        </div>
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="startOverlay" class="overlay">
+        <h1>贪吃蛇</h1>
+        <p>使用方向键或屏幕按钮控制蛇移动</p>
+        <p>吃到食物可以增加长度和得分</p>
+        <p>撞到墙壁或自己的身体游戏结束</p>
+        <button id="startBtn" class="btn">开始游戏</button>
+    </div>
+
+    <div id="endOverlay" class="overlay hidden">
+        <h2>游戏结束</h2>
+        <div id="finalScore" class="score">得分: 0</div>
+        <p id="gameMessage">再接再厉！</p>
+        <button id="restartBtn" class="btn">重新开始</button>
+    </div>
+
+    <div class="controls">
+        <div class="control-btn" id="upBtn">↑</div>
+        <div class="control-btn" id="leftBtn">←</div>
+        <div class="control-btn" id="downBtn">↓</div>
+        <div class="control-btn" id="rightBtn">→</div>
     </div>
 
     <script>
-        const screens = {
-            start: document.getElementById('startScreen'),
-            game: document.getElementById('gameScreen'),
-            end: document.getElementById('endScreen')
-        };
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const turnCountEl = document.getElementById('turnCount');
-        const troopCountEl = document.getElementById('troopCount');
-        const enemyCountEl = document.getElementById('enemyCount');
-        const commandEl = document.getElementById('command');
-        const endMessageEl = document.getElementById('endMessage');
-        const endScoreEl = document.getElementById('endScore');
-        
-        let gameState = {
-            turn: 0,
-            troops: 5,
-            enemies: 8,
-            command: 'none',
-            gameOver: false,
-            win: false,
-            map: [],
-            playerPos: { x: 0, y: 0 },
-            enemyPositions: [],
-            fog: [],
-            mapSize: 12,
-            cellSize: 40
-        };
-        
+        const startOverlay = document.getElementById('startOverlay');
+        const endOverlay = document.getElementById('endOverlay');
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const finalScore = document.getElementById('finalScore');
+        const gameMessage = document.getElementById('gameMessage');
+
+        const upBtn = document.getElementById('upBtn');
+        const leftBtn = document.getElementById('leftBtn');
+        const downBtn = document.getElementById('downBtn');
+        const rightBtn = document.getElementById('rightBtn');
+
+        const GRID_SIZE = 20;
+        let gridWidth, gridHeight;
+        let snake = [];
+        let food = {};
+        let direction = 'right';
+        let nextDirection = 'right';
+        let score = 0;
+        let gameSpeed = 120;
+        let gameLoop;
+        let gameRunning = false;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            gridWidth = Math.floor(canvas.width / GRID_SIZE);
+            gridHeight = Math.floor(canvas.height / GRID_SIZE);
+            
+            if (gameRunning) {
+                drawGame();
+            }
+        }
+
         function initGame() {
-            gameState = {
-                turn: 0,
-                troops: 5,
-                enemies: 8,
-                command: 'none',
-                gameOver: false,
-                win: false,
-                map: [],
-                playerPos: { x: Math.floor(gameState.mapSize/2), y: Math.floor(gameState.mapSize/2) },
-                enemyPositions: [],
-                fog: [],
-                mapSize: 12,
-                cellSize: Math.min(40, Math.floor(Math.min(window.innerWidth*0.8, window.innerHeight*0.6)/12))
-            };
+            snake = [
+                {x: Math.floor(gridWidth / 4), y: Math.floor(gridHeight / 2)},
+                {x: Math.floor(gridWidth / 4) - 1, y: Math.floor(gridHeight / 2)},
+                {x: Math.floor(gridWidth / 4) - 2, y: Math.floor(gridHeight / 2)}
+            ];
             
-            canvas.width = gameState.mapSize * gameState.cellSize;
-            canvas.height = gameState.mapSize * gameState.cellSize;
+            direction = 'right';
+            nextDirection = 'right';
+            score = 0;
+            gameSpeed = 120;
             
-            for(let y=0; y<gameState.mapSize; y++) {
-                gameState.map[y] = [];
-                gameState.fog[y] = [];
-                for(let x=0; x<gameState.mapSize; x++) {
-                    gameState.map[y][x] = Math.random() > 0.7 ? 'forest' : 'plain';
-                    gameState.fog[y][x] = true;
-                }
-            }
-            
-            gameState.enemyPositions = [];
-            while(gameState.enemyPositions.length < gameState.enemies) {
-                const x = Math.floor(Math.random() * gameState.mapSize);
-                const y = Math.floor(Math.random() * gameState.mapSize);
-                if((x !== gameState.playerPos.x || y !== gameState.playerPos.y) && 
-                   !gameState.enemyPositions.some(e => e.x===x && e.y===y)) {
-                    gameState.enemyPositions.push({x, y, hidden: true});
-                }
-            }
-            
-            revealFog(gameState.playerPos.x, gameState.playerPos.y, 2);
-            updateUI();
-            draw();
+            generateFood();
+            drawGame();
         }
-        
-        function revealFog(centerX, centerY, radius) {
-            for(let y=0; y<gameState.mapSize; y++) {
-                for(let x=0; x<gameState.mapSize; x++) {
-                    const dist = Math.sqrt((x-centerX)**2 + (y-centerY)**2);
-                    if(dist <= radius) gameState.fog[y][x] = false;
-                }
-            }
-        }
-        
-        function executeCommand(cmd) {
-            if(gameState.gameOver) return;
+
+        function generateFood() {
+            let newFood;
+            let onSnake;
             
-            gameState.command = cmd;
-            gameState.turn++;
-            
-            let message = '';
-            const nearbyEnemies = gameState.enemyPositions.filter(e => {
-                const dist = Math.sqrt((e.x-gameState.playerPos.x)**2 + (e.y-gameState.playerPos.y)**2);
-                return dist <= 2 && !e.hidden;
-            });
-            
-            switch(cmd) {
-                case 'search':
-                    revealFog(gameState.playerPos.x, gameState.playerPos.y, 3);
-                    nearbyEnemies.forEach(e => e.hidden = false);
-                    message = '执行搜索：发现附近区域';
-                    break;
-                    
-                case 'attack':
-                    if(nearbyEnemies.length > 0) {
-                        const killed = Math.min(2, nearbyEnemies.length);
-                        for(let i=0; i<killed; i++) {
-                            const idx = gameState.enemyPositions.indexOf(nearbyEnemies[i]);
-                            if(idx > -1) gameState.enemyPositions.splice(idx, 1);
-                        }
-                        gameState.enemies = gameState.enemyPositions.length;
-                        gameState.troops -= Math.floor(Math.random() * 2);
-                        message = `执行打击：消灭${killed}名敌人，部队受损`;
-                    } else {
-                        message = '执行打击：附近没有可见敌人';
-                    }
-                    break;
-                    
-                case 'retreat':
-                    const oldX = gameState.playerPos.x;
-                    const oldY = gameState.playerPos.y;
-                    gameState.playerPos.x = Math.max(0, Math.min(gameState.mapSize-1, oldX + (Math.random()>0.5?1:-1)));
-                    gameState.playerPos.y = Math.max(0, Math.min(gameState.mapSize-1, oldY + (Math.random()>0.5?1:-1)));
-                    revealFog(gameState.playerPos.x, gameState.playerPos.y, 1);
-                    message = '执行撤退：移动位置';
-                    break;
-            }
-            
-            if(gameState.troops <= 0) {
-                gameState.gameOver = true;
-                gameState.win = false;
-                endGame();
-                return;
-            }
-            
-            if(gameState.enemies <= 0) {
-                gameState.gameOver = true;
-                gameState.win = true;
-                endGame();
-                return;
-            }
-            
-            if(cmd !== 'retreat') {
-                const enemyAttack = Math.random() > 0.6;
-                if(enemyAttack && nearbyEnemies.length > 0) {
-                    gameState.troops -= 1;
-                    message += '，遭到敌人反击';
-                }
-            }
-            
-            commandEl.textContent = message;
-            updateUI();
-            draw();
-        }
-        
-        function updateUI() {
-            turnCountEl.textContent = gameState.turn;
-            troopCountEl.textContent = gameState.troops;
-            enemyCountEl.textContent = gameState.enemies;
-        }
-        
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            for(let y=0; y<gameState.mapSize; y++) {
-                for(let x=0; x<gameState.mapSize; x++) {
-                    const cellX = x * gameState.cellSize;
-                    const cellY = y * gameState.cellSize;
-                    
-                    if(gameState.fog[y][x]) {
-                        ctx.fillStyle = '#1a1a3a';
-                        ctx.fillRect(cellX, cellY, gameState.cellSize, gameState.cellSize);
-                        continue;
-                    }
-                    
-                    if(gameState.map[y][x] === 'forest') {
-                        ctx.fillStyle = '#0a5f0a';
-                    } else {
-                        ctx.fillStyle = '#2a4a2a';
-                    }
-                    ctx.fillRect(cellX, cellY, gameState.cellSize, gameState.cellSize);
-                    
-                    ctx.strokeStyle = '#3a5f3a';
-                    ctx.strokeRect(cellX, cellY, gameState.cellSize, gameState.cellSize);
-                }
-            }
-            
-            gameState.enemyPositions.forEach(enemy => {
-                if(!enemy.hidden || !gameState.fog[enemy.y][enemy.x]) {
-                    const cellX = enemy.x * gameState.cellSize;
-                    const cellY = enemy.y * gameState.cellSize;
-                    ctx.fillStyle = enemy.hidden ? '#ff6666' : '#ff0000';
-                    ctx.beginPath();
-                    ctx.arc(cellX + gameState.cellSize/2, cellY + gameState.cellSize/2, gameState.cellSize/3, 0, Math.PI*2);
-                    ctx.fill();
-                    if(!enemy.hidden) {
-                        ctx.strokeStyle = '#ffaaaa';
-                        ctx.lineWidth = 2;
-                        ctx.stroke();
+            do {
+                onSnake = false;
+                newFood = {
+                    x: Math.floor(Math.random() * gridWidth),
+                    y: Math.floor(Math.random() * gridHeight)
+                };
+                
+                for (let segment of snake) {
+                    if (segment.x === newFood.x && segment.y === newFood.y) {
+                        onSnake = true;
+                        break;
                     }
                 }
-            });
+            } while (onSnake);
             
-            const playerX = gameState.playerPos.x * gameState.cellSize;
-            const playerY = gameState.playerPos.y * gameState.cellSize;
-            ctx.fillStyle = '#4a6fff';
+            food = newFood;
+        }
+
+        function drawGame() {
+            ctx.fillStyle = '#111122';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#4CAF50';
+            for (let i = 0; i < snake.length; i++) {
+                const segment = snake[i];
+                const x = segment.x * GRID_SIZE;
+                const y = segment.y * GRID_SIZE;
+                
+                if (i === 0) {
+                    ctx.fillStyle = '#66BB6A';
+                } else {
+                    ctx.fillStyle = '#4CAF50';
+                }
+                
+                ctx.fillRect(x, y, GRID_SIZE - 1, GRID_SIZE - 1);
+                
+                if (i === 0) {
+                    ctx.fillStyle = '#1B5E20';
+                    ctx.fillRect(x + GRID_SIZE * 0.3, y + GRID_SIZE * 0.3, GRID_SIZE * 0.4, GRID_SIZE * 0.4);
+                }
+            }
+            
+            ctx.fillStyle = '#FF5252';
             ctx.beginPath();
-            ctx.moveTo(playerX + gameState.cellSize/2, playerY + gameState.cellSize/4);
-            ctx.lineTo(playerX + gameState.cellSize/4, playerY + 3*gameState.cellSize/4);
-            ctx.lineTo(playerX + 3*gameState.cellSize/4, playerY + 3*gameState.cellSize/4);
-            ctx.closePath();
+            const foodX = food.x * GRID_SIZE + GRID_SIZE / 2;
+            const foodY = food.y * GRID_SIZE + GRID_SIZE / 2;
+            ctx.arc(foodX, foodY, GRID_SIZE / 2 - 2, 0, Math.PI * 2);
             ctx.fill();
-            ctx.strokeStyle = '#aaccff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
             
-            ctx.fillStyle = 'rgba(255,255,255,0.1)';
-            for(let y=0; y<gameState.mapSize; y++) {
-                for(let x=0; x<gameState.mapSize; x++) {
-                    ctx.strokeRect(x*gameState.cellSize, y*gameState.cellSize, gameState.cellSize, gameState.cellSize);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            for (let x = 0; x < gridWidth; x++) {
+                for (let y = 0; y < gridHeight; y++) {
+                    ctx.strokeRect(x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE, GRID_SIZE);
                 }
             }
+            
+            ctx.fillStyle = '#FFEB3B';
+            ctx.font = '24px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(`得分: ${score}`, 20, 35);
+            
+            ctx.fillStyle = '#4CAF50';
+            ctx.font = '18px Arial';
+            ctx.fillText(`长度: ${snake.length}`, 20, 65);
         }
-        
-        function endGame() {
-            const score = gameState.turn * 10 + gameState.troops * 50;
-            if(gameState.win) {
-                endMessageEl.textContent = '胜利！你击败了所有敌人！';
-                endScoreEl.textContent = `得分: ${score}`;
+
+        function updateGame() {
+            direction = nextDirection;
+            
+            const head = {...snake[0]};
+            
+            switch(direction) {
+                case 'up': head.y--; break;
+                case 'down': head.y++; break;
+                case 'left': head.x--; break;
+                case 'right': head.x++; break;
+            }
+            
+            if (head.x < 0 || head.x >= gridWidth || head.y < 0 || head.y >= gridHeight) {
+                gameOver();
+                return;
+            }
+            
+            for (let segment of snake) {
+                if (head.x === segment.x && head.y === segment.y) {
+                    gameOver();
+                    return;
+                }
+            }
+            
+            snake.unshift(head);
+            
+            if (head.x === food.x && head.y === food.y) {
+                score += 10;
+                if (gameSpeed > 60) gameSpeed -= 2;
+                generateFood();
             } else {
-                endMessageEl.textContent = '失败！你的部队全军覆没。';
-                endScoreEl.textContent = `坚持回合: ${gameState.turn}`;
+                snake.pop();
             }
-            screens.game.classList.remove('active');
-            screens.end.classList.add('active');
+            
+            drawGame();
         }
-        
-        function switchScreen(to) {
-            Object.values(screens).forEach(s => s.classList.remove('active'));
-            screens[to].classList.add('active');
+
+        function gameOver() {
+            gameRunning = false;
+            clearInterval(gameLoop);
+            
+            finalScore.textContent = `得分: ${score}`;
+            
+            if (score < 50) {
+                gameMessage.textContent = '再接再厉！';
+            } else if (score < 100) {
+                gameMessage.textContent = '不错哦！';
+            } else if (score < 200) {
+                gameMessage.textContent = '太棒了！';
+            } else {
+                gameMessage.textContent = '你是大神！';
+            }
+            
+            endOverlay.classList.remove('hidden');
         }
-        
-        document.getElementById('startBtn').addEventListener('click', () => {
+
+        function startGame() {
+            startOverlay.classList.add('hidden');
+            endOverlay.classList.add('hidden');
+            
             initGame();
-            switchScreen('game');
-        });
-        
-        document.getElementById('restartBtn').addEventListener('click', () => {
-            initGame();
-            switchScreen('game');
-        });
-        
-        document.getElementById('searchBtn').addEventListener('click', () => executeCommand('search'));
-        document.getElementById('attackBtn').addEventListener('click', () => executeCommand('attack'));
-        document.getElementById('retreatBtn').addEventListener('click', () => executeCommand('retreat'));
-        
-        document.addEventListener('keydown', (e) => {
-            if(!screens.game.classList.contains('active')) return;
-            if(e.key === '1') executeCommand('search');
-            if(e.key === '2') executeCommand('attack');
-            if(e.key === '3') executeCommand('retreat');
-        });
-        
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            const rect = canvas.getBoundingClientRect();
-            const x = Math.floor((e.touches[0].clientX - rect.left) / gameState.cellSize);
-            const y = Math.floor((e.touches[0].clientY - rect.top) / gameState.cellSize);
-            if(x >= 0 && x < gameState.mapSize && y >= 0 && y < gameState.mapSize) {
-                const dist = Math.sqrt((x-gameState.playerPos.x)**2 + (y-gameState.playerPos.y)**2);
-                if(dist <= 1) {
-                    const cmds = ['search', 'attack', 'retreat'];
-                    executeCommand(cmds[Math.floor(Math.random()*3)]);
-                }
+            gameRunning = true;
+            
+            if (gameLoop) clearInterval(gameLoop);
+            gameLoop = setInterval(updateGame, gameSpeed);
+        }
+
+        function handleKeyDown(e) {
+            if (!gameRunning) return;
+            
+            switch(e.key) {
+                case 'ArrowUp':
+                    if (direction !== 'down') nextDirection = 'up';
+                    break;
+                case 'ArrowDown':
+                    if (direction !== 'up') nextDirection = 'down';
+                    break;
+                case 'ArrowLeft':
+                    if (direction !== 'right') nextDirection = 'left';
+                    break;
+                case 'ArrowRight':
+                    if (direction !== 'left') nextDirection = 'right';
+                    break;
             }
-        });
-        
-        window.addEventListener('resize', () => {
-            if(screens.game.classList.contains('active')) {
-                gameState.cellSize = Math.min(40, Math.floor(Math.min(window.innerWidth*0.8, window.innerHeight*0.6)/12));
-                canvas.width = gameState.mapSize * gameState.cellSize;
-                canvas.height = gameState.mapSize * gameState.cellSize;
-                draw();
-            }
-        });
-        
-        initGame();
+        }
+
+        function setupTouchControls() {
+            upBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (gameRunning && direction !== 'down') nextDirection = 'up';
+            });
+            
+            leftBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (gameRunning && direction !== 'right') nextDirection = 'left';
+            });
+            
+            downBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (gameRunning && direction !== 'up') nextDirection = 'down';
+            });
+            
+            rightBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (gameRunning && direction !== 'left') nextDirection = 'right';
+            });
+        }
+
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', startGame);
+
+        window.addEventListener('resize', resizeCanvas);
+        document.addEventListener('keydown', handleKeyDown);
+
+        setupTouchControls();
+        resizeCanvas();
+        drawGame();
     </script>
 
   <!-- 推广栏 -->
@@ -857,8 +656,8 @@ body {
   <div class="tiktok-author-row">
     <div class="tiktok-author-avatar" id="author-avatar" onclick="openAuthorProfile()">👤</div>
     <div class="tiktok-author-details">
-      <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">player_5x3fk4</span>
-      <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="4b028955-a0ba-42e9-bb0f-8deee82d54b3" onclick="toggleFollow()">
+      <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">游戏玩家</span>
+      <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="c51962c2-6e44-493a-a947-4dd5e40cfb00" onclick="toggleFollow()">
         <span class="follow-icon">+</span> 关注
       </button>
     </div>
@@ -884,13 +683,7 @@ body {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
     </div>
   </div>
-  <div class="tiktok-action" id="stat-comment-btn" onclick="toggleCommentsPanel()">
-    <div class="tiktok-icon">
-      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-    </div>
-    <span class="tiktok-count" id="stat-comments">0</span>
-  </div>
-  <div class="tiktok-action tiktok-info-only" title="游玩次数">
+  <div class="tiktok-action tiktok-info" title="游玩次数">
     <div class="tiktok-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
     </div>
@@ -903,23 +696,6 @@ body {
   <div style="background:transparent;border-radius:12px;padding:10px;width:90%;max-width:400px;text-align:center;position:relative;" onclick="event.stopPropagation()">
     <button onclick="document.getElementById('promo-modal').style.display='none'" style="position:absolute;right:0;top:0;border:none;background:rgba(0,0,0,0.5);width:28px;height:28px;border-radius:50%;font-size:18px;cursor:pointer;color:#fff;z-index:1;">×</button>
     <img src="/images/wechat-qrcode.png" style="width:100%;height:auto;display:block;border-radius:12px;">
-  </div>
-</div>
-
-<!-- 评论区域 -->
-<div class="game-comments-section" id="game-comments-section">
-  <div class="comments-header">
-    <span class="comments-title">💬 评论</span>
-    <button class="comments-close-btn" onclick="toggleCommentsPanel()">×</button>
-  </div>
-  <div class="comments-body" id="game-comments-list">
-    <div style="text-align:center;padding:30px;color:#999;">加载中...</div>
-  </div>
-  <button id="comments-load-more-btn" style="display:none;" onclick="loadMoreGameComments()">加载更多</button>
-  <div class="comments-login-hint" id="comment-login-hint" style="display:none;">请登录后发表留言</div>
-  <div class="comments-input-area" id="comment-input-area" style="display:none;">
-    <textarea id="game-comment-input" placeholder="说点什么..." maxlength="500"></textarea>
-    <button id="game-comment-submit" onclick="submitGameComment()">发布</button>
   </div>
 </div>
 
@@ -958,10 +734,10 @@ body {
 
 <script>
 // 获取游戏ID和作者信息
-const gameId = 'a1e71950-5322-4223-b602-04dfe17c9e3a';
-const gameTitle = '搜打撤SLG';
-const authorToken = '4b028955-a0ba-42e9-bb0f-8deee82d54b3';
-const authorName = 'player_5x3fk4';
+const gameId = '5fac99f5-bb8e-4693-9347-27f64a1a874c';
+const gameTitle = '贪吃蛇';
+const authorToken = 'c51962c2-6e44-493a-a947-4dd5e40cfb00';
+const authorName = '游戏玩家';
 const API_BASE = '/api/games';
 
 // 调试日志
@@ -1394,232 +1170,8 @@ function toggleFollowFromProfile() {
     .catch(() => {});
 }
 
-// ==================== 留言板功能 ====================
-
-// 切换留言板面板
-function toggleCommentsPanel() {
-  const panel = document.getElementById('game-comments-section');
-  if (panel) {
-    panel.classList.toggle('expanded');
-  }
-}
-
-// 留言板状态
-let commentsData = {
-  comments: [],
-  total: 0,
-  offset: 0,
-  hasMore: false,
-  isLoading: false
-};
-
-// 加载留言列表
-function loadGameComments(isRefresh = true) {
-  if (commentsData.isLoading) return;
-  commentsData.isLoading = true;
-  
-  const limit = 20;
-  const offset = isRefresh ? 0 : commentsData.offset;
-  
-  fetch('/api/games/' + gameId + '/comments?limit=' + limit + '&offset=' + offset, {
-    headers: getAuthHeaders()
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        if (isRefresh) {
-          commentsData.comments = data.comments;
-          commentsData.offset = data.comments.length;
-        } else {
-          commentsData.comments = commentsData.comments.concat(data.comments);
-          commentsData.offset += data.comments.length;
-        }
-        commentsData.total = data.total;
-        commentsData.hasMore = data.hasMore;
-        renderComments();
-        updateCommentsCount();
-      }
-    })
-    .catch(err => console.error('加载留言失败:', err))
-    .finally(() => { commentsData.isLoading = false; });
-}
-
-// 渲染留言列表
-function renderComments() {
-  const listEl = document.getElementById('game-comments-list');
-  const loadMoreBtn = document.getElementById('comments-load-more-btn');
-  
-  if (!listEl) return;
-  
-  if (commentsData.comments.length === 0) {
-    listEl.innerHTML = '<div style="text-align:center;padding:30px;color:#999;">💬 还没有留言，快来抢沙发！</div>';
-    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
-    return;
-  }
-  
-  let html = '';
-  commentsData.comments.forEach(function(comment) {
-    const timeStr = formatCommentTime(comment.created_at);
-    const avatarInitial = comment.author_name ? comment.author_name.charAt(0).toUpperCase() : '?';
-    const userToken = getUserToken();
-    const canDelete = comment.is_mine || (userToken && comment.user_token === userToken);
-    
-    html += '<div class="comment-item" data-id="' + comment.id + '">' +
-      '<div class="comment-header">' +
-        '<div class="comment-author-info">' +
-          '<div class="comment-avatar">' + avatarInitial + '</div>' +
-          '<span class="comment-author-name">' + escapeHtml(comment.author_name) + '</span>' +
-          '<span class="comment-time">' + timeStr + '</span>' +
-        '</div>' +
-        (canDelete ? '<button class="comment-delete-btn" onclick="deleteGameComment(' + comment.id + ')">删除</button>' : '') +
-      '</div>' +
-      '<div class="comment-content">' + escapeHtml(comment.content) + '</div>' +
-    '</div>';
-  });
-  
-  listEl.innerHTML = html;
-  
-  if (loadMoreBtn) {
-    loadMoreBtn.style.display = commentsData.hasMore ? 'block' : 'none';
-  }
-}
-
-// 更新评论数量
-function updateCommentsCount() {
-  const countEl = document.getElementById('stat-comments');
-  if (countEl) countEl.textContent = commentsData.total;
-}
-
-// 格式化留言时间
-function formatCommentTime(dateStr) {
-  if (!dateStr) return '';
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diff = now - date;
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-  
-  if (minutes < 1) return '刚刚';
-  if (minutes < 60) return minutes + '分钟前';
-  if (hours < 24) return hours + '小时前';
-  if (days < 7) return days + '天前';
-  return (date.getMonth() + 1) + '/' + date.getDate();
-}
-
-// HTML转义
-function escapeHtml(str) {
-  if (!str) return '';
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-// 发布留言
-function submitGameComment() {
-  const inputEl = document.getElementById('game-comment-input');
-  const submitBtn = document.getElementById('game-comment-submit');
-  
-  if (!inputEl || !submitBtn) return;
-  
-  const content = inputEl.value.trim();
-  if (!content) {
-    alert('请输入留言内容');
-    return;
-  }
-  if (content.length > 500) {
-    alert('留言内容不能超过500字');
-    return;
-  }
-  
-  const userToken = getUserToken();
-  if (!userToken) {
-    alert('请先登录后再留言');
-    return;
-  }
-  
-  submitBtn.disabled = true;
-  submitBtn.textContent = '发布中...';
-  
-  fetch('/api/games/' + gameId + '/comments', {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ content: content })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        inputEl.value = '';
-        commentsData.comments.unshift(data.comment);
-        commentsData.total++;
-        renderComments();
-        updateCommentsCount();
-      } else {
-        alert(data.error || '发布失败');
-      }
-    })
-    .catch(err => {
-      console.error('发布留言失败:', err);
-      alert('网络错误，请重试');
-    })
-    .finally(() => {
-      submitBtn.disabled = false;
-      submitBtn.textContent = '发布';
-    });
-}
-
-// 删除留言
-function deleteGameComment(commentId) {
-  if (!confirm('确定要删除这条留言吗？')) return;
-  
-  fetch('/api/games/' + gameId + '/comments/' + commentId, {
-    method: 'DELETE',
-    headers: getAuthHeaders()
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        commentsData.comments = commentsData.comments.filter(function(c) { return c.id !== commentId; });
-        commentsData.total--;
-        renderComments();
-        updateCommentsCount();
-      } else {
-        alert(data.error || '删除失败');
-      }
-    })
-    .catch(err => {
-      console.error('删除留言失败:', err);
-      alert('网络错误，请重试');
-    });
-}
-
-// 加载更多留言
-function loadMoreGameComments() {
-  if (!commentsData.hasMore || commentsData.isLoading) return;
-  loadGameComments(false);
-}
-
-// 更新留言输入区域显示
-function updateCommentInputUI() {
-  const loginHint = document.getElementById('comment-login-hint');
-  const inputArea = document.getElementById('comment-input-area');
-  const userToken = getUserToken();
-  
-  if (loginHint && inputArea) {
-    if (userToken) {
-      loginHint.style.display = 'none';
-      inputArea.style.display = 'flex';
-    } else {
-      loginHint.style.display = 'block';
-      inputArea.style.display = 'none';
-    }
-  }
-}
-
 // 初始化
-window.addEventListener('load', function() {
-  loadStats();
-  updateCommentInputUI();
-  loadGameComments(true);
-});
+window.addEventListener('load', loadStats);
 </script>
 
 </body>

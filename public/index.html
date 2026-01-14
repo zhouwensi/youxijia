@@ -119,6 +119,17 @@
               <!-- 动态加载 -->
             </div>
           </section>
+
+          <!-- 评论榜 -->
+          <section class="home-section" id="section-comments">
+            <div class="section-header">
+              <h3 class="section-title">💬 评论</h3>
+              <button class="btn-more" onclick="showMoreGames('comments')">更多 →</button>
+            </div>
+            <div class="games-grid-home" id="list-comments">
+              <!-- 动态加载 -->
+            </div>
+          </section>
         </div>
       </main>
     </div>
@@ -390,6 +401,21 @@
           </div>
         </div>
         
+        <!-- 我的评论 -->
+        <div class="profile-section-row">
+          <div class="profile-section-header-v">
+            <span class="section-icon">💬</span>
+            <span class="section-title">我的评论</span>
+            <button class="btn-more-header" id="profile-comments-more" onclick="showMoreComments()" style="display:none;">更多 →</button>
+            <span class="section-count" id="section-count-comments">0</span>
+          </div>
+          <div class="profile-comments-scroll">
+            <div class="profile-comments-list" id="profile-comments-list">
+              <div class="loading-games">加载中...</div>
+            </div>
+          </div>
+        </div>
+        
       </div>
     </div>
 
@@ -533,6 +559,38 @@
             <span class="promo-float-text">关注公众号"游戏开发技术教程"，一句话免费做游戏</span>
           </div>
         </div>
+        <!-- 游戏留言板 -->
+        <div class="comments-section" id="comments-section" style="display:none;">
+          <div class="comments-header">
+            <h3 class="comments-title">💬 留言板 <span class="comments-count" id="comments-count">(0)</span></h3>
+          </div>
+          
+          <!-- 留言输入区域 -->
+          <div id="comment-input-container">
+            <!-- 登录提示（未登录时显示） -->
+            <div class="comment-login-hint" id="comment-login-hint" style="display:none;">
+              <p>登录后即可发表留言</p>
+              <button class="btn btn-primary btn-sm" onclick="showLoginModal()">立即登录</button>
+            </div>
+            
+            <!-- 输入框（已登录时显示） -->
+            <div class="comment-input-area" id="comment-input-area" style="display:none;">
+              <textarea id="comment-input" placeholder="说点什么吧...（最多500字）" maxlength="500"></textarea>
+              <button class="comment-submit-btn" id="comment-submit-btn" onclick="submitComment()">发布</button>
+            </div>
+          </div>
+          
+          <!-- 留言列表 -->
+          <div class="comments-list" id="comments-list">
+            <!-- 动态加载 -->
+          </div>
+          
+          <!-- 加载更多 -->
+          <div class="comments-load-more" id="comments-load-more" style="display:none;">
+            <button class="comments-load-more-btn" onclick="loadMoreComments()">加载更多留言</button>
+          </div>
+        </div>
+        
         <!-- 调试面板 -->
         <div class="debug-panel" id="debug-panel" style="display:none;">
           <div class="debug-header">

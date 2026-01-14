@@ -381,13 +381,167 @@ function generateStandaloneGameHtml(gameCode, gameInfo) {
   background: rgba(251, 191, 36, 0.8) !important;
   border-color: #fbbf24 !important;
 }
-.tiktok-action.tiktok-info {
+.tiktok-action.tiktok-info-only {
   cursor: default !important;
-  opacity: 0.8 !important;
+  opacity: 0.7 !important;
+  pointer-events: none !important;
 }
 /* 为推广栏预留底部空间 */
 body {
   padding-bottom: 65px !important;
+}
+/* ====== 留言板样式 ====== */
+.game-comments-section {
+  position: fixed !important;
+  bottom: 60px !important;
+  left: 0 !important;
+  right: 0 !important;
+  background: #fff !important;
+  z-index: 999997 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+  transition: max-height 0.3s ease !important;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.15) !important;
+  border-radius: 16px 16px 0 0 !important;
+}
+.game-comments-section.expanded {
+  max-height: 60vh !important;
+}
+.comments-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 12px 16px !important;
+  border-bottom: 1px solid #eee !important;
+  background: #f8f9fa !important;
+}
+.comments-title {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #333 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+.comments-close-btn {
+  background: none !important;
+  border: none !important;
+  font-size: 20px !important;
+  cursor: pointer !important;
+  color: #999 !important;
+  padding: 4px !important;
+}
+.comments-body {
+  max-height: calc(60vh - 120px) !important;
+  overflow-y: auto !important;
+  padding: 12px 16px !important;
+}
+.comment-item {
+  padding: 12px 0 !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+}
+.comment-item:last-child {
+  border-bottom: none !important;
+}
+.comment-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 6px !important;
+}
+.comment-author-info {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+.comment-avatar {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  color: #fff !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.comment-author-name {
+  font-weight: 600 !important;
+  color: #333 !important;
+  font-size: 14px !important;
+}
+.comment-time {
+  color: #999 !important;
+  font-size: 12px !important;
+}
+.comment-content {
+  color: #333 !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  word-break: break-word !important;
+}
+.comment-delete-btn {
+  background: none !important;
+  border: none !important;
+  color: #999 !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+  padding: 2px 8px !important;
+}
+.comment-delete-btn:hover {
+  color: #ef4444 !important;
+}
+.comments-input-area {
+  display: flex !important;
+  gap: 8px !important;
+  padding: 12px 16px !important;
+  border-top: 1px solid #eee !important;
+  background: #fff !important;
+}
+.comments-input-area textarea {
+  flex: 1 !important;
+  border: 1px solid #ddd !important;
+  border-radius: 8px !important;
+  padding: 10px 12px !important;
+  font-size: 14px !important;
+  resize: none !important;
+  height: 40px !important;
+  min-height: 40px !important;
+}
+.comments-input-area button {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+}
+.comments-input-area button:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+}
+.comments-login-hint {
+  text-align: center !important;
+  padding: 12px 16px !important;
+  color: #999 !important;
+  font-size: 14px !important;
+  border-top: 1px solid #eee !important;
+}
+#comments-load-more-btn {
+  display: block !important;
+  width: 100% !important;
+  padding: 10px !important;
+  background: #f5f5f5 !important;
+  border: none !important;
+  color: #666 !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  margin-top: 8px !important;
+  border-radius: 8px !important;
 }
 `;
 
@@ -430,7 +584,13 @@ body {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
     </div>
   </div>
-  <div class="tiktok-action tiktok-info" title="游玩次数">
+  <div class="tiktok-action" id="stat-comment-btn" onclick="toggleCommentsPanel()">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <span class="tiktok-count" id="stat-comments">0</span>
+  </div>
+  <div class="tiktok-action tiktok-info-only" title="游玩次数">
     <div class="tiktok-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
     </div>
@@ -443,6 +603,23 @@ body {
   <div style="background:transparent;border-radius:12px;padding:10px;width:90%;max-width:400px;text-align:center;position:relative;" onclick="event.stopPropagation()">
     <button onclick="document.getElementById('promo-modal').style.display='none'" style="position:absolute;right:0;top:0;border:none;background:rgba(0,0,0,0.5);width:28px;height:28px;border-radius:50%;font-size:18px;cursor:pointer;color:#fff;z-index:1;">×</button>
     <img src="/images/wechat-qrcode.png" style="width:100%;height:auto;display:block;border-radius:12px;">
+  </div>
+</div>
+
+<!-- 评论区域 -->
+<div class="game-comments-section" id="game-comments-section">
+  <div class="comments-header">
+    <span class="comments-title">💬 评论</span>
+    <button class="comments-close-btn" onclick="toggleCommentsPanel()">×</button>
+  </div>
+  <div class="comments-body" id="game-comments-list">
+    <div style="text-align:center;padding:30px;color:#999;">加载中...</div>
+  </div>
+  <button id="comments-load-more-btn" style="display:none;" onclick="loadMoreGameComments()">加载更多</button>
+  <div class="comments-login-hint" id="comment-login-hint" style="display:none;">请登录后发表留言</div>
+  <div class="comments-input-area" id="comment-input-area" style="display:none;">
+    <textarea id="game-comment-input" placeholder="说点什么..." maxlength="500"></textarea>
+    <button id="game-comment-submit" onclick="submitGameComment()">发布</button>
   </div>
 </div>
 
@@ -917,8 +1094,232 @@ function toggleFollowFromProfile() {
     .catch(() => {});
 }
 
+// ==================== 留言板功能 ====================
+
+// 切换留言板面板
+function toggleCommentsPanel() {
+  const panel = document.getElementById('game-comments-section');
+  if (panel) {
+    panel.classList.toggle('expanded');
+  }
+}
+
+// 留言板状态
+let commentsData = {
+  comments: [],
+  total: 0,
+  offset: 0,
+  hasMore: false,
+  isLoading: false
+};
+
+// 加载留言列表
+function loadGameComments(isRefresh = true) {
+  if (commentsData.isLoading) return;
+  commentsData.isLoading = true;
+  
+  const limit = 20;
+  const offset = isRefresh ? 0 : commentsData.offset;
+  
+  fetch('/api/games/' + gameId + '/comments?limit=' + limit + '&offset=' + offset, {
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (isRefresh) {
+          commentsData.comments = data.comments;
+          commentsData.offset = data.comments.length;
+        } else {
+          commentsData.comments = commentsData.comments.concat(data.comments);
+          commentsData.offset += data.comments.length;
+        }
+        commentsData.total = data.total;
+        commentsData.hasMore = data.hasMore;
+        renderComments();
+        updateCommentsCount();
+      }
+    })
+    .catch(err => console.error('加载留言失败:', err))
+    .finally(() => { commentsData.isLoading = false; });
+}
+
+// 渲染留言列表
+function renderComments() {
+  const listEl = document.getElementById('game-comments-list');
+  const loadMoreBtn = document.getElementById('comments-load-more-btn');
+  
+  if (!listEl) return;
+  
+  if (commentsData.comments.length === 0) {
+    listEl.innerHTML = '<div style="text-align:center;padding:30px;color:#999;">💬 还没有留言，快来抢沙发！</div>';
+    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+    return;
+  }
+  
+  let html = '';
+  commentsData.comments.forEach(function(comment) {
+    const timeStr = formatCommentTime(comment.created_at);
+    const avatarInitial = comment.author_name ? comment.author_name.charAt(0).toUpperCase() : '?';
+    const userToken = getUserToken();
+    const canDelete = comment.is_mine || (userToken && comment.user_token === userToken);
+    
+    html += '<div class="comment-item" data-id="' + comment.id + '">' +
+      '<div class="comment-header">' +
+        '<div class="comment-author-info">' +
+          '<div class="comment-avatar">' + avatarInitial + '</div>' +
+          '<span class="comment-author-name">' + escapeHtml(comment.author_name) + '</span>' +
+          '<span class="comment-time">' + timeStr + '</span>' +
+        '</div>' +
+        (canDelete ? '<button class="comment-delete-btn" onclick="deleteGameComment(' + comment.id + ')">删除</button>' : '') +
+      '</div>' +
+      '<div class="comment-content">' + escapeHtml(comment.content) + '</div>' +
+    '</div>';
+  });
+  
+  listEl.innerHTML = html;
+  
+  if (loadMoreBtn) {
+    loadMoreBtn.style.display = commentsData.hasMore ? 'block' : 'none';
+  }
+}
+
+// 更新评论数量
+function updateCommentsCount() {
+  const countEl = document.getElementById('stat-comments');
+  if (countEl) countEl.textContent = commentsData.total;
+}
+
+// 格式化留言时间
+function formatCommentTime(dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = now - date;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  
+  if (minutes < 1) return '刚刚';
+  if (minutes < 60) return minutes + '分钟前';
+  if (hours < 24) return hours + '小时前';
+  if (days < 7) return days + '天前';
+  return (date.getMonth() + 1) + '/' + date.getDate();
+}
+
+// HTML转义
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// 发布留言
+function submitGameComment() {
+  const inputEl = document.getElementById('game-comment-input');
+  const submitBtn = document.getElementById('game-comment-submit');
+  
+  if (!inputEl || !submitBtn) return;
+  
+  const content = inputEl.value.trim();
+  if (!content) {
+    alert('请输入留言内容');
+    return;
+  }
+  if (content.length > 500) {
+    alert('留言内容不能超过500字');
+    return;
+  }
+  
+  const userToken = getUserToken();
+  if (!userToken) {
+    alert('请先登录后再留言');
+    return;
+  }
+  
+  submitBtn.disabled = true;
+  submitBtn.textContent = '发布中...';
+  
+  fetch('/api/games/' + gameId + '/comments', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ content: content })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        inputEl.value = '';
+        commentsData.comments.unshift(data.comment);
+        commentsData.total++;
+        renderComments();
+        updateCommentsCount();
+      } else {
+        alert(data.error || '发布失败');
+      }
+    })
+    .catch(err => {
+      console.error('发布留言失败:', err);
+      alert('网络错误，请重试');
+    })
+    .finally(() => {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '发布';
+    });
+}
+
+// 删除留言
+function deleteGameComment(commentId) {
+  if (!confirm('确定要删除这条留言吗？')) return;
+  
+  fetch('/api/games/' + gameId + '/comments/' + commentId, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        commentsData.comments = commentsData.comments.filter(function(c) { return c.id !== commentId; });
+        commentsData.total--;
+        renderComments();
+        updateCommentsCount();
+      } else {
+        alert(data.error || '删除失败');
+      }
+    })
+    .catch(err => {
+      console.error('删除留言失败:', err);
+      alert('网络错误，请重试');
+    });
+}
+
+// 加载更多留言
+function loadMoreGameComments() {
+  if (!commentsData.hasMore || commentsData.isLoading) return;
+  loadGameComments(false);
+}
+
+// 更新留言输入区域显示
+function updateCommentInputUI() {
+  const loginHint = document.getElementById('comment-login-hint');
+  const inputArea = document.getElementById('comment-input-area');
+  const userToken = getUserToken();
+  
+  if (loginHint && inputArea) {
+    if (userToken) {
+      loginHint.style.display = 'none';
+      inputArea.style.display = 'flex';
+    } else {
+      loginHint.style.display = 'block';
+      inputArea.style.display = 'none';
+    }
+  }
+}
+
 // 初始化
-window.addEventListener('load', loadStats);
+window.addEventListener('load', function() {
+  loadStats();
+  updateCommentInputUI();
+  loadGameComments(true);
+});
 </script>
 `;
   
@@ -1495,6 +1896,38 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_user_accounts_device_fingerprint ON user_accounts(device_fingerprint);
 `);
 
+// ==================== 数据迁移：修复默认作者名 ====================
+// 将所有使用默认名称"游戏玩家"的游戏更新为使用账号ID
+try {
+  // 获取所有使用默认名称且有关联账号的游戏
+  const gamesWithDefaultName = db.prepare(`
+    SELECT g.id, g.author_token, u.account_id, u.nickname
+    FROM games g
+    LEFT JOIN user_accounts u ON g.author_token = u.user_token
+    WHERE g.author_name = '游戏玩家' AND u.account_id IS NOT NULL
+  `).all();
+  
+  if (gamesWithDefaultName.length > 0) {
+    const updateStmt = db.prepare('UPDATE games SET author_name = ? WHERE id = ?');
+    let updatedCount = 0;
+    
+    for (const game of gamesWithDefaultName) {
+      // 如果用户设置了自定义昵称（不是默认的"游戏玩家"），使用昵称；否则使用账号ID
+      const displayName = (game.nickname && game.nickname !== '游戏玩家') 
+        ? game.nickname 
+        : game.account_id;
+      updateStmt.run(displayName, game.id);
+      updatedCount++;
+    }
+    
+    if (updatedCount > 0) {
+      console.log(`[DB迁移] 已更新 ${updatedCount} 个游戏的作者名（从"游戏玩家"改为账号ID）`);
+    }
+  }
+} catch (e) {
+  console.error('[DB迁移] 更新作者名时出错:', e.message);
+}
+
 // 生成唯一账号ID的函数
 function generateAccountId() {
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -1545,6 +1978,36 @@ db.exec(`
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);
+
+// ==================== 游戏留言表 ====================
+db.exec(`
+  CREATE TABLE IF NOT EXISTS game_comments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    game_id TEXT NOT NULL,
+    user_token TEXT NOT NULL,
+    author_name TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_deleted INTEGER DEFAULT 0,
+    is_hidden INTEGER DEFAULT 0
+  )
+`);
+
+// 创建留言索引
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_comments_game_id ON game_comments(game_id, is_deleted);
+  CREATE INDEX IF NOT EXISTS idx_comments_user_token ON game_comments(user_token);
+`);
+
+// 添加 is_hidden 字段（如果不存在）
+try {
+  db.exec(`ALTER TABLE game_comments ADD COLUMN is_hidden INTEGER DEFAULT 0`);
+  console.log('[DB] 添加 is_hidden 字段成功');
+} catch (e) {
+  // 字段已存在，忽略错误
+}
+
+console.log('[DB] 留言表初始化完成');
 
 // 初始化默认配置
 const defaultConfigs = [
@@ -1663,6 +2126,22 @@ function getClientIP(req) {
          'unknown';
 }
 
+/**
+ * 获取用于显示的昵称
+ * 如果昵称是默认值'游戏玩家'或空，则返回账号ID
+ * @param {Object} account - 包含 nickname 和 account_id 的账号对象
+ * @returns {string} 用于显示的昵称
+ */
+function getDisplayNickname(account) {
+  if (!account) return '匿名';
+  const nickname = account.nickname;
+  const accountId = account.account_id;
+  if (nickname && nickname !== '游戏玩家' && nickname !== '') {
+    return nickname;
+  }
+  return accountId || '匿名';
+}
+
 // 获取或创建用户账号信息（支持设备指纹自动恢复）
 app.post('/api/account/init', (req, res) => {
   try {
@@ -1733,13 +2212,19 @@ app.post('/api/account/init', (req, res) => {
       }
     }
     
+    // 如果昵称是默认值'游戏玩家'，则返回账号ID作为显示名称
+    const displayNickname = (account.nickname && account.nickname !== '游戏玩家') 
+      ? account.nickname 
+      : account.account_id;
+    
     res.json({
       success: true,
       recovered: isRecovered,
       userToken: newToken,
       account: {
         accountId: account.account_id,
-        nickname: account.nickname,
+        nickname: displayNickname,
+        rawNickname: account.nickname, // 原始昵称，用于判断是否需要显示"设置昵称"提示
         hasPassword: !!account.has_password,
         createdAt: account.created_at
       }
@@ -1764,11 +2249,17 @@ app.get('/api/account', (req, res) => {
       return res.status(404).json({ success: false, error: '账号不存在，请刷新页面' });
     }
     
+    // 如果昵称是默认值'游戏玩家'，则返回账号ID作为显示名称
+    const displayNickname = (account.nickname && account.nickname !== '游戏玩家') 
+      ? account.nickname 
+      : account.account_id;
+    
     res.json({
       success: true,
       account: {
         accountId: account.account_id,
-        nickname: account.nickname,
+        nickname: displayNickname,
+        rawNickname: account.nickname, // 原始昵称
         hasPassword: !!account.has_password,
         email: account.email,
         createdAt: account.created_at
@@ -1812,12 +2303,18 @@ app.post('/api/account/recover', (req, res) => {
     
     console.log('[DEBUG] 账号恢复成功:', account.account_id);
     
+    // 如果昵称是默认值'游戏玩家'，则返回账号ID作为显示名称
+    const displayNickname = (account.nickname && account.nickname !== '游戏玩家') 
+      ? account.nickname 
+      : account.account_id;
+    
     res.json({
       success: true,
       userToken: account.user_token,
       account: {
         accountId: account.account_id,
-        nickname: account.nickname,
+        nickname: displayNickname,
+        rawNickname: account.nickname,
         hasPassword: !!account.has_password,
         createdAt: account.created_at
       }
@@ -1991,12 +2488,18 @@ app.post('/api/account/login', (req, res) => {
       return res.status(400).json({ success: false, error: '密码错误' });
     }
     
+    // 如果昵称是默认值'游戏玩家'，则返回账号ID作为显示名称
+    const displayNickname = (account.nickname && account.nickname !== '游戏玩家') 
+      ? account.nickname 
+      : account.account_id;
+    
     res.json({
       success: true,
       userToken: account.user_token,
       account: {
         accountId: account.account_id,
-        nickname: account.nickname,
+        nickname: displayNickname,
+        rawNickname: account.nickname,
         hasPassword: true
       }
     });
@@ -2232,12 +2735,18 @@ app.post('/api/account/secure-recover', (req, res) => {
     
     console.log('[DEBUG] 安全账号恢复成功:', account.account_id, { isSameDevice, passwordCorrect });
     
+    // 如果昵称是默认值'游戏玩家'，则返回账号ID作为显示名称
+    const displayNickname = (account.nickname && account.nickname !== '游戏玩家') 
+      ? account.nickname 
+      : account.account_id;
+    
     res.json({
       success: true,
       userToken: account.user_token,
       account: {
         accountId: account.account_id,
-        nickname: account.nickname,
+        nickname: displayNickname,
+        rawNickname: account.nickname,
         hasPassword: !!account.has_password,
         createdAt: account.created_at
       },
@@ -2661,10 +3170,11 @@ app.get('/api/games/featured', (req, res) => {
     const limit = parseInt(req.query.limit) || 12;
     const offset = parseInt(req.query.offset) || 0;
     const games = db.prepare(`
-      SELECT id, title, prompt, author_name, play_count, like_count, favorite_count, is_featured, created_at 
-      FROM games 
-      WHERE is_hidden = 0 AND (is_public = 1 OR is_public IS NULL) AND (is_featured = 1 OR like_count >= 5)
-      ORDER BY is_featured DESC, like_count DESC, play_count DESC 
+      SELECT g.id, g.title, g.prompt, g.author_name, g.play_count, g.like_count, g.favorite_count, g.is_featured, g.created_at,
+             (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) as comment_count
+      FROM games g
+      WHERE g.is_hidden = 0 AND (g.is_public = 1 OR g.is_public IS NULL) AND (g.is_featured = 1 OR g.like_count >= 5)
+      ORDER BY g.is_featured DESC, g.like_count DESC, g.play_count DESC 
       LIMIT ? OFFSET ?
     `).all(limit, offset);
     res.json({ success: true, games });
@@ -2717,6 +3227,162 @@ app.post('/api/games/:id/verify', (req, res) => {
     res.json({ success: true, isAuthor });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==================== 游戏留言板 API ====================
+
+// 获取游戏留言列表
+app.get('/api/games/:id/comments', (req, res) => {
+  try {
+    const gameId = req.params.id;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+    const offset = parseInt(req.query.offset) || 0;
+    const userToken = req.headers['x-user-token'] || null;
+    
+    // 获取留言列表（隐藏的评论只对自己可见）
+    const comments = db.prepare(`
+      SELECT id, author_name, content, created_at, user_token, is_hidden
+      FROM game_comments
+      WHERE game_id = ? AND is_deleted = 0 
+        AND (is_hidden = 0 OR user_token = ?)
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `).all(gameId, userToken || '', limit, offset);
+    
+    // 处理返回数据，标记是否为当前用户的留言
+    const processedComments = comments.map(comment => ({
+      id: comment.id,
+      author_name: comment.author_name,
+      content: comment.content,
+      created_at: comment.created_at,
+      is_mine: userToken && comment.user_token === userToken,
+      is_hidden: comment.is_hidden === 1
+    }));
+    
+    // 获取总留言数（不包括隐藏的，除非是自己的）
+    const totalRow = db.prepare(`
+      SELECT COUNT(*) as total FROM game_comments 
+      WHERE game_id = ? AND is_deleted = 0 AND (is_hidden = 0 OR user_token = ?)
+    `).get(gameId, userToken || '');
+    
+    res.json({
+      success: true,
+      comments: processedComments,
+      total: totalRow.total,
+      hasMore: offset + comments.length < totalRow.total
+    });
+  } catch (error) {
+    console.error('[ERROR] 获取留言失败:', error);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
+// 发布留言
+app.post('/api/games/:id/comments', (req, res) => {
+  try {
+    const gameId = req.params.id;
+    const userToken = req.headers['x-user-token'];
+    const { content } = req.body;
+    
+    // 验证用户登录
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '请先登录后再留言' });
+    }
+    
+    // 获取用户信息
+    const user = db.prepare('SELECT account_id, nickname FROM user_accounts WHERE user_token = ?').get(userToken);
+    if (!user) {
+      return res.status(401).json({ success: false, error: '用户不存在，请重新登录' });
+    }
+    
+    // 验证留言内容
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({ success: false, error: '留言内容不能为空' });
+    }
+    
+    const trimmedContent = content.trim();
+    
+    if (trimmedContent.length > 500) {
+      return res.status(400).json({ success: false, error: '留言内容不能超过500字' });
+    }
+    
+    // 敏感词检测
+    const lowerContent = trimmedContent.toLowerCase();
+    for (const word of SENSITIVE_WORDS) {
+      if (lowerContent.includes(word.toLowerCase())) {
+        return res.status(400).json({ success: false, error: '留言内容包含违禁词，请修改后重试' });
+      }
+    }
+    
+    // 验证游戏存在
+    const game = db.prepare('SELECT id FROM games WHERE id = ?').get(gameId);
+    if (!game) {
+      return res.status(404).json({ success: false, error: '游戏不存在' });
+    }
+    
+    // 获取显示名称（优先使用昵称，否则使用账号ID）
+    const authorName = (user.nickname && user.nickname !== '游戏玩家') 
+      ? user.nickname 
+      : user.account_id;
+    
+    // 插入留言
+    const result = db.prepare(`
+      INSERT INTO game_comments (game_id, user_token, author_name, content)
+      VALUES (?, ?, ?, ?)
+    `).run(gameId, userToken, authorName, trimmedContent);
+    
+    console.log(`[INFO] 新留言: 游戏=${gameId}, 用户=${authorName}, 内容长度=${trimmedContent.length}`);
+    
+    res.json({
+      success: true,
+      comment: {
+        id: result.lastInsertRowid,
+        author_name: authorName,
+        content: trimmedContent,
+        created_at: new Date().toISOString(),
+        is_mine: true
+      }
+    });
+  } catch (error) {
+    console.error('[ERROR] 发布留言失败:', error);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
+// 删除留言（只能删除自己的）
+app.delete('/api/games/:id/comments/:commentId', (req, res) => {
+  try {
+    const { id: gameId, commentId } = req.params;
+    const userToken = req.headers['x-user-token'];
+    
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '请先登录' });
+    }
+    
+    // 验证留言存在且属于当前用户
+    const comment = db.prepare(`
+      SELECT id, user_token FROM game_comments 
+      WHERE id = ? AND game_id = ? AND is_deleted = 0
+    `).get(commentId, gameId);
+    
+    if (!comment) {
+      return res.status(404).json({ success: false, error: '留言不存在' });
+    }
+    
+    if (comment.user_token !== userToken) {
+      return res.status(403).json({ success: false, error: '只能删除自己的留言' });
+    }
+    
+    // 软删除
+    db.prepare('UPDATE game_comments SET is_deleted = 1 WHERE id = ?').run(commentId);
+    
+    console.log(`[INFO] 删除留言: ID=${commentId}, 游戏=${gameId}`);
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[ERROR] 删除留言失败:', error);
+    res.status(500).json({ success: false, error: '服务器错误' });
   }
 });
 
@@ -3276,12 +3942,13 @@ app.get('/api/my-games', (req, res) => {
     }
 
     const games = db.prepare(`
-      SELECT id, title, prompt, author_name, play_count, like_count, created_at,
-             COALESCE(status, 'published') as status,
-             CASE WHEN is_public = 0 THEN 'private' ELSE 'public' END as visibility
-      FROM games
-      WHERE author_token = ?
-      ORDER BY created_at DESC
+      SELECT g.id, g.title, g.prompt, g.author_name, g.play_count, g.like_count, g.created_at,
+             COALESCE(g.status, 'published') as status,
+             CASE WHEN g.is_public = 0 THEN 'private' ELSE 'public' END as visibility,
+             (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) as comment_count
+      FROM games g
+      WHERE g.author_token = ?
+      ORDER BY g.created_at DESC
     `).all(authorToken);
 
     // 计算总统计（只统计已发布的）
@@ -3377,7 +4044,8 @@ app.get('/api/my-likes', (req, res) => {
     }
     
     const games = db.prepare(`
-      SELECT g.id, g.title, g.prompt, g.author_name, g.play_count, g.like_count, g.created_at, ul.created_at as liked_at
+      SELECT g.id, g.title, g.prompt, g.author_name, g.play_count, g.like_count, g.created_at, ul.created_at as liked_at,
+             (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) as comment_count
       FROM user_likes ul
       JOIN games g ON ul.game_id = g.id
       WHERE ul.user_token = ?
@@ -3400,7 +4068,8 @@ app.get('/api/my-favorites', (req, res) => {
     }
     
     const games = db.prepare(`
-      SELECT g.id, g.title, g.prompt, g.author_name, g.play_count, g.like_count, g.created_at, uf.created_at as favorited_at
+      SELECT g.id, g.title, g.prompt, g.author_name, g.play_count, g.like_count, g.created_at, uf.created_at as favorited_at,
+             (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) as comment_count
       FROM user_favorites uf
       JOIN games g ON uf.game_id = g.id
       WHERE uf.user_token = ?
@@ -3410,6 +4079,109 @@ app.get('/api/my-favorites', (req, res) => {
     res.json({ success: true, games, count: games.length });
   } catch (error) {
     console.error('[ERROR] 获取我的收藏失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==================== 我的评论 ====================
+// 获取我的评论列表
+app.get('/api/my-comments', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    if (!userToken) {
+      return res.json({ success: true, comments: [], count: 0 });
+    }
+    
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = parseInt(req.query.offset) || 0;
+    
+    const comments = db.prepare(`
+      SELECT c.id, c.game_id, c.content, c.is_hidden, c.is_deleted, c.created_at,
+             g.title as game_title, g.author_name as game_author
+      FROM game_comments c
+      LEFT JOIN games g ON c.game_id = g.id
+      WHERE c.user_token = ? AND c.is_deleted = 0
+      ORDER BY c.created_at DESC
+      LIMIT ? OFFSET ?
+    `).all(userToken, limit, offset);
+    
+    const total = db.prepare(`
+      SELECT COUNT(*) as count FROM game_comments 
+      WHERE user_token = ? AND is_deleted = 0
+    `).get(userToken);
+    
+    res.json({ 
+      success: true, 
+      comments, 
+      count: total?.count || 0 
+    });
+  } catch (error) {
+    console.error('[ERROR] 获取我的评论失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 切换评论隐藏状态（隐藏/开放）
+app.post('/api/my-comments/:id/toggle-hidden', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    const commentId = req.params.id;
+    
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '请先登录' });
+    }
+    
+    // 检查评论是否属于该用户
+    const comment = db.prepare(`
+      SELECT id, is_hidden FROM game_comments 
+      WHERE id = ? AND user_token = ? AND is_deleted = 0
+    `).get(commentId, userToken);
+    
+    if (!comment) {
+      return res.status(404).json({ success: false, error: '评论不存在或无权操作' });
+    }
+    
+    // 切换隐藏状态
+    const newHidden = comment.is_hidden ? 0 : 1;
+    db.prepare('UPDATE game_comments SET is_hidden = ? WHERE id = ?').run(newHidden, commentId);
+    
+    res.json({ 
+      success: true, 
+      is_hidden: newHidden === 1,
+      message: newHidden ? '评论已隐藏' : '评论已公开'
+    });
+  } catch (error) {
+    console.error('[ERROR] 切换评论隐藏状态失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 删除我的评论
+app.delete('/api/my-comments/:id', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    const commentId = req.params.id;
+    
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '请先登录' });
+    }
+    
+    // 检查评论是否属于该用户
+    const comment = db.prepare(`
+      SELECT id FROM game_comments 
+      WHERE id = ? AND user_token = ? AND is_deleted = 0
+    `).get(commentId, userToken);
+    
+    if (!comment) {
+      return res.status(404).json({ success: false, error: '评论不存在或无权操作' });
+    }
+    
+    // 软删除
+    db.prepare('UPDATE game_comments SET is_deleted = 1 WHERE id = ?').run(commentId);
+    
+    res.json({ success: true, message: '评论已删除' });
+  } catch (error) {
+    console.error('[ERROR] 删除评论失败:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -3561,14 +4333,22 @@ app.get('/api/users/:token/profile', (req, res) => {
     const account = db.prepare('SELECT account_id, nickname FROM user_accounts WHERE user_token = ?')
       .get(userToken);
 
-    // 如果账号表没有，从游戏表获取作者名
-    let nickname = account?.nickname;
     let accountId = account?.account_id;
-
-    if (!nickname || nickname === '游戏玩家') {
-      const game = db.prepare('SELECT author_name FROM games WHERE author_token = ? LIMIT 1')
-        .get(userToken);
-      nickname = game?.author_name || '游戏家用户';
+    let rawNickname = account?.nickname;
+    
+    // 如果昵称是默认值'游戏玩家'或空，则使用账号ID
+    let nickname;
+    if (!rawNickname || rawNickname === '游戏玩家') {
+      // 优先使用账号ID，如果没有则从游戏表获取作者名
+      if (accountId) {
+        nickname = accountId;
+      } else {
+        const game = db.prepare('SELECT author_name FROM games WHERE author_token = ? LIMIT 1')
+          .get(userToken);
+        nickname = game?.author_name || '匿名用户';
+      }
+    } else {
+      nickname = rawNickname;
     }
 
     // 获取作品数
@@ -3604,10 +4384,11 @@ app.get('/api/users/:token/games', (req, res) => {
 
     // 修复：is_public 可能为 NULL（旧数据），所以用 OR is_public IS NULL
     const games = db.prepare(`
-      SELECT id, title, author_name, play_count, like_count, share_count, created_at
-      FROM games
-      WHERE author_token = ? AND (is_public = 1 OR is_public IS NULL) AND (is_hidden = 0 OR is_hidden IS NULL)
-      ORDER BY created_at DESC
+      SELECT g.id, g.title, g.author_name, g.play_count, g.like_count, g.share_count, g.created_at,
+             (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) as comment_count
+      FROM games g
+      WHERE g.author_token = ? AND (g.is_public = 1 OR g.is_public IS NULL) AND (g.is_hidden = 0 OR g.is_hidden IS NULL)
+      ORDER BY g.created_at DESC
       LIMIT ? OFFSET ?
     `).all(userToken, limit, offset);
 
@@ -4829,6 +5610,160 @@ app.get('/api/admin/users', (req, res) => {
   }
 });
 
+// ==================== 管理员留言管理API ====================
+
+// 获取留言列表（管理员）
+app.get('/api/admin/comments', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const offset = (page - 1) * limit;
+    const keyword = req.query.keyword || '';
+    const status = req.query.status || 'all'; // all, active, deleted
+    
+    // 构建查询条件
+    let whereClause = '1=1';
+    const params = [];
+    
+    if (status === 'active') {
+      whereClause += ' AND c.is_deleted = 0';
+    } else if (status === 'deleted') {
+      whereClause += ' AND c.is_deleted = 1';
+    }
+    
+    if (keyword) {
+      whereClause += ' AND (c.content LIKE ? OR c.author_name LIKE ?)';
+      params.push(`%${keyword}%`, `%${keyword}%`);
+    }
+    
+    // 获取总数
+    const totalQuery = `SELECT COUNT(*) as count FROM game_comments c WHERE ${whereClause}`;
+    const total = db.prepare(totalQuery).get(...params).count;
+    
+    // 获取留言列表，关联游戏标题
+    const commentsQuery = `
+      SELECT c.*, g.title as game_title
+      FROM game_comments c
+      LEFT JOIN games g ON c.game_id = g.id
+      WHERE ${whereClause}
+      ORDER BY c.created_at DESC
+      LIMIT ? OFFSET ?
+    `;
+    const comments = db.prepare(commentsQuery).all(...params, limit, offset);
+    
+    // 获取统计数据
+    const statsQuery = `
+      SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN is_deleted = 0 THEN 1 ELSE 0 END) as active,
+        SUM(CASE WHEN is_deleted = 1 THEN 1 ELSE 0 END) as deleted,
+        SUM(CASE WHEN date(created_at) = date('now') AND is_deleted = 0 THEN 1 ELSE 0 END) as today
+      FROM game_comments
+    `;
+    const stats = db.prepare(statsQuery).get();
+    
+    res.json({
+      success: true,
+      comments,
+      stats: {
+        total: stats.total || 0,
+        active: stats.active || 0,
+        deleted: stats.deleted || 0,
+        today: stats.today || 0
+      },
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    console.error('获取留言列表失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 删除留言（管理员软删除）
+app.delete('/api/admin/comments/:commentId', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { commentId } = req.params;
+    
+    const result = db.prepare(`
+      UPDATE game_comments SET is_deleted = 1 WHERE id = ?
+    `).run(commentId);
+    
+    if (result.changes === 0) {
+      return res.status(404).json({ success: false, error: '留言不存在' });
+    }
+    
+    res.json({ success: true, message: '留言已删除' });
+  } catch (error) {
+    console.error('删除留言失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 恢复留言（管理员）
+app.post('/api/admin/comments/:commentId/restore', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { commentId } = req.params;
+    
+    const result = db.prepare(`
+      UPDATE game_comments SET is_deleted = 0 WHERE id = ?
+    `).run(commentId);
+    
+    if (result.changes === 0) {
+      return res.status(404).json({ success: false, error: '留言不存在' });
+    }
+    
+    res.json({ success: true, message: '留言已恢复' });
+  } catch (error) {
+    console.error('恢复留言失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 彻底删除留言（管理员）
+app.delete('/api/admin/comments/:commentId/permanent', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { commentId } = req.params;
+    
+    const result = db.prepare(`
+      DELETE FROM game_comments WHERE id = ?
+    `).run(commentId);
+    
+    if (result.changes === 0) {
+      return res.status(404).json({ success: false, error: '留言不存在' });
+    }
+    
+    res.json({ success: true, message: '留言已彻底删除' });
+  } catch (error) {
+    console.error('彻底删除留言失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ==================== 前端排行榜API ====================
 
 // 获取推荐榜（管理员推荐）
@@ -4836,10 +5771,11 @@ app.get('/api/leaderboard/featured', (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
     const games = db.prepare(`
-      SELECT id, title, prompt, author_name, play_count, like_count, favorite_count, created_at
-      FROM games 
-      WHERE is_featured = 1 AND is_hidden = 0
-      ORDER BY updated_at DESC, like_count DESC
+      SELECT g.id, g.title, g.prompt, g.author_name, g.play_count, g.like_count, g.favorite_count, g.created_at,
+             (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) as comment_count
+      FROM games g
+      WHERE g.is_featured = 1 AND g.is_hidden = 0
+      ORDER BY g.updated_at DESC, g.like_count DESC
       LIMIT ?
     `).all(limit);
     res.json({ success: true, games });
@@ -4856,10 +5792,33 @@ app.get('/api/leaderboard/favorites', (req, res) => {
     
     // 直接使用 games 表中的 favorite_count 字段
     const games = db.prepare(`
-      SELECT id, title, prompt, author_name, play_count, like_count, favorite_count, created_at
-      FROM games
-      WHERE is_hidden = 0 AND (is_public = 1 OR is_public IS NULL)
-      ORDER BY favorite_count DESC, like_count DESC
+      SELECT g.id, g.title, g.prompt, g.author_name, g.play_count, g.like_count, g.favorite_count, g.created_at,
+             (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) as comment_count
+      FROM games g
+      WHERE g.is_hidden = 0 AND (g.is_public = 1 OR g.is_public IS NULL)
+      ORDER BY g.favorite_count DESC, g.like_count DESC
+      LIMIT ? OFFSET ?
+    `).all(limit, offset);
+    
+    res.json({ success: true, games });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 获取评论榜（按评论数排序）
+app.get('/api/leaderboard/comments', (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = parseInt(req.query.offset) || 0;
+    
+    // 按评论数排序
+    const games = db.prepare(`
+      SELECT g.id, g.title, g.prompt, g.author_name, g.play_count, g.like_count, g.favorite_count, g.created_at,
+             (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) as comment_count
+      FROM games g
+      WHERE g.is_hidden = 0 AND (g.is_public = 1 OR g.is_public IS NULL)
+      ORDER BY comment_count DESC, g.created_at DESC
       LIMIT ? OFFSET ?
     `).all(limit, offset);
     
@@ -4931,11 +5890,12 @@ app.get('/api/games', (req, res) => {
     
     // 获取游戏列表（排除草稿和私密）
     const sql = `
-      SELECT id, title, prompt, author_name, play_count, like_count, favorite_count, created_at,
-             (play_count + like_count * 5 + favorite_count * 3) as hot_score
-      FROM games 
-      WHERE is_hidden = 0 AND (is_public = 1 OR is_public IS NULL) AND COALESCE(status, 'published') = 'published' ${categoryWhere}
-      ORDER BY ${orderBy}
+      SELECT g.id, g.title, g.prompt, g.author_name, g.play_count, g.like_count, g.favorite_count, g.created_at,
+             (g.play_count + g.like_count * 5 + g.favorite_count * 3) as hot_score,
+             (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) as comment_count
+      FROM games g
+      WHERE g.is_hidden = 0 AND (g.is_public = 1 OR g.is_public IS NULL) AND COALESCE(g.status, 'published') = 'published' ${categoryWhere.replace(/title/g, 'g.title').replace(/prompt/g, 'g.prompt')}
+      ORDER BY ${orderBy.replace(/play_count/g, 'g.play_count').replace(/like_count/g, 'g.like_count').replace(/favorite_count/g, 'g.favorite_count').replace(/created_at/g, 'g.created_at')}
       LIMIT ? OFFSET ?
     `;
     
@@ -4981,10 +5941,11 @@ app.get('/api/leaderboard/hot', (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const offset = parseInt(req.query.offset) || 0;
     const games = db.prepare(`
-      SELECT id, title, prompt, author_name, play_count, like_count, favorite_count, created_at,
-             (play_count + like_count * 5 + favorite_count * 3) as score
-      FROM games 
-      WHERE is_hidden = 0 AND (is_public = 1 OR is_public IS NULL)
+      SELECT g.id, g.title, g.prompt, g.author_name, g.play_count, g.like_count, g.favorite_count, g.created_at,
+             (g.play_count + g.like_count * 5 + g.favorite_count * 3) as score,
+             (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) as comment_count
+      FROM games g
+      WHERE g.is_hidden = 0 AND (g.is_public = 1 OR g.is_public IS NULL)
       ORDER BY score DESC
       LIMIT ? OFFSET ?
     `).all(limit, offset);
@@ -5245,7 +6206,8 @@ app.get('/api/games/hot', (req, res) => {
         g.play_count, g.like_count,
         COALESCE(s.share_count, 0) as share_count,
         g.created_at,
-        (g.play_count + g.like_count * 5 + COALESCE(s.share_count, 0) * 3) as hot_score
+        (g.play_count + g.like_count * 5 + COALESCE(s.share_count, 0) * 3) as hot_score,
+        (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) as comment_count
       FROM games g
       LEFT JOIN game_stats s ON g.id = s.game_id
       WHERE g.is_hidden = 0 AND (g.is_public = 1 OR g.is_public IS NULL) ${dateFilter}

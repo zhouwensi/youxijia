@@ -569,6 +569,7 @@
       <button class="tab-btn" onclick="switchTab('config')">⚙️ 系统配置</button>
       <button class="tab-btn" onclick="switchTab('games')">🎮 游戏管理</button>
       <button class="tab-btn" onclick="switchTab('users')">👥 用户管理</button>
+      <button class="tab-btn" onclick="switchTab('comments')">💬 留言管理</button>
       <button class="tab-btn" onclick="switchTab('tools')">🛠️ 数据工具</button>
     </div>
 
@@ -898,6 +899,60 @@
       </div>
     </div>
 
+    <!-- 留言管理 -->
+    <div class="tab-content" id="tab-comments">
+      <div class="config-section">
+        <h2>💬 留言管理</h2>
+        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;">
+          <div class="config-item" style="flex: 1; min-width: 200px;">
+            <input type="text" id="comment-search-keyword" placeholder="搜索留言内容或作者..." style="width: 100%;">
+          </div>
+          <div class="config-item" style="width: 180px;">
+            <select id="comment-filter-status" style="width: 100%; padding: 0.5rem; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 4px;">
+              <option value="all">全部留言</option>
+              <option value="active">正常留言</option>
+              <option value="deleted">已删除</option>
+            </select>
+          </div>
+          <button class="btn-save" onclick="loadComments(1)" style="background: linear-gradient(135deg, #6366f1, #4f46e5);">
+            🔍 搜索
+          </button>
+          <button class="btn-save" onclick="loadComments(1)" style="background: linear-gradient(135deg, #10b981, #059669);">
+            🔄 刷新
+          </button>
+        </div>
+        
+        <!-- 留言统计 -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+          <div style="background: rgba(99, 102, 241, 0.1); padding: 1rem; border-radius: 0.5rem; text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: bold; color: #a5b4fc;" id="comments-total">0</div>
+            <div style="font-size: 0.75rem; color: #94a3b8;">总留言数</div>
+          </div>
+          <div style="background: rgba(16, 185, 129, 0.1); padding: 1rem; border-radius: 0.5rem; text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: bold; color: #6ee7b7;" id="comments-active">0</div>
+            <div style="font-size: 0.75rem; color: #94a3b8;">正常留言</div>
+          </div>
+          <div style="background: rgba(239, 68, 68, 0.1); padding: 1rem; border-radius: 0.5rem; text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: bold; color: #fca5a5;" id="comments-deleted">0</div>
+            <div style="font-size: 0.75rem; color: #94a3b8;">已删除</div>
+          </div>
+          <div style="background: rgba(251, 191, 36, 0.1); padding: 1rem; border-radius: 0.5rem; text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: bold; color: #fcd34d;" id="comments-today">0</div>
+            <div style="font-size: 0.75rem; color: #94a3b8;">今日留言</div>
+          </div>
+        </div>
+        
+        <!-- 留言列表 -->
+        <div id="comments-list" style="max-height: 600px; overflow-y: auto;">
+          <p style="color: #64748b; text-align: center; padding: 2rem;">加载中...</p>
+        </div>
+        
+        <!-- 分页 -->
+        <div id="comments-pagination" style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem;">
+        </div>
+      </div>
+    </div>
+
     <!-- 数据工具 -->
     <div class="tab-content" id="tab-tools">
       <div class="config-section">
@@ -1089,6 +1144,9 @@
           break;
         case 'users':
           loadUsers(1);
+          break;
+        case 'comments':
+          loadCommentsAdmin(1);
           break;
         case 'tools':
           refreshStaticFilesStats();
@@ -2226,6 +2284,211 @@
       } catch (error) {
         showToast('删除失败: ' + error.message, 'error');
       }
+    }
+
+    // ==================== 留言管理功能 ====================
+    
+    let commentsAdminPage = 1;
+    const commentsAdminLimit = 20;
+    
+    // 加载留言列表（管理后台）
+    async function loadCommentsAdmin(page = 1) {
+      commentsAdminPage = page;
+      const keyword = document.getElementById('comment-search-keyword')?.value || '';
+      const status = document.getElementById('comment-filter-status')?.value || 'all';
+      
+      try {
+        const response = await fetch(`/api/admin/comments?page=${page}&limit=${commentsAdminLimit}&keyword=${encodeURIComponent(keyword)}&status=${status}`, {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          // 更新统计
+          document.getElementById('comments-total').textContent = data.stats?.total || 0;
+          document.getElementById('comments-active').textContent = data.stats?.active || 0;
+          document.getElementById('comments-deleted').textContent = data.stats?.deleted || 0;
+          document.getElementById('comments-today').textContent = data.stats?.today || 0;
+          
+          renderCommentsAdmin(data.comments);
+          renderCommentsPagination(data.pagination);
+        } else {
+          showToast(data.error || '加载留言失败', 'error');
+        }
+      } catch (error) {
+        showToast('加载留言失败: ' + error.message, 'error');
+      }
+    }
+    
+    // 渲染留言列表
+    function renderCommentsAdmin(comments) {
+      const container = document.getElementById('comments-list');
+      
+      if (!comments || comments.length === 0) {
+        container.innerHTML = '<p style="color: #64748b; text-align: center; padding: 2rem;">暂无留言数据</p>';
+        return;
+      }
+      
+      let html = '<table style="width: 100%; font-size: 0.85rem; border-collapse: collapse;">';
+      html += `
+        <thead>
+          <tr style="text-align: left; color: #94a3b8; border-bottom: 1px solid #334155;">
+            <th style="padding: 0.75rem 0.5rem; width: 60px;">ID</th>
+            <th style="padding: 0.75rem 0.5rem; width: 150px;">游戏</th>
+            <th style="padding: 0.75rem 0.5rem; width: 120px;">作者</th>
+            <th style="padding: 0.75rem 0.5rem;">内容</th>
+            <th style="padding: 0.75rem 0.5rem; width: 150px;">时间</th>
+            <th style="padding: 0.75rem 0.5rem; width: 80px;">状态</th>
+            <th style="padding: 0.75rem 0.5rem; width: 120px;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+      `;
+      
+      comments.forEach(comment => {
+        const statusBadge = comment.is_deleted 
+          ? '<span style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">已删除</span>'
+          : '<span style="background: rgba(16, 185, 129, 0.2); color: #6ee7b7; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">正常</span>';
+        
+        const actionBtns = comment.is_deleted
+          ? `<button onclick="restoreComment(${comment.id})" style="background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">恢复</button>
+             <button onclick="permanentDeleteComment(${comment.id})" style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; margin-left: 4px;">彻底删除</button>`
+          : `<button onclick="deleteCommentAdmin(${comment.id})" style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">删除</button>`;
+        
+        const contentShort = comment.content.length > 50 
+          ? comment.content.substring(0, 50) + '...' 
+          : comment.content;
+        
+        html += `
+          <tr style="border-bottom: 1px solid #1e293b;">
+            <td style="padding: 0.75rem 0.5rem; color: #64748b;">${comment.id}</td>
+            <td style="padding: 0.75rem 0.5rem;">
+              <a href="/?game=${comment.game_id}" target="_blank" style="color: #a5b4fc; text-decoration: none;" title="${escapeHtml(comment.game_title || '未知游戏')}">
+                ${escapeHtml((comment.game_title || '未知').substring(0, 15))}
+              </a>
+            </td>
+            <td style="padding: 0.75rem 0.5rem; color: #e2e8f0;">${escapeHtml(comment.author_name)}</td>
+            <td style="padding: 0.75rem 0.5rem; color: #e2e8f0;" title="${escapeHtml(comment.content)}">${escapeHtml(contentShort)}</td>
+            <td style="padding: 0.75rem 0.5rem; color: #64748b; font-size: 0.8rem;">${formatTime(comment.created_at)}</td>
+            <td style="padding: 0.75rem 0.5rem;">${statusBadge}</td>
+            <td style="padding: 0.75rem 0.5rem;">${actionBtns}</td>
+          </tr>
+        `;
+      });
+      
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+    
+    // 渲染分页
+    function renderCommentsPagination(pagination) {
+      const container = document.getElementById('comments-pagination');
+      if (!pagination || pagination.totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+      }
+      
+      let html = '';
+      
+      // 上一页
+      if (pagination.page > 1) {
+        html += `<button onclick="loadCommentsAdmin(${pagination.page - 1})" class="btn-save" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;">上一页</button>`;
+      }
+      
+      // 页码
+      const startPage = Math.max(1, pagination.page - 2);
+      const endPage = Math.min(pagination.totalPages, pagination.page + 2);
+      
+      for (let i = startPage; i <= endPage; i++) {
+        const isActive = i === pagination.page;
+        const style = isActive 
+          ? 'background: linear-gradient(135deg, #6366f1, #4f46e5);' 
+          : 'background: rgba(255,255,255,0.1);';
+        html += `<button onclick="loadCommentsAdmin(${i})" class="btn-save" style="${style} padding: 0.4rem 0.75rem; font-size: 0.8rem;">${i}</button>`;
+      }
+      
+      // 下一页
+      if (pagination.page < pagination.totalPages) {
+        html += `<button onclick="loadCommentsAdmin(${pagination.page + 1})" class="btn-save" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;">下一页</button>`;
+      }
+      
+      container.innerHTML = html;
+    }
+    
+    // 删除留言（软删除）
+    async function deleteCommentAdmin(commentId) {
+      if (!confirm('确定要删除这条留言吗？')) return;
+      
+      try {
+        const response = await fetch(`/api/admin/comments/${commentId}`, {
+          method: 'DELETE',
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          showToast('留言已删除', 'success');
+          loadCommentsAdmin(commentsAdminPage);
+        } else {
+          showToast(data.error || '删除失败', 'error');
+        }
+      } catch (error) {
+        showToast('删除失败: ' + error.message, 'error');
+      }
+    }
+    
+    // 恢复留言
+    async function restoreComment(commentId) {
+      try {
+        const response = await fetch(`/api/admin/comments/${commentId}/restore`, {
+          method: 'POST',
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          showToast('留言已恢复', 'success');
+          loadCommentsAdmin(commentsAdminPage);
+        } else {
+          showToast(data.error || '恢复失败', 'error');
+        }
+      } catch (error) {
+        showToast('恢复失败: ' + error.message, 'error');
+      }
+    }
+    
+    // 彻底删除留言
+    async function permanentDeleteComment(commentId) {
+      if (!confirm('确定要彻底删除这条留言吗？此操作不可恢复！')) return;
+      
+      try {
+        const response = await fetch(`/api/admin/comments/${commentId}/permanent`, {
+          method: 'DELETE',
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          showToast('留言已彻底删除', 'success');
+          loadCommentsAdmin(commentsAdminPage);
+        } else {
+          showToast(data.error || '删除失败', 'error');
+        }
+      } catch (error) {
+        showToast('删除失败: ' + error.message, 'error');
+      }
+    }
+    
+    // 格式化时间
+    function formatTime(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day} ${hours}:${minutes}`;
     }
 
     // 检查已保存的登录状态

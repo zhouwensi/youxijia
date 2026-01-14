@@ -238,13 +238,167 @@
   background: rgba(251, 191, 36, 0.8) !important;
   border-color: #fbbf24 !important;
 }
-.tiktok-action.tiktok-info {
+.tiktok-action.tiktok-info-only {
   cursor: default !important;
-  opacity: 0.8 !important;
+  opacity: 0.7 !important;
+  pointer-events: none !important;
 }
 /* 为推广栏预留底部空间 */
 body {
   padding-bottom: 65px !important;
+}
+/* ====== 留言板样式 ====== */
+.game-comments-section {
+  position: fixed !important;
+  bottom: 60px !important;
+  left: 0 !important;
+  right: 0 !important;
+  background: #fff !important;
+  z-index: 999997 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+  transition: max-height 0.3s ease !important;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.15) !important;
+  border-radius: 16px 16px 0 0 !important;
+}
+.game-comments-section.expanded {
+  max-height: 60vh !important;
+}
+.comments-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 12px 16px !important;
+  border-bottom: 1px solid #eee !important;
+  background: #f8f9fa !important;
+}
+.comments-title {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #333 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+.comments-close-btn {
+  background: none !important;
+  border: none !important;
+  font-size: 20px !important;
+  cursor: pointer !important;
+  color: #999 !important;
+  padding: 4px !important;
+}
+.comments-body {
+  max-height: calc(60vh - 120px) !important;
+  overflow-y: auto !important;
+  padding: 12px 16px !important;
+}
+.comment-item {
+  padding: 12px 0 !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+}
+.comment-item:last-child {
+  border-bottom: none !important;
+}
+.comment-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 6px !important;
+}
+.comment-author-info {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+.comment-avatar {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  color: #fff !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.comment-author-name {
+  font-weight: 600 !important;
+  color: #333 !important;
+  font-size: 14px !important;
+}
+.comment-time {
+  color: #999 !important;
+  font-size: 12px !important;
+}
+.comment-content {
+  color: #333 !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  word-break: break-word !important;
+}
+.comment-delete-btn {
+  background: none !important;
+  border: none !important;
+  color: #999 !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+  padding: 2px 8px !important;
+}
+.comment-delete-btn:hover {
+  color: #ef4444 !important;
+}
+.comments-input-area {
+  display: flex !important;
+  gap: 8px !important;
+  padding: 12px 16px !important;
+  border-top: 1px solid #eee !important;
+  background: #fff !important;
+}
+.comments-input-area textarea {
+  flex: 1 !important;
+  border: 1px solid #ddd !important;
+  border-radius: 8px !important;
+  padding: 10px 12px !important;
+  font-size: 14px !important;
+  resize: none !important;
+  height: 40px !important;
+  min-height: 40px !important;
+}
+.comments-input-area button {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+}
+.comments-input-area button:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+}
+.comments-login-hint {
+  text-align: center !important;
+  padding: 12px 16px !important;
+  color: #999 !important;
+  font-size: 14px !important;
+  border-top: 1px solid #eee !important;
+}
+#comments-load-more-btn {
+  display: block !important;
+  width: 100% !important;
+  padding: 10px !important;
+  background: #f5f5f5 !important;
+  border: none !important;
+  color: #666 !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  margin-top: 8px !important;
+  border-radius: 8px !important;
 }
 </style>
   <!-- 原游戏head内容 -->
@@ -892,7 +1046,13 @@ body {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
     </div>
   </div>
-  <div class="tiktok-action tiktok-info" title="游玩次数">
+  <div class="tiktok-action" id="stat-comment-btn" onclick="toggleCommentsPanel()">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <span class="tiktok-count" id="stat-comments">0</span>
+  </div>
+  <div class="tiktok-action tiktok-info-only" title="游玩次数">
     <div class="tiktok-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
     </div>
@@ -905,6 +1065,23 @@ body {
   <div style="background:transparent;border-radius:12px;padding:10px;width:90%;max-width:400px;text-align:center;position:relative;" onclick="event.stopPropagation()">
     <button onclick="document.getElementById('promo-modal').style.display='none'" style="position:absolute;right:0;top:0;border:none;background:rgba(0,0,0,0.5);width:28px;height:28px;border-radius:50%;font-size:18px;cursor:pointer;color:#fff;z-index:1;">×</button>
     <img src="/images/wechat-qrcode.png" style="width:100%;height:auto;display:block;border-radius:12px;">
+  </div>
+</div>
+
+<!-- 评论区域 -->
+<div class="game-comments-section" id="game-comments-section">
+  <div class="comments-header">
+    <span class="comments-title">💬 评论</span>
+    <button class="comments-close-btn" onclick="toggleCommentsPanel()">×</button>
+  </div>
+  <div class="comments-body" id="game-comments-list">
+    <div style="text-align:center;padding:30px;color:#999;">加载中...</div>
+  </div>
+  <button id="comments-load-more-btn" style="display:none;" onclick="loadMoreGameComments()">加载更多</button>
+  <div class="comments-login-hint" id="comment-login-hint" style="display:none;">请登录后发表留言</div>
+  <div class="comments-input-area" id="comment-input-area" style="display:none;">
+    <textarea id="game-comment-input" placeholder="说点什么..." maxlength="500"></textarea>
+    <button id="game-comment-submit" onclick="submitGameComment()">发布</button>
   </div>
 </div>
 
@@ -1379,8 +1556,232 @@ function toggleFollowFromProfile() {
     .catch(() => {});
 }
 
+// ==================== 留言板功能 ====================
+
+// 切换留言板面板
+function toggleCommentsPanel() {
+  const panel = document.getElementById('game-comments-section');
+  if (panel) {
+    panel.classList.toggle('expanded');
+  }
+}
+
+// 留言板状态
+let commentsData = {
+  comments: [],
+  total: 0,
+  offset: 0,
+  hasMore: false,
+  isLoading: false
+};
+
+// 加载留言列表
+function loadGameComments(isRefresh = true) {
+  if (commentsData.isLoading) return;
+  commentsData.isLoading = true;
+  
+  const limit = 20;
+  const offset = isRefresh ? 0 : commentsData.offset;
+  
+  fetch('/api/games/' + gameId + '/comments?limit=' + limit + '&offset=' + offset, {
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (isRefresh) {
+          commentsData.comments = data.comments;
+          commentsData.offset = data.comments.length;
+        } else {
+          commentsData.comments = commentsData.comments.concat(data.comments);
+          commentsData.offset += data.comments.length;
+        }
+        commentsData.total = data.total;
+        commentsData.hasMore = data.hasMore;
+        renderComments();
+        updateCommentsCount();
+      }
+    })
+    .catch(err => console.error('加载留言失败:', err))
+    .finally(() => { commentsData.isLoading = false; });
+}
+
+// 渲染留言列表
+function renderComments() {
+  const listEl = document.getElementById('game-comments-list');
+  const loadMoreBtn = document.getElementById('comments-load-more-btn');
+  
+  if (!listEl) return;
+  
+  if (commentsData.comments.length === 0) {
+    listEl.innerHTML = '<div style="text-align:center;padding:30px;color:#999;">💬 还没有留言，快来抢沙发！</div>';
+    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+    return;
+  }
+  
+  let html = '';
+  commentsData.comments.forEach(function(comment) {
+    const timeStr = formatCommentTime(comment.created_at);
+    const avatarInitial = comment.author_name ? comment.author_name.charAt(0).toUpperCase() : '?';
+    const userToken = getUserToken();
+    const canDelete = comment.is_mine || (userToken && comment.user_token === userToken);
+    
+    html += '<div class="comment-item" data-id="' + comment.id + '">' +
+      '<div class="comment-header">' +
+        '<div class="comment-author-info">' +
+          '<div class="comment-avatar">' + avatarInitial + '</div>' +
+          '<span class="comment-author-name">' + escapeHtml(comment.author_name) + '</span>' +
+          '<span class="comment-time">' + timeStr + '</span>' +
+        '</div>' +
+        (canDelete ? '<button class="comment-delete-btn" onclick="deleteGameComment(' + comment.id + ')">删除</button>' : '') +
+      '</div>' +
+      '<div class="comment-content">' + escapeHtml(comment.content) + '</div>' +
+    '</div>';
+  });
+  
+  listEl.innerHTML = html;
+  
+  if (loadMoreBtn) {
+    loadMoreBtn.style.display = commentsData.hasMore ? 'block' : 'none';
+  }
+}
+
+// 更新评论数量
+function updateCommentsCount() {
+  const countEl = document.getElementById('stat-comments');
+  if (countEl) countEl.textContent = commentsData.total;
+}
+
+// 格式化留言时间
+function formatCommentTime(dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = now - date;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  
+  if (minutes < 1) return '刚刚';
+  if (minutes < 60) return minutes + '分钟前';
+  if (hours < 24) return hours + '小时前';
+  if (days < 7) return days + '天前';
+  return (date.getMonth() + 1) + '/' + date.getDate();
+}
+
+// HTML转义
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// 发布留言
+function submitGameComment() {
+  const inputEl = document.getElementById('game-comment-input');
+  const submitBtn = document.getElementById('game-comment-submit');
+  
+  if (!inputEl || !submitBtn) return;
+  
+  const content = inputEl.value.trim();
+  if (!content) {
+    alert('请输入留言内容');
+    return;
+  }
+  if (content.length > 500) {
+    alert('留言内容不能超过500字');
+    return;
+  }
+  
+  const userToken = getUserToken();
+  if (!userToken) {
+    alert('请先登录后再留言');
+    return;
+  }
+  
+  submitBtn.disabled = true;
+  submitBtn.textContent = '发布中...';
+  
+  fetch('/api/games/' + gameId + '/comments', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ content: content })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        inputEl.value = '';
+        commentsData.comments.unshift(data.comment);
+        commentsData.total++;
+        renderComments();
+        updateCommentsCount();
+      } else {
+        alert(data.error || '发布失败');
+      }
+    })
+    .catch(err => {
+      console.error('发布留言失败:', err);
+      alert('网络错误，请重试');
+    })
+    .finally(() => {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '发布';
+    });
+}
+
+// 删除留言
+function deleteGameComment(commentId) {
+  if (!confirm('确定要删除这条留言吗？')) return;
+  
+  fetch('/api/games/' + gameId + '/comments/' + commentId, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        commentsData.comments = commentsData.comments.filter(function(c) { return c.id !== commentId; });
+        commentsData.total--;
+        renderComments();
+        updateCommentsCount();
+      } else {
+        alert(data.error || '删除失败');
+      }
+    })
+    .catch(err => {
+      console.error('删除留言失败:', err);
+      alert('网络错误，请重试');
+    });
+}
+
+// 加载更多留言
+function loadMoreGameComments() {
+  if (!commentsData.hasMore || commentsData.isLoading) return;
+  loadGameComments(false);
+}
+
+// 更新留言输入区域显示
+function updateCommentInputUI() {
+  const loginHint = document.getElementById('comment-login-hint');
+  const inputArea = document.getElementById('comment-input-area');
+  const userToken = getUserToken();
+  
+  if (loginHint && inputArea) {
+    if (userToken) {
+      loginHint.style.display = 'none';
+      inputArea.style.display = 'flex';
+    } else {
+      loginHint.style.display = 'block';
+      inputArea.style.display = 'none';
+    }
+  }
+}
+
 // 初始化
-window.addEventListener('load', loadStats);
+window.addEventListener('load', function() {
+  loadStats();
+  updateCommentInputUI();
+  loadGameComments(true);
+});
 </script>
 
 </body>

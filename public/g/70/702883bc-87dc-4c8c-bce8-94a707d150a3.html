@@ -7,11 +7,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#1a1a2e">
-  <meta name="description" content="搜打撤slg - AI一句话生成的游戏">
-  <meta property="og:title" content="搜打撤SLG - AI游戏">
+  <meta name="description" content="打砖块 - AI一句话生成的游戏">
+  <meta property="og:title" content="打砖块 - AI游戏">
   <meta property="og:description" content="这个游戏由AI一句话生成！关注公众号「游戏开发技术教程」，你也可以免费生成游戏！">
   <meta property="og:type" content="website">
-  <title>搜打撤SLG - AI游戏</title>
+  <title>打砖块 - AI游戏</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
   <!-- 推广栏样式 -->
   <style>
@@ -238,167 +238,13 @@
   background: rgba(251, 191, 36, 0.8) !important;
   border-color: #fbbf24 !important;
 }
-.tiktok-action.tiktok-info-only {
+.tiktok-action.tiktok-info {
   cursor: default !important;
-  opacity: 0.7 !important;
-  pointer-events: none !important;
+  opacity: 0.8 !important;
 }
 /* 为推广栏预留底部空间 */
 body {
   padding-bottom: 65px !important;
-}
-/* ====== 留言板样式 ====== */
-.game-comments-section {
-  position: fixed !important;
-  bottom: 60px !important;
-  left: 0 !important;
-  right: 0 !important;
-  background: #fff !important;
-  z-index: 999997 !important;
-  max-height: 0 !important;
-  overflow: hidden !important;
-  transition: max-height 0.3s ease !important;
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.15) !important;
-  border-radius: 16px 16px 0 0 !important;
-}
-.game-comments-section.expanded {
-  max-height: 60vh !important;
-}
-.comments-header {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  padding: 12px 16px !important;
-  border-bottom: 1px solid #eee !important;
-  background: #f8f9fa !important;
-}
-.comments-title {
-  font-size: 16px !important;
-  font-weight: 600 !important;
-  color: #333 !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-}
-.comments-close-btn {
-  background: none !important;
-  border: none !important;
-  font-size: 20px !important;
-  cursor: pointer !important;
-  color: #999 !important;
-  padding: 4px !important;
-}
-.comments-body {
-  max-height: calc(60vh - 120px) !important;
-  overflow-y: auto !important;
-  padding: 12px 16px !important;
-}
-.comment-item {
-  padding: 12px 0 !important;
-  border-bottom: 1px solid #f0f0f0 !important;
-}
-.comment-item:last-child {
-  border-bottom: none !important;
-}
-.comment-header {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  margin-bottom: 6px !important;
-}
-.comment-author-info {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-}
-.comment-avatar {
-  width: 28px !important;
-  height: 28px !important;
-  border-radius: 50% !important;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
-  color: #fff !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-.comment-author-name {
-  font-weight: 600 !important;
-  color: #333 !important;
-  font-size: 14px !important;
-}
-.comment-time {
-  color: #999 !important;
-  font-size: 12px !important;
-}
-.comment-content {
-  color: #333 !important;
-  font-size: 14px !important;
-  line-height: 1.5 !important;
-  word-break: break-word !important;
-}
-.comment-delete-btn {
-  background: none !important;
-  border: none !important;
-  color: #999 !important;
-  font-size: 12px !important;
-  cursor: pointer !important;
-  padding: 2px 8px !important;
-}
-.comment-delete-btn:hover {
-  color: #ef4444 !important;
-}
-.comments-input-area {
-  display: flex !important;
-  gap: 8px !important;
-  padding: 12px 16px !important;
-  border-top: 1px solid #eee !important;
-  background: #fff !important;
-}
-.comments-input-area textarea {
-  flex: 1 !important;
-  border: 1px solid #ddd !important;
-  border-radius: 8px !important;
-  padding: 10px 12px !important;
-  font-size: 14px !important;
-  resize: none !important;
-  height: 40px !important;
-  min-height: 40px !important;
-}
-.comments-input-area button {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
-  color: #fff !important;
-  border: none !important;
-  padding: 10px 20px !important;
-  border-radius: 8px !important;
-  font-size: 14px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  white-space: nowrap !important;
-}
-.comments-input-area button:disabled {
-  opacity: 0.6 !important;
-  cursor: not-allowed !important;
-}
-.comments-login-hint {
-  text-align: center !important;
-  padding: 12px 16px !important;
-  color: #999 !important;
-  font-size: 14px !important;
-  border-top: 1px solid #eee !important;
-}
-#comments-load-more-btn {
-  display: block !important;
-  width: 100% !important;
-  padding: 10px !important;
-  background: #f5f5f5 !important;
-  border: none !important;
-  color: #666 !important;
-  font-size: 14px !important;
-  cursor: pointer !important;
-  margin-top: 8px !important;
-  border-radius: 8px !important;
 }
 </style>
   <!-- 原游戏head内容 -->
@@ -407,116 +253,78 @@ body {
     
     
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
         body {
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #0a0a2a 0%, #1a1a3a 100%);
-            color: #e0e0ff;
+            background: #0a0a1a;
+            color: #fff;
             overflow: hidden;
-            touch-action: manipulation;
-            user-select: none;
-        }
-        #gameContainer {
             width: 100vw;
             height: 100vh;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            position: relative;
+        }
+        canvas {
+            display: block;
+            background: #11112e;
         }
         .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            text-align: center;
-            padding: 20px;
+            background: rgba(10, 10, 26, 0.9);
+            z-index: 10;
+            transition: opacity 0.3s;
+        }
+        .screen.hidden {
             display: none;
         }
-        .active { display: flex; }
         h1 {
-            font-size: 3.5rem;
-            margin-bottom: 30px;
-            text-shadow: 0 0 15px #4a6fff;
-            color: #7a9fff;
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            margin-bottom: 2rem;
+            text-shadow: 0 0 10px #00a8ff;
+            color: #00a8ff;
         }
-        h2 { font-size: 2.5rem; margin-bottom: 20px; color: #8ab4ff; }
-        p {
-            font-size: 1.2rem;
-            max-width: 600px;
-            line-height: 1.6;
-            margin-bottom: 30px;
-            color: #b0c4ff;
+        .score {
+            font-size: clamp(1.5rem, 5vw, 2.5rem);
+            margin: 1rem 0;
+            color: #00ff9d;
         }
         .btn {
-            background: linear-gradient(to bottom, #3a5fcf 0%, #2a4fbf 100%);
+            background: linear-gradient(45deg, #00a8ff, #0097e6);
             color: white;
             border: none;
-            padding: 15px 40px;
-            font-size: 1.3rem;
-            border-radius: 10px;
+            padding: 1rem 2rem;
+            font-size: clamp(1.2rem, 4vw, 1.8rem);
+            border-radius: 50px;
             cursor: pointer;
-            margin: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            transition: all 0.2s;
+            margin-top: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 168, 255, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
         }
         .btn:hover, .btn:active {
-            background: linear-gradient(to bottom, #4a6fdf 0%, #3a5fcf 100%);
-            transform: translateY(-2px);
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 168, 255, 0.6);
         }
-        #gameCanvas {
-            background-color: #0f0f2a;
-            border: 3px solid #3a5fcf;
-            border-radius: 10px;
-            box-shadow: 0 0 30px rgba(58, 95, 207, 0.5);
-            max-width: 95%;
-            max-height: 70vh;
-        }
-        #ui {
-            margin-top: 20px;
-            display: flex;
-            justify-content: space-around;
-            width: 90%;
-            max-width: 800px;
-            flex-wrap: wrap;
-        }
-        .ui-item {
-            background: rgba(30, 30, 60, 0.8);
-            padding: 10px 20px;
-            border-radius: 8px;
-            margin: 5px;
-            font-size: 1.2rem;
-            min-width: 150px;
-        }
-        #controls {
-            display: flex;
-            margin-top: 20px;
-            gap: 20px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        .control-btn {
-            background: rgba(58, 95, 207, 0.7);
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            font-size: 1.1rem;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        #endScore {
-            font-size: 2rem;
-            color: #ffcc00;
-            margin: 20px 0;
-        }
-        @media (max-width: 768px) {
-            h1 { font-size: 2.5rem; }
-            h2 { font-size: 2rem; }
-            .btn { padding: 12px 30px; font-size: 1.1rem; }
-            .ui-item { font-size: 1rem; min-width: 120px; }
+        .controls {
+            margin-top: 2rem;
+            font-size: clamp(0.9rem, 3vw, 1.2rem);
+            color: #aaa;
+            text-align: center;
+            max-width: 90%;
         }
     </style>
 
@@ -524,327 +332,270 @@ body {
 <body>
   <!-- 原游戏body内容 -->
   
-    <div id="gameContainer">
-        <div id="startScreen" class="screen active">
-            <h1>搜打撤SLG</h1>
-            <p>指挥你的部队在战场上执行三种核心指令：<br>
-            <strong>搜索</strong> - 探索未知区域，发现敌人<br>
-            <strong>打击</strong> - 攻击发现的敌人<br>
-            <strong>撤退</strong> - 规避危险，保存实力<br>
-            合理运用策略，击败所有敌人！</p>
-            <button id="startBtn" class="btn">开始游戏</button>
-            <p style="margin-top: 30px; font-size: 1rem; color: #8a9fff;">
-                操作：键盘 1/2/3 或 点击下方按钮<br>
-                手机可直接触屏操作
-            </p>
-        </div>
-        <div id="gameScreen" class="screen">
-            <canvas id="gameCanvas"></canvas>
-            <div id="ui">
-                <div class="ui-item">回合: <span id="turnCount">0</span></div>
-                <div class="ui-item">部队: <span id="troopCount">5</span></div>
-                <div class="ui-item">敌人: <span id="enemyCount">8</span></div>
-                <div class="ui-item">指令: <span id="command">无</span></div>
-            </div>
-            <div id="controls">
-                <button id="searchBtn" class="control-btn">搜索 (1)</button>
-                <button id="attackBtn" class="control-btn">打击 (2)</button>
-                <button id="retreatBtn" class="control-btn">撤退 (3)</button>
-            </div>
-        </div>
-        <div id="endScreen" class="screen">
-            <h2>游戏结束</h2>
-            <p id="endMessage"></p>
-            <div id="endScore"></div>
-            <button id="restartBtn" class="btn">重新开始</button>
-        </div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="startScreen" class="screen">
+        <h1>打砖块</h1>
+        <div class="controls">使用 ← → 键或触摸屏幕左右移动挡板</div>
+        <button id="startBtn" class="btn">开始游戏</button>
+    </div>
+    <div id="endScreen" class="screen hidden">
+        <h1>游戏结束</h1>
+        <div id="finalScore" class="score">得分: 0</div>
+        <button id="restartBtn" class="btn">再玩一次</button>
     </div>
 
     <script>
-        const screens = {
-            start: document.getElementById('startScreen'),
-            game: document.getElementById('gameScreen'),
-            end: document.getElementById('endScreen')
-        };
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const turnCountEl = document.getElementById('turnCount');
-        const troopCountEl = document.getElementById('troopCount');
-        const enemyCountEl = document.getElementById('enemyCount');
-        const commandEl = document.getElementById('command');
-        const endMessageEl = document.getElementById('endMessage');
-        const endScoreEl = document.getElementById('endScore');
-        
-        let gameState = {
-            turn: 0,
-            troops: 5,
-            enemies: 8,
-            command: 'none',
-            gameOver: false,
-            win: false,
-            map: [],
-            playerPos: { x: 0, y: 0 },
-            enemyPositions: [],
-            fog: [],
-            mapSize: 12,
-            cellSize: 40
+        const startScreen = document.getElementById('startScreen');
+        const endScreen = document.getElementById('endScreen');
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const finalScore = document.getElementById('finalScore');
+
+        let gameRunning = false;
+        let score = 0;
+        let lives = 3;
+        let animationId = null;
+
+        const paddle = {
+            width: 100,
+            height: 15,
+            x: 0,
+            y: 0,
+            speed: 10,
+            color: '#00a8ff'
         };
-        
-        function initGame() {
-            gameState = {
-                turn: 0,
-                troops: 5,
-                enemies: 8,
-                command: 'none',
-                gameOver: false,
-                win: false,
-                map: [],
-                playerPos: { x: Math.floor(gameState.mapSize/2), y: Math.floor(gameState.mapSize/2) },
-                enemyPositions: [],
-                fog: [],
-                mapSize: 12,
-                cellSize: Math.min(40, Math.floor(Math.min(window.innerWidth*0.8, window.innerHeight*0.6)/12))
-            };
-            
-            canvas.width = gameState.mapSize * gameState.cellSize;
-            canvas.height = gameState.mapSize * gameState.cellSize;
-            
-            for(let y=0; y<gameState.mapSize; y++) {
-                gameState.map[y] = [];
-                gameState.fog[y] = [];
-                for(let x=0; x<gameState.mapSize; x++) {
-                    gameState.map[y][x] = Math.random() > 0.7 ? 'forest' : 'plain';
-                    gameState.fog[y][x] = true;
-                }
-            }
-            
-            gameState.enemyPositions = [];
-            while(gameState.enemyPositions.length < gameState.enemies) {
-                const x = Math.floor(Math.random() * gameState.mapSize);
-                const y = Math.floor(Math.random() * gameState.mapSize);
-                if((x !== gameState.playerPos.x || y !== gameState.playerPos.y) && 
-                   !gameState.enemyPositions.some(e => e.x===x && e.y===y)) {
-                    gameState.enemyPositions.push({x, y, hidden: true});
-                }
-            }
-            
-            revealFog(gameState.playerPos.x, gameState.playerPos.y, 2);
-            updateUI();
-            draw();
-        }
-        
-        function revealFog(centerX, centerY, radius) {
-            for(let y=0; y<gameState.mapSize; y++) {
-                for(let x=0; x<gameState.mapSize; x++) {
-                    const dist = Math.sqrt((x-centerX)**2 + (y-centerY)**2);
-                    if(dist <= radius) gameState.fog[y][x] = false;
+
+        const ball = {
+            x: 0,
+            y: 0,
+            radius: 10,
+            speedX: 5,
+            speedY: -5,
+            color: '#00ff9d'
+        };
+
+        const brickRowCount = 5;
+        const brickColumnCount = 8;
+        const brickWidth = 0;
+        const brickHeight = 20;
+        const brickPadding = 10;
+        const brickOffsetTop = 60;
+        const brickOffsetLeft = 0;
+        const bricks = [];
+
+        let leftPressed = false;
+        let rightPressed = false;
+        let touchX = null;
+
+        function initBricks() {
+            bricks.length = 0;
+            for (let c = 0; c < brickColumnCount; c++) {
+                bricks[c] = [];
+                for (let r = 0; r < brickRowCount; r++) {
+                    bricks[c][r] = { x: 0, y: 0, status: 1, color: `hsl(${r * 40}, 100%, 60%)` };
                 }
             }
         }
-        
-        function executeCommand(cmd) {
-            if(gameState.gameOver) return;
-            
-            gameState.command = cmd;
-            gameState.turn++;
-            
-            let message = '';
-            const nearbyEnemies = gameState.enemyPositions.filter(e => {
-                const dist = Math.sqrt((e.x-gameState.playerPos.x)**2 + (e.y-gameState.playerPos.y)**2);
-                return dist <= 2 && !e.hidden;
-            });
-            
-            switch(cmd) {
-                case 'search':
-                    revealFog(gameState.playerPos.x, gameState.playerPos.y, 3);
-                    nearbyEnemies.forEach(e => e.hidden = false);
-                    message = '执行搜索：发现附近区域';
-                    break;
-                    
-                case 'attack':
-                    if(nearbyEnemies.length > 0) {
-                        const killed = Math.min(2, nearbyEnemies.length);
-                        for(let i=0; i<killed; i++) {
-                            const idx = gameState.enemyPositions.indexOf(nearbyEnemies[i]);
-                            if(idx > -1) gameState.enemyPositions.splice(idx, 1);
-                        }
-                        gameState.enemies = gameState.enemyPositions.length;
-                        gameState.troops -= Math.floor(Math.random() * 2);
-                        message = `执行打击：消灭${killed}名敌人，部队受损`;
-                    } else {
-                        message = '执行打击：附近没有可见敌人';
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            paddle.width = Math.min(150, canvas.width * 0.2);
+            paddle.x = (canvas.width - paddle.width) / 2;
+            paddle.y = canvas.height - 40;
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height - 60;
+            brickWidth = (canvas.width - brickOffsetLeft * 2 - brickPadding * (brickColumnCount - 1)) / brickColumnCount;
+        }
+
+        function drawPaddle() {
+            ctx.beginPath();
+            ctx.roundRect(paddle.x, paddle.y, paddle.width, paddle.height, 8);
+            ctx.fillStyle = paddle.color;
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = ball.color;
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawBricks() {
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    if (bricks[c][r].status === 1) {
+                        const brickX = c * (brickWidth + brickPadding) + brickOffsetLeft;
+                        const brickY = r * (brickHeight + brickPadding) + brickOffsetTop;
+                        bricks[c][r].x = brickX;
+                        bricks[c][r].y = brickY;
+                        ctx.beginPath();
+                        ctx.roundRect(brickX, brickY, brickWidth, brickHeight, 4);
+                        ctx.fillStyle = bricks[c][r].color;
+                        ctx.fill();
+                        ctx.closePath();
                     }
-                    break;
-                    
-                case 'retreat':
-                    const oldX = gameState.playerPos.x;
-                    const oldY = gameState.playerPos.y;
-                    gameState.playerPos.x = Math.max(0, Math.min(gameState.mapSize-1, oldX + (Math.random()>0.5?1:-1)));
-                    gameState.playerPos.y = Math.max(0, Math.min(gameState.mapSize-1, oldY + (Math.random()>0.5?1:-1)));
-                    revealFog(gameState.playerPos.x, gameState.playerPos.y, 1);
-                    message = '执行撤退：移动位置';
-                    break;
-            }
-            
-            if(gameState.troops <= 0) {
-                gameState.gameOver = true;
-                gameState.win = false;
-                endGame();
-                return;
-            }
-            
-            if(gameState.enemies <= 0) {
-                gameState.gameOver = true;
-                gameState.win = true;
-                endGame();
-                return;
-            }
-            
-            if(cmd !== 'retreat') {
-                const enemyAttack = Math.random() > 0.6;
-                if(enemyAttack && nearbyEnemies.length > 0) {
-                    gameState.troops -= 1;
-                    message += '，遭到敌人反击';
                 }
             }
-            
-            commandEl.textContent = message;
-            updateUI();
-            draw();
         }
-        
-        function updateUI() {
-            turnCountEl.textContent = gameState.turn;
-            troopCountEl.textContent = gameState.troops;
-            enemyCountEl.textContent = gameState.enemies;
+
+        function drawHUD() {
+            ctx.font = '20px Arial';
+            ctx.fillStyle = '#fff';
+            ctx.fillText(`得分: ${score}`, 20, 30);
+            ctx.fillText(`生命: ${lives}`, canvas.width - 100, 30);
         }
-        
+
+        function collisionDetection() {
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    const b = bricks[c][r];
+                    if (b.status === 1) {
+                        if (ball.x > b.x && ball.x < b.x + brickWidth &&
+                            ball.y > b.y && ball.y < b.y + brickHeight) {
+                            ball.speedY = -ball.speedY;
+                            b.status = 0;
+                            score += 10;
+                            if (score === brickRowCount * brickColumnCount * 10) {
+                                gameOver(true);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function movePaddle() {
+            if (rightPressed && paddle.x < canvas.width - paddle.width) {
+                paddle.x += paddle.speed;
+            }
+            if (leftPressed && paddle.x > 0) {
+                paddle.x -= paddle.speed;
+            }
+            if (touchX !== null) {
+                paddle.x = touchX - paddle.width / 2;
+                if (paddle.x < 0) paddle.x = 0;
+                if (paddle.x > canvas.width - paddle.width) paddle.x = canvas.width - paddle.width;
+            }
+        }
+
+        function moveBall() {
+            ball.x += ball.speedX;
+            ball.y += ball.speedY;
+
+            if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
+                ball.speedX = -ball.speedX;
+            }
+            if (ball.y - ball.radius < 0) {
+                ball.speedY = -ball.speedY;
+            }
+
+            if (ball.y + ball.radius > canvas.height) {
+                lives--;
+                if (lives <= 0) {
+                    gameOver(false);
+                } else {
+                    resetBall();
+                }
+            }
+
+            if (ball.y + ball.radius > paddle.y &&
+                ball.y - ball.radius < paddle.y + paddle.height &&
+                ball.x > paddle.x &&
+                ball.x < paddle.x + paddle.width) {
+                const hitPos = (ball.x - paddle.x) / paddle.width;
+                ball.speedX = 8 * (hitPos - 0.5);
+                ball.speedY = -Math.abs(ball.speedY);
+            }
+        }
+
+        function resetBall() {
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height - 60;
+            ball.speedX = 5 * (Math.random() > 0.5 ? 1 : -1);
+            ball.speedY = -5;
+        }
+
+        function gameOver(win) {
+            gameRunning = false;
+            cancelAnimationFrame(animationId);
+            finalScore.textContent = `得分: ${score}`;
+            endScreen.classList.remove('hidden');
+        }
+
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            for(let y=0; y<gameState.mapSize; y++) {
-                for(let x=0; x<gameState.mapSize; x++) {
-                    const cellX = x * gameState.cellSize;
-                    const cellY = y * gameState.cellSize;
-                    
-                    if(gameState.fog[y][x]) {
-                        ctx.fillStyle = '#1a1a3a';
-                        ctx.fillRect(cellX, cellY, gameState.cellSize, gameState.cellSize);
-                        continue;
-                    }
-                    
-                    if(gameState.map[y][x] === 'forest') {
-                        ctx.fillStyle = '#0a5f0a';
-                    } else {
-                        ctx.fillStyle = '#2a4a2a';
-                    }
-                    ctx.fillRect(cellX, cellY, gameState.cellSize, gameState.cellSize);
-                    
-                    ctx.strokeStyle = '#3a5f3a';
-                    ctx.strokeRect(cellX, cellY, gameState.cellSize, gameState.cellSize);
-                }
-            }
-            
-            gameState.enemyPositions.forEach(enemy => {
-                if(!enemy.hidden || !gameState.fog[enemy.y][enemy.x]) {
-                    const cellX = enemy.x * gameState.cellSize;
-                    const cellY = enemy.y * gameState.cellSize;
-                    ctx.fillStyle = enemy.hidden ? '#ff6666' : '#ff0000';
-                    ctx.beginPath();
-                    ctx.arc(cellX + gameState.cellSize/2, cellY + gameState.cellSize/2, gameState.cellSize/3, 0, Math.PI*2);
-                    ctx.fill();
-                    if(!enemy.hidden) {
-                        ctx.strokeStyle = '#ffaaaa';
-                        ctx.lineWidth = 2;
-                        ctx.stroke();
-                    }
-                }
-            });
-            
-            const playerX = gameState.playerPos.x * gameState.cellSize;
-            const playerY = gameState.playerPos.y * gameState.cellSize;
-            ctx.fillStyle = '#4a6fff';
-            ctx.beginPath();
-            ctx.moveTo(playerX + gameState.cellSize/2, playerY + gameState.cellSize/4);
-            ctx.lineTo(playerX + gameState.cellSize/4, playerY + 3*gameState.cellSize/4);
-            ctx.lineTo(playerX + 3*gameState.cellSize/4, playerY + 3*gameState.cellSize/4);
-            ctx.closePath();
-            ctx.fill();
-            ctx.strokeStyle = '#aaccff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            
-            ctx.fillStyle = 'rgba(255,255,255,0.1)';
-            for(let y=0; y<gameState.mapSize; y++) {
-                for(let x=0; x<gameState.mapSize; x++) {
-                    ctx.strokeRect(x*gameState.cellSize, y*gameState.cellSize, gameState.cellSize, gameState.cellSize);
-                }
+            drawBricks();
+            drawPaddle();
+            drawBall();
+            drawHUD();
+            collisionDetection();
+            movePaddle();
+            moveBall();
+
+            if (gameRunning) {
+                animationId = requestAnimationFrame(draw);
             }
         }
-        
-        function endGame() {
-            const score = gameState.turn * 10 + gameState.troops * 50;
-            if(gameState.win) {
-                endMessageEl.textContent = '胜利！你击败了所有敌人！';
-                endScoreEl.textContent = `得分: ${score}`;
-            } else {
-                endMessageEl.textContent = '失败！你的部队全军覆没。';
-                endScoreEl.textContent = `坚持回合: ${gameState.turn}`;
-            }
-            screens.game.classList.remove('active');
-            screens.end.classList.add('active');
+
+        function startGame() {
+            gameRunning = true;
+            score = 0;
+            lives = 3;
+            startScreen.classList.add('hidden');
+            endScreen.classList.add('hidden');
+            initBricks();
+            resizeCanvas();
+            resetBall();
+            draw();
         }
-        
-        function switchScreen(to) {
-            Object.values(screens).forEach(s => s.classList.remove('active'));
-            screens[to].classList.add('active');
+
+        function keyDownHandler(e) {
+            if (e.key === 'Right' || e.key === 'ArrowRight') rightPressed = true;
+            if (e.key === 'Left' || e.key === 'ArrowLeft') leftPressed = true;
         }
-        
-        document.getElementById('startBtn').addEventListener('click', () => {
-            initGame();
-            switchScreen('game');
-        });
-        
-        document.getElementById('restartBtn').addEventListener('click', () => {
-            initGame();
-            switchScreen('game');
-        });
-        
-        document.getElementById('searchBtn').addEventListener('click', () => executeCommand('search'));
-        document.getElementById('attackBtn').addEventListener('click', () => executeCommand('attack'));
-        document.getElementById('retreatBtn').addEventListener('click', () => executeCommand('retreat'));
-        
-        document.addEventListener('keydown', (e) => {
-            if(!screens.game.classList.contains('active')) return;
-            if(e.key === '1') executeCommand('search');
-            if(e.key === '2') executeCommand('attack');
-            if(e.key === '3') executeCommand('retreat');
-        });
-        
-        canvas.addEventListener('touchstart', (e) => {
+
+        function keyUpHandler(e) {
+            if (e.key === 'Right' || e.key === 'ArrowRight') rightPressed = false;
+            if (e.key === 'Left' || e.key === 'ArrowLeft') leftPressed = false;
+        }
+
+        function touchStartHandler(e) {
             e.preventDefault();
-            const rect = canvas.getBoundingClientRect();
-            const x = Math.floor((e.touches[0].clientX - rect.left) / gameState.cellSize);
-            const y = Math.floor((e.touches[0].clientY - rect.top) / gameState.cellSize);
-            if(x >= 0 && x < gameState.mapSize && y >= 0 && y < gameState.mapSize) {
-                const dist = Math.sqrt((x-gameState.playerPos.x)**2 + (y-gameState.playerPos.y)**2);
-                if(dist <= 1) {
-                    const cmds = ['search', 'attack', 'retreat'];
-                    executeCommand(cmds[Math.floor(Math.random()*3)]);
-                }
-            }
-        });
-        
+            const touch = e.touches[0];
+            touchX = touch.clientX;
+        }
+
+        function touchMoveHandler(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            touchX = touch.clientX;
+        }
+
+        function touchEndHandler() {
+            touchX = null;
+        }
+
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', startGame);
+        document.addEventListener('keydown', keyDownHandler);
+        document.addEventListener('keyup', keyUpHandler);
+        canvas.addEventListener('touchstart', touchStartHandler);
+        canvas.addEventListener('touchmove', touchMoveHandler);
+        canvas.addEventListener('touchend', touchEndHandler);
         window.addEventListener('resize', () => {
-            if(screens.game.classList.contains('active')) {
-                gameState.cellSize = Math.min(40, Math.floor(Math.min(window.innerWidth*0.8, window.innerHeight*0.6)/12));
-                canvas.width = gameState.mapSize * gameState.cellSize;
-                canvas.height = gameState.mapSize * gameState.cellSize;
-                draw();
+            if (gameRunning) {
+                resizeCanvas();
             }
         });
-        
-        initGame();
+
+        resizeCanvas();
+        initBricks();
     </script>
 
   <!-- 推广栏 -->
@@ -857,8 +608,8 @@ body {
   <div class="tiktok-author-row">
     <div class="tiktok-author-avatar" id="author-avatar" onclick="openAuthorProfile()">👤</div>
     <div class="tiktok-author-details">
-      <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">player_5x3fk4</span>
-      <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="4b028955-a0ba-42e9-bb0f-8deee82d54b3" onclick="toggleFollow()">
+      <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">匿名</span>
+      <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="6782d168-bc86-4f8d-a86b-dd149164aa76" onclick="toggleFollow()">
         <span class="follow-icon">+</span> 关注
       </button>
     </div>
@@ -884,13 +635,7 @@ body {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
     </div>
   </div>
-  <div class="tiktok-action" id="stat-comment-btn" onclick="toggleCommentsPanel()">
-    <div class="tiktok-icon">
-      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-    </div>
-    <span class="tiktok-count" id="stat-comments">0</span>
-  </div>
-  <div class="tiktok-action tiktok-info-only" title="游玩次数">
+  <div class="tiktok-action tiktok-info" title="游玩次数">
     <div class="tiktok-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
     </div>
@@ -903,23 +648,6 @@ body {
   <div style="background:transparent;border-radius:12px;padding:10px;width:90%;max-width:400px;text-align:center;position:relative;" onclick="event.stopPropagation()">
     <button onclick="document.getElementById('promo-modal').style.display='none'" style="position:absolute;right:0;top:0;border:none;background:rgba(0,0,0,0.5);width:28px;height:28px;border-radius:50%;font-size:18px;cursor:pointer;color:#fff;z-index:1;">×</button>
     <img src="/images/wechat-qrcode.png" style="width:100%;height:auto;display:block;border-radius:12px;">
-  </div>
-</div>
-
-<!-- 评论区域 -->
-<div class="game-comments-section" id="game-comments-section">
-  <div class="comments-header">
-    <span class="comments-title">💬 评论</span>
-    <button class="comments-close-btn" onclick="toggleCommentsPanel()">×</button>
-  </div>
-  <div class="comments-body" id="game-comments-list">
-    <div style="text-align:center;padding:30px;color:#999;">加载中...</div>
-  </div>
-  <button id="comments-load-more-btn" style="display:none;" onclick="loadMoreGameComments()">加载更多</button>
-  <div class="comments-login-hint" id="comment-login-hint" style="display:none;">请登录后发表留言</div>
-  <div class="comments-input-area" id="comment-input-area" style="display:none;">
-    <textarea id="game-comment-input" placeholder="说点什么..." maxlength="500"></textarea>
-    <button id="game-comment-submit" onclick="submitGameComment()">发布</button>
   </div>
 </div>
 
@@ -958,10 +686,10 @@ body {
 
 <script>
 // 获取游戏ID和作者信息
-const gameId = 'a1e71950-5322-4223-b602-04dfe17c9e3a';
-const gameTitle = '搜打撤SLG';
-const authorToken = '4b028955-a0ba-42e9-bb0f-8deee82d54b3';
-const authorName = 'player_5x3fk4';
+const gameId = '702883bc-87dc-4c8c-bce8-94a707d150a3';
+const gameTitle = '打砖块';
+const authorToken = '6782d168-bc86-4f8d-a86b-dd149164aa76';
+const authorName = '匿名';
 const API_BASE = '/api/games';
 
 // 调试日志
@@ -1394,232 +1122,8 @@ function toggleFollowFromProfile() {
     .catch(() => {});
 }
 
-// ==================== 留言板功能 ====================
-
-// 切换留言板面板
-function toggleCommentsPanel() {
-  const panel = document.getElementById('game-comments-section');
-  if (panel) {
-    panel.classList.toggle('expanded');
-  }
-}
-
-// 留言板状态
-let commentsData = {
-  comments: [],
-  total: 0,
-  offset: 0,
-  hasMore: false,
-  isLoading: false
-};
-
-// 加载留言列表
-function loadGameComments(isRefresh = true) {
-  if (commentsData.isLoading) return;
-  commentsData.isLoading = true;
-  
-  const limit = 20;
-  const offset = isRefresh ? 0 : commentsData.offset;
-  
-  fetch('/api/games/' + gameId + '/comments?limit=' + limit + '&offset=' + offset, {
-    headers: getAuthHeaders()
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        if (isRefresh) {
-          commentsData.comments = data.comments;
-          commentsData.offset = data.comments.length;
-        } else {
-          commentsData.comments = commentsData.comments.concat(data.comments);
-          commentsData.offset += data.comments.length;
-        }
-        commentsData.total = data.total;
-        commentsData.hasMore = data.hasMore;
-        renderComments();
-        updateCommentsCount();
-      }
-    })
-    .catch(err => console.error('加载留言失败:', err))
-    .finally(() => { commentsData.isLoading = false; });
-}
-
-// 渲染留言列表
-function renderComments() {
-  const listEl = document.getElementById('game-comments-list');
-  const loadMoreBtn = document.getElementById('comments-load-more-btn');
-  
-  if (!listEl) return;
-  
-  if (commentsData.comments.length === 0) {
-    listEl.innerHTML = '<div style="text-align:center;padding:30px;color:#999;">💬 还没有留言，快来抢沙发！</div>';
-    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
-    return;
-  }
-  
-  let html = '';
-  commentsData.comments.forEach(function(comment) {
-    const timeStr = formatCommentTime(comment.created_at);
-    const avatarInitial = comment.author_name ? comment.author_name.charAt(0).toUpperCase() : '?';
-    const userToken = getUserToken();
-    const canDelete = comment.is_mine || (userToken && comment.user_token === userToken);
-    
-    html += '<div class="comment-item" data-id="' + comment.id + '">' +
-      '<div class="comment-header">' +
-        '<div class="comment-author-info">' +
-          '<div class="comment-avatar">' + avatarInitial + '</div>' +
-          '<span class="comment-author-name">' + escapeHtml(comment.author_name) + '</span>' +
-          '<span class="comment-time">' + timeStr + '</span>' +
-        '</div>' +
-        (canDelete ? '<button class="comment-delete-btn" onclick="deleteGameComment(' + comment.id + ')">删除</button>' : '') +
-      '</div>' +
-      '<div class="comment-content">' + escapeHtml(comment.content) + '</div>' +
-    '</div>';
-  });
-  
-  listEl.innerHTML = html;
-  
-  if (loadMoreBtn) {
-    loadMoreBtn.style.display = commentsData.hasMore ? 'block' : 'none';
-  }
-}
-
-// 更新评论数量
-function updateCommentsCount() {
-  const countEl = document.getElementById('stat-comments');
-  if (countEl) countEl.textContent = commentsData.total;
-}
-
-// 格式化留言时间
-function formatCommentTime(dateStr) {
-  if (!dateStr) return '';
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diff = now - date;
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-  
-  if (minutes < 1) return '刚刚';
-  if (minutes < 60) return minutes + '分钟前';
-  if (hours < 24) return hours + '小时前';
-  if (days < 7) return days + '天前';
-  return (date.getMonth() + 1) + '/' + date.getDate();
-}
-
-// HTML转义
-function escapeHtml(str) {
-  if (!str) return '';
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-// 发布留言
-function submitGameComment() {
-  const inputEl = document.getElementById('game-comment-input');
-  const submitBtn = document.getElementById('game-comment-submit');
-  
-  if (!inputEl || !submitBtn) return;
-  
-  const content = inputEl.value.trim();
-  if (!content) {
-    alert('请输入留言内容');
-    return;
-  }
-  if (content.length > 500) {
-    alert('留言内容不能超过500字');
-    return;
-  }
-  
-  const userToken = getUserToken();
-  if (!userToken) {
-    alert('请先登录后再留言');
-    return;
-  }
-  
-  submitBtn.disabled = true;
-  submitBtn.textContent = '发布中...';
-  
-  fetch('/api/games/' + gameId + '/comments', {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ content: content })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        inputEl.value = '';
-        commentsData.comments.unshift(data.comment);
-        commentsData.total++;
-        renderComments();
-        updateCommentsCount();
-      } else {
-        alert(data.error || '发布失败');
-      }
-    })
-    .catch(err => {
-      console.error('发布留言失败:', err);
-      alert('网络错误，请重试');
-    })
-    .finally(() => {
-      submitBtn.disabled = false;
-      submitBtn.textContent = '发布';
-    });
-}
-
-// 删除留言
-function deleteGameComment(commentId) {
-  if (!confirm('确定要删除这条留言吗？')) return;
-  
-  fetch('/api/games/' + gameId + '/comments/' + commentId, {
-    method: 'DELETE',
-    headers: getAuthHeaders()
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        commentsData.comments = commentsData.comments.filter(function(c) { return c.id !== commentId; });
-        commentsData.total--;
-        renderComments();
-        updateCommentsCount();
-      } else {
-        alert(data.error || '删除失败');
-      }
-    })
-    .catch(err => {
-      console.error('删除留言失败:', err);
-      alert('网络错误，请重试');
-    });
-}
-
-// 加载更多留言
-function loadMoreGameComments() {
-  if (!commentsData.hasMore || commentsData.isLoading) return;
-  loadGameComments(false);
-}
-
-// 更新留言输入区域显示
-function updateCommentInputUI() {
-  const loginHint = document.getElementById('comment-login-hint');
-  const inputArea = document.getElementById('comment-input-area');
-  const userToken = getUserToken();
-  
-  if (loginHint && inputArea) {
-    if (userToken) {
-      loginHint.style.display = 'none';
-      inputArea.style.display = 'flex';
-    } else {
-      loginHint.style.display = 'block';
-      inputArea.style.display = 'none';
-    }
-  }
-}
-
 // 初始化
-window.addEventListener('load', function() {
-  loadStats();
-  updateCommentInputUI();
-  loadGameComments(true);
-});
+window.addEventListener('load', loadStats);
 </script>
 
 </body>

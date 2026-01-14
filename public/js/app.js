@@ -194,6 +194,18 @@ const state = {
   }
 };
 
+/**
+ * 获取有效的作者名
+ * 优先使用设置的作者名，其次是账号昵称，如果是默认值'游戏玩家'则使用账号ID
+ */
+function getEffectiveAuthorName() {
+  const nickname = state.settings.authorName || state.account.nickname;
+  if (nickname && nickname !== '游戏玩家' && nickname !== '') {
+    return nickname;
+  }
+  return state.account.accountId || '匿名';
+}
+
 // 生成设备指纹（用于防白嫖）
 function generateDeviceFingerprint() {
   try {
@@ -504,7 +516,7 @@ async function saveGeneratingState() {
     if (!existingDraftId) {
       try {
         const authorToken = getAuthorToken();
-        const authorName = state.settings.authorName || state.account.nickname || '匿名';
+        const authorName = getEffectiveAuthorName();
         
         const response = await fetch('/api/games', {
           method: 'POST',
@@ -1001,9 +1013,9 @@ async function updateNickname(nickname) {
       state.settings.authorName = nickname;
       localStorage.setItem('aigame-author-name', nickname);
       
-      // 更新"我的"页面的用户名显示
+      // 更新"我的"页面的用户名显示（使用有效作者名函数确保一致性）
       const usernameEl = document.getElementById('profile-page-username');
-      if (usernameEl) usernameEl.textContent = nickname || '游戏创作者';
+      if (usernameEl) usernameEl.textContent = getEffectiveAuthorName();
       
       // 刷新"我的作品"列表以显示最新的作者名
       if (typeof loadProfilePageGames === 'function') {
@@ -1090,9 +1102,9 @@ async function loginWithAccount(accountId, password) {
       localStorage.setItem('aigame-author-name', nickname);
       // 更新账号ID显示
       updateAccountIdDisplay();
-      // 更新我的页面昵称显示
+      // 更新我的页面昵称显示（使用有效作者名函数确保一致性）
       const usernameEl = document.getElementById('profile-page-username');
-      if (usernameEl) usernameEl.textContent = nickname || '游戏创作者';
+      if (usernameEl) usernameEl.textContent = getEffectiveAuthorName();
 
       showToast('登录成功');
       // 重新加载数据
@@ -1329,7 +1341,7 @@ const HOME_SECTION_LIMIT = 6;
 
 // 加载首页所有分类数据
 async function loadHomeSections() {
-  const sections = ['recent', 'featured', 'hot', 'likes', 'favorites'];
+  const sections = ['recent', 'featured', 'hot', 'likes', 'favorites', 'comments'];
   
   // 并行加载所有分类
   await Promise.all(sections.map(section => loadHomeSection(section)));
@@ -1360,6 +1372,9 @@ async function loadHomeSection(sectionName) {
         break;
       case 'featured':
         apiUrl = `/api/games/featured?limit=${HOME_SECTION_LIMIT}&offset=0`;
+        break;
+      case 'comments':
+        apiUrl = `/api/leaderboard/comments?limit=${HOME_SECTION_LIMIT}&offset=0`;
         break;
       default:
         apiUrl = `/api/games?sort=newest&limit=${HOME_SECTION_LIMIT}&offset=0`;
@@ -1399,6 +1414,7 @@ function renderHomeGameList(container, games) {
         <div class="game-card-stats">
           <span>🎮 ${game.play_count || 0}</span>
           <span>❤️ ${game.like_count || 0}</span>
+          <span>💬 ${game.comment_count || 0}</span>
         </div>
       </div>
     `;
@@ -1445,6 +1461,7 @@ function renderGameList(container, games, tabName, append = false, startOffset =
           <div class="game-card-stats">
             <span>🎮 ${game.play_count || 0}</span>
             <span>❤️ ${game.like_count || 0}</span>
+            <span>💬 ${game.comment_count || 0}</span>
           </div>
         </div>
       </div>
@@ -1988,6 +2005,7 @@ async function loadProfilePageData() {
   loadProfilePageGames();
   loadProfilePageLikes();
   loadProfilePageFavorites();
+  loadProfilePageComments();
 }
 
 
@@ -2029,6 +2047,10 @@ function showMoreGames(category) {
     case 'favorites':
       title = '⭐ 收藏榜';
       apiUrl = '/api/leaderboard/favorites';
+      break;
+    case 'comments':
+      title = '💬 评论榜';
+      apiUrl = '/api/leaderboard/comments';
       break;
     // 个人页面分类
     case 'my-games':
@@ -2153,6 +2175,7 @@ function renderListGameCard(game, isMyGames = false) {
   const emoji = getGameEmoji(game.title);
   const plays = game.plays || game.play_count || 0;
   const likes = game.likes || game.like_count || 0;
+  const comments = game.comment_count || 0;
   const isPrivate = game.visibility === 'private';
   
   // 长按数据属性（仅我的作品）
@@ -2168,6 +2191,7 @@ function renderListGameCard(game, isMyGames = false) {
         <div class="list-card-stats">
           <span>🎮 ${formatNumber(plays)}</span>
           <span>❤️ ${formatNumber(likes)}</span>
+          <span>💬 ${formatNumber(comments)}</span>
         </div>
         ${!isMyGames && game.author_name ? `<div class="list-card-author">👤 ${escapeHtml(game.author_name)}</div>` : ''}
       </div>
@@ -2349,6 +2373,7 @@ function renderTiktokCard(game, type = 'works') {
   const emoji = getGameEmoji(game.title);
   const playCount = formatNumber(game.play_count || 0);
   const likeCount = formatNumber(game.like_count || 0);
+  const commentCount = formatNumber(game.comment_count || 0);
   const author = type === 'works' ? '' : `<span>👤 ${escapeHtml(game.author_name || '匿名')}</span>`;
   
   return `
@@ -2359,6 +2384,7 @@ function renderTiktokCard(game, type = 'works') {
         <div class="tiktok-card-stats">
           <span>▶️ ${playCount}</span>
           <span>❤️ ${likeCount}</span>
+          <span>💬 ${commentCount}</span>
           ${author}
         </div>
       </div>
@@ -2400,6 +2426,10 @@ function renderHorizontalCard(game, enableLongPress = true) {
           <span class="card-stat">
             <span class="stat-icon">❤️</span>
             <span>${formatNumber(likes)}</span>
+          </span>
+          <span class="card-stat">
+            <span class="stat-icon">💬</span>
+            <span>${formatNumber(game.comment_count || 0)}</span>
           </span>
         </div>
       `}
@@ -2606,6 +2636,146 @@ async function loadProfilePageFavorites() {
   }
 }
 
+// 加载我的评论（竖向列表）
+async function loadProfilePageComments() {
+  const container = document.getElementById('profile-comments-list');
+  const moreBtn = document.getElementById('profile-comments-more');
+  const DISPLAY_LIMIT = 5; // 显示5条评论
+  if (!container) return;
+  
+  container.innerHTML = '<div class="loading-games">加载中...</div>';
+  
+  try {
+    const response = await fetch('/api/my-comments', {
+      headers: { 'X-User-Token': getUserToken() }
+    });
+    const data = await response.json();
+    
+    if (data.success && data.comments && data.comments.length > 0) {
+      const total = data.comments.length;
+      const sectionCount = document.getElementById('section-count-comments');
+      if (sectionCount) sectionCount.textContent = total;
+      const displayComments = data.comments.slice(0, DISPLAY_LIMIT);
+      container.innerHTML = displayComments.map(comment => renderMyCommentCard(comment)).join('');
+      if (moreBtn) moreBtn.style.display = total > DISPLAY_LIMIT ? 'inline-flex' : 'none';
+    } else {
+      container.innerHTML = '<div class="empty-games">还没有发表评论</div>';
+      const sectionCount = document.getElementById('section-count-comments');
+      if (sectionCount) sectionCount.textContent = '0';
+      if (moreBtn) moreBtn.style.display = 'none';
+    }
+  } catch (e) {
+    console.error('加载评论列表失败:', e);
+    container.innerHTML = '<div class="error-games">加载失败</div>';
+  }
+}
+
+// 渲染我的评论卡片
+function renderMyCommentCard(comment) {
+  const date = new Date(comment.created_at).toLocaleDateString('zh-CN');
+  const statusClass = comment.is_hidden ? 'comment-hidden' : '';
+  const statusText = comment.is_hidden ? '🔒 已隐藏' : '🌐 公开';
+  const toggleBtnText = comment.is_hidden ? '公开' : '隐藏';
+  
+  return `
+    <div class="my-comment-card ${statusClass}" data-comment-id="${comment.id}">
+      <div class="my-comment-header">
+        <span class="my-comment-game" onclick="openGame(${comment.game_id})">${escapeHtml(comment.game_title || '游戏')}</span>
+        <span class="my-comment-status">${statusText}</span>
+      </div>
+      <div class="my-comment-content">${escapeHtml(comment.content)}</div>
+      <div class="my-comment-footer">
+        <span class="my-comment-date">${date}</span>
+        <div class="my-comment-actions">
+          <button class="btn-comment-action" onclick="toggleMyCommentHidden(${comment.id})">${toggleBtnText}</button>
+          <button class="btn-comment-action btn-comment-delete" onclick="deleteMyComment(${comment.id})">删除</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// 切换评论隐藏状态
+async function toggleMyCommentHidden(commentId) {
+  try {
+    const response = await fetch(`/api/my-comments/${commentId}/toggle-hidden`, {
+      method: 'POST',
+      headers: { 'X-User-Token': getUserToken() }
+    });
+    const data = await response.json();
+    
+    if (data.success) {
+      showToast(data.message, 'success');
+      loadProfilePageComments(); // 刷新列表
+    } else {
+      showToast(data.error || '操作失败', 'error');
+    }
+  } catch (e) {
+    console.error('切换评论状态失败:', e);
+    showToast('操作失败', 'error');
+  }
+}
+
+// 删除我的评论
+async function deleteMyComment(commentId) {
+  if (!confirm('确定要删除这条评论吗？')) return;
+  
+  try {
+    const response = await fetch(`/api/my-comments/${commentId}`, {
+      method: 'DELETE',
+      headers: { 'X-User-Token': getUserToken() }
+    });
+    const data = await response.json();
+    
+    if (data.success) {
+      showToast('评论已删除', 'success');
+      loadProfilePageComments(); // 刷新列表
+    } else {
+      showToast(data.error || '删除失败', 'error');
+    }
+  } catch (e) {
+    console.error('删除评论失败:', e);
+    showToast('删除失败', 'error');
+  }
+}
+
+// 显示更多评论
+function showMoreComments() {
+  // 打开我的评论管理页面
+  openMyCommentsPage();
+}
+
+// 打开我的评论管理页面
+async function openMyCommentsPage() {
+  const listPage = document.getElementById('game-list-page');
+  document.getElementById('list-page-title').textContent = '💬 我的评论';
+  listPage.classList.add('active');
+  document.getElementById('bottom-nav').style.display = 'none';
+  
+  const grid = document.getElementById('game-list-grid');
+  grid.innerHTML = '<div class="loading-games">加载中...</div>';
+  
+  try {
+    const response = await fetch('/api/my-comments?limit=100', {
+      headers: { 'X-User-Token': getUserToken() }
+    });
+    const data = await response.json();
+    
+    if (data.success && data.comments && data.comments.length > 0) {
+      grid.innerHTML = data.comments.map(comment => renderMyCommentCard(comment)).join('');
+    } else {
+      grid.innerHTML = '<div class="list-empty"><div class="list-empty-icon">📭</div><p>还没有发表评论</p></div>';
+    }
+  } catch (e) {
+    console.error('加载评论列表失败:', e);
+    grid.innerHTML = '<div class="list-empty"><div class="list-empty-icon">😢</div><p>加载失败</p></div>';
+  }
+  
+  // 隐藏加载更多
+  const noMore = document.getElementById('list-no-more');
+  if (noMore) noMore.style.display = 'flex';
+}
+
 // 加载设置页面数据
 function loadProfilePageSettings() {
   // 更新账号ID显示（使用统一函数）
@@ -2697,9 +2867,9 @@ async function savePageSettings() {
   
   showToast('设置已保存', 'success');
   
-  // 更新显示
+  // 更新显示（使用有效作者名函数确保一致性）
   const usernameEl = document.getElementById('profile-page-username');
-  if (usernameEl) usernameEl.textContent = nickname || '游戏创作者';
+  if (usernameEl) usernameEl.textContent = getEffectiveAuthorName();
 }
 
 // 显示游戏页面
@@ -3106,6 +3276,7 @@ function renderLeaderboard(container, games, type, append = false, startOffset =
       <div class="leaderboard-stats">
         ${highlightStat}
         <span class="leaderboard-stat">👁️ ${game.play_count || 0}</span>
+        <span class="leaderboard-stat">💬 ${game.comment_count || 0}</span>
       </div>
     `;
     
@@ -3283,6 +3454,7 @@ function createGameCard(game) {
       <div class="game-card-stats-row">
         <span>❤️ ${game.like_count || 0}</span>
         <span>👁️ ${game.play_count || 0}</span>
+        <span>💬 ${game.comment_count || 0}</span>
       </div>
     </div>
   `;
@@ -3874,7 +4046,7 @@ function openSaveModal() {
   modal.classList.add('active');
   
   document.getElementById('save-title').value = state.currentGame?.title || '';
-  document.getElementById('save-author').value = state.settings.authorName || state.account.nickname || '';
+  document.getElementById('save-author').value = getEffectiveAuthorName();
   
   // 生成成功后刷新积分显示（后端已扣除，前端同步）
   loadCredits().then(() => {
@@ -5291,8 +5463,8 @@ function switchProfileTab(tabName) {
 
 // 加载个人中心数据
 async function loadProfileData() {
-  // 设置用户名
-  const username = state.settings.authorName || state.account.nickname || '游戏创作者';
+  // 设置用户名（使用有效的作者名，排除默认值'游戏玩家'）
+  const username = getEffectiveAuthorName();
   document.getElementById('profile-username').textContent = username;
   
   // 显示账号信息
@@ -5444,7 +5616,7 @@ async function saveProfileSettings() {
   // 密码设置已移除，改用设备指纹自动恢复机制
   
   // 更新用户名显示
-  document.getElementById('profile-username').textContent = state.settings.authorName || state.account.nickname || '游戏创作者';
+  document.getElementById('profile-username').textContent = getEffectiveAuthorName();
   
   showToast('设置已保存', 'success');
   
@@ -5546,6 +5718,7 @@ async function loadMyGames() {
                   <div class="my-game-meta">
                     <span>▶️ ${game.play_count || 0}</span>
                     <span>❤️ ${game.like_count || 0}</span>
+                    <span>💬 ${game.comment_count || 0}</span>
                     <span>📅 ${formatDate(game.created_at)}</span>
                   </div>
                 </div>
@@ -5605,6 +5778,7 @@ async function loadMyLikes() {
               <span>👤 ${escapeHtml(game.author_name || '匿名')}</span>
               <span>▶️ ${game.play_count || 0}</span>
               <span>❤️ ${game.like_count || 0}</span>
+              <span>💬 ${game.comment_count || 0}</span>
             </div>
           </div>
           <div class="my-game-actions">
@@ -5655,6 +5829,7 @@ async function loadMyFavorites() {
               <span>👤 ${escapeHtml(game.author_name || '匿名')}</span>
               <span>▶️ ${game.play_count || 0}</span>
               <span>❤️ ${game.like_count || 0}</span>
+              <span>💬 ${game.comment_count || 0}</span>
             </div>
           </div>
           <div class="my-game-actions">
@@ -7591,6 +7766,7 @@ async function openUserProfile(userToken) {
                 <div class="user-game-stats">
                   <span>🎮 ${formatNumber(game.play_count || 0)}</span>
                   <span>❤️ ${formatNumber(game.like_count || 0)}</span>
+                  <span>💬 ${formatNumber(game.comment_count || 0)}</span>
                 </div>
               </div>
             `).join('')}
@@ -7788,3 +7964,344 @@ document.addEventListener('keydown', (e) => {
     exitFullscreenMode();
   }
 });
+
+// ==================== 游戏留言板功能 ====================
+
+// 留言板状态
+let commentsState = {
+  gameId: null,
+  comments: [],
+  total: 0,
+  offset: 0,
+  hasMore: false,
+  isLoading: false
+};
+
+// 初始化留言板（游戏页面加载时调用）
+async function initComments(gameId) {
+  console.log('[DEBUG] 初始化留言板, gameId:', gameId);
+  
+  if (!gameId) {
+    console.log('[DEBUG] 无效的 gameId，跳过留言板初始化');
+    return;
+  }
+  
+  commentsState.gameId = gameId;
+  commentsState.comments = [];
+  commentsState.offset = 0;
+  commentsState.hasMore = false;
+  
+  // 显示留言板区域
+  const section = document.getElementById('comments-section');
+  console.log('[DEBUG] 留言板区域元素:', section);
+  if (section) {
+    section.style.display = 'block';
+    console.log('[DEBUG] 留言板区域已设置为显示');
+  } else {
+    console.log('[DEBUG] 未找到留言板区域元素 #comments-section');
+  }
+  
+  // 根据登录状态显示输入区域或登录提示
+  updateCommentInputUI();
+  
+  // 加载留言列表
+  try {
+    await loadComments(true);
+    console.log('[DEBUG] 留言加载完成, total:', commentsState.total);
+  } catch (err) {
+    console.error('[DEBUG] 留言加载失败:', err);
+  }
+}
+
+// 更新留言输入区域UI
+function updateCommentInputUI() {
+  const loginHint = document.getElementById('comment-login-hint');
+  const inputArea = document.getElementById('comment-input-area');
+  
+  if (!loginHint || !inputArea) return;
+  
+  const userToken = localStorage.getItem('user_token');
+  
+  if (userToken) {
+    loginHint.style.display = 'none';
+    inputArea.style.display = 'flex';
+  } else {
+    loginHint.style.display = 'block';
+    inputArea.style.display = 'none';
+  }
+}
+
+// 加载留言列表
+async function loadComments(isRefresh = false) {
+  if (commentsState.isLoading) return;
+  if (!commentsState.gameId) return;
+  
+  commentsState.isLoading = true;
+  
+  try {
+    const userToken = localStorage.getItem('user_token') || '';
+    const limit = 20;
+    const offset = isRefresh ? 0 : commentsState.offset;
+    
+    const response = await fetch(`/api/games/${commentsState.gameId}/comments?limit=${limit}&offset=${offset}`, {
+      headers: {
+        'X-User-Token': userToken
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      if (isRefresh) {
+        commentsState.comments = data.comments;
+        commentsState.offset = data.comments.length;
+      } else {
+        commentsState.comments = [...commentsState.comments, ...data.comments];
+        commentsState.offset += data.comments.length;
+      }
+      
+      commentsState.total = data.total;
+      commentsState.hasMore = data.hasMore;
+      
+      renderComments();
+      updateCommentsCount();
+    }
+  } catch (error) {
+    console.error('加载留言失败:', error);
+  } finally {
+    commentsState.isLoading = false;
+  }
+}
+
+// 加载更多留言
+async function loadMoreComments() {
+  if (!commentsState.hasMore || commentsState.isLoading) return;
+  await loadComments(false);
+}
+
+// 渲染留言列表
+function renderComments() {
+  const listEl = document.getElementById('comments-list');
+  const loadMoreEl = document.getElementById('comments-load-more');
+  
+  if (!listEl) return;
+  
+  if (commentsState.comments.length === 0) {
+    listEl.innerHTML = `
+      <div class="comments-empty">
+        <div class="comments-empty-icon">💬</div>
+        <div class="comments-empty-text">还没有留言，快来抢沙发！</div>
+      </div>
+    `;
+    if (loadMoreEl) loadMoreEl.style.display = 'none';
+    return;
+  }
+  
+  let html = '';
+  commentsState.comments.forEach(comment => {
+    const timeStr = formatCommentTime(comment.created_at);
+    const avatarInitial = comment.author_name ? comment.author_name.charAt(0).toUpperCase() : '?';
+    
+    html += `
+      <div class="comment-item" data-id="${comment.id}">
+        <div class="comment-header">
+          <div class="comment-author-info">
+            <div class="comment-avatar">${avatarInitial}</div>
+            <span class="comment-author-name">${escapeHtml(comment.author_name)}</span>
+            <span class="comment-time">${timeStr}</span>
+          </div>
+          <div class="comment-actions">
+            ${comment.is_mine ? `<button class="comment-delete-btn" onclick="deleteComment(${comment.id})">删除</button>` : ''}
+          </div>
+        </div>
+        <div class="comment-content">${escapeHtml(comment.content)}</div>
+      </div>
+    `;
+  });
+  
+  listEl.innerHTML = html;
+  
+  // 显示/隐藏加载更多按钮
+  if (loadMoreEl) {
+    loadMoreEl.style.display = commentsState.hasMore ? 'flex' : 'none';
+  }
+}
+
+// 更新留言数量显示
+function updateCommentsCount() {
+  const countEl = document.getElementById('comments-count');
+  if (countEl) {
+    countEl.textContent = `(${commentsState.total})`;
+  }
+}
+
+// 格式化留言时间
+function formatCommentTime(dateStr) {
+  if (!dateStr) return '';
+  
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = now - date;
+  
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  
+  if (minutes < 1) return '刚刚';
+  if (minutes < 60) return `${minutes}分钟前`;
+  if (hours < 24) return `${hours}小时前`;
+  if (days < 7) return `${days}天前`;
+  
+  return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
+// 发布留言
+async function submitComment() {
+  const inputEl = document.getElementById('comment-input');
+  const submitBtn = document.getElementById('comment-submit-btn');
+  
+  if (!inputEl || !submitBtn) return;
+  
+  const content = inputEl.value.trim();
+  
+  if (!content) {
+    showToast('请输入留言内容', 'error');
+    return;
+  }
+  
+  if (content.length > 500) {
+    showToast('留言内容不能超过500字', 'error');
+    return;
+  }
+  
+  const userToken = localStorage.getItem('user_token');
+  if (!userToken) {
+    showToast('请先登录', 'error');
+    showLoginModal();
+    return;
+  }
+  
+  // 禁用按钮
+  submitBtn.disabled = true;
+  submitBtn.textContent = '发布中...';
+  
+  try {
+    const response = await fetch(`/api/games/${commentsState.gameId}/comments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Token': userToken
+      },
+      body: JSON.stringify({ content })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // 清空输入框
+      inputEl.value = '';
+      
+      // 添加新留言到列表顶部
+      commentsState.comments.unshift(data.comment);
+      commentsState.total++;
+      
+      renderComments();
+      updateCommentsCount();
+      
+      showToast('留言发布成功', 'success');
+    } else {
+      showToast(data.error || '发布失败', 'error');
+    }
+  } catch (error) {
+    console.error('发布留言失败:', error);
+    showToast('网络错误，请重试', 'error');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = '发布';
+  }
+}
+
+// 删除留言
+async function deleteComment(commentId) {
+  if (!confirm('确定要删除这条留言吗？')) return;
+  
+  const userToken = localStorage.getItem('user_token');
+  if (!userToken) {
+    showToast('请先登录', 'error');
+    return;
+  }
+  
+  try {
+    const response = await fetch(`/api/games/${commentsState.gameId}/comments/${commentId}`, {
+      method: 'DELETE',
+      headers: {
+        'X-User-Token': userToken
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // 从列表中移除
+      commentsState.comments = commentsState.comments.filter(c => c.id !== commentId);
+      commentsState.total--;
+      
+      renderComments();
+      updateCommentsCount();
+      
+      showToast('留言已删除', 'success');
+    } else {
+      showToast(data.error || '删除失败', 'error');
+    }
+  } catch (error) {
+    console.error('删除留言失败:', error);
+    showToast('网络错误，请重试', 'error');
+  }
+}
+
+// 显示登录弹窗
+function showLoginModal() {
+  // 调用现有的登录对话框函数
+  if (typeof showLoginDialog === 'function') {
+    showLoginDialog();
+  } else {
+    // 跳转到我的页面触发登录
+    switchBottomNav('profile');
+  }
+}
+
+// 隐藏留言板（离开游戏页面时）
+function hideComments() {
+  const section = document.getElementById('comments-section');
+  if (section) {
+    section.style.display = 'none';
+  }
+  
+  // 重置状态
+  commentsState = {
+    gameId: null,
+    comments: [],
+    total: 0,
+    offset: 0,
+    hasMore: false,
+    isLoading: false
+  };
+}
+
+// 扩展原有的 loadGameById 函数，加载游戏后初始化留言板
+const origLoadGameByIdForComments = loadGameById;
+loadGameById = async function(gameId) {
+  await origLoadGameByIdForComments(gameId);
+  
+  // 初始化留言板
+  await initComments(gameId);
+};
+
+// 扩展 showHome 函数，隐藏留言板
+const origShowHomeForComments = showHome;
+if (typeof showHome === 'function') {
+  showHome = function() {
+    hideComments();
+    return origShowHomeForComments.apply(this, arguments);
+  };
+}
