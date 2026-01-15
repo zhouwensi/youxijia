@@ -182,12 +182,12 @@
 }
 .tiktok-sidebar {
   position: fixed !important;
-  right: 12px !important;
+  right: 8px !important;
   top: 50% !important;
   transform: translateY(-50%) !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 16px !important;
+  gap: 12px !important;
   z-index: 999998 !important;
   pointer-events: auto !important;
 }
@@ -210,18 +210,18 @@
   transform: scale(0.9) !important;
 }
 .tiktok-icon {
-  width: 48px !important;
-  height: 48px !important;
+  width: 40px !important;
+  height: 40px !important;
   border-radius: 50% !important;
   background: rgba(0, 0, 0, 0.6) !important;
   backdrop-filter: blur(8px) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 24px !important;
+  font-size: 18px !important;
   transition: all 0.2s ease !important;
-  border: 2px solid rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
   color: #fff !important;
 }
 .tiktok-action:hover .tiktok-icon {
@@ -230,10 +230,10 @@
   border-color: rgba(255, 255, 255, 0.4) !important;
 }
 .tiktok-count {
-  font-size: 12px !important;
-  font-weight: 600 !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
   color: #fff !important;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
   white-space: nowrap !important;
 }
 .tiktok-action.liked .tiktok-icon {
@@ -1351,30 +1351,30 @@ body {
 <div class="tiktok-sidebar">
   <div class="tiktok-action" id="stat-like-btn" onclick="likeGame()">
     <div class="tiktok-icon">
-      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
     </div>
     <span class="tiktok-count" id="stat-likes">0</span>
   </div>
   <div class="tiktok-action" id="stat-fav-btn" onclick="toggleFavorite()">
     <div class="tiktok-icon">
-      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
     </div>
     <span class="tiktok-count" id="stat-favs">0</span>
   </div>
   <div class="tiktok-action" onclick="openSharePanel()">
     <div class="tiktok-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
     </div>
   </div>
   <div class="tiktok-action" id="stat-comment-btn" onclick="toggleCommentsPanel()">
     <div class="tiktok-icon">
-      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
     </div>
     <span class="tiktok-count" id="stat-comments">0</span>
   </div>
   <div class="tiktok-action tiktok-info-only" title="游玩次数">
     <div class="tiktok-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
     </div>
     <span class="tiktok-count" id="stat-plays">0</span>
   </div>

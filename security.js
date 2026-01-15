@@ -513,14 +513,22 @@ function bodySizeCheck(maxSize = 1024 * 1024) { // 默认1MB
  * 获取CORS配置
  */
 function getCorsConfig() {
+  // 默认允许的域名（生产环境）
+  const defaultOrigins = [
+    'http://localhost', 
+    'http://localhost:80', 
+    'http://127.0.0.1', 
+    'http://127.0.0.1:80',
+    // 生产域名
+    'http://www.yijuhuayouxi.com',
+    'https://www.yijuhuayouxi.com',
+    'http://yijuhuayouxi.com',
+    'https://yijuhuayouxi.com'
+  ];
+  
   const allowedOrigins = process.env.ALLOWED_ORIGINS 
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-    : [
-        'http://localhost', 
-        'http://localhost:80', 
-        'http://127.0.0.1', 
-        'http://127.0.0.1:80'
-      ];
+    : defaultOrigins;
   
   return {
     origin: function(origin, callback) {

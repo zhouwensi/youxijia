@@ -7,11 +7,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#1a1a2e">
-  <meta name="description" content="扫雷 - AI一句话生成的游戏">
-  <meta property="og:title" content="扫雷 - AI游戏">
+  <meta name="description" content="做个流星蝴蝶剑 - AI一句话生成的游戏">
+  <meta property="og:title" content="流星蝴蝶剑 - AI游戏">
   <meta property="og:description" content="这个游戏由AI一句话生成！关注公众号「游戏开发技术教程」，你也可以免费生成游戏！">
   <meta property="og:type" content="website">
-  <title>扫雷 - AI游戏</title>
+  <title>流星蝴蝶剑 - AI游戏</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
   <!-- 推广栏样式 -->
   <style>
@@ -452,108 +452,115 @@ body {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
-
+        
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #121212;
-            color: #e0e0e0;
             width: 100vw;
             height: 100vh;
             overflow: hidden;
+            background: #0a0a14;
+            font-family: 'Microsoft YaHei', sans-serif;
+            color: #e0e0ff;
             display: flex;
             justify-content: center;
             align-items: center;
         }
-
+        
         canvas {
             display: block;
-            background: #1a1a1a;
-            border-radius: 8px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            background: #111122;
         }
-
-        .overlay {
+        
+        .screen {
             position: absolute;
-            top: 0;
-            left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.85);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            background: rgba(10, 10, 20, 0.85);
             z-index: 10;
             transition: opacity 0.3s;
         }
-
+        
         .hidden {
             display: none !important;
         }
-
+        
         h1 {
-            font-size: clamp(2.5rem, 8vw, 4rem);
-            margin-bottom: 1.5rem;
-            color: #4fc3f7;
-            text-shadow: 0 0 10px rgba(79, 195, 247, 0.5);
-            text-align: center;
-        }
-
-        h2 {
-            font-size: clamp(2rem, 6vw, 3rem);
-            margin-bottom: 1.5rem;
-            color: #ff9800;
-            text-align: center;
-        }
-
-        p {
-            font-size: clamp(1rem, 4vw, 1.3rem);
+            font-size: min(8vw, 4rem);
             margin-bottom: 2rem;
-            max-width: 90%;
             text-align: center;
-            line-height: 1.5;
-            color: #b0b0b0;
+            color: #7bb3ff;
+            text-shadow: 0 0 10px #3a7bd5, 0 0 20px #3a7bd5;
+            letter-spacing: 0.2em;
         }
-
-        .stats {
-            font-size: clamp(1.2rem, 5vw, 1.8rem);
-            margin: 1.5rem 0;
-            color: #69f0ae;
-            text-align: center;
+        
+        h2 {
+            font-size: min(6vw, 3rem);
+            margin-bottom: 1.5rem;
+            color: #ff7b7b;
+            text-shadow: 0 0 8px #ff3a3a;
         }
-
-        .btn {
-            background: linear-gradient(135deg, #2196f3, #0d47a1);
+        
+        .score {
+            font-size: min(5vw, 2.5rem);
+            margin: 1rem 0;
+            color: #7bff7b;
+        }
+        
+        button {
+            padding: min(4vw, 1.5rem) min(8vw, 3rem);
+            font-size: min(5vw, 1.8rem);
+            background: linear-gradient(145deg, #3a5fcd, #2a4dbd);
             color: white;
             border: none;
-            padding: clamp(0.8rem, 3vw, 1.2rem) clamp(2rem, 6vw, 3rem);
-            font-size: clamp(1.1rem, 4vw, 1.5rem);
-            border-radius: 50px;
+            border-radius: 12px;
             cursor: pointer;
+            margin: 1rem;
             transition: all 0.2s;
-            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
-            font-weight: bold;
-            letter-spacing: 1px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
-
-        .btn:hover, .btn:active {
+        
+        button:hover, button:active {
+            background: linear-gradient(145deg, #4a6fdd, #3a5fcd);
             transform: scale(1.05);
-            box-shadow: 0 6px 20px rgba(33, 150, 243, 0.5);
         }
-
-        .btn:active {
-            transform: scale(0.98);
+        
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            padding: 0 10px;
+            z-index: 5;
         }
-
+        
+        .control-btn {
+            width: min(20vw, 80px);
+            height: min(20vw, 80px);
+            border-radius: 50%;
+            background: rgba(58, 95, 205, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: min(8vw, 2rem);
+            color: white;
+            user-select: none;
+            touch-action: none;
+        }
+        
         .instructions {
-            margin-top: 2rem;
-            font-size: clamp(0.9rem, 3vw, 1.1rem);
-            color: #888;
-            text-align: center;
             max-width: 90%;
+            text-align: center;
+            margin: 2rem 0;
+            font-size: min(4vw, 1.2rem);
+            line-height: 1.5;
+            color: #a0a0ff;
         }
     </style>
 
@@ -562,380 +569,485 @@ body {
   <!-- 原游戏body内容 -->
   
     <canvas id="gameCanvas"></canvas>
-
-    <div id="startOverlay" class="overlay">
-        <h1>💣 扫雷</h1>
-        <p>点击翻开格子，长按或右键标记地雷</p>
-        <p>避免踩到地雷，标记所有地雷即可获胜</p>
-        <button id="startBtn" class="btn">开始游戏</button>
-        <div class="instructions">
-            操作：点击翻开 | 长按/右键标记
-        </div>
+    
+    <div id="startScreen" class="screen">
+        <h1>⚔️ 流星蝴蝶剑 ⚔️</h1>
+        <p class="instructions">控制剑客躲避流星，击败蝴蝶敌人<br>WASD/方向键移动，空格/点击攻击<br>触屏可使用下方按钮</p>
+        <button id="startBtn">开始游戏</button>
     </div>
-
-    <div id="endOverlay" class="overlay hidden">
-        <h2 id="endTitle">游戏结束</h2>
-        <p id="endMessage"></p>
-        <div class="stats" id="endStats"></div>
-        <button id="restartBtn" class="btn">再玩一次</button>
+    
+    <div id="endScreen" class="screen hidden">
+        <h2>游戏结束</h2>
+        <div class="score">最终得分: <span id="finalScore">0</span></div>
+        <button id="restartBtn">重新开始</button>
+    </div>
+    
+    <div class="controls">
+        <div class="control-btn" id="leftBtn">←</div>
+        <div class="control-btn" id="rightBtn">→</div>
+        <div class="control-btn" id="upBtn">↑</div>
+        <div class="control-btn" id="downBtn">↓</div>
+        <div class="control-btn" id="attackBtn">⚔️</div>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const startOverlay = document.getElementById('startOverlay');
-        const endOverlay = document.getElementById('endOverlay');
+        const startScreen = document.getElementById('startScreen');
+        const endScreen = document.getElementById('endScreen');
         const startBtn = document.getElementById('startBtn');
         const restartBtn = document.getElementById('restartBtn');
-        const endTitle = document.getElementById('endTitle');
-        const endMessage = document.getElementById('endMessage');
-        const endStats = document.getElementById('endStats');
-
-        let gameState = 'start';
-        let grid = [];
-        let revealed = [];
-        let flagged = [];
-        let gameOver = false;
-        let gameWon = false;
-        let mineCount = 10;
-        let flagCount = 0;
-        let startTime = 0;
-        let elapsedTime = 0;
-        let rows = 9;
-        let cols = 9;
-        let cellSize = 0;
-        let gridOffsetX = 0;
-        let gridOffsetY = 0;
-        let touchStartTime = 0;
-        let touchStartCell = null;
-
-        const colors = {
-            bg: '#1a1a1a',
-            grid: '#2d2d2d',
-            hidden: '#333',
-            revealed: '#444',
-            text: '#e0e0e0',
-            mine: '#f44336',
-            flag: '#ff9800',
-            numbers: [
-                '#2196f3',
-                '#4caf50',
-                '#f44336',
-                '#9c27b0',
-                '#ff9800',
-                '#009688',
-                '#795548',
-                '#607d8b'
-            ]
+        const finalScore = document.getElementById('finalScore');
+        
+        const controlBtns = {
+            left: document.getElementById('leftBtn'),
+            right: document.getElementById('rightBtn'),
+            up: document.getElementById('upBtn'),
+            down: document.getElementById('downBtn'),
+            attack: document.getElementById('attackBtn')
         };
-
+        
+        let game = {
+            running: false,
+            score: 0,
+            player: {
+                x: 400,
+                y: 300,
+                width: 40,
+                height: 60,
+                speed: 5,
+                health: 100,
+                attacking: false,
+                attackCooldown: 0,
+                attackRange: 80
+            },
+            meteors: [],
+            butterflies: [],
+            particles: [],
+            keys: {},
+            lastTime: 0,
+            spawnTimer: 0,
+            butterflySpawnTimer: 0
+        };
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        
         function initGame() {
-            rows = 9;
-            cols = 9;
-            mineCount = 10;
-            flagCount = 0;
-            gameOver = false;
-            gameWon = false;
-            startTime = Date.now();
-            elapsedTime = 0;
-
-            grid = Array(rows).fill().map(() => Array(cols).fill(0));
-            revealed = Array(rows).fill().map(() => Array(cols).fill(false));
-            flagged = Array(rows).fill().map(() => Array(cols).fill(false));
-
-            placeMines();
-            calculateNumbers();
-            resizeCanvas();
+            game = {
+                running: true,
+                score: 0,
+                player: {
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    width: 40,
+                    height: 60,
+                    speed: 5,
+                    health: 100,
+                    attacking: false,
+                    attackCooldown: 0,
+                    attackRange: 80
+                },
+                meteors: [],
+                butterflies: [],
+                particles: [],
+                keys: {},
+                lastTime: 0,
+                spawnTimer: 0,
+                butterflySpawnTimer: 0
+            };
+            
+            startScreen.classList.add('hidden');
+            endScreen.classList.add('hidden');
         }
-
-        function placeMines() {
-            let minesPlaced = 0;
-            while (minesPlaced < mineCount) {
-                const r = Math.floor(Math.random() * rows);
-                const c = Math.floor(Math.random() * cols);
-                if (grid[r][c] !== -1) {
-                    grid[r][c] = -1;
-                    minesPlaced++;
-                }
+        
+        function drawPlayer() {
+            ctx.save();
+            ctx.translate(game.player.x, game.player.y);
+            
+            ctx.fillStyle = game.player.attacking ? '#ffaa00' : '#4a6fdd';
+            ctx.fillRect(-game.player.width/2, -game.player.height/2, game.player.width, game.player.height);
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-game.player.width/4, -game.player.height/3, game.player.width/2, game.player.height/6);
+            
+            if (game.player.attacking) {
+                ctx.strokeStyle = '#ffaa00';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(game.player.attackRange, 0, 10, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(game.player.width/2, 0);
+                ctx.lineTo(game.player.attackRange, 0);
+                ctx.stroke();
             }
+            
+            ctx.restore();
+            
+            ctx.fillStyle = '#ff3333';
+            ctx.fillRect(game.player.x - 30, game.player.y - 50, 60, 8);
+            ctx.fillStyle = '#33ff33';
+            ctx.fillRect(game.player.x - 30, game.player.y - 50, 60 * (game.player.health / 100), 8);
         }
-
-        function calculateNumbers() {
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    if (grid[r][c] === -1) continue;
-                    let count = 0;
-                    for (let dr = -1; dr <= 1; dr++) {
-                        for (let dc = -1; dc <= 1; dc++) {
-                            const nr = r + dr;
-                            const nc = c + dc;
-                            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && grid[nr][nc] === -1) {
-                                count++;
+        
+        function drawMeteors() {
+            game.meteors.forEach(meteor => {
+                ctx.save();
+                ctx.translate(meteor.x, meteor.y);
+                
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, meteor.size);
+                gradient.addColorStop(0, '#ffaa00');
+                gradient.addColorStop(1, '#ff5500');
+                ctx.fillStyle = gradient;
+                
+                ctx.beginPath();
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i * Math.PI * 2) / 8;
+                    const radius = meteor.size * (i % 2 === 0 ? 1 : 0.7);
+                    const x = Math.cos(angle) * radius;
+                    const y = Math.sin(angle) * radius;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.fill();
+                
+                ctx.restore();
+            });
+        }
+        
+        function drawButterflies() {
+            game.butterflies.forEach(butterfly => {
+                ctx.save();
+                ctx.translate(butterfly.x, butterfly.y);
+                
+                const wingOffset = Math.sin(Date.now() * 0.01 + butterfly.id) * 10;
+                
+                ctx.fillStyle = '#ff66cc';
+                ctx.beginPath();
+                ctx.ellipse(-15, wingOffset, 20, 10, 0, 0, Math.PI * 2);
+                ctx.ellipse(15, -wingOffset, 20, 10, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#cc44aa';
+                ctx.beginPath();
+                ctx.arc(0, 0, 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+                
+                ctx.fillStyle = '#ff3333';
+                ctx.fillRect(butterfly.x - 20, butterfly.y - 30, 40, 5);
+                ctx.fillStyle = '#33ff33';
+                ctx.fillRect(butterfly.x - 20, butterfly.y - 30, 40 * (butterfly.health / 50), 5);
+            });
+        }
+        
+        function drawParticles() {
+            game.particles.forEach((particle, index) => {
+                ctx.globalAlpha = particle.life / 100;
+                ctx.fillStyle = particle.color;
+                ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
+                ctx.globalAlpha = 1;
+            });
+        }
+        
+        function drawHUD() {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '24px Microsoft YaHei';
+            ctx.fillText(`得分: ${game.score}`, 20, 40);
+            ctx.fillText(`生命: ${Math.max(0, game.player.health)}`, 20, 70);
+        }
+        
+        function updatePlayer(deltaTime) {
+            if (game.keys['ArrowLeft'] || game.keys['a'] || game.keys['A'] || controlBtns.left.pressed) {
+                game.player.x -= game.player.speed;
+            }
+            if (game.keys['ArrowRight'] || game.keys['d'] || game.keys['D'] || controlBtns.right.pressed) {
+                game.player.x += game.player.speed;
+            }
+            if (game.keys['ArrowUp'] || game.keys['w'] || game.keys['W'] || controlBtns.up.pressed) {
+                game.player.y -= game.player.speed;
+            }
+            if (game.keys['ArrowDown'] || game.keys['s'] || game.keys['S'] || controlBtns.down.pressed) {
+                game.player.y += game.player.speed;
+            }
+            
+            game.player.x = Math.max(game.player.width/2, Math.min(canvas.width - game.player.width/2, game.player.x));
+            game.player.y = Math.max(game.player.height/2, Math.min(canvas.height - game.player.height/2, game.player.y));
+            
+            if (game.player.attackCooldown > 0) {
+                game.player.attackCooldown -= deltaTime;
+            }
+            
+            if ((game.keys[' '] || controlBtns.attack.pressed) && game.player.attackCooldown <= 0) {
+                game.player.attacking = true;
+                game.player.attackCooldown = 300;
+                
+                game.butterflies.forEach((butterfly, index) => {
+                    const dx = butterfly.x - game.player.x;
+                    const dy = butterfly.y - game.player.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < game.player.attackRange) {
+                        butterfly.health -= 20;
+                        
+                        for (let i = 0; i < 10; i++) {
+                            game.particles.push({
+                                x: butterfly.x,
+                                y: butterfly.y,
+                                vx: (Math.random() - 0.5) * 10,
+                                vy: (Math.random() - 0.5) * 10,
+                                color: '#ff66cc',
+                                size: Math.random() * 4 + 2,
+                                life: 100
+                            });
+                        }
+                        
+                        if (butterfly.health <= 0) {
+                            game.butterflies.splice(index, 1);
+                            game.score += 50;
+                            
+                            for (let i = 0; i < 20; i++) {
+                                game.particles.push({
+                                    x: butterfly.x,
+                                    y: butterfly.y,
+                                    vx: (Math.random() - 0.5) * 15,
+                                    vy: (Math.random() - 0.5) * 15,
+                                    color: '#ff66cc',
+                                    size: Math.random() * 6 + 3,
+                                    life: 100
+                                });
                             }
                         }
                     }
-                    grid[r][c] = count;
-                }
+                });
+                
+                setTimeout(() => {
+                    game.player.attacking = false;
+                }, 200);
             }
         }
-
-        function revealCell(r, c) {
-            if (r < 0 || r >= rows || c < 0 || c >= cols) return;
-            if (revealed[r][c] || flagged[r][c]) return;
-            if (gameOver) return;
-
-            revealed[r][c] = true;
-
-            if (grid[r][c] === -1) {
-                gameOver = true;
-                showEndScreen(false);
-                return;
-            }
-
-            if (grid[r][c] === 0) {
-                for (let dr = -1; dr <= 1; dr++) {
-                    for (let dc = -1; dc <= 1; dc++) {
-                        revealCell(r + dr, c + dc);
+        
+        function updateMeteors(deltaTime) {
+            game.meteors.forEach((meteor, index) => {
+                meteor.x += meteor.vx * deltaTime * 0.05;
+                meteor.y += meteor.vy * deltaTime * 0.05;
+                
+                const dx = meteor.x - game.player.x;
+                const dy = meteor.y - game.player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < meteor.size + game.player.width/2) {
+                    game.player.health -= 10;
+                    game.meteors.splice(index, 1);
+                    
+                    for (let i = 0; i < 15; i++) {
+                        game.particles.push({
+                            x: meteor.x,
+                            y: meteor.y,
+                            vx: (Math.random() - 0.5) * 12,
+                            vy: (Math.random() - 0.5) * 12,
+                            color: '#ffaa00',
+                            size: Math.random() * 5 + 2,
+                            life: 100
+                        });
                     }
                 }
-            }
-
-            checkWin();
-        }
-
-        function toggleFlag(r, c) {
-            if (revealed[r][c] || gameOver) return;
-            flagged[r][c] = !flagged[r][c];
-            flagCount += flagged[r][c] ? 1 : -1;
-            checkWin();
-        }
-
-        function checkWin() {
-            let correctFlags = 0;
-            let allRevealed = true;
-
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    if (grid[r][c] === -1 && flagged[r][c]) {
-                        correctFlags++;
-                    }
-                    if (grid[r][c] !== -1 && !revealed[r][c]) {
-                        allRevealed = false;
-                    }
+                
+                if (meteor.x < -50 || meteor.x > canvas.width + 50 || 
+                    meteor.y < -50 || meteor.y > canvas.height + 50) {
+                    game.meteors.splice(index, 1);
                 }
-            }
-
-            if (correctFlags === mineCount && flagCount === mineCount) {
-                gameWon = true;
-                gameOver = true;
-                showEndScreen(true);
-            } else if (allRevealed) {
-                gameWon = true;
-                gameOver = true;
-                showEndScreen(true);
-            }
-        }
-
-        function showEndScreen(won) {
-            elapsedTime = Math.floor((Date.now() - startTime) / 1000);
-            endTitle.textContent = won ? '🎉 恭喜获胜！' : '💥 游戏结束';
-            endMessage.textContent = won ? '你成功标记了所有地雷！' : '你不小心踩到了地雷...';
-            endStats.textContent = `用时: ${elapsedTime}秒 | 地雷: ${mineCount}个`;
-            endOverlay.classList.remove('hidden');
-        }
-
-        function resizeCanvas() {
-            const maxWidth = window.innerWidth * 0.95;
-            const maxHeight = window.innerHeight * 0.85;
-            const cellWidth = maxWidth / cols;
-            const cellHeight = maxHeight / rows;
-            cellSize = Math.min(cellWidth, cellHeight, 60);
+            });
             
-            canvas.width = cellSize * cols;
-            canvas.height = cellSize * rows + 60;
-            
-            gridOffsetX = (window.innerWidth - canvas.width) / 2;
-            gridOffsetY = (window.innerHeight - canvas.height) / 2;
-            
-            canvas.style.position = 'absolute';
-            canvas.style.left = `${gridOffsetX}px`;
-            canvas.style.top = `${gridOffsetY}px`;
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            const headerHeight = 40;
-            ctx.fillStyle = colors.bg;
-            ctx.fillRect(0, 0, canvas.width, headerHeight);
-
-            ctx.fillStyle = colors.text;
-            ctx.font = 'bold 20px Arial';
-            ctx.textAlign = 'left';
-            ctx.fillText(`🚩 ${flagCount}/${mineCount}`, 10, 28);
-
-            elapsedTime = Math.floor((Date.now() - startTime) / 1000);
-            ctx.textAlign = 'right';
-            ctx.fillText(`⏱️ ${elapsedTime}s`, canvas.width - 10, 28);
-
-            ctx.translate(0, headerHeight);
-
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    const x = c * cellSize;
-                    const y = r * cellSize;
-
-                    if (revealed[r][c]) {
-                        ctx.fillStyle = colors.revealed;
-                        ctx.fillRect(x, y, cellSize, cellSize);
-
-                        if (grid[r][c] === -1) {
-                            ctx.fillStyle = colors.mine;
-                            ctx.beginPath();
-                            ctx.arc(x + cellSize/2, y + cellSize/2, cellSize/3, 0, Math.PI * 2);
-                            ctx.fill();
-                        } else if (grid[r][c] > 0) {
-                            ctx.fillStyle = colors.numbers[grid[r][c] - 1];
-                            ctx.font = `bold ${cellSize/2}px Arial`;
-                            ctx.textAlign = 'center';
-                            ctx.textBaseline = 'middle';
-                            ctx.fillText(grid[r][c], x + cellSize/2, y + cellSize/2);
-                        }
-                    } else {
-                        ctx.fillStyle = colors.hidden;
-                        ctx.fillRect(x, y, cellSize, cellSize);
-
-                        if (flagged[r][c]) {
-                            ctx.fillStyle = colors.flag;
-                            ctx.font = `bold ${cellSize/2}px Arial`;
-                            ctx.textAlign = 'center';
-                            ctx.textBaseline = 'middle';
-                            ctx.fillText('🚩', x + cellSize/2, y + cellSize/2);
-                        }
-                    }
-
-                    ctx.strokeStyle = colors.grid;
-                    ctx.lineWidth = 1;
-                    ctx.strokeRect(x, y, cellSize, cellSize);
+            game.spawnTimer += deltaTime;
+            if (game.spawnTimer > 1000) {
+                game.spawnTimer = 0;
+                
+                const side = Math.floor(Math.random() * 4);
+                let x, y, vx, vy;
+                
+                switch(side) {
+                    case 0: 
+                        x = Math.random() * canvas.width;
+                        y = -50;
+                        vx = (Math.random() - 0.5) * 3;
+                        vy = Math.random() * 2 + 1;
+                        break;
+                    case 1:
+                        x = canvas.width + 50;
+                        y = Math.random() * canvas.height;
+                        vx = -Math.random() * 2 - 1;
+                        vy = (Math.random() - 0.5) * 3;
+                        break;
+                    case 2:
+                        x = Math.random() * canvas.width;
+                        y = canvas.height + 50;
+                        vx = (Math.random() - 0.5) * 3;
+                        vy = -Math.random() * 2 - 1;
+                        break;
+                    case 3:
+                        x = -50;
+                        y = Math.random() * canvas.height;
+                        vx = Math.random() * 2 + 1;
+                        vy = (Math.random() - 0.5) * 3;
+                        break;
                 }
+                
+                game.meteors.push({
+                    x, y, vx, vy,
+                    size: Math.random() * 20 + 15
+                });
             }
-
-            ctx.translate(0, -headerHeight);
-
-            if (gameOver && !gameWon) {
-                for (let r = 0; r < rows; r++) {
-                    for (let c = 0; c < cols; c++) {
-                        if (grid[r][c] === -1 && !flagged[r][c]) {
-                            const x = c * cellSize;
-                            const y = r * cellSize + headerHeight;
-                            ctx.fillStyle = 'rgba(244, 67, 54, 0.3)';
-                            ctx.fillRect(x, y, cellSize, cellSize);
-                        }
-                    }
+        }
+        
+        function updateButterflies(deltaTime) {
+            game.butterflies.forEach((butterfly, index) => {
+                const dx = game.player.x - butterfly.x;
+                const dy = game.player.y - butterfly.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 100) {
+                    butterfly.x += (dx / distance) * butterfly.speed * deltaTime * 0.05;
+                    butterfly.y += (dy / distance) * butterfly.speed * deltaTime * 0.05;
+                }
+                
+                const playerDx = butterfly.x - game.player.x;
+                const playerDy = butterfly.y - game.player.y;
+                const playerDistance = Math.sqrt(playerDx * playerDx + playerDy * playerDy);
+                
+                if (playerDistance < butterfly.size + game.player.width/2 && !game.player.attacking) {
+                    game.player.health -= 0.5;
+                }
+            });
+            
+            game.butterflySpawnTimer += deltaTime;
+            if (game.butterflySpawnTimer > 3000) {
+                game.butterflySpawnTimer = 0;
+                
+                if (game.butterflies.length < 5) {
+                    game.butterflies.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        health: 50,
+                        size: 25,
+                        speed: Math.random() * 2 + 1,
+                        id: Math.random()
+                    });
                 }
             }
         }
-
-        function getCellFromPos(x, y) {
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = x - rect.left;
-            const mouseY = y - rect.top;
-
-            if (mouseY < 40) return null;
-
-            const gridX = mouseX;
-            const gridY = mouseY - 40;
-
-            const c = Math.floor(gridX / cellSize);
-            const r = Math.floor(gridY / cellSize);
-
-            if (r >= 0 && r < rows && c >= 0 && c < cols) {
-                return { r, c };
-            }
-            return null;
-        }
-
-        function handleClick(x, y, isRightClick = false) {
-            if (gameState !== 'playing') return;
-            
-            const cell = getCellFromPos(x, y);
-            if (!cell) return;
-
-            if (isRightClick) {
-                toggleFlag(cell.r, cell.c);
-            } else {
-                revealCell(cell.r, cell.c);
-            }
-        }
-
-        canvas.addEventListener('click', (e) => {
-            if (gameState === 'playing') {
-                handleClick(e.clientX, e.clientY, false);
-            }
-        });
-
-        canvas.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            if (gameState === 'playing') {
-                handleClick(e.clientX, e.clientY, true);
-            }
-        });
-
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            if (gameState !== 'playing') return;
-            
-            const touch = e.touches[0];
-            touchStartTime = Date.now();
-            touchStartCell = getCellFromPos(touch.clientX, touch.clientY);
-        });
-
-        canvas.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            if (gameState !== 'playing' || !touchStartCell) return;
-            
-            const touch = e.changedTouches[0];
-            const endCell = getCellFromPos(touch.clientX, touch.clientY);
-            const touchDuration = Date.now() - touchStartTime;
-
-            if (endCell && endCell.r === touchStartCell.r && endCell.c === touchStartCell.c) {
-                if (touchDuration > 500) {
-                    toggleFlag(touchStartCell.r, touchStartCell.c);
-                } else {
-                    revealCell(touchStartCell.r, touchStartCell.c);
+        
+        function updateParticles(deltaTime) {
+            game.particles.forEach((particle, index) => {
+                particle.x += particle.vx * deltaTime * 0.05;
+                particle.y += particle.vy * deltaTime * 0.05;
+                particle.life -= deltaTime * 0.1;
+                
+                if (particle.life <= 0) {
+                    game.particles.splice(index, 1);
                 }
+            });
+        }
+        
+        function checkGameOver() {
+            if (game.player.health <= 0) {
+                game.running = false;
+                finalScore.textContent = game.score;
+                endScreen.classList.remove('hidden');
+            }
+        }
+        
+        function gameLoop(timestamp) {
+            if (!game.lastTime) game.lastTime = timestamp;
+            const deltaTime = timestamp - game.lastTime;
+            game.lastTime = timestamp;
+            
+            if (game.running) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                updatePlayer(deltaTime);
+                updateMeteors(deltaTime);
+                updateButterflies(deltaTime);
+                updateParticles(deltaTime);
+                
+                drawMeteors();
+                drawButterflies();
+                drawParticles();
+                drawPlayer();
+                drawHUD();
+                
+                checkGameOver();
             }
             
-            touchStartCell = null;
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function setupControls() {
+            Object.values(controlBtns).forEach(btn => {
+                btn.pressed = false;
+                
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    btn.pressed = true;
+                });
+                
+                btn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    btn.pressed = false;
+                });
+                
+                btn.addEventListener('touchcancel', (e) => {
+                    e.preventDefault();
+                    btn.pressed = false;
+                });
+                
+                btn.addEventListener('mousedown', () => {
+                    btn.pressed = true;
+                });
+                
+                btn.addEventListener('mouseup', () => {
+                    btn.pressed = false;
+                });
+                
+                btn.addEventListener('mouseleave', () => {
+                    btn.pressed = false;
+                });
+            });
+        }
+        
+        window.addEventListener('keydown', (e) => {
+            game.keys[e.key] = true;
         });
-
-        startBtn.addEventListener('click', () => {
-            startOverlay.classList.add('hidden');
-            gameState = 'playing';
-            initGame();
-            gameLoop();
+        
+        window.addEventListener('keyup', (e) => {
+            game.keys[e.key] = false;
         });
-
-        restartBtn.addEventListener('click', () => {
-            endOverlay.classList.add('hidden');
-            gameState = 'playing';
-            initGame();
-            gameLoop();
-        });
-
+        
         window.addEventListener('resize', () => {
             resizeCanvas();
-        });
-
-        function gameLoop() {
-            if (gameState === 'playing') {
-                draw();
-                requestAnimationFrame(gameLoop);
+            if (game.running) {
+                game.player.x = Math.max(game.player.width/2, Math.min(canvas.width - game.player.width/2, game.player.x));
+                game.player.y = Math.max(game.player.height/2, Math.min(canvas.height - game.player.height/2, game.player.y));
             }
-        }
-
+        });
+        
+        startBtn.addEventListener('click', () => {
+            initGame();
+        });
+        
+        restartBtn.addEventListener('click', () => {
+            initGame();
+        });
+        
         resizeCanvas();
-        draw();
+        setupControls();
+        requestAnimationFrame(gameLoop);
     </script>
 
   <!-- 推广栏 -->
@@ -950,12 +1062,12 @@ body {
     <div class="tiktok-author-details">
       <div style="display:flex;flex-direction:column;">
         <div style="display:flex;align-items:center;gap:10px;">
-          <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">player_xp2hhp</span>
-          <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="b8da8a95-4942-4678-a039-47cfcaed0c2b" onclick="toggleFollow()">
+          <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">MarsZhou</span>
+          <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="854e9951-0f87-4d3e-b1cc-f6b8559fbe9c" onclick="toggleFollow()">
             <span class="follow-icon">+</span> 关注
           </button>
         </div>
-        <span class="tiktok-publish-time">发布于 2026年1月14日</span>
+        <span class="tiktok-publish-time">发布于 2026年1月13日</span>
       </div>
     </div>
   </div>
@@ -1057,10 +1169,10 @@ body {
 
 <script>
 // 获取游戏ID和作者信息
-const gameId = 'b2bfcd6c-bd62-4400-ab63-13907c2a3861';
-const gameTitle = '扫雷';
-const authorToken = 'b8da8a95-4942-4678-a039-47cfcaed0c2b';
-const authorName = 'player_xp2hhp';
+const gameId = '9459f456-a915-4796-9695-63761b77f836';
+const gameTitle = '流星蝴蝶剑';
+const authorToken = '854e9951-0f87-4d3e-b1cc-f6b8559fbe9c';
+const authorName = 'MarsZhou';
 const API_BASE = '/api/games';
 
 // 调试日志
