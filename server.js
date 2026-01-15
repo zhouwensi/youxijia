@@ -101,11 +101,18 @@ function deleteGameStaticFile(gameId) {
 
 // 生成独立游戏HTML页面（直接嵌入游戏代码，不使用iframe，微信兼容）
 function generateStandaloneGameHtml(gameCode, gameInfo) {
-  const { title, authorName, gameId, prompt } = gameInfo;
+  const { title, authorName, gameId, prompt, created_at } = gameInfo;
   
   const safeTitle = escapeHtmlSafe(title || '未命名游戏');
   const safeAuthor = escapeHtmlSafe(authorName || '匿名');
   const safePrompt = escapeHtmlSafe(prompt || title || '');
+  
+  // 格式化发布时间
+  const publishTime = created_at ? new Date(created_at).toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }) : '';
   
   // 从游戏代码中提取<head>和<body>内容
   let headContent = '';
@@ -295,6 +302,12 @@ function generateStandaloneGameHtml(gameCode, gameInfo) {
 .tiktok-author-name:hover {
   opacity: 0.8 !important;
 }
+.tiktok-publish-time {
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-size: 0.75rem !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8) !important;
+  margin-top: 2px !important;
+}
 .tiktok-follow-btn {
   background: #fe2c55 !important;
   color: white !important;
@@ -327,6 +340,12 @@ function generateStandaloneGameHtml(gameCode, gameInfo) {
   gap: 16px !important;
   z-index: 999998 !important;
   pointer-events: auto !important;
+}
+.tiktok-sidebar.comments-open {
+  display: none !important;
+}
+.tiktok-author-info.comments-open {
+  display: none !important;
 }
 .tiktok-action {
   display: flex !important;
@@ -391,6 +410,22 @@ body {
   padding-bottom: 65px !important;
 }
 /* ====== 留言板样式 ====== */
+.comments-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  z-index: 999996 !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transition: opacity 0.3s ease, visibility 0.3s ease !important;
+}
+.comments-overlay.visible {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
 .game-comments-section {
   position: fixed !important;
   bottom: 60px !important;
@@ -492,6 +527,19 @@ body {
 .comment-delete-btn:hover {
   color: #ef4444 !important;
 }
+.comment-avatar.comment-clickable,
+.comment-author-name.comment-clickable {
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+.comment-avatar.comment-clickable:hover {
+  transform: scale(1.1) !important;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3) !important;
+}
+.comment-author-name.comment-clickable:hover {
+  color: #6366f1 !important;
+  text-decoration: underline !important;
+}
 .comments-input-area {
   display: flex !important;
   gap: 8px !important;
@@ -557,10 +605,15 @@ body {
   <div class="tiktok-author-row">
     <div class="tiktok-author-avatar" id="author-avatar" onclick="openAuthorProfile()">👤</div>
     <div class="tiktok-author-details">
-      <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">${safeAuthor}</span>
-      <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="${authorToken}" onclick="toggleFollow()">
-        <span class="follow-icon">+</span> 关注
-      </button>
+      <div style="display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">${safeAuthor}</span>
+          <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="${authorToken}" onclick="toggleFollow()">
+            <span class="follow-icon">+</span> 关注
+          </button>
+        </div>
+        ${publishTime ? `<span class="tiktok-publish-time">发布于 ${publishTime}</span>` : ''}
+      </div>
     </div>
   </div>
 </div>
@@ -605,6 +658,9 @@ body {
     <img src="/images/wechat-qrcode.png" style="width:100%;height:auto;display:block;border-radius:12px;">
   </div>
 </div>
+
+<!-- 评论蒙版 -->
+<div class="comments-overlay" id="comments-overlay" onclick="toggleCommentsPanel()"></div>
 
 <!-- 评论区域 -->
 <div class="game-comments-section" id="game-comments-section">
@@ -909,6 +965,7 @@ function openAuthorProfile() {
     fetch('/api/users/' + authorToken + '/games?limit=4', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({ games: [] }))
   ]).then(([profileData, statsData, gamesData]) => {
     const nickname = (profileData.profile && profileData.profile.nickname) || authorName || '游戏创作者';
+    const accountId = (profileData.profile && profileData.profile.accountId) || '';
     const followers = statsData.followerCount || statsData.followers || 0;
     const following = statsData.followingCount || statsData.following || 0;
     const games = gamesData.games || [];
@@ -922,6 +979,9 @@ function openAuthorProfile() {
         '</div>';
     }
     
+    // 账号ID显示（小字、浅色、带@前缀）
+    const accountIdHtml = accountId ? '<div style="font-size:12px;color:#999;margin-top:2px;">@' + accountId + '</div>' : '';
+    
     // 如果是自己，不显示关注按钮
     const followBtnHtml = isSelf ? '' : '<button id="profile-follow-btn" onclick="toggleFollowFromProfile()" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>';
     
@@ -929,6 +989,7 @@ function openAuthorProfile() {
       '<div style="margin-bottom:15px;">' +
         '<div style="width:60px;height:60px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:28px;">👤</div>' +
         '<div style="font-size:18px;font-weight:600;color:#333;">' + nickname + '</div>' +
+        accountIdHtml +
       '</div>' +
       '<div style="display:flex;justify-content:center;gap:30px;margin-bottom:15px;">' +
         '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + following + '</strong><span style="color:#999;font-size:12px;">关注</span></div>' +
@@ -950,6 +1011,110 @@ function openAuthorProfile() {
 // 关闭作者主页
 function closeAuthorProfile() {
   document.getElementById('author-profile-modal').style.display = 'none';
+}
+
+// 打开评论者主页（用于点击评论头像）
+function openCommentAuthorProfile(commentAuthorToken) {
+  if (!commentAuthorToken) return;
+  
+  const currentUserToken = getUserToken();
+  // 如果是自己的评论，不跳转
+  if (commentAuthorToken === currentUserToken) {
+    alert('这是您自己的评论');
+    return;
+  }
+  
+  // 使用已有的作者主页弹窗展示评论者信息
+  const modal = document.getElementById('author-profile-modal');
+  const content = document.getElementById('author-profile-content');
+  content.innerHTML = '<div style="padding:20px;color:#999;">加载中...</div>';
+  modal.style.display = 'flex';
+  
+  // 加载评论者信息
+  Promise.all([
+    fetch('/api/users/' + commentAuthorToken + '/profile', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/users/' + commentAuthorToken + '/follow-stats', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/users/' + commentAuthorToken + '/games?limit=4', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({ games: [] }))
+  ]).then(([profileData, statsData, gamesData]) => {
+    const nickname = (profileData.profile && profileData.profile.nickname) || '游戏玩家';
+    const accountId = (profileData.profile && profileData.profile.accountId) || '';
+    const followers = statsData.followerCount || statsData.followers || 0;
+    const following = statsData.followingCount || statsData.following || 0;
+    const games = gamesData.games || [];
+    
+    let gamesHtml = '';
+    if (games.length > 0) {
+      gamesHtml = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:15px;">' +
+        games.slice(0, 4).map(g => '<a href="/g/' + g.id.substring(0,2) + '/' + g.id + '.html" style="background:#f5f5f5;border-radius:8px;padding:10px;text-decoration:none;color:#333;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎮 ' + (g.title || '未命名').substring(0, 10) + '</a>').join('') +
+        '</div>';
+    }
+    
+    // 账号ID显示（小字、浅色、带@前缀）
+    const accountIdHtml = accountId ? '<div style="font-size:12px;color:#999;margin-top:2px;">@' + accountId + '</div>' : '';
+    
+    content.innerHTML = 
+      '<div style="margin-bottom:15px;">' +
+        '<div style="width:60px;height:60px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:28px;">👤</div>' +
+        '<div style="font-size:18px;font-weight:600;color:#333;">' + nickname + '</div>' +
+        accountIdHtml +
+      '</div>' +
+      '<div style="display:flex;justify-content:center;gap:30px;margin-bottom:15px;">' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + following + '</strong><span style="color:#999;font-size:12px;">关注</span></div>' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + followers + '</strong><span style="color:#999;font-size:12px;">粉丝</span></div>' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + games.length + '</strong><span style="color:#999;font-size:12px;">作品</span></div>' +
+      '</div>' +
+      '<button onclick="toggleFollowCommentAuthor(\\'' + commentAuthorToken + '\\')" id="comment-author-follow-btn" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>' +
+      gamesHtml;
+    
+    // 检查是否已关注
+    fetch('/api/users/' + commentAuthorToken + '/follow-status', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.following) {
+          const btn = document.getElementById('comment-author-follow-btn');
+          if (btn) {
+            btn.textContent = '已关注';
+            btn.style.background = '#f5f5f5';
+            btn.style.color = '#999';
+          }
+        }
+      }).catch(() => {});
+  }).catch(() => {
+    content.innerHTML = '<div style="padding:20px;color:#999;">加载失败</div>';
+  });
+}
+
+// 关注/取关评论者
+function toggleFollowCommentAuthor(targetToken) {
+  const userToken = getUserToken();
+  if (!userToken) {
+    alert('请先登录后再关注');
+    return;
+  }
+  
+  const btn = document.getElementById('comment-author-follow-btn');
+  const isFollowing = btn && btn.textContent === '已关注';
+  
+  fetch('/api/users/' + targetToken + '/follow', {
+    method: isFollowing ? 'DELETE' : 'POST',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && btn) {
+        if (isFollowing) {
+          btn.textContent = '+ 关注';
+          btn.style.background = '#fe2c55';
+          btn.style.color = '#fff';
+        } else {
+          btn.textContent = '已关注';
+          btn.style.background = '#f5f5f5';
+          btn.style.color = '#999';
+        }
+      }
+    }).catch(() => {
+      alert('操作失败，请重试');
+    });
 }
 
 // 检查关注状态
@@ -1099,8 +1264,23 @@ function toggleFollowFromProfile() {
 // 切换留言板面板
 function toggleCommentsPanel() {
   const panel = document.getElementById('game-comments-section');
+  const sidebar = document.querySelector('.tiktok-sidebar');
+  const authorInfo = document.getElementById('tiktok-author-info');
+  const overlay = document.getElementById('comments-overlay');
   if (panel) {
+    const isExpanding = !panel.classList.contains('expanded');
     panel.classList.toggle('expanded');
+    // 评论面板展开时隐藏右侧按钮和作者信息（使用class覆盖!important）
+    if (sidebar) {
+      sidebar.classList.toggle('comments-open', isExpanding);
+    }
+    if (authorInfo) {
+      authorInfo.classList.toggle('comments-open', isExpanding);
+    }
+    // 控制蒙版显示
+    if (overlay) {
+      overlay.classList.toggle('visible', isExpanding);
+    }
   }
 }
 
@@ -1161,14 +1341,17 @@ function renderComments() {
   commentsData.comments.forEach(function(comment) {
     const timeStr = formatCommentTime(comment.created_at);
     const avatarInitial = comment.author_name ? comment.author_name.charAt(0).toUpperCase() : '?';
-    const userToken = getUserToken();
-    const canDelete = comment.is_mine || (userToken && comment.user_token === userToken);
+    const currentUserToken = getUserToken();
+    const canDelete = comment.is_mine || (currentUserToken && comment.user_token === currentUserToken);
+    const commentUserToken = comment.user_token || '';
+    const clickableClass = commentUserToken ? 'comment-clickable' : '';
+    const onClickAttr = commentUserToken ? 'onclick="openCommentAuthorProfile(\\'' + commentUserToken + '\\')"' : '';
     
     html += '<div class="comment-item" data-id="' + comment.id + '">' +
       '<div class="comment-header">' +
         '<div class="comment-author-info">' +
-          '<div class="comment-avatar">' + avatarInitial + '</div>' +
-          '<span class="comment-author-name">' + escapeHtml(comment.author_name) + '</span>' +
+          '<div class="comment-avatar ' + clickableClass + '" ' + onClickAttr + '>' + avatarInitial + '</div>' +
+          '<span class="comment-author-name ' + clickableClass + '" ' + onClickAttr + '>' + escapeHtml(comment.author_name) + '</span>' +
           '<span class="comment-time">' + timeStr + '</span>' +
         '</div>' +
         (canDelete ? '<button class="comment-delete-btn" onclick="deleteGameComment(' + comment.id + ')">删除</button>' : '') +
@@ -1356,6 +1539,10 @@ window.addEventListener('load', function() {
 }
 
 const app = express();
+
+// 信任代理，以获取真实客户端IP（用于Nginx等反向代理）
+app.set('trust proxy', true);
+
 const PORT = process.env.PORT || 80;
 
 // 测试模式：设为 true 将使用本地HTML文件而不调用LLM
@@ -1841,10 +2028,26 @@ try {
   // 字段已存在，忽略
 }
 
+// 添加 orientation 字段（如果不存在）- 屏幕方向：portrait(竖屏)/landscape(横屏)
+try {
+  db.exec(`ALTER TABLE games ADD COLUMN orientation TEXT DEFAULT 'portrait'`);
+  console.log('[DB] 添加 orientation 字段成功');
+} catch (e) {
+  // 字段已存在，忽略
+}
+
 // 添加 share_count 字段（如果不存在）
 try {
   db.exec(`ALTER TABLE games ADD COLUMN share_count INTEGER DEFAULT 0`);
   console.log('[DB] 添加 share_count 字段成功');
+} catch (e) {
+  // 字段已存在，忽略
+}
+
+// 添加 visibility 字段（如果不存在）- 可见性：public(所有人)/followers(仅粉丝)/private(仅自己)
+try {
+  db.exec(`ALTER TABLE games ADD COLUMN visibility TEXT DEFAULT 'public'`);
+  console.log('[DB] 添加 visibility 字段成功');
 } catch (e) {
   // 字段已存在，忽略
 }
@@ -2364,11 +2567,14 @@ app.put('/api/account/nickname', (req, res) => {
         let regeneratedCount = 0;
         for (const game of userGames) {
           if (game.code) {
+            // 获取游戏创建时间
+            const gameData = db.prepare('SELECT created_at FROM games WHERE id = ?').get(game.id);
             saveGameStaticFile(game.id, game.code, {
               title: game.title,
               prompt: game.prompt,
               authorName: trimmedNickname,
-              authorToken: userToken
+              authorToken: userToken,
+              created_at: gameData?.created_at
             });
             regeneratedCount++;
           }
@@ -3256,6 +3462,7 @@ app.get('/api/games/:id/comments', (req, res) => {
       author_name: comment.author_name,
       content: comment.content,
       created_at: comment.created_at,
+      user_token: comment.user_token, // 用于点击头像跳转到用户主页
       is_mine: userToken && comment.user_token === userToken,
       is_hidden: comment.is_hidden === 1
     }));
@@ -3281,6 +3488,17 @@ app.get('/api/games/:id/comments', (req, res) => {
 // 发布留言
 app.post('/api/games/:id/comments', (req, res) => {
   try {
+    // 首先检查发言封禁状态
+    const banStatus = checkBanStatus(req, BAN_TYPES.COMMENT);
+    if (banStatus.banned) {
+      console.log('[BLOCKED] 被禁止发言用户尝试发表留言:', banStatus);
+      return res.status(403).json({ 
+        success: false, 
+        error: `您已被禁止发言。原因：${banStatus.reason}`,
+        banned: true
+      });
+    }
+    
     const gameId = req.params.id;
     const userToken = req.headers['x-user-token'];
     const { content } = req.body;
@@ -3392,6 +3610,19 @@ app.post('/api/generate', async (req, res) => {
   console.log('\n========== 开始生成游戏 ==========');
   
   try {
+    // 首先检查创作封禁状态
+    const banStatus = checkBanStatus(req, BAN_TYPES.CREATE);
+    if (banStatus.banned) {
+      console.log('[BLOCKED] 被禁止创作用户尝试生成游戏:', banStatus);
+      return res.status(403).json({ 
+        success: false, 
+        error: `您已被禁止创作游戏。原因：${banStatus.reason}`,
+        banned: true,
+        banType: banStatus.type,
+        banReason: banStatus.reason
+      });
+    }
+    
     const { prompt, llmConfig, draftId, advancedSettings } = req.body;
     const userToken = req.headers['x-user-token'] || null;
     const authorToken = req.headers['x-author-token'] || null;
@@ -3598,13 +3829,25 @@ app.post('/api/generate', async (req, res) => {
 3. 页面加载后立即显示游戏，不能空白
 4. 同时支持键盘和触屏操作
 
+【触摸控制要求 - 非常重要】：
+1. 对于需要移动/转向的角色或物体，必须支持手指触摸拖动控制，不要只用按钮
+2. 实现触摸方式：监听touchstart/touchmove/touchend事件，根据手指移动方向控制角色
+3. 可以使用虚拟摇杆（左下角半透明圆形区域）或直接触摸屏幕任意位置拖动
+4. 同时保留键盘方向键/WASD支持，但触屏设备优先使用触摸控制
+
 【游戏界面要求 - 非常重要】：
 1. 只有3种界面状态：开始界面、游戏进行中、结束界面
-2. 开始界面：显示游戏标题和"开始游戏"按钮，可以用半透明遮罩层
+2. 开始界面：显示游戏标题、"开始游戏"按钮、以及"游戏说明"按钮（点击显示操作方法）
 3. 游戏进行中：必须隐藏所有遮罩层，只显示Canvas游戏画面。得分、生命值等HUD信息直接用Canvas绑制在画面上，不要用HTML覆盖层
 4. 结束界面：游戏结束时才显示结果，可以用半透明遮罩层
 5. 点击"开始游戏"后，必须立即隐藏开始界面的遮罩，让玩家看到游戏画面
 6. 不要在游戏进行中显示任何全屏或半透明的HTML遮罩层
+7. 游戏界面右上角保留一个小的"?"按钮，点击可随时查看游戏说明
+
+【内容合规要求】：
+1. 游戏内容必须健康积极，适合所有年龄段
+2. 禁止包含暴力血腥、色情低俗、政治敏感、赌博等违规内容
+3. 游戏角色和场景设计要正向友好
 
 【游戏要求】：
 1. 游戏有趣、逻辑完整
@@ -3698,18 +3941,24 @@ ${advancedHint}${gameNameHint}
       try {
         const draftGame = db.prepare('SELECT author_token FROM games WHERE id = ?').get(draftId);
         if (draftGame && draftGame.author_token === authorToken) {
+          // 获取orientation和visibility设置
+          const gameOrientation = advancedSettings?.orientation || 'portrait';
+          const gameVisibility = advancedSettings?.visibility || 'public';
+          const isPublic = gameVisibility === 'public' ? 1 : 0;
+          
           db.prepare(`
             UPDATE games 
-            SET title = ?, code = ?, status = 'published', updated_at = CURRENT_TIMESTAMP 
+            SET title = ?, code = ?, status = 'published', orientation = ?, visibility = ?, is_public = ?, updated_at = CURRENT_TIMESTAMP 
             WHERE id = ?
-          `).run(title, code, draftId);
+          `).run(title, code, gameOrientation, gameVisibility, isPublic, draftId);
           
           // 生成静态文件
           saveGameStaticFile(draftId, code, {
             title: title,
             authorName: '匿名', // 从草稿中获取作者名会更好
             prompt: prompt,
-            authorToken: authorToken
+            authorToken: authorToken,
+            created_at: new Date().toISOString()
           });
           
           console.log(`[INFO] 草稿已自动发布: ${draftId}`);
@@ -3750,7 +3999,7 @@ ${advancedHint}${gameNameHint}
 // 保存游戏（支持创建草稿：status='draft' 时 code 可为空）
 app.post('/api/games', (req, res) => {
   try {
-    const { title, prompt, code, authorName, authorToken, status } = req.body;
+    const { title, prompt, code, authorName, authorToken, status, orientation, visibility } = req.body;
     
     // 草稿模式：只需要prompt，不需要code
     const isDraft = status === 'draft';
@@ -3770,11 +4019,14 @@ app.post('/api/games', (req, res) => {
     const gameAuthor = authorName || '匿名';
     const gameCode = code || ''; // 草稿时code为空
     const gameStatus = isDraft ? 'draft' : 'published';
+    const gameOrientation = orientation || 'portrait'; // 默认竖屏
+    const gameVisibility = visibility || 'public'; // 默认公开，支持 public/followers/private
+    const isPublic = gameVisibility === 'public' ? 1 : 0; // 兼容旧字段
     
     db.prepare(`
-      INSERT INTO games (id, title, prompt, code, author_name, author_token, status) 
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(id, gameTitle, prompt, gameCode, gameAuthor, token, gameStatus);
+      INSERT INTO games (id, title, prompt, code, author_name, author_token, status, orientation, visibility, is_public) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, gameTitle, prompt, gameCode, gameAuthor, token, gameStatus, gameOrientation, gameVisibility, isPublic);
 
     // 只有已发布的游戏才生成静态文件
     if (!isDraft && code) {
@@ -3782,7 +4034,8 @@ app.post('/api/games', (req, res) => {
         title: gameTitle,
         authorName: gameAuthor,
         prompt: prompt,
-        authorToken: token
+        authorToken: token,
+        created_at: new Date().toISOString()
       });
     }
 
@@ -3825,6 +4078,8 @@ app.put('/api/games/:id', (req, res) => {
     // 处理可见性设置
     if (visibility !== undefined) {
       const isPublic = visibility === 'public' ? 1 : 0;
+      updates.push('visibility = ?');
+      params.push(visibility);
       updates.push('is_public = ?');
       params.push(isPublic);
     }
@@ -3837,11 +4092,14 @@ app.put('/api/games/:id', (req, res) => {
     // 如果更新为已发布状态且有代码，生成静态文件
     const newStatus = status || game.status;
     if (newStatus === 'published' && code) {
+      // 获取游戏的创建时间
+      const gameData = db.prepare('SELECT created_at FROM games WHERE id = ?').get(req.params.id);
       saveGameStaticFile(req.params.id, code, {
         title: title || prompt?.slice(0, 50),
         authorName: authorName || '匿名',
         prompt: prompt,
-        authorToken: game.author_token
+        authorToken: game.author_token,
+        created_at: gameData?.created_at || new Date().toISOString()
       });
     }
 
@@ -3944,7 +4202,7 @@ app.get('/api/my-games', (req, res) => {
     const games = db.prepare(`
       SELECT g.id, g.title, g.prompt, g.author_name, g.play_count, g.like_count, g.created_at,
              COALESCE(g.status, 'published') as status,
-             CASE WHEN g.is_public = 0 THEN 'private' ELSE 'public' END as visibility,
+             COALESCE(g.visibility, CASE WHEN g.is_public = 0 THEN 'private' ELSE 'public' END) as visibility,
              (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) as comment_count
       FROM games g
       WHERE g.author_token = ?
@@ -4698,6 +4956,17 @@ app.post('/api/trial/generate', async (req, res) => {
   const authorToken = req.headers['x-author-token'] || null;
   
   try {
+    // 检查创作封禁状态（主要针对IP）
+    const banStatus = checkBanStatus(req, BAN_TYPES.CREATE);
+    if (banStatus.banned) {
+      console.log('[BLOCKED] 被禁止创作用户尝试体验模式生成:', banStatus);
+      return res.status(403).json({ 
+        success: false, 
+        error: `您已被禁止创作游戏。原因：${banStatus.reason}`,
+        banned: true
+      });
+    }
+    
     const { prompt, draftId } = req.body;
     console.log('[TRIAL] 收到生成请求:', { prompt, draftId, authorToken: authorToken ? authorToken.slice(0, 8) + '...' : null });
     
@@ -4742,15 +5011,27 @@ app.post('/api/trial/generate', async (req, res) => {
 1. 完整HTML文件：<!DOCTYPE html>、<html>、<head>、<body>，必须正确闭合
 2. CSS写在<style>内，JS写在<script>内
 3. 页面加载后立即显示游戏，不能空白
-4. 同时支持键盘和触屏操作（监听touch事件）
+4. 同时支持键盘和触屏操作
+
+【触摸控制要求 - 非常重要】：
+1. 对于需要移动/转向的角色或物体，必须支持手指触摸拖动控制，不要只用按钮
+2. 实现触摸方式：监听touchstart/touchmove/touchend事件，根据手指移动方向控制角色
+3. 可以使用虚拟摇杆（左下角半透明圆形区域）或直接触摸屏幕任意位置拖动
+4. 同时保留键盘方向键/WASD支持，但触屏设备优先使用触摸控制
 
 【游戏界面要求 - 非常重要】：
 1. 只有3种界面状态：开始界面、游戏进行中、结束界面
-2. 开始界面：显示游戏标题和"开始游戏"按钮，可以用半透明遮罩层
+2. 开始界面：显示游戏标题、"开始游戏"按钮、以及"游戏说明"按钮（点击显示操作方法）
 3. 游戏进行中：必须隐藏所有遮罩层，只显示Canvas游戏画面。得分、生命值等HUD信息直接用Canvas绑制在画面上，不要用HTML覆盖层
 4. 结束界面：游戏结束时才显示结果，可以用半透明遮罩层
 5. 点击"开始游戏"后，必须立即隐藏开始界面的遮罩，让玩家看到游戏画面
 6. 不要在游戏进行中显示任何全屏或半透明的HTML遮罩层
+7. 游戏界面右上角保留一个小的"?"按钮，点击可随时查看游戏说明
+
+【内容合规要求】：
+1. 游戏内容必须健康积极，适合所有年龄段
+2. 禁止包含暴力血腥、色情低俗、政治敏感、赌博等违规内容
+3. 游戏角色和场景设计要正向友好
 
 【游戏要求】：
 1. 游戏有趣、逻辑完整
@@ -4906,18 +5187,22 @@ app.post('/api/trial/generate', async (req, res) => {
       try {
         const draftGame = db.prepare('SELECT author_token, author_name FROM games WHERE id = ?').get(draftId);
         if (draftGame && draftGame.author_token === authorToken) {
+          // Trial模式默认竖屏
+          const gameOrientation = 'portrait';
+          
           db.prepare(`
             UPDATE games 
-            SET title = ?, code = ?, status = 'published', updated_at = CURRENT_TIMESTAMP 
+            SET title = ?, code = ?, status = 'published', orientation = ?, updated_at = CURRENT_TIMESTAMP 
             WHERE id = ?
-          `).run(title, code, draftId);
+          `).run(title, code, gameOrientation, draftId);
           
           // 生成静态文件
           saveGameStaticFile(draftId, code, {
             title: title,
             authorName: draftGame.author_name || '匿名',
             prompt: prompt,
-            authorToken: authorToken
+            authorToken: authorToken,
+            created_at: new Date().toISOString()
           });
           
           console.log(`[TRIAL] 草稿已自动发布: ${draftId}`);
@@ -5584,16 +5869,49 @@ app.get('/api/admin/users', (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
+    const search = req.query.search?.trim() || '';
     
-    const total = db.prepare('SELECT COUNT(*) as count FROM user_credits').get().count;
+    let total, users;
     
-    const users = db.prepare(`
-      SELECT user_token, credits, total_earned, total_used, followed_wechat, 
-             ad_count_today, created_at, updated_at
-      FROM user_credits 
-      ORDER BY created_at DESC 
-      LIMIT ? OFFSET ?
-    `).all(limit, offset);
+    if (search) {
+      // 搜索模式：按昵称、账号ID或Token搜索
+      const searchPattern = `%${search}%`;
+      
+      total = db.prepare(`
+        SELECT COUNT(*) as count 
+        FROM user_credits uc
+        LEFT JOIN user_accounts ua ON uc.user_token = ua.user_token
+        WHERE uc.user_token LIKE ? 
+           OR ua.account_id LIKE ? 
+           OR ua.nickname LIKE ?
+      `).get(searchPattern, searchPattern, searchPattern).count;
+      
+      users = db.prepare(`
+        SELECT uc.user_token, uc.credits, uc.total_earned, uc.total_used, uc.followed_wechat, 
+               uc.ad_count_today, uc.created_at, uc.updated_at,
+               ua.account_id, ua.nickname
+        FROM user_credits uc
+        LEFT JOIN user_accounts ua ON uc.user_token = ua.user_token
+        WHERE uc.user_token LIKE ? 
+           OR ua.account_id LIKE ? 
+           OR ua.nickname LIKE ?
+        ORDER BY uc.created_at DESC 
+        LIMIT ? OFFSET ?
+      `).all(searchPattern, searchPattern, searchPattern, limit, offset);
+    } else {
+      // 正常模式
+      total = db.prepare('SELECT COUNT(*) as count FROM user_credits').get().count;
+      
+      users = db.prepare(`
+        SELECT uc.user_token, uc.credits, uc.total_earned, uc.total_used, uc.followed_wechat, 
+               uc.ad_count_today, uc.created_at, uc.updated_at,
+               ua.account_id, ua.nickname
+        FROM user_credits uc
+        LEFT JOIN user_accounts ua ON uc.user_token = ua.user_token
+        ORDER BY uc.created_at DESC 
+        LIMIT ? OFFSET ?
+      `).all(limit, offset);
+    }
     
     res.json({ 
       success: true, 
@@ -5606,6 +5924,465 @@ app.get('/api/admin/users', (req, res) => {
       }
     });
   } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==================== 封禁管理API ====================
+
+// 封禁类型定义
+const BAN_TYPES = {
+  ACCESS: 'access',   // 禁止访问网站
+  COMMENT: 'comment', // 禁止发言/评论
+  CREATE: 'create'    // 禁止创作游戏
+};
+
+// 封禁账号表
+const ensureBanTables = () => {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS banned_accounts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      account_id TEXT UNIQUE NOT NULL,
+      reason TEXT DEFAULT '违规',
+      duration INTEGER,
+      expire_at TEXT,
+      hide_works INTEGER DEFAULT 0,
+      hide_messages INTEGER DEFAULT 0,
+      ban_types TEXT DEFAULT NULL,
+      operator TEXT DEFAULT 'admin',
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS banned_ips (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      ip TEXT UNIQUE NOT NULL,
+      reason TEXT DEFAULT '违规',
+      duration INTEGER,
+      expire_at TEXT,
+      ban_types TEXT DEFAULT NULL,
+      operator TEXT DEFAULT 'admin',
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  
+  // 尝试添加 ban_types 列（如果表已存在）
+  try {
+    db.exec(`ALTER TABLE banned_accounts ADD COLUMN ban_types TEXT DEFAULT NULL`);
+    console.log('[DB] 为 banned_accounts 添加 ban_types 列');
+  } catch (e) {
+    // 列已存在，忽略
+  }
+  try {
+    db.exec(`ALTER TABLE banned_ips ADD COLUMN ban_types TEXT DEFAULT NULL`);
+    console.log('[DB] 为 banned_ips 添加 ban_types 列');
+  } catch (e) {
+    // 列已存在，忽略
+  }
+};
+ensureBanTables();
+
+// ==================== 封禁检查函数 ====================
+
+// 标准化IP地址（处理IPv6映射的IPv4地址）
+function normalizeIP(ip) {
+  if (!ip) return 'unknown';
+  // 移除 ::ffff: 前缀（IPv6映射的IPv4地址）
+  if (ip.startsWith('::ffff:')) {
+    return ip.substring(7);
+  }
+  // 将IPv6 localhost转换为IPv4 localhost
+  if (ip === '::1') {
+    return '127.0.0.1';
+  }
+  return ip;
+}
+
+// 获取客户端真实IP（已标准化）
+function getClientIP(req) {
+  let ip;
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    ip = forwarded.split(',')[0].trim();
+  } else {
+    ip = req.headers['x-real-ip'] || req.connection?.remoteAddress || req.ip || 'unknown';
+  }
+  // 标准化IP地址
+  return normalizeIP(ip);
+}
+
+// 检查账号是否被封禁
+function checkAccountBanned(accountId) {
+  if (!accountId) return null;
+  
+  try {
+    const ban = db.prepare(`
+      SELECT account_id, reason, expire_at, ban_types
+      FROM banned_accounts 
+      WHERE account_id = ? AND (expire_at IS NULL OR expire_at > datetime('now'))
+    `).get(accountId);
+    
+    if (ban && ban.ban_types) {
+      try {
+        ban.banTypes = JSON.parse(ban.ban_types);
+      } catch (e) {
+        ban.banTypes = null;
+      }
+    }
+    
+    return ban || null;
+  } catch (e) {
+    console.error('[ERROR] 检查账号封禁状态失败:', e);
+    return null;
+  }
+}
+
+// 检查账号是否被封禁某种类型
+function checkAccountBannedForType(accountId, banType) {
+  const ban = checkAccountBanned(accountId);
+  if (!ban) return false;
+  
+  // 如果没有指定封禁类型，视为全部禁止
+  if (!ban.banTypes || ban.banTypes.length === 0) return true;
+  
+  return ban.banTypes.includes(banType);
+}
+
+// 检查IP是否被封禁
+function checkIPBanned(ip) {
+  if (!ip || ip === 'unknown') return null;
+  
+  // 标准化IP地址
+  const normalizedIP = normalizeIP(ip);
+  console.log(`[IP CHECK] 原始IP: ${ip}, 标准化IP: ${normalizedIP}`);
+  
+  try {
+    // 同时检查原始IP和标准化IP
+    const ban = db.prepare(`
+      SELECT ip, reason, expire_at, ban_types
+      FROM banned_ips 
+      WHERE (ip = ? OR ip = ?) AND (expire_at IS NULL OR expire_at > datetime('now'))
+    `).get(ip, normalizedIP);
+    
+    // 调试：列出所有封禁的IP
+    const allBannedIPs = db.prepare('SELECT ip FROM banned_ips').all();
+    console.log(`[IP CHECK] 当前封禁IP列表:`, allBannedIPs.map(b => b.ip));
+    
+    if (ban && ban.ban_types) {
+      try {
+        ban.banTypes = JSON.parse(ban.ban_types);
+      } catch (e) {
+        ban.banTypes = null;
+      }
+    }
+    
+    return ban || null;
+  } catch (e) {
+    console.error('[ERROR] 检查IP封禁状态失败:', e);
+    return null;
+  }
+}
+
+// 检查IP是否被封禁某种类型
+function checkIPBannedForType(ip, banType) {
+  const ban = checkIPBanned(ip);
+  if (!ban) return false;
+  
+  // 如果没有指定封禁类型，视为全部禁止
+  if (!ban.banTypes || ban.banTypes.length === 0) return true;
+  
+  return ban.banTypes.includes(banType);
+}
+
+// 通过用户Token获取账号ID
+function getAccountIdByToken(userToken) {
+  if (!userToken) return null;
+  
+  try {
+    const user = db.prepare('SELECT account_id FROM user_accounts WHERE user_token = ?').get(userToken);
+    return user?.account_id || null;
+  } catch (e) {
+    console.error('[ERROR] getAccountIdByToken 失败:', e.message);
+    return null;
+  }
+}
+
+// 综合封禁检查（检查账号和IP）
+// banTypeToCheck: 可选，指定要检查的封禁类型 (access/comment/create)，不指定则检查任意封禁
+function checkBanStatus(req, banTypeToCheck = null) {
+  const userToken = req.headers['x-user-token'] || null;
+  const accountId = getAccountIdByToken(userToken);
+  const clientIP = getClientIP(req);
+  
+  console.log(`[BAN CHECK] userToken: ${userToken?.substring(0,8)}..., accountId: ${accountId}, IP: ${clientIP}, checkType: ${banTypeToCheck || 'any'}`);
+  
+  // 检查账号封禁
+  if (accountId) {
+    const accountBan = checkAccountBanned(accountId);
+    console.log(`[BAN CHECK] 账号封禁检查结果:`, accountBan);
+    if (accountBan) {
+      // 如果指定了检查类型，只检查该类型
+      if (banTypeToCheck) {
+        const isBannedForType = !accountBan.banTypes || accountBan.banTypes.length === 0 || accountBan.banTypes.includes(banTypeToCheck);
+        if (isBannedForType) {
+          return {
+            banned: true,
+            type: 'account',
+            banTypes: accountBan.banTypes || [BAN_TYPES.ACCESS, BAN_TYPES.COMMENT, BAN_TYPES.CREATE],
+            reason: accountBan.reason || '账号已被封禁',
+            expireAt: accountBan.expire_at
+          };
+        }
+      } else {
+        // 不指定类型，有封禁就返回
+        return {
+          banned: true,
+          type: 'account',
+          banTypes: accountBan.banTypes || [BAN_TYPES.ACCESS, BAN_TYPES.COMMENT, BAN_TYPES.CREATE],
+          reason: accountBan.reason || '账号已被封禁',
+          expireAt: accountBan.expire_at
+        };
+      }
+    }
+  }
+  
+  // 检查IP封禁
+  const ipBan = checkIPBanned(clientIP);
+  console.log(`[BAN CHECK] IP封禁检查结果:`, ipBan);
+  if (ipBan) {
+    // 如果指定了检查类型，只检查该类型
+    if (banTypeToCheck) {
+      const isBannedForType = !ipBan.banTypes || ipBan.banTypes.length === 0 || ipBan.banTypes.includes(banTypeToCheck);
+      if (isBannedForType) {
+        return {
+          banned: true,
+          type: 'ip',
+          banTypes: ipBan.banTypes || [BAN_TYPES.ACCESS, BAN_TYPES.COMMENT, BAN_TYPES.CREATE],
+          reason: ipBan.reason || 'IP已被封禁',
+          expireAt: ipBan.expire_at
+        };
+      }
+    } else {
+      return {
+        banned: true,
+        type: 'ip',
+        banTypes: ipBan.banTypes || [BAN_TYPES.ACCESS, BAN_TYPES.COMMENT, BAN_TYPES.CREATE],
+        reason: ipBan.reason || 'IP已被封禁',
+        expireAt: ipBan.expire_at
+      };
+    }
+  }
+  
+  return { banned: false };
+}
+
+// 前端检查封禁状态API
+app.get('/api/check-ban', (req, res) => {
+  const banStatus = checkBanStatus(req);
+  res.json(banStatus);
+});
+
+// 用户状态检查API（用于前端安全检查）
+app.get('/api/user/status', (req, res) => {
+  try {
+    const clientIP = getClientIP(req);
+    const userToken = req.headers['x-user-token'] || null;
+    
+    // 通过 token 获取账号ID
+    let accountId = null;
+    if (userToken) {
+      accountId = getAccountIdByToken(userToken);
+    }
+    
+    let result = {
+      success: true,
+      ip: clientIP,
+      accountId: accountId,
+      banned: false,
+      banReason: null,
+      banExpireAt: null,
+      banTypes: null,
+      allowDevTools: false
+    };
+    
+    // 检查IP是否被封禁
+    const ipBan = checkIPBanned(clientIP);
+    if (ipBan) {
+      result.banned = true;
+      result.banType = 'ip';
+      result.banReason = ipBan.reason;
+      result.banExpireAt = ipBan.expire_at;
+      result.banTypes = ipBan.banTypes || null;
+    }
+    
+    // 检查账号是否被封禁
+    if (accountId && !result.banned) {
+      const accountBan = checkAccountBanned(accountId);
+      if (accountBan) {
+        result.banned = true;
+        result.banType = 'account';
+        result.banReason = accountBan.reason;
+        result.banExpireAt = accountBan.expire_at;
+        result.banTypes = accountBan.banTypes || null;
+      }
+    }
+    
+    // 检查是否在DevTools白名单中
+    try {
+      const whitelist = db.prepare(`
+        SELECT account_id, ip FROM devtools_whitelist WHERE account_id = ? OR ip = ?
+      `).get(accountId || '', clientIP);
+      result.allowDevTools = !!whitelist;
+    } catch (e) {
+      result.allowDevTools = false;
+    }
+    
+    console.log(`[USER STATUS] IP: ${clientIP}, accountId: ${accountId}, token: ${userToken ? userToken.substring(0,8) + '...' : 'none'}, banned: ${result.banned}`);
+    res.json(result);
+  } catch (error) {
+    console.error('[ERROR] 用户状态检查失败:', error);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
+// 获取封禁列表
+app.get('/api/admin/ban', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const type = req.query.type || 'all';
+    let result = {};
+    
+    if (type === 'all' || type === 'accounts') {
+      const accounts = db.prepare(`
+        SELECT account_id as accountId, reason, duration, expire_at as expireAt, 
+               hide_works as hideWorks, hide_messages as hideMessages, 
+               ban_types as banTypesJson,
+               operator, created_at as createdAt
+        FROM banned_accounts 
+        WHERE expire_at IS NULL OR expire_at > datetime('now')
+      `).all();
+      // 解析 banTypes JSON
+      result.bannedAccounts = accounts.map(a => {
+        let banTypes = null;
+        if (a.banTypesJson) {
+          try {
+            banTypes = JSON.parse(a.banTypesJson);
+          } catch (e) {}
+        }
+        delete a.banTypesJson;
+        return { ...a, banTypes };
+      });
+    }
+    
+    if (type === 'all' || type === 'ips') {
+      const ips = db.prepare(`
+        SELECT ip, reason, duration, expire_at as expireAt, 
+               ban_types as banTypesJson,
+               operator, created_at as createdAt
+        FROM banned_ips 
+        WHERE expire_at IS NULL OR expire_at > datetime('now')
+      `).all();
+      // 解析 banTypes JSON
+      result.bannedIPs = ips.map(b => {
+        let banTypes = null;
+        if (b.banTypesJson) {
+          try {
+            banTypes = JSON.parse(b.banTypesJson);
+          } catch (e) {}
+        }
+        delete b.banTypesJson;
+        return { ...b, banTypes };
+      });
+    }
+    
+    res.json({ success: true, ...result });
+  } catch (error) {
+    console.error('[ERROR] 获取封禁列表失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 添加封禁
+app.post('/api/admin/ban', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { type, target, reason, duration, hideWorks, hideMessages, banTypes } = req.body;
+    
+    if (!type || !target) {
+      return res.status(400).json({ success: false, error: '缺少必要参数' });
+    }
+    
+    const now = new Date();
+    const expireAt = duration ? new Date(now.getTime() + duration * 60 * 1000).toISOString() : null;
+    // 将 banTypes 数组转换为 JSON 字符串存储
+    const banTypesJson = banTypes && banTypes.length > 0 ? JSON.stringify(banTypes) : null;
+    
+    // 生成封禁类型描述
+    const banTypeLabels = {
+      'access': '禁止访问',
+      'comment': '禁止发言',
+      'create': '禁止创作'
+    };
+    const banTypeDesc = banTypes && banTypes.length > 0 
+      ? banTypes.map(t => banTypeLabels[t] || t).join('、')
+      : '全部禁止';
+    
+    if (type === 'account') {
+      db.prepare(`
+        INSERT OR REPLACE INTO banned_accounts (account_id, reason, duration, expire_at, hide_works, hide_messages, ban_types)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(target, reason || '违规', duration || null, expireAt, hideWorks ? 1 : 0, hideMessages ? 1 : 0, banTypesJson);
+      
+      res.json({ success: true, message: `账号 ${target} 已被封禁（${banTypeDesc}）` });
+    } else if (type === 'ip') {
+      db.prepare(`
+        INSERT OR REPLACE INTO banned_ips (ip, reason, duration, expire_at, ban_types)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(target, reason || '违规', duration || null, expireAt, banTypesJson);
+      
+      res.json({ success: true, message: `IP ${target} 已被封禁（${banTypeDesc}）` });
+    } else {
+      return res.status(400).json({ success: false, error: '无效的封禁类型' });
+    }
+  } catch (error) {
+    console.error('[ERROR] 封禁操作失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 解除封禁
+app.delete('/api/admin/ban', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { type, target } = req.body;
+    
+    if (!type || !target) {
+      return res.status(400).json({ success: false, error: '缺少必要参数' });
+    }
+    
+    if (type === 'account') {
+      db.prepare('DELETE FROM banned_accounts WHERE account_id = ?').run(target);
+      res.json({ success: true, message: `账号 ${target} 已解封` });
+    } else if (type === 'ip') {
+      db.prepare('DELETE FROM banned_ips WHERE ip = ?').run(target);
+      res.json({ success: true, message: `IP ${target} 已解封` });
+    } else {
+      return res.status(400).json({ success: false, error: '无效的类型' });
+    }
+  } catch (error) {
+    console.error('[ERROR] 解封操作失败:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -5835,6 +6612,7 @@ app.get('/api/games', (req, res) => {
     const offset = parseInt(req.query.offset) || 0;
     const sort = req.query.sort || 'newest';
     const category = req.query.category || 'all';
+    const orientation = req.query.orientation || 'all';
     
     // 构建排序条件
     let orderBy = 'created_at DESC';
@@ -5883,18 +6661,25 @@ app.get('/api/games', (req, res) => {
       }
     }
     
+    // 构建方向筛选条件
+    let orientationWhere = '';
+    if (orientation && orientation !== 'all') {
+      orientationWhere = `AND (orientation = ? OR (orientation IS NULL AND ? = 'portrait'))`;
+      params.push(orientation, orientation);
+    }
+    
     // 获取总数（排除草稿和私密）
-    const countSql = `SELECT COUNT(*) as total FROM games WHERE is_hidden = 0 AND (is_public = 1 OR is_public IS NULL) AND COALESCE(status, 'published') = 'published' ${categoryWhere}`;
+    const countSql = `SELECT COUNT(*) as total FROM games WHERE is_hidden = 0 AND (is_public = 1 OR is_public IS NULL) AND COALESCE(status, 'published') = 'published' ${categoryWhere} ${orientationWhere}`;
     const totalResult = db.prepare(countSql).get(...params);
     const total = totalResult ? totalResult.total : 0;
     
     // 获取游戏列表（排除草稿和私密）
     const sql = `
-      SELECT g.id, g.title, g.prompt, g.author_name, g.play_count, g.like_count, g.favorite_count, g.created_at,
+      SELECT g.id, g.title, g.prompt, g.author_name, g.play_count, g.like_count, g.favorite_count, g.created_at, g.orientation,
              (g.play_count + g.like_count * 5 + g.favorite_count * 3) as hot_score,
              (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) as comment_count
       FROM games g
-      WHERE g.is_hidden = 0 AND (g.is_public = 1 OR g.is_public IS NULL) AND COALESCE(g.status, 'published') = 'published' ${categoryWhere.replace(/title/g, 'g.title').replace(/prompt/g, 'g.prompt')}
+      WHERE g.is_hidden = 0 AND (g.is_public = 1 OR g.is_public IS NULL) AND COALESCE(g.status, 'published') = 'published' ${categoryWhere.replace(/title/g, 'g.title').replace(/prompt/g, 'g.prompt')} ${orientationWhere.replace(/orientation/g, 'g.orientation')}
       ORDER BY ${orderBy.replace(/play_count/g, 'g.play_count').replace(/like_count/g, 'g.like_count').replace(/favorite_count/g, 'g.favorite_count').replace(/created_at/g, 'g.created_at')}
       LIMIT ? OFFSET ?
     `;
@@ -6585,7 +7370,7 @@ function generateAllStaticFiles(forceRegenerate = false) {
     
     // 获取所有已发布的游戏
     const games = db.prepare(`
-      SELECT id, title, prompt, code, author_name, author_token 
+      SELECT id, title, prompt, code, author_name, author_token, created_at 
       FROM games 
       WHERE COALESCE(status, 'published') = 'published'
       ORDER BY created_at DESC
@@ -6605,7 +7390,8 @@ function generateAllStaticFiles(forceRegenerate = false) {
           title: game.title,
           authorName: game.author_name,
           prompt: game.prompt,
-          authorToken: game.author_token
+          authorToken: game.author_token,
+          created_at: game.created_at
         });
         generated++;
       } else {

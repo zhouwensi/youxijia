@@ -8,6 +8,13 @@ const GAME_PREFIX = 'game:';
 const RECENT_GAMES_KEY = 'games:recent';
 const FEATURED_GAMES_KEY = 'games:featured';
 const DELETED_GAMES_KEY = 'games:deleted'; // 已删除游戏列表
+// 封禁相关键名
+const BANNED_ACCOUNTS_KEY = 'banned:accounts';
+const BANNED_IPS_KEY = 'banned:ips';
+const DEVTOOLS_WHITELIST_KEY = 'config:devtools_whitelist';
+// 邀请积分相关
+const REFERRAL_PREFIX = 'referral:';
+const DAILY_REFERRAL_KEY = 'daily_referral:';
 
 // 生成游戏ID
 function generateId() {
@@ -265,6 +272,267 @@ async function getAllGames(options = {}) {
   };
 }
 
+// ==================== 封禁功能 ====================
+
+/**
+ * 封禁类型常量
+ * - access: 禁止访问网站
+ * - comment: 禁止发言/评论
+ * - create: 禁止创作游戏
+ */
+const BAN_TYPES = {
+  ACCESS: 'access',   // 禁止访问网站
+  COMMENT: 'comment', // 禁止发言/评论
+  CREATE: 'create'    // 禁止创作游戏
+};
+
+// 封禁账号
+async function banAccount(accountId, reason, duration = null, hideWorks = false, hideMessages = false, operator = 'admin', banTypes = null) {
+  const now = new Date();
+  
+  // 如果没有指定封禁类型，默认为全部禁止
+  const types = banTypes || [BAN_TYPES.ACCESS, BAN_TYPES.COMMENT, BAN_TYPES.CREATE];
+  
+  const banInfo = {
+    accountId,
+    reason,
+    duration, // null表示永久，否则为分钟数
+    expireAt: duration ? new Date(now.getTime() + duration * 60 * 1000).toISOString() : null,
+    hideWorks,
+    hideMessages,
+    operator,
+    banTypes: types, // 新增：封禁类型数组
+    createdAt: now.toISOString()
+  };
+  
+  await kv.hset(BANNED_ACCOUNTS_KEY, accountId, JSON.stringify(banInfo));
+  
+  // 如果需要隐藏作品
+  if (hideWorks) {
+    await hideUserWorks(accountId);
+  }
+  
+  return banInfo;
+}
+
+// 解封账号
+async function unbanAccount(accountId) {
+  await kv.hdel(BANNED_ACCOUNTS_KEY, accountId);
+  return true;
+}
+
+// 检查账号是否被封禁
+async function isAccountBanned(accountId) {
+  const data = await kv.hget(BANNED_ACCOUNTS_KEY, accountId);
+  if (!data) return null;
+  
+  const banInfo = typeof data === 'string' ? JSON.parse(data) : data;
+  
+  // 检查是否已过期
+  if (banInfo.expireAt && new Date(banInfo.expireAt) < new Date()) {
+    await unbanAccount(accountId);
+    return null;
+  }
+  
+  return banInfo;
+}
+
+// 封禁IP
+async function banIP(ip, reason, duration = null, operator = 'admin', banTypes = null) {
+  const now = new Date();
+  
+  // 如果没有指定封禁类型，默认为全部禁止
+  const types = banTypes || [BAN_TYPES.ACCESS, BAN_TYPES.COMMENT, BAN_TYPES.CREATE];
+  
+  const banInfo = {
+    ip,
+    reason,
+    duration,
+    expireAt: duration ? new Date(now.getTime() + duration * 60 * 1000).toISOString() : null,
+    operator,
+    banTypes: types, // 新增：封禁类型数组
+    createdAt: now.toISOString()
+  };
+  
+  await kv.hset(BANNED_IPS_KEY, ip, JSON.stringify(banInfo));
+  return banInfo;
+}
+
+// 解封IP
+async function unbanIP(ip) {
+  await kv.hdel(BANNED_IPS_KEY, ip);
+  return true;
+}
+
+// 检查IP是否被封禁
+async function isIPBanned(ip) {
+  const data = await kv.hget(BANNED_IPS_KEY, ip);
+  if (!data) return null;
+  
+  const banInfo = typeof data === 'string' ? JSON.parse(data) : data;
+  
+  // 检查是否已过期
+  if (banInfo.expireAt && new Date(banInfo.expireAt) < new Date()) {
+    await unbanIP(ip);
+    return null;
+  }
+  
+  return banInfo;
+}
+
+// 获取所有被封禁的账号
+async function getBannedAccounts() {
+  const data = await kv.hgetall(BANNED_ACCOUNTS_KEY);
+  if (!data) return [];
+  
+  const accounts = [];
+  for (const [accountId, info] of Object.entries(data)) {
+    const banInfo = typeof info === 'string' ? JSON.parse(info) : info;
+    // 过滤已过期的
+    if (!banInfo.expireAt || new Date(banInfo.expireAt) > new Date()) {
+      accounts.push(banInfo);
+    }
+  }
+  return accounts;
+}
+
+// 获取所有被封禁的IP
+async function getBannedIPs() {
+  const data = await kv.hgetall(BANNED_IPS_KEY);
+  if (!data) return [];
+  
+  const ips = [];
+  for (const [ip, info] of Object.entries(data)) {
+    const banInfo = typeof info === 'string' ? JSON.parse(info) : info;
+    // 过滤已过期的
+    if (!banInfo.expireAt || new Date(banInfo.expireAt) > new Date()) {
+      ips.push(banInfo);
+    }
+  }
+  return ips;
+}
+
+// 隐藏用户所有作品
+async function hideUserWorks(accountId) {
+  const ids = await kv.lrange(RECENT_GAMES_KEY, 0, 999) || [];
+  
+  for (const id of ids) {
+    const game = await getGame(id);
+    if (game && game.author_token === accountId) {
+      game.is_hidden = 1;
+      game.updated_at = new Date().toISOString();
+      await kv.set(`${GAME_PREFIX}${id}`, JSON.stringify(game));
+    }
+  }
+  
+  return true;
+}
+
+// ==================== DevTools白名单 ====================
+
+// 获取DevTools白名单
+async function getDevToolsWhitelist() {
+  const data = await kv.get(DEVTOOLS_WHITELIST_KEY);
+  if (!data) return { accounts: [], ips: [] };
+  return typeof data === 'string' ? JSON.parse(data) : data;
+}
+
+// 设置DevTools白名单
+async function setDevToolsWhitelist(whitelist) {
+  await kv.set(DEVTOOLS_WHITELIST_KEY, JSON.stringify(whitelist));
+  return true;
+}
+
+// 检查是否在DevTools白名单中
+async function isInDevToolsWhitelist(accountId, ip) {
+  const whitelist = await getDevToolsWhitelist();
+  
+  if (accountId && whitelist.accounts.includes(accountId)) {
+    return true;
+  }
+  if (ip && whitelist.ips.includes(ip)) {
+    return true;
+  }
+  return false;
+}
+
+// ==================== 邀请积分功能 ====================
+
+// 记录邀请关系
+async function recordReferral(inviterAccountId, inviteeAccountId) {
+  const key = `${REFERRAL_PREFIX}${inviteeAccountId}`;
+  const referralInfo = {
+    inviter: inviterAccountId,
+    invitee: inviteeAccountId,
+    createdAt: new Date().toISOString(),
+    rewarded: false
+  };
+  
+  await kv.set(key, JSON.stringify(referralInfo));
+  return referralInfo;
+}
+
+// 获取邀请关系
+async function getReferral(inviteeAccountId) {
+  const key = `${REFERRAL_PREFIX}${inviteeAccountId}`;
+  const data = await kv.get(key);
+  if (!data) return null;
+  return typeof data === 'string' ? JSON.parse(data) : data;
+}
+
+// 标记邀请已奖励
+async function markReferralRewarded(inviteeAccountId) {
+  const referral = await getReferral(inviteeAccountId);
+  if (!referral) return null;
+  
+  referral.rewarded = true;
+  referral.rewardedAt = new Date().toISOString();
+  
+  const key = `${REFERRAL_PREFIX}${inviteeAccountId}`;
+  await kv.set(key, JSON.stringify(referral));
+  return referral;
+}
+
+// 获取用户今日邀请奖励次数
+async function getDailyReferralCount(accountId) {
+  const today = new Date().toISOString().slice(0, 10);
+  const key = `${DAILY_REFERRAL_KEY}${accountId}:${today}`;
+  const count = await kv.get(key);
+  return parseInt(count) || 0;
+}
+
+// 增加用户今日邀请奖励次数
+async function incrementDailyReferralCount(accountId) {
+  const today = new Date().toISOString().slice(0, 10);
+  const key = `${DAILY_REFERRAL_KEY}${accountId}:${today}`;
+  const count = await kv.incr(key);
+  // 设置过期时间为明天（24小时后自动清除）
+  await kv.expire(key, 86400);
+  return count;
+}
+
+// 检查账号是否被特定类型封禁
+async function isAccountBannedForType(accountId, banType) {
+  const banInfo = await isAccountBanned(accountId);
+  if (!banInfo) return false;
+  
+  // 如果没有 banTypes 字段（旧数据），视为全部封禁
+  if (!banInfo.banTypes) return true;
+  
+  return banInfo.banTypes.includes(banType);
+}
+
+// 检查IP是否被特定类型封禁
+async function isIPBannedForType(ip, banType) {
+  const banInfo = await isIPBanned(ip);
+  if (!banInfo) return false;
+  
+  // 如果没有 banTypes 字段（旧数据），视为全部封禁
+  if (!banInfo.banTypes) return true;
+  
+  return banInfo.banTypes.includes(banType);
+}
+
 module.exports = {
   createGame,
   getGame,
@@ -279,5 +547,28 @@ module.exports = {
   restoreGame,
   permanentDeleteGame,
   setGameVisibility,
-  getAllGames
+  getAllGames,
+  // 封禁功能
+  BAN_TYPES,
+  banAccount,
+  unbanAccount,
+  isAccountBanned,
+  isAccountBannedForType,
+  banIP,
+  unbanIP,
+  isIPBanned,
+  isIPBannedForType,
+  getBannedAccounts,
+  getBannedIPs,
+  hideUserWorks,
+  // DevTools白名单
+  getDevToolsWhitelist,
+  setDevToolsWhitelist,
+  isInDevToolsWhitelist,
+  // 邀请积分
+  recordReferral,
+  getReferral,
+  markReferralRewarded,
+  getDailyReferralCount,
+  incrementDailyReferralCount
 };

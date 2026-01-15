@@ -7,6 +7,7 @@
   <meta name="description" content="浏览所有AI生成的小游戏">
   <title>全部游戏 - AI Game Generator</title>
   <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/security.js"></script>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
   <style>
     /* 页面专属样式 */
@@ -245,11 +246,28 @@
       <div class="games-page-header">
         <div class="container">
           <h1 class="games-page-title">
-            <a href="/" class="back-link">← 返回</a>
-            🎮 全部游戏
+            <a href="/" class="back-link">←</a>
+            <span id="page-title-icon">🎮</span>
+            <span id="page-title-text">全部游戏</span>
           </h1>
           
           <div class="filter-bar">
+            <!-- 游戏类型筛选 -->
+            <div class="filter-group">
+              <span class="filter-label">类型：</span>
+              <div class="filter-tabs" id="gameType-tabs">
+                <button class="filter-tab active" data-gametype="all">全部</button>
+                <button class="filter-tab" data-gametype="action">💥 动作</button>
+                <button class="filter-tab" data-gametype="puzzle">🧩 益智</button>
+                <button class="filter-tab" data-gametype="arcade">🕹️ 街机</button>
+                <button class="filter-tab" data-gametype="strategy">♟️ 策略</button>
+                <button class="filter-tab" data-gametype="adventure">🗺️ 冒险</button>
+                <button class="filter-tab" data-gametype="sports">⚽ 体育</button>
+                <button class="filter-tab" data-gametype="shooting">🔫 射击</button>
+                <button class="filter-tab" data-gametype="card">🃏 卡牌</button>
+              </div>
+            </div>
+            
             <!-- 分类筛选 -->
             <div class="filter-group">
               <span class="filter-label">分类：</span>
@@ -272,6 +290,17 @@
                 <button class="filter-tab" data-sort="likes">❤️ 点赞</button>
                 <button class="filter-tab" data-sort="favorites">⭐ 收藏</button>
                 <button class="filter-tab" data-sort="plays">👁️ 游玩</button>
+                <button class="filter-tab" data-sort="comments">💬 评论</button>
+              </div>
+            </div>
+            
+            <!-- 屏幕方向 -->
+            <div class="filter-group">
+              <span class="filter-label">方向：</span>
+              <div class="filter-tabs" id="orientation-tabs">
+                <button class="filter-tab active" data-orientation="all">全部</button>
+                <button class="filter-tab" data-orientation="portrait">📱 竖屏</button>
+                <button class="filter-tab" data-orientation="landscape">🖥️ 横屏</button>
               </div>
             </div>
           </div>
@@ -313,10 +342,37 @@
     // ==================== 状态管理 ====================
     let currentSort = 'newest';
     let currentCategory = 'all';
+    let currentOrientation = 'all';
+    let currentGameType = 'all';
     let currentOffset = 0;
     let isLoading = false;
     let hasMore = true;
     const PAGE_SIZE = 20;
+    // 保存初始排序方式（用于刚进入页面时的默认排序）
+    let initialSort = 'newest';
+    
+    // 页面标题配置
+    const PAGE_TITLES = {
+      sort: {
+        newest: { icon: '🕐', text: '最新游戏' },
+        hot: { icon: '🔥', text: '热门游戏' },
+        likes: { icon: '❤️', text: '最多点赞' },
+        favorites: { icon: '⭐', text: '最多收藏' },
+        plays: { icon: '👁️', text: '最多游玩' },
+        comments: { icon: '💬', text: '最多评论' },
+        recommended: { icon: '✨', text: '推荐游戏' }
+      },
+      gameType: {
+        action: { icon: '💥', text: '动作游戏' },
+        puzzle: { icon: '🧩', text: '益智游戏' },
+        arcade: { icon: '🕹️', text: '街机游戏' },
+        strategy: { icon: '♟️', text: '策略游戏' },
+        adventure: { icon: '🗺️', text: '冒险游戏' },
+        sports: { icon: '⚽', text: '体育游戏' },
+        shooting: { icon: '🔫', text: '射击游戏' },
+        card: { icon: '🃏', text: '卡牌游戏' }
+      }
+    };
     
     // ==================== 初始化 ====================
     document.addEventListener('DOMContentLoaded', () => {
@@ -324,10 +380,20 @@
       const urlParams = new URLSearchParams(window.location.search);
       currentSort = urlParams.get('sort') || 'newest';
       currentCategory = urlParams.get('category') || 'all';
+      currentOrientation = urlParams.get('orientation') || 'all';
+      currentGameType = urlParams.get('gameType') || 'all';
+      
+      // 保存初始排序方式
+      initialSort = currentSort;
+      
+      // 更新页面标题
+      updatePageTitle();
       
       // 设置初始选中状态
       updateActiveTab('sort-tabs', currentSort);
       updateActiveTab('category-tabs', currentCategory);
+      updateActiveTab('orientation-tabs', currentOrientation);
+      updateActiveTab('gameType-tabs', currentGameType);
       
       // 绑定筛选事件
       bindFilterEvents();
@@ -338,6 +404,32 @@
       // 绑定滚动事件
       bindScrollEvents();
     });
+    
+    // 更新页面标题
+    function updatePageTitle() {
+      const iconEl = document.getElementById('page-title-icon');
+      const textEl = document.getElementById('page-title-text');
+      
+      let icon = '🎮';
+      let text = '全部游戏';
+      
+      // 优先根据游戏类型设置标题
+      if (currentGameType !== 'all' && PAGE_TITLES.gameType[currentGameType]) {
+        icon = PAGE_TITLES.gameType[currentGameType].icon;
+        text = PAGE_TITLES.gameType[currentGameType].text;
+      } 
+      // 其次根据排序方式设置标题
+      else if (PAGE_TITLES.sort[currentSort]) {
+        icon = PAGE_TITLES.sort[currentSort].icon;
+        text = PAGE_TITLES.sort[currentSort].text;
+      }
+      
+      if (iconEl) iconEl.textContent = icon;
+      if (textEl) textEl.textContent = text;
+      
+      // 更新浏览器标题
+      document.title = `${text} - AI Game Generator`;
+    }
     
     // ==================== 筛选事件绑定 ====================
     function bindFilterEvents() {
@@ -366,6 +458,32 @@
           }
         });
       });
+      
+      // 屏幕方向标签
+      document.querySelectorAll('#orientation-tabs .filter-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const orientation = tab.dataset.orientation;
+          if (orientation !== currentOrientation) {
+            currentOrientation = orientation;
+            updateActiveTab('orientation-tabs', orientation);
+            updateURL();
+            loadGames(true);
+          }
+        });
+      });
+      
+      // 游戏类型标签
+      document.querySelectorAll('#gameType-tabs .filter-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const gameType = tab.dataset.gametype;
+          if (gameType !== currentGameType) {
+            currentGameType = gameType;
+            updateActiveTab('gameType-tabs', gameType);
+            updateURL();
+            loadGames(true);
+          }
+        });
+      });
     }
     
     function updateActiveTab(containerId, value) {
@@ -373,7 +491,11 @@
       if (!container) return;
       
       container.querySelectorAll('.filter-tab').forEach(tab => {
-        const dataKey = containerId === 'sort-tabs' ? 'sort' : 'category';
+        let dataKey;
+        if (containerId === 'sort-tabs') dataKey = 'sort';
+        else if (containerId === 'category-tabs') dataKey = 'category';
+        else if (containerId === 'orientation-tabs') dataKey = 'orientation';
+        else if (containerId === 'gameType-tabs') dataKey = 'gametype';
         tab.classList.toggle('active', tab.dataset[dataKey] === value);
       });
     }
@@ -382,6 +504,8 @@
       const url = new URL(window.location);
       url.searchParams.set('sort', currentSort);
       url.searchParams.set('category', currentCategory);
+      url.searchParams.set('orientation', currentOrientation);
+      url.searchParams.set('gameType', currentGameType);
       window.history.replaceState({}, '', url);
     }
     
@@ -401,7 +525,7 @@
       updateLoadingUI(true);
       
       try {
-        const url = `/api/games?sort=${currentSort}&category=${currentCategory}&limit=${PAGE_SIZE}&offset=${currentOffset}`;
+        const url = `/api/games?sort=${currentSort}&category=${currentCategory}&orientation=${currentOrientation}&gameType=${currentGameType}&limit=${PAGE_SIZE}&offset=${currentOffset}`;
         const response = await fetch(url);
         const data = await response.json();
         
@@ -539,7 +663,10 @@
     }
     
     function openGame(gameId) {
-      window.location.href = `/?game=${gameId}`;
+      // 跳转到静态游戏页面，这样浏览器返回按钮会回到游戏列表
+      // 静态文件存储在 /g/{前2位字符}/{gameId}.html
+      const subDir = gameId.substring(0, 2);
+      window.location.href = `/g/${subDir}/${gameId}.html`;
     }
     
     function showToast(message, type = 'info') {

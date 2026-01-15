@@ -37,6 +37,7 @@ echo data>> "%TEMP%\7z_exclude.txt"
 echo *.db>> "%TEMP%\7z_exclude.txt"
 echo *.db-journal>> "%TEMP%\7z_exclude.txt"
 echo bak>> "%TEMP%\7z_exclude.txt"
+echo public\g>> "%TEMP%\7z_exclude.txt"
 
 :: 检查是否有 7z
 where 7z >nul 2>&1
@@ -59,7 +60,7 @@ powershell -Command ^
     "$source = '%~dp0'; " ^
     "$dest = '%ZIP_NAME%'; " ^
     "$exclude = @('node_modules', '.git', 'data', '*.zip', '*.db', '*.db-journal', 'bak'); " ^
-    "$files = Get-ChildItem -Path $source -Exclude $exclude; " ^
+    "$files = Get-ChildItem -Path $source -Exclude $exclude | Where-Object { $_.FullName -notlike '*\public\g\*' }; " ^
     "Compress-Archive -Path $files.FullName -DestinationPath $dest -Force"
 
 :done

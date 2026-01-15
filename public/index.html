@@ -6,15 +6,19 @@
   <meta name="format-detection" content="telephone=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#0f172a">
+  <meta name="theme-color" content="#080810">
   <!-- 微信分享相关 -->
-  <meta name="description" content="用一句话描述，AI帮你生成可玩的小游戏！">
-  <meta property="og:title" content="一句话生成游戏">
-  <meta property="og:description" content="用一句话描述，AI帮你生成可玩的小游戏！">
+  <meta name="description" content="用一句话描述，AI帮你生成可玩的小游戏！未来科技，一触即发！">
+  <meta property="og:title" content="AI游戏工坊 - 一句话生成游戏">
+  <meta property="og:description" content="用一句话描述，AI帮你生成可玩的小游戏！未来科技，一触即发！">
   <meta property="og:type" content="website">
-  <title>一句话生成游戏 - AI Game Generator</title>
+  <title>AI游戏工坊 - 一句话生成游戏</title>
+  <!-- 科技字体 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
 </head>
 <body>
   <div id="app" class="app-layout">
@@ -241,6 +245,15 @@
                   <option value="">无音效</option>
                   <option value="basic">基础音效</option>
                   <option value="rich">丰富音效</option>
+                </select>
+              </div>
+              <!-- 可见性 -->
+              <div class="setting-group">
+                <label>👁️ 可见范围</label>
+                <select id="adv-visibility">
+                  <option value="public">🌍 所有人可见</option>
+                  <option value="followers">👥 仅粉丝可见</option>
+                  <option value="private">🔒 仅自己可见</option>
                 </select>
               </div>
               <!-- 色调 -->
@@ -508,6 +521,7 @@
                 </button>
               </div>
             </div>
+            <div class="tiktok-publish-time" id="tiktok-publish-time"></div>
           </div>
           
           <!-- TikTok风格右侧互动栏 -->
@@ -561,8 +575,9 @@
         </div>
         <!-- 游戏留言板 -->
         <div class="comments-section" id="comments-section" style="display:none;">
-          <div class="comments-header">
+          <div class="comments-header" onclick="toggleCommentsExpand()">
             <h3 class="comments-title">💬 留言板 <span class="comments-count" id="comments-count">(0)</span></h3>
+            <button class="comments-toggle-btn" id="comments-toggle-btn">展开 ▼</button>
           </div>
           
           <!-- 留言输入区域 -->
@@ -612,6 +627,9 @@
         <h3>AI 正在创作游戏...</h3>
         <p class="generating-tip" id="generating-status">正在连接 AI 服务</p>
         <p class="generating-time" id="generating-time">已用时: 0秒</p>
+        <p class="generating-speed-tip" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+          ⏱️ 生成速度取决于所选AI模型，通常需要1-7分钟
+        </p>
         <div class="generating-progress">
           <div class="generating-progress-bar" id="generating-progress-bar"></div>
         </div>
@@ -1209,5 +1227,6 @@
   </div>
 
   <script src="/js/app.js"></script>
+  <script src="/js/security.js"></script>
 </body>
 </html>

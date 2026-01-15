@@ -515,7 +515,12 @@ function bodySizeCheck(maxSize = 1024 * 1024) { // 默认1MB
 function getCorsConfig() {
   const allowedOrigins = process.env.ALLOWED_ORIGINS 
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-    : ['http://localhost:80', 'http://127.0.0.1:80'];
+    : [
+        'http://localhost', 
+        'http://localhost:80', 
+        'http://127.0.0.1', 
+        'http://127.0.0.1:80'
+      ];
   
   return {
     origin: function(origin, callback) {

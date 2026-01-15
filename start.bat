@@ -91,7 +91,20 @@ if !PID_FOUND! equ 1 (
     echo.
 )
 
-echo [3/3] 正在启动服务器...
+echo [3/4] 正在混淆前端代码...
+echo.
+
+:: 执行代码混淆构建
+set NODE_ENV=production
+node build.js
+if !errorlevel! neq 0 (
+    echo.
+    echo [WARN] 代码混淆过程出现问题，但服务器仍将启动
+    echo.
+)
+
+echo.
+echo [4/4] 正在启动服务器...
 echo.
 
 :: 显示启动信息
