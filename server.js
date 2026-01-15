@@ -332,12 +332,12 @@ function generateStandaloneGameHtml(gameCode, gameInfo) {
 }
 .tiktok-sidebar {
   position: fixed !important;
-  right: 12px !important;
+  right: 8px !important;
   top: 50% !important;
   transform: translateY(-50%) !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 16px !important;
+  gap: 12px !important;
   z-index: 999998 !important;
   pointer-events: auto !important;
 }
@@ -360,18 +360,18 @@ function generateStandaloneGameHtml(gameCode, gameInfo) {
   transform: scale(0.9) !important;
 }
 .tiktok-icon {
-  width: 48px !important;
-  height: 48px !important;
+  width: 40px !important;
+  height: 40px !important;
   border-radius: 50% !important;
   background: rgba(0, 0, 0, 0.6) !important;
   backdrop-filter: blur(8px) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 24px !important;
+  font-size: 18px !important;
   transition: all 0.2s ease !important;
-  border: 2px solid rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
   color: #fff !important;
 }
 .tiktok-action:hover .tiktok-icon {
@@ -380,10 +380,10 @@ function generateStandaloneGameHtml(gameCode, gameInfo) {
   border-color: rgba(255, 255, 255, 0.4) !important;
 }
 .tiktok-count {
-  font-size: 12px !important;
-  font-weight: 600 !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
   color: #fff !important;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
   white-space: nowrap !important;
 }
 .tiktok-action.liked .tiktok-icon {
@@ -622,30 +622,30 @@ body {
 <div class="tiktok-sidebar">
   <div class="tiktok-action" id="stat-like-btn" onclick="likeGame()">
     <div class="tiktok-icon">
-      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
     </div>
     <span class="tiktok-count" id="stat-likes">0</span>
   </div>
   <div class="tiktok-action" id="stat-fav-btn" onclick="toggleFavorite()">
     <div class="tiktok-icon">
-      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
     </div>
     <span class="tiktok-count" id="stat-favs">0</span>
   </div>
   <div class="tiktok-action" onclick="openSharePanel()">
     <div class="tiktok-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
     </div>
   </div>
   <div class="tiktok-action" id="stat-comment-btn" onclick="toggleCommentsPanel()">
     <div class="tiktok-icon">
-      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
     </div>
     <span class="tiktok-count" id="stat-comments">0</span>
   </div>
   <div class="tiktok-action tiktok-info-only" title="游玩次数">
     <div class="tiktok-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
     </div>
     <span class="tiktok-count" id="stat-plays">0</span>
   </div>
@@ -1541,7 +1541,8 @@ window.addEventListener('load', function() {
 const app = express();
 
 // 信任代理，以获取真实客户端IP（用于Nginx等反向代理）
-app.set('trust proxy', true);
+// 设置为 1 表示信任第一个代理，避免 express-rate-limit 警告
+app.set('trust proxy', 1);
 
 const PORT = process.env.PORT || 80;
 
@@ -5742,6 +5743,63 @@ app.get('/api/admin/games', (req, res) => {
   }
 });
 
+// 修复游戏文件（从数据库重新生成）
+app.post('/api/admin/games/:id/repair', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { id } = req.params;
+    
+    const game = db.prepare('SELECT * FROM games WHERE id = ?').get(id);
+    if (!game) {
+      return res.status(404).json({ success: false, error: '游戏不存在' });
+    }
+    
+    if (!game.code) {
+      return res.status(400).json({ success: false, error: '游戏代码为空，无法修复' });
+    }
+    
+    // 备份原文件（如果存在）
+    const filePath = getGameFilePath(id);
+    if (fs.existsSync(filePath)) {
+      const backupPath = filePath + '.bak.' + Date.now();
+      fs.copyFileSync(filePath, backupPath);
+      console.log(`[INFO] 已备份原游戏文件: ${backupPath}`);
+    }
+    
+    // 重新生成游戏文件
+    const gameInfo = {
+      title: game.title || '未命名游戏',
+      authorName: game.author_name || '匿名用户',
+      authorToken: game.author_token || '',
+      createdAt: game.created_at
+    };
+    
+    const success = saveGameStaticFile(id, game.code, gameInfo);
+    
+    if (success) {
+      // 获取新文件大小
+      const stats = fs.statSync(filePath);
+      const fileSize = stats.size;
+      
+      res.json({ 
+        success: true, 
+        message: '游戏文件已修复',
+        fileSize: fileSize,
+        gameTitle: game.title
+      });
+    } else {
+      res.status(500).json({ success: false, error: '保存游戏文件失败' });
+    }
+  } catch (error) {
+    console.error('[ERROR] 修复游戏失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // 更新游戏状态（推荐/隐藏）
 app.put('/api/admin/games/:id', (req, res) => {
   const adminKey = req.headers['x-admin-key'];
@@ -5979,6 +6037,27 @@ const ensureBanTables = () => {
   } catch (e) {
     // 列已存在，忽略
   }
+  
+  // DevTools 白名单表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS devtools_whitelist (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      type TEXT NOT NULL,
+      value TEXT UNIQUE NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  
+  // 默认将 localhost 和 127.0.0.1 加入白名单
+  const defaultIPs = ['127.0.0.1', 'localhost', '::1'];
+  for (const ip of defaultIPs) {
+    try {
+      db.prepare(`INSERT OR IGNORE INTO devtools_whitelist (type, value) VALUES ('ip', ?)`).run(ip);
+    } catch (e) {
+      // 已存在，忽略
+    }
+  }
+  console.log('[DB] DevTools白名单表已初始化，默认白名单IP: 127.0.0.1, localhost, ::1');
 };
 ensureBanTables();
 
@@ -6230,7 +6309,8 @@ app.get('/api/user/status', (req, res) => {
     // 检查是否在DevTools白名单中
     try {
       const whitelist = db.prepare(`
-        SELECT account_id, ip FROM devtools_whitelist WHERE account_id = ? OR ip = ?
+        SELECT value FROM devtools_whitelist 
+        WHERE (type = 'account' AND value = ?) OR (type = 'ip' AND value = ?)
       `).get(accountId || '', clientIP);
       result.allowDevTools = !!whitelist;
     } catch (e) {
@@ -7345,6 +7425,95 @@ app.post('/api/admin/generate-static-files', (req, res) => {
       res.status(500).json({ success: false, error: result.error });
     }
   } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==================== DevTools 白名单管理 ====================
+
+// 获取 DevTools 白名单
+app.get('/api/admin/devtools', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const accounts = db.prepare(`SELECT value FROM devtools_whitelist WHERE type = 'account'`).all().map(r => r.value);
+    const ips = db.prepare(`SELECT value FROM devtools_whitelist WHERE type = 'ip'`).all().map(r => r.value);
+    
+    res.json({
+      success: true,
+      whitelist: { accounts, ips }
+    });
+  } catch (error) {
+    console.error('[ERROR] 获取DevTools白名单失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 添加到 DevTools 白名单
+app.put('/api/admin/devtools', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { type, value } = req.body;
+    
+    if (!type || !value) {
+      return res.status(400).json({ success: false, error: '缺少参数' });
+    }
+    
+    if (type !== 'account' && type !== 'ip') {
+      return res.status(400).json({ success: false, error: '无效的类型' });
+    }
+    
+    db.prepare(`INSERT OR IGNORE INTO devtools_whitelist (type, value) VALUES (?, ?)`).run(type, value.trim());
+    
+    // 返回更新后的白名单
+    const accounts = db.prepare(`SELECT value FROM devtools_whitelist WHERE type = 'account'`).all().map(r => r.value);
+    const ips = db.prepare(`SELECT value FROM devtools_whitelist WHERE type = 'ip'`).all().map(r => r.value);
+    
+    res.json({
+      success: true,
+      message: '已添加到白名单',
+      whitelist: { accounts, ips }
+    });
+  } catch (error) {
+    console.error('[ERROR] 添加DevTools白名单失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 从 DevTools 白名单移除
+app.delete('/api/admin/devtools', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { type, value } = req.body;
+    
+    if (!type || !value) {
+      return res.status(400).json({ success: false, error: '缺少参数' });
+    }
+    
+    db.prepare(`DELETE FROM devtools_whitelist WHERE type = ? AND value = ?`).run(type, value.trim());
+    
+    // 返回更新后的白名单
+    const accounts = db.prepare(`SELECT value FROM devtools_whitelist WHERE type = 'account'`).all().map(r => r.value);
+    const ips = db.prepare(`SELECT value FROM devtools_whitelist WHERE type = 'ip'`).all().map(r => r.value);
+    
+    res.json({
+      success: true,
+      message: '已从白名单移除',
+      whitelist: { accounts, ips }
+    });
+  } catch (error) {
+    console.error('[ERROR] 移除DevTools白名单失败:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

@@ -22,28 +22,28 @@ const crypto = require('crypto');
 const SECURITY_CONFIG = {
   // 速率限制配置
   rateLimit: {
-    // 通用API限制
+    // 通用API限制（放宽限制，适应正常浏览）
     general: {
       windowMs: 15 * 60 * 1000, // 15分钟
-      max: 200, // 每个IP最多200次请求
+      max: 1000, // 每个IP最多1000次请求（原200次太少，页面有多个API调用）
       message: { success: false, error: '请求过于频繁，请稍后再试' }
     },
     // 严格限制（登录、注册等敏感操作）
     strict: {
       windowMs: 60 * 1000, // 1分钟
-      max: 10, // 每分钟最多10次
+      max: 20, // 每分钟最多20次（原10次）
       message: { success: false, error: '操作过于频繁，请1分钟后再试' }
     },
     // 游戏生成限制（消耗资源较大）
     generate: {
       windowMs: 60 * 1000, // 1分钟
-      max: 5, // 每分钟最多5次
+      max: 10, // 每分钟最多10次（原5次）
       message: { success: false, error: '生成请求过于频繁，请稍后再试' }
     },
     // 管理员API限制
     admin: {
       windowMs: 60 * 1000, // 1分钟
-      max: 30, // 每分钟最多30次
+      max: 60, // 每分钟最多60次（原30次）
       message: { success: false, error: '管理操作过于频繁，请稍后再试' }
     }
   },

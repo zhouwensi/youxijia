@@ -1577,6 +1577,7 @@
               ${game.is_hidden ? '显示' : '隐藏'}
             </button>
             <button class="btn-action btn-delete" onclick="deleteGame('${game.id}')">软删除</button>
+            <button class="btn-action" style="background: rgba(59, 130, 246, 0.2); color: #60a5fa;" onclick="repairGame('${game.id}')" title="修复游戏文件">🔧</button>
           `;
         }
         
@@ -1698,6 +1699,31 @@
         }
       } catch (error) {
         showToast('恢复失败', 'error');
+      }
+    }
+
+    // 修复游戏文件
+    async function repairGame(gameId) {
+      if (!confirm('🔧 修复游戏\n\n此操作将从数据库重新生成游戏文件。\n如果游戏无法正常加载或显示异常，可以尝试修复。\n\n确定要修复这个游戏吗？')) return;
+      
+      try {
+        showToast('正在修复...', 'info');
+        const response = await fetch(`/api/admin/games/${gameId}/repair`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          }
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast(`✅ 修复成功！文件大小: ${data.fileSize} 字符`, 'success');
+        } else {
+          showToast(data.error || '修复失败', 'error');
+        }
+      } catch (error) {
+        showToast('修复失败: ' + error.message, 'error');
       }
     }
 

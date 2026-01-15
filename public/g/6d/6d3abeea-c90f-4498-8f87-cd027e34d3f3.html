@@ -152,6 +152,12 @@
 .tiktok-author-name:hover {
   opacity: 0.8 !important;
 }
+.tiktok-publish-time {
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-size: 0.75rem !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8) !important;
+  margin-top: 2px !important;
+}
 .tiktok-follow-btn {
   background: #fe2c55 !important;
   color: white !important;
@@ -184,6 +190,12 @@
   gap: 16px !important;
   z-index: 999998 !important;
   pointer-events: auto !important;
+}
+.tiktok-sidebar.comments-open {
+  display: none !important;
+}
+.tiktok-author-info.comments-open {
+  display: none !important;
 }
 .tiktok-action {
   display: flex !important;
@@ -248,6 +260,22 @@ body {
   padding-bottom: 65px !important;
 }
 /* ====== 留言板样式 ====== */
+.comments-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  z-index: 999996 !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transition: opacity 0.3s ease, visibility 0.3s ease !important;
+}
+.comments-overlay.visible {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
 .game-comments-section {
   position: fixed !important;
   bottom: 60px !important;
@@ -348,6 +376,19 @@ body {
 }
 .comment-delete-btn:hover {
   color: #ef4444 !important;
+}
+.comment-avatar.comment-clickable,
+.comment-author-name.comment-clickable {
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+.comment-avatar.comment-clickable:hover {
+  transform: scale(1.1) !important;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3) !important;
+}
+.comment-author-name.comment-clickable:hover {
+  color: #6366f1 !important;
+  text-decoration: underline !important;
 }
 .comments-input-area {
   display: flex !important;
@@ -1427,10 +1468,15 @@ body {
   <div class="tiktok-author-row">
     <div class="tiktok-author-avatar" id="author-avatar" onclick="openAuthorProfile()">👤</div>
     <div class="tiktok-author-details">
-      <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">MarsZhou</span>
-      <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="ec27c2f8-1e74-4417-9a0c-4169d4baa83e" onclick="toggleFollow()">
-        <span class="follow-icon">+</span> 关注
-      </button>
+      <div style="display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">MarsZhou</span>
+          <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="ec27c2f8-1e74-4417-9a0c-4169d4baa83e" onclick="toggleFollow()">
+            <span class="follow-icon">+</span> 关注
+          </button>
+        </div>
+        <span class="tiktok-publish-time">发布于 2026年1月6日</span>
+      </div>
     </div>
   </div>
 </div>
@@ -1475,6 +1521,9 @@ body {
     <img src="/images/wechat-qrcode.png" style="width:100%;height:auto;display:block;border-radius:12px;">
   </div>
 </div>
+
+<!-- 评论蒙版 -->
+<div class="comments-overlay" id="comments-overlay" onclick="toggleCommentsPanel()"></div>
 
 <!-- 评论区域 -->
 <div class="game-comments-section" id="game-comments-section">
@@ -1779,6 +1828,7 @@ function openAuthorProfile() {
     fetch('/api/users/' + authorToken + '/games?limit=4', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({ games: [] }))
   ]).then(([profileData, statsData, gamesData]) => {
     const nickname = (profileData.profile && profileData.profile.nickname) || authorName || '游戏创作者';
+    const accountId = (profileData.profile && profileData.profile.accountId) || '';
     const followers = statsData.followerCount || statsData.followers || 0;
     const following = statsData.followingCount || statsData.following || 0;
     const games = gamesData.games || [];
@@ -1792,6 +1842,9 @@ function openAuthorProfile() {
         '</div>';
     }
     
+    // 账号ID显示（小字、浅色、带@前缀）
+    const accountIdHtml = accountId ? '<div style="font-size:12px;color:#999;margin-top:2px;">@' + accountId + '</div>' : '';
+    
     // 如果是自己，不显示关注按钮
     const followBtnHtml = isSelf ? '' : '<button id="profile-follow-btn" onclick="toggleFollowFromProfile()" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>';
     
@@ -1799,6 +1852,7 @@ function openAuthorProfile() {
       '<div style="margin-bottom:15px;">' +
         '<div style="width:60px;height:60px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:28px;">👤</div>' +
         '<div style="font-size:18px;font-weight:600;color:#333;">' + nickname + '</div>' +
+        accountIdHtml +
       '</div>' +
       '<div style="display:flex;justify-content:center;gap:30px;margin-bottom:15px;">' +
         '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + following + '</strong><span style="color:#999;font-size:12px;">关注</span></div>' +
@@ -1820,6 +1874,110 @@ function openAuthorProfile() {
 // 关闭作者主页
 function closeAuthorProfile() {
   document.getElementById('author-profile-modal').style.display = 'none';
+}
+
+// 打开评论者主页（用于点击评论头像）
+function openCommentAuthorProfile(commentAuthorToken) {
+  if (!commentAuthorToken) return;
+  
+  const currentUserToken = getUserToken();
+  // 如果是自己的评论，不跳转
+  if (commentAuthorToken === currentUserToken) {
+    alert('这是您自己的评论');
+    return;
+  }
+  
+  // 使用已有的作者主页弹窗展示评论者信息
+  const modal = document.getElementById('author-profile-modal');
+  const content = document.getElementById('author-profile-content');
+  content.innerHTML = '<div style="padding:20px;color:#999;">加载中...</div>';
+  modal.style.display = 'flex';
+  
+  // 加载评论者信息
+  Promise.all([
+    fetch('/api/users/' + commentAuthorToken + '/profile', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/users/' + commentAuthorToken + '/follow-stats', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/users/' + commentAuthorToken + '/games?limit=4', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({ games: [] }))
+  ]).then(([profileData, statsData, gamesData]) => {
+    const nickname = (profileData.profile && profileData.profile.nickname) || '游戏玩家';
+    const accountId = (profileData.profile && profileData.profile.accountId) || '';
+    const followers = statsData.followerCount || statsData.followers || 0;
+    const following = statsData.followingCount || statsData.following || 0;
+    const games = gamesData.games || [];
+    
+    let gamesHtml = '';
+    if (games.length > 0) {
+      gamesHtml = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:15px;">' +
+        games.slice(0, 4).map(g => '<a href="/g/' + g.id.substring(0,2) + '/' + g.id + '.html" style="background:#f5f5f5;border-radius:8px;padding:10px;text-decoration:none;color:#333;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎮 ' + (g.title || '未命名').substring(0, 10) + '</a>').join('') +
+        '</div>';
+    }
+    
+    // 账号ID显示（小字、浅色、带@前缀）
+    const accountIdHtml = accountId ? '<div style="font-size:12px;color:#999;margin-top:2px;">@' + accountId + '</div>' : '';
+    
+    content.innerHTML = 
+      '<div style="margin-bottom:15px;">' +
+        '<div style="width:60px;height:60px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:28px;">👤</div>' +
+        '<div style="font-size:18px;font-weight:600;color:#333;">' + nickname + '</div>' +
+        accountIdHtml +
+      '</div>' +
+      '<div style="display:flex;justify-content:center;gap:30px;margin-bottom:15px;">' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + following + '</strong><span style="color:#999;font-size:12px;">关注</span></div>' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + followers + '</strong><span style="color:#999;font-size:12px;">粉丝</span></div>' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + games.length + '</strong><span style="color:#999;font-size:12px;">作品</span></div>' +
+      '</div>' +
+      '<button onclick="toggleFollowCommentAuthor(\'' + commentAuthorToken + '\')" id="comment-author-follow-btn" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>' +
+      gamesHtml;
+    
+    // 检查是否已关注
+    fetch('/api/users/' + commentAuthorToken + '/follow-status', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.following) {
+          const btn = document.getElementById('comment-author-follow-btn');
+          if (btn) {
+            btn.textContent = '已关注';
+            btn.style.background = '#f5f5f5';
+            btn.style.color = '#999';
+          }
+        }
+      }).catch(() => {});
+  }).catch(() => {
+    content.innerHTML = '<div style="padding:20px;color:#999;">加载失败</div>';
+  });
+}
+
+// 关注/取关评论者
+function toggleFollowCommentAuthor(targetToken) {
+  const userToken = getUserToken();
+  if (!userToken) {
+    alert('请先登录后再关注');
+    return;
+  }
+  
+  const btn = document.getElementById('comment-author-follow-btn');
+  const isFollowing = btn && btn.textContent === '已关注';
+  
+  fetch('/api/users/' + targetToken + '/follow', {
+    method: isFollowing ? 'DELETE' : 'POST',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && btn) {
+        if (isFollowing) {
+          btn.textContent = '+ 关注';
+          btn.style.background = '#fe2c55';
+          btn.style.color = '#fff';
+        } else {
+          btn.textContent = '已关注';
+          btn.style.background = '#f5f5f5';
+          btn.style.color = '#999';
+        }
+      }
+    }).catch(() => {
+      alert('操作失败，请重试');
+    });
 }
 
 // 检查关注状态
@@ -1969,8 +2127,23 @@ function toggleFollowFromProfile() {
 // 切换留言板面板
 function toggleCommentsPanel() {
   const panel = document.getElementById('game-comments-section');
+  const sidebar = document.querySelector('.tiktok-sidebar');
+  const authorInfo = document.getElementById('tiktok-author-info');
+  const overlay = document.getElementById('comments-overlay');
   if (panel) {
+    const isExpanding = !panel.classList.contains('expanded');
     panel.classList.toggle('expanded');
+    // 评论面板展开时隐藏右侧按钮和作者信息（使用class覆盖!important）
+    if (sidebar) {
+      sidebar.classList.toggle('comments-open', isExpanding);
+    }
+    if (authorInfo) {
+      authorInfo.classList.toggle('comments-open', isExpanding);
+    }
+    // 控制蒙版显示
+    if (overlay) {
+      overlay.classList.toggle('visible', isExpanding);
+    }
   }
 }
 
@@ -2031,14 +2204,17 @@ function renderComments() {
   commentsData.comments.forEach(function(comment) {
     const timeStr = formatCommentTime(comment.created_at);
     const avatarInitial = comment.author_name ? comment.author_name.charAt(0).toUpperCase() : '?';
-    const userToken = getUserToken();
-    const canDelete = comment.is_mine || (userToken && comment.user_token === userToken);
+    const currentUserToken = getUserToken();
+    const canDelete = comment.is_mine || (currentUserToken && comment.user_token === currentUserToken);
+    const commentUserToken = comment.user_token || '';
+    const clickableClass = commentUserToken ? 'comment-clickable' : '';
+    const onClickAttr = commentUserToken ? 'onclick="openCommentAuthorProfile(\'' + commentUserToken + '\')"' : '';
     
     html += '<div class="comment-item" data-id="' + comment.id + '">' +
       '<div class="comment-header">' +
         '<div class="comment-author-info">' +
-          '<div class="comment-avatar">' + avatarInitial + '</div>' +
-          '<span class="comment-author-name">' + escapeHtml(comment.author_name) + '</span>' +
+          '<div class="comment-avatar ' + clickableClass + '" ' + onClickAttr + '>' + avatarInitial + '</div>' +
+          '<span class="comment-author-name ' + clickableClass + '" ' + onClickAttr + '>' + escapeHtml(comment.author_name) + '</span>' +
           '<span class="comment-time">' + timeStr + '</span>' +
         '</div>' +
         (canDelete ? '<button class="comment-delete-btn" onclick="deleteGameComment(' + comment.id + ')">删除</button>' : '') +

@@ -2819,11 +2819,12 @@ body.modal-open {
 }
 
 /* 弹窗打开时禁用主内容区域的点击 */
-body.modal-open #app > *:not(.modal) {
+body.modal-open #app > *:not(.modal):not(.search-panel) {
   pointer-events: none;
 }
 
-body.modal-open .modal {
+body.modal-open .modal,
+body.modal-open .search-panel {
   pointer-events: auto;
 }
 
