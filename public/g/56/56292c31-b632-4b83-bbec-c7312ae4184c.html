@@ -1,0 +1,2180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="description" content="2048 - AI一句话生成的游戏">
+  <meta property="og:title" content="2048 - AI游戏">
+  <meta property="og:description" content="这个游戏由AI一句话生成！关注公众号「游戏开发技术教程」，你也可以免费生成游戏！">
+  <meta property="og:type" content="website">
+  <title>2048 - AI游戏</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+  <!-- 推广栏样式 -->
+  <style>
+/* 游戏家推广栏 - 固定在底部 */
+.yxj-promo-bar {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 32px !important;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.95) 0%, rgba(139, 92, 246, 0.95) 100%) !important;
+  padding: 0 2rem 0 0.75rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0 !important;
+  z-index: 999999 !important;
+  backdrop-filter: blur(4px) !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+.yxj-promo-bar.yxj-hidden {
+  display: none !important;
+}
+.yxj-promo-text {
+  color: #fff !important;
+  font-size: 0.75rem !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  overflow: hidden !important;
+}
+.yxj-promo-close {
+  position: absolute !important;
+  right: 6px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  background: rgba(255,255,255,0.2) !important;
+  border: none !important;
+  color: #fff !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+.yxj-promo-home {
+  position: fixed !important;
+  top: 10px !important;
+  left: 10px !important;
+  background: rgba(0,0,0,0.5) !important;
+  color: #fff !important;
+  text-decoration: none !important;
+  padding: 6px 12px !important;
+  border-radius: 20px !important;
+  font-size: 12px !important;
+  z-index: 999998 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+/* TikTok 风格组件 */
+.tiktok-author-info {
+  position: fixed !important;
+  left: 12px !important;
+  bottom: 44px !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  z-index: 999998 !important;
+  padding: 0 !important;
+  pointer-events: auto !important;
+}
+.tiktok-author-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+.tiktok-author-avatar {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1rem !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+  cursor: pointer !important;
+  transition: transform 0.2s, box-shadow 0.2s !important;
+  text-decoration: none !important;
+}
+.tiktok-author-avatar:hover {
+  transform: scale(1.05) !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5) !important;
+}
+.tiktok-author-details {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+.tiktok-author-name {
+  color: white !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8) !important;
+  cursor: pointer !important;
+  transition: opacity 0.2s !important;
+}
+.tiktok-author-name:hover {
+  opacity: 0.8 !important;
+}
+.tiktok-publish-time {
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-size: 0.6875rem !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+  margin-top: 1px !important;
+}
+.tiktok-follow-btn {
+  background: #fe2c55 !important;
+  color: white !important;
+  border: none !important;
+  padding: 4px 10px !important;
+  border-radius: 3px !important;
+  font-size: 0.6875rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  transition: all 0.2s ease !important;
+  text-shadow: none !important;
+}
+.tiktok-follow-btn:hover {
+  background: #e6284d !important;
+  transform: scale(1.02) !important;
+}
+.tiktok-follow-btn:active {
+  transform: scale(0.95) !important;
+}
+.tiktok-sidebar {
+  position: fixed !important;
+  right: 8px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  z-index: 999998 !important;
+  pointer-events: auto !important;
+}
+.tiktok-sidebar.comments-open {
+  display: none !important;
+}
+.tiktok-author-info.comments-open {
+  display: none !important;
+}
+.tiktok-action {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 4px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+.tiktok-action:active {
+  transform: scale(0.9) !important;
+}
+.tiktok-icon {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(8px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 18px !important;
+  transition: all 0.2s ease !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  color: #fff !important;
+}
+.tiktok-action:hover .tiktok-icon {
+  transform: scale(1.1) !important;
+  background: rgba(0, 0, 0, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+.tiktok-count {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: #fff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
+  white-space: nowrap !important;
+}
+.tiktok-action.liked .tiktok-icon {
+  background: rgba(239, 68, 68, 0.8) !important;
+  border-color: #ef4444 !important;
+  animation: likePopTiktok 0.3s ease !important;
+}
+@keyframes likePopTiktok {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+.tiktok-action.favorited .tiktok-icon {
+  background: rgba(251, 191, 36, 0.8) !important;
+  border-color: #fbbf24 !important;
+}
+.tiktok-action.tiktok-info-only {
+  cursor: default !important;
+  opacity: 0.7 !important;
+  pointer-events: none !important;
+}
+/* 为推广栏预留底部空间 */
+body {
+  padding-bottom: 36px !important;
+}
+/* ====== 留言板样式 ====== */
+.comments-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  z-index: 999996 !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transition: opacity 0.3s ease, visibility 0.3s ease !important;
+}
+.comments-overlay.visible {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+.game-comments-section {
+  position: fixed !important;
+  bottom: 60px !important;
+  left: 0 !important;
+  right: 0 !important;
+  background: #fff !important;
+  z-index: 999997 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+  transition: max-height 0.3s ease !important;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.15) !important;
+  border-radius: 16px 16px 0 0 !important;
+}
+.game-comments-section.expanded {
+  max-height: 60vh !important;
+}
+.comments-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 12px 16px !important;
+  border-bottom: 1px solid #eee !important;
+  background: #f8f9fa !important;
+}
+.comments-title {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #333 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+.comments-close-btn {
+  background: none !important;
+  border: none !important;
+  font-size: 20px !important;
+  cursor: pointer !important;
+  color: #999 !important;
+  padding: 4px !important;
+}
+.comments-body {
+  max-height: calc(60vh - 120px) !important;
+  overflow-y: auto !important;
+  padding: 12px 16px !important;
+}
+.comment-item {
+  padding: 12px 0 !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+}
+.comment-item:last-child {
+  border-bottom: none !important;
+}
+.comment-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 6px !important;
+}
+.comment-author-info {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+.comment-avatar {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  color: #fff !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.comment-author-name {
+  font-weight: 600 !important;
+  color: #333 !important;
+  font-size: 14px !important;
+}
+.comment-time {
+  color: #999 !important;
+  font-size: 12px !important;
+}
+.comment-content {
+  color: #333 !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  word-break: break-word !important;
+}
+.comment-delete-btn {
+  background: none !important;
+  border: none !important;
+  color: #999 !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+  padding: 2px 8px !important;
+}
+.comment-delete-btn:hover {
+  color: #ef4444 !important;
+}
+.comment-avatar.comment-clickable,
+.comment-author-name.comment-clickable {
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+.comment-avatar.comment-clickable:hover {
+  transform: scale(1.1) !important;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3) !important;
+}
+.comment-author-name.comment-clickable:hover {
+  color: #6366f1 !important;
+  text-decoration: underline !important;
+}
+.comments-input-area {
+  display: flex !important;
+  gap: 8px !important;
+  padding: 12px 16px !important;
+  border-top: 1px solid #eee !important;
+  background: #fff !important;
+}
+.comments-input-area textarea {
+  flex: 1 !important;
+  border: 1px solid #ddd !important;
+  border-radius: 8px !important;
+  padding: 10px 12px !important;
+  font-size: 14px !important;
+  resize: none !important;
+  height: 40px !important;
+  min-height: 40px !important;
+}
+.comments-input-area button {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+}
+.comments-input-area button:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+}
+.comments-login-hint {
+  text-align: center !important;
+  padding: 12px 16px !important;
+  color: #999 !important;
+  font-size: 14px !important;
+  border-top: 1px solid #eee !important;
+}
+#comments-load-more-btn {
+  display: block !important;
+  width: 100% !important;
+  padding: 10px !important;
+  background: #f5f5f5 !important;
+  border: none !important;
+  color: #666 !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  margin-top: 8px !important;
+  border-radius: 8px !important;
+}
+</style>
+  <!-- 原游戏head内容 -->
+  
+    
+    
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: manipulation;
+        }
+        
+        body {
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: #fff;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        #gameCanvas {
+            background-color: rgba(25, 25, 35, 0.9);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 20, 30, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: opacity 0.3s;
+        }
+        
+        .title {
+            font-size: 4.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #f7971e, #ffd200);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 5px 15px rgba(247, 151, 30, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+            color: #a0a0c0;
+            max-width: 80%;
+            text-align: center;
+            line-height: 1.5;
+        }
+        
+        .button {
+            background: linear-gradient(45deg, #2193b0, #6dd5ed);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.3rem;
+            border-radius: 50px;
+            margin: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 5px 15px rgba(33, 147, 176, 0.4);
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        
+        .button:hover, .button:active {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(33, 147, 176, 0.6);
+        }
+        
+        .button:active {
+            transform: translateY(1px);
+        }
+        
+        .button.secondary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .button.secondary:hover, .button.secondary:active {
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.6);
+        }
+        
+        #instructions {
+            max-width: 90%;
+            width: 500px;
+            background-color: rgba(40, 45, 60, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            display: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        #instructions h2 {
+            color: #ffd200;
+            margin-bottom: 15px;
+            font-size: 1.8rem;
+        }
+        
+        #instructions p {
+            margin-bottom: 10px;
+            line-height: 1.5;
+            color: #c0c0e0;
+        }
+        
+        #instructions ul {
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+        
+        #instructions li {
+            margin-bottom: 8px;
+            color: #c0c0e0;
+            line-height: 1.4;
+        }
+        
+        #closeInstructions {
+            background: #667eea;
+            padding: 10px 25px;
+            font-size: 1rem;
+        }
+        
+        #gameOver {
+            display: none;
+        }
+        
+        #gameOver h2 {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            color: #ff416c;
+        }
+        
+        #finalScore {
+            font-size: 2.5rem;
+            margin: 20px 0;
+            color: #ffd200;
+        }
+        
+        .hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .score-container {
+            background-color: rgba(40, 45, 60, 0.9);
+            border-radius: 10px;
+            padding: 15px;
+            min-width: 150px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .score-label {
+            font-size: 0.9rem;
+            color: #a0a0c0;
+            margin-bottom: 5px;
+        }
+        
+        .score-value {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #fff;
+        }
+        
+        #helpButton {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 5;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .touch-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            z-index: 5;
+            pointer-events: none;
+        }
+        
+        .touch-instruction {
+            background-color: rgba(40, 45, 60, 0.85);
+            color: #a0a0c0;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-size: 1rem;
+            pointer-events: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        @media (max-width: 768px) {
+            .title {
+                font-size: 3.5rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+                margin-bottom: 30px;
+            }
+            
+            .button {
+                padding: 14px 35px;
+                font-size: 1.2rem;
+            }
+            
+            .hud {
+                flex-direction: row;
+                width: calc(100% - 40px);
+                justify-content: space-between;
+            }
+            
+            .score-container {
+                min-width: 120px;
+                padding: 12px;
+            }
+            
+            .score-value {
+                font-size: 1.8rem;
+            }
+        }
+        
+        @media (max-height: 700px) {
+            .title {
+                font-size: 3rem;
+            }
+            
+            .subtitle {
+                margin-bottom: 20px;
+            }
+            
+            .button {
+                padding: 12px 30px;
+                font-size: 1.1rem;
+                margin: 8px;
+            }
+        }
+    </style>
+
+</head>
+<body>
+  <!-- 原游戏body内容 -->
+  
+    <canvas id="gameCanvas"></canvas>
+    
+    <div class="hud">
+        <div class="score-container">
+            <div class="score-label">分数</div>
+            <div id="score" class="score-value">0</div>
+        </div>
+        <div class="score-container">
+            <div class="score-label">最高分</div>
+            <div id="bestScore" class="score-value">0</div>
+        </div>
+    </div>
+    
+    <button id="helpButton">?</button>
+    
+    <div class="touch-controls">
+        <div class="touch-instruction">滑动屏幕或使用方向键移动方块</div>
+    </div>
+    
+    <div id="startScreen" class="overlay">
+        <h1 class="title">2048</h1>
+        <p class="subtitle">合并相同数字的方块，创造2048！</p>
+        <button id="startButton" class="button">开始游戏</button>
+        <button id="showInstructions" class="button secondary">游戏说明</button>
+        
+        <div id="instructions">
+            <h2>游戏说明</h2>
+            <p>在4×4的方格中，通过滑动合并相同数字的方块。</p>
+            <ul>
+                <li>使用<strong>方向键</strong>或<strong>WASD</strong>键移动方块</li>
+                <li>在触屏设备上，可以<strong>滑动屏幕</strong>控制方块移动方向</li>
+                <li>当两个相同数字的方块碰撞时，它们会<strong>合并</strong>成一个数字翻倍的新方块</li>
+                <li>每次移动后，会在空白位置随机生成一个2或4</li>
+                <li>目标是创建一个<strong>2048</strong>的方块</li>
+                <li>当方格被填满且无法合并时，游戏结束</li>
+            </ul>
+            <button id="closeInstructions" class="button">关闭说明</button>
+        </div>
+    </div>
+    
+    <div id="gameOver" class="overlay">
+        <h2 id="gameOverTitle">游戏结束</h2>
+        <div id="finalScore" class="score-value">分数: 0</div>
+        <button id="restartButton" class="button">再来一次</button>
+        <button id="backToMenu" class="button secondary">返回菜单</button>
+    </div>
+
+    <script>
+        // 游戏常量
+        const GRID_SIZE = 4;
+        const CELL_SIZE = 100;
+        const CELL_GAP = 15;
+        const BOARD_PADDING = 20;
+        const COLORS = {
+            0: '#2d3047',
+            2: '#3a506b',
+            4: '#1c2541',
+            8: '#ff9a00',
+            16: '#ff6b6b',
+            32: '#ff4757',
+            64: '#ff3838',
+            128: '#f9ca24',
+            256: '#f0932b',
+            512: '#eb4d4b',
+            1024: '#6ab04c',
+            2048: '#1dd1a1',
+            4096: '#0abde3',
+            8192: '#341f97'
+        };
+
+        // 游戏变量
+        let canvas, ctx;
+        let grid = [];
+        let score = 0;
+        let bestScore = 0;
+        let gameOver = false;
+        let gameWon = false;
+        let touchStartX, touchStartY;
+        let isTouchDevice = false;
+        
+        // DOM元素
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOver');
+        const startButton = document.getElementById('startButton');
+        const restartButton = document.getElementById('restartButton');
+        const backToMenu = document.getElementById('backToMenu');
+        const showInstructions = document.getElementById('showInstructions');
+        const closeInstructions = document.getElementById('closeInstructions');
+        const instructions = document.getElementById('instructions');
+        const helpButton = document.getElementById('helpButton');
+        const scoreElement = document.getElementById('score');
+        const bestScoreElement = document.getElementById('bestScore');
+        const finalScoreElement = document.getElementById('finalScore');
+        const gameOverTitle = document.getElementById('gameOverTitle');
+        
+        // 初始化
+        function init() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            
+            // 检测是否触屏设备
+            isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            
+            // 加载最高分
+            const savedBestScore = localStorage.getItem('2048_bestScore');
+            if (savedBestScore) {
+                bestScore = parseInt(savedBestScore);
+                bestScoreElement.textContent = bestScore;
+            }
+            
+            // 调整画布大小
+            resizeCanvas();
+            
+            // 事件监听
+            window.addEventListener('resize', resizeCanvas);
+            document.addEventListener('keydown', handleKeyPress);
+            
+            // 触摸事件
+            canvas.addEventListener('touchstart', handleTouchStart, {passive: false});
+            canvas.addEventListener('touchmove', handleTouchMove, {passive: false});
+            canvas.addEventListener('touchend', handleTouchEnd);
+            
+            // 按钮事件
+            startButton.addEventListener('click', startGame);
+            restartButton.addEventListener('click', startGame);
+            backToMenu.addEventListener('click', () => {
+                gameOverScreen.style.display = 'none';
+                startScreen.style.display = 'flex';
+            });
+            showInstructions.addEventListener('click', () => {
+                instructions.style.display = 'block';
+            });
+            closeInstructions.addEventListener('click', () => {
+                instructions.style.display = 'none';
+            });
+            helpButton.addEventListener('click', () => {
+                instructions.style.display = 'block';
+            });
+            
+            // 初始绘制
+            drawEmptyGrid();
+        }
+        
+        // 调整画布大小
+        function resizeCanvas() {
+            const size = Math.min(window.innerWidth, window.innerHeight);
+            const canvasSize = Math.min(size * 0.9, 500);
+            
+            canvas.width = canvasSize;
+            canvas.height = canvasSize;
+            
+            // 重新绘制
+            if (grid.length > 0) {
+                drawGrid();
+            } else {
+                drawEmptyGrid();
+            }
+        }
+        
+        // 绘制空白网格
+        function drawEmptyGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const boardSize = GRID_SIZE * CELL_SIZE + (GRID_SIZE - 1) * CELL_GAP + 2 * BOARD_PADDING;
+            const scale = canvas.width / boardSize;
+            const offsetX = (canvas.width - boardSize * scale) / 2;
+            const offsetY = (canvas.height - boardSize * scale) / 2;
+            
+            ctx.save();
+            ctx.translate(offsetX, offsetY);
+            ctx.scale(scale, scale);
+            
+            // 绘制网格背景
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, boardSize, boardSize);
+            ctx.fillStyle = '#16213e';
+            ctx.fillRect(BOARD_PADDING, BOARD_PADDING, 
+                        boardSize - 2 * BOARD_PADDING, 
+                        boardSize - 2 * BOARD_PADDING);
+            
+            // 绘制单元格
+            for (let row = 0; row < GRID_SIZE; row++) {
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    const x = BOARD_PADDING + col * (CELL_SIZE + CELL_GAP);
+                    const y = BOARD_PADDING + row * (CELL_SIZE + CELL_GAP);
+                    
+                    ctx.fillStyle = COLORS[0];
+                    ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+                }
+            }
+            
+            ctx.restore();
+        }
+        
+        // 开始游戏
+        function startGame() {
+            // 重置游戏状态
+            grid = [];
+            score = 0;
+            gameOver = false;
+            gameWon = false;
+            
+            // 更新UI
+            scoreElement.textContent = '0';
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            
+            // 初始化网格
+            for (let row = 0; row < GRID_SIZE; row++) {
+                grid[row] = [];
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    grid[row][col] = 0;
+                }
+            }
+            
+            // 添加两个初始方块
+            addRandomTile();
+            addRandomTile();
+            
+            // 绘制游戏
+            drawGrid();
+        }
+        
+        // 添加随机方块
+        function addRandomTile() {
+            const emptyCells = [];
+            
+            // 找到所有空格
+            for (let row = 0; row < GRID_SIZE; row++) {
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    if (grid[row][col] === 0) {
+                        emptyCells.push({row, col});
+                    }
+                }
+            }
+            
+            if (emptyCells.length > 0) {
+                // 随机选择一个空格
+                const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                
+                // 90%概率生成2，10%概率生成4
+                grid[randomCell.row][randomCell.col] = Math.random() < 0.9 ? 2 : 4;
+            }
+        }
+        
+        // 绘制网格和方块
+        function drawGrid() {
+            const boardSize = GRID_SIZE * CELL_SIZE + (GRID_SIZE - 1) * CELL_GAP + 2 * BOARD_PADDING;
+            const scale = canvas.width / boardSize;
+            const offsetX = (canvas.width - boardSize * scale) / 2;
+            const offsetY = (canvas.height - boardSize * scale) / 2;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.save();
+            ctx.translate(offsetX, offsetY);
+            ctx.scale(scale, scale);
+            
+            // 绘制网格背景
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, boardSize, boardSize);
+            ctx.fillStyle = '#16213e';
+            ctx.fillRect(BOARD_PADDING, BOARD_PADDING, 
+                        boardSize - 2 * BOARD_PADDING, 
+                        boardSize - 2 * BOARD_PADDING);
+            
+            // 绘制单元格和数字
+            for (let row = 0; row < GRID_SIZE; row++) {
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    const x = BOARD_PADDING + col * (CELL_SIZE + CELL_GAP);
+                    const y = BOARD_PADDING + row * (CELL_SIZE + CELL_GAP);
+                    const value = grid[row][col];
+                    
+                    // 绘制单元格背景
+                    ctx.fillStyle = COLORS[value] || COLORS[0];
+                    ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                    
+                    // 绘制边框
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+                    
+                    // 如果有数字，绘制数字
+                    if (value > 0) {
+                        ctx.fillStyle = value <= 4 ? '#776e65' : '#f9f6f2';
+                        ctx.font = `bold ${getFontSize(value)}px Arial`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(
+                            value.toString(),
+                            x + CELL_SIZE / 2,
+                            y + CELL_SIZE / 2
+                        );
+                        
+                        // 为2048添加特殊效果
+                        if (value === 2048 && !gameWon) {
+                            gameWon = true;
+                            setTimeout(() => {
+                                showGameOver(true);
+                            }, 500);
+                        }
+                    }
+                }
+            }
+            
+            ctx.restore();
+        }
+        
+        // 根据数字大小获取字体大小
+        function getFontSize(value) {
+            if (value < 100) return 40;
+            if (value < 1000) return 35;
+            if (value < 10000) return 30;
+            return 25;
+        }
+        
+        // 移动并合并方块
+        function move(direction) {
+            let moved = false;
+            const oldGrid = JSON.parse(JSON.stringify(grid));
+            
+            // 根据方向移动
+            switch(direction) {
+                case 'up':
+                    for (let col = 0; col < GRID_SIZE; col++) {
+                        const column = [];
+                        for (let row = 0; row < GRID_SIZE; row++) {
+                            column.push(grid[row][col]);
+                        }
+                        const newColumn = mergeLine(column);
+                        for (let row = 0; row < GRID_SIZE; row++) {
+                            if (grid[row][col] !== newColumn[row]) {
+                                moved = true;
+                            }
+                            grid[row][col] = newColumn[row];
+                        }
+                    }
+                    break;
+                    
+                case 'down':
+                    for (let col = 0; col < GRID_SIZE; col++) {
+                        const column = [];
+                        for (let row = GRID_SIZE - 1; row >= 0; row--) {
+                            column.push(grid[row][col]);
+                        }
+                        const newColumn = mergeLine(column);
+                        for (let row = GRID_SIZE - 1; row >= 0; row--) {
+                            if (grid[row][col] !== newColumn[GRID_SIZE - 1 - row]) {
+                                moved = true;
+                            }
+                            grid[row][col] = newColumn[GRID_SIZE - 1 - row];
+                        }
+                    }
+                    break;
+                    
+                case 'left':
+                    for (let row = 0; row < GRID_SIZE; row++) {
+                        const newRow = mergeLine(grid[row]);
+                        for (let col = 0; col < GRID_SIZE; col++) {
+                            if (grid[row][col] !== newRow[col]) {
+                                moved = true;
+                            }
+                            grid[row][col] = newRow[col];
+                        }
+                    }
+                    break;
+                    
+                case 'right':
+                    for (let row = 0; row < GRID_SIZE; row++) {
+                        const reversedRow = [...grid[row]].reverse();
+                        const newRow = mergeLine(reversedRow).reverse();
+                        for (let col = 0; col < GRID_SIZE; col++) {
+                            if (grid[row][col] !== newRow[col]) {
+                                moved = true;
+                            }
+                            grid[row][col] = newRow[col];
+                        }
+                    }
+                    break;
+            }
+            
+            // 如果移动了，添加新方块并重绘
+            if (moved) {
+                addRandomTile();
+                drawGrid();
+                
+                // 检查游戏是否结束
+                if (isGameOver()) {
+                    setTimeout(() => {
+                        showGameOver(false);
+                    }, 500);
+                }
+                
+                return true;
+            }
+            
+            // 如果没有移动，恢复原网格
+            grid = oldGrid;
+            return false;
+        }
+        
+        // 合并一行/列
+        function mergeLine(line) {
+            // 过滤掉0
+            let filtered = line.filter(val => val !== 0);
+            
+            // 合并相同数字
+            for (let i = 0; i < filtered.length - 1; i++) {
+                if (filtered[i] === filtered[i + 1]) {
+                    filtered[i] *= 2;
+                    filtered[i + 1] = 0;
+                    score += filtered[i];
+                    
+                    // 更新分数显示
+                    scoreElement.textContent = score;
+                    
+                    // 更新最高分
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestScoreElement.textContent = bestScore;
+                        localStorage.setItem('2048_bestScore', bestScore);
+                    }
+                }
+            }
+            
+            // 再次过滤0
+            filtered = filtered.filter(val => val !== 0);
+            
+            // 用0填充剩余位置
+            while (filtered.length < GRID_SIZE) {
+                filtered.push(0);
+            }
+            
+            return filtered;
+        }
+        
+        // 检查游戏是否结束
+        function isGameOver() {
+            // 检查是否有空格
+            for (let row = 0; row < GRID_SIZE; row++) {
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    if (grid[row][col] === 0) {
+                        return false;
+                    }
+                }
+            }
+            
+            // 检查是否可以合并
+            for (let row = 0; row < GRID_SIZE; row++) {
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    const current = grid[row][col];
+                    
+                    // 检查右侧
+                    if (col < GRID_SIZE - 1 && grid[row][col + 1] === current) {
+                        return false;
+                    }
+                    
+                    // 检查下方
+                    if (row < GRID_SIZE - 1 && grid[row + 1][col] === current) {
+                        return false;
+                    }
+                }
+            }
+            
+            return true;
+        }
+        
+        // 显示游戏结束界面
+        function showGameOver(isWin) {
+            gameOver = true;
+            
+            if (isWin) {
+                gameOverTitle.textContent = "恭喜！你赢了！";
+                gameOverTitle.style.color = "#1dd1a1";
+            } else {
+                gameOverTitle.textContent = "游戏结束";
+                gameOverTitle.style.color = "#ff416c";
+            }
+            
+            finalScoreElement.textContent = `分数: ${score}`;
+            gameOverScreen.style.display = 'flex';
+        }
+        
+        // 处理键盘输入
+        function handleKeyPress(e) {
+            if (gameOver) return;
+            
+            let direction = null;
+            
+            switch(e.key) {
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    direction = 'up';
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    direction = 'down';
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    direction = 'left';
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    direction = 'right';
+                    break;
+                default:
+                    return;
+            }
+            
+            e.preventDefault();
+            move(direction);
+        }
+        
+        // 触摸事件处理
+        function handleTouchStart(e) {
+            if (gameOver) return;
+            
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            e.preventDefault();
+        }
+        
+        function handleTouchMove(e) {
+            e.preventDefault();
+        }
+        
+        function handleTouchEnd(e) {
+            if (gameOver || !touchStartX || !touchStartY) return;
+            
+            const touch = e.changedTouches[0];
+            const touchEndX = touch.clientX;
+            const touchEndY = touch.clientY;
+            
+            const dx = touchEndX - touchStartX;
+            const dy = touchEndY - touchStartY;
+            
+            // 最小滑动距离
+            const minSwipeDistance = 30;
+            
+            // 判断滑动方向
+            if (Math.abs(dx) > Math.abs(dy)) {
+                // 水平滑动
+                if (Math.abs(dx) > minSwipeDistance) {
+                    if (dx > 0) {
+                        move('right');
+                    } else {
+                        move('left');
+                    }
+                }
+            } else {
+                // 垂直滑动
+                if (Math.abs(dy) > minSwipeDistance) {
+                    if (dy > 0) {
+                        move('down');
+                    } else {
+                        move('up');
+                    }
+                }
+            }
+            
+            // 重置触摸起点
+            touchStartX = null;
+            touchStartY = null;
+        }
+        
+        // 初始化游戏
+        window.onload = init;
+    </script>
+
+  <!-- 推广栏 -->
+  
+<!-- 游戏家顶部导航 -->
+<a class="yxj-promo-home" href="/" title="更多游戏">🏠 更多游戏</a>
+
+<!-- 抖音风格左下角作者信息 -->
+<div class="tiktok-author-info" id="tiktok-author-info">
+  <div class="tiktok-author-row">
+    <div class="tiktok-author-avatar" id="author-avatar" onclick="openAuthorProfile()">👤</div>
+    <div class="tiktok-author-details">
+      <div style="display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">匿名</span>
+          <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="b754e320-baf7-4f9d-b000-e19ff68d56d8" onclick="toggleFollow()">
+            <span class="follow-icon">+</span> 关注
+          </button>
+        </div>
+        <span class="tiktok-publish-time">发布于 2026年1月17日</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TikTok风格右侧互动栏 -->
+<div class="tiktok-sidebar">
+  <div class="tiktok-action" id="stat-like-btn" onclick="likeGame()">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+    </div>
+    <span class="tiktok-count" id="stat-likes">0</span>
+  </div>
+  <div class="tiktok-action" id="stat-fav-btn" onclick="toggleFavorite()">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+    </div>
+    <span class="tiktok-count" id="stat-favs">0</span>
+  </div>
+  <div class="tiktok-action" onclick="openSharePanel()">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+    </div>
+  </div>
+  <div class="tiktok-action" id="stat-comment-btn" onclick="toggleCommentsPanel()">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <span class="tiktok-count" id="stat-comments">0</span>
+  </div>
+  <div class="tiktok-action tiktok-info-only" title="游玩次数">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+    </div>
+    <span class="tiktok-count" id="stat-plays">0</span>
+  </div>
+</div>
+
+<!-- 关注弹窗 -->
+<div id="promo-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999999;align-items:center;justify-content:center;" onclick="document.getElementById('promo-modal').style.display='none'">
+  <div style="background:transparent;border-radius:12px;padding:10px;width:90%;max-width:400px;text-align:center;position:relative;" onclick="event.stopPropagation()">
+    <button onclick="document.getElementById('promo-modal').style.display='none'" style="position:absolute;right:0;top:0;border:none;background:rgba(0,0,0,0.5);width:28px;height:28px;border-radius:50%;font-size:18px;cursor:pointer;color:#fff;z-index:1;">×</button>
+    <img src="/images/wechat-qrcode.png" style="width:100%;height:auto;display:block;border-radius:12px;">
+  </div>
+</div>
+
+<!-- 评论蒙版 -->
+<div class="comments-overlay" id="comments-overlay" onclick="toggleCommentsPanel()"></div>
+
+<!-- 评论区域 -->
+<div class="game-comments-section" id="game-comments-section">
+  <div class="comments-header">
+    <span class="comments-title">💬 评论</span>
+    <button class="comments-close-btn" onclick="toggleCommentsPanel()">×</button>
+  </div>
+  <div class="comments-body" id="game-comments-list">
+    <div style="text-align:center;padding:30px;color:#999;">加载中...</div>
+  </div>
+  <button id="comments-load-more-btn" style="display:none;" onclick="loadMoreGameComments()">加载更多</button>
+  <div class="comments-login-hint" id="comment-login-hint" style="display:none;">请登录后发表留言</div>
+  <div class="comments-input-area" id="comment-input-area" style="display:none;">
+    <textarea id="game-comment-input" placeholder="说点什么..." maxlength="500"></textarea>
+    <button id="game-comment-submit" onclick="submitGameComment()">发布</button>
+  </div>
+</div>
+
+<!-- 游戏家推广栏 -->
+<div class="yxj-promo-bar" id="yxj-promo" onclick="showPromoModal()" style="cursor:pointer;">
+  <button class="yxj-promo-close" onclick="event.stopPropagation();document.getElementById('yxj-promo').classList.add('yxj-hidden');document.body.style.paddingBottom='0';">×</button>
+  <span class="yxj-promo-text">👉 点击关注微信公众号「游戏开发技术教程」，一句话免费做游戏！</span>
+</div>
+
+<!-- 分享面板 -->
+<div id="share-panel" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999999;align-items:flex-end;justify-content:center;" onclick="closeSharePanel()">
+  <div style="background:#fff;border-radius:16px 16px 0 0;padding:20px;width:100%;max-width:500px;text-align:center;position:relative;max-height:80vh;overflow-y:auto;" onclick="event.stopPropagation()">
+    <div style="width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 15px;"></div>
+    <h3 style="margin:0 0 15px;font-size:18px;">📤 分享游戏</h3>
+    <div style="background:#f5f5f5;border-radius:8px;padding:12px;margin-bottom:15px;">
+      <textarea id="share-text" readonly style="width:100%;border:none;background:transparent;font-size:14px;resize:none;min-height:80px;outline:none;"></textarea>
+    </div>
+    <button onclick="copyShareText()" style="width:100%;padding:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;margin-bottom:10px;">📋 复制分享内容</button>
+    <button onclick="closeSharePanel()" style="width:100%;padding:12px;background:#f0f0f0;color:#666;border:none;border-radius:8px;font-size:14px;cursor:pointer;">取消</button>
+  </div>
+</div>
+
+<!-- 作者主页弹窗 -->
+<div id="author-profile-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999999;align-items:center;justify-content:center;" onclick="closeAuthorProfile()">
+  <div style="background:#fff;border-radius:12px;padding:20px;width:90%;max-width:360px;text-align:center;position:relative;" onclick="event.stopPropagation()">
+    <button onclick="closeAuthorProfile()" style="position:absolute;right:10px;top:10px;border:none;background:none;font-size:24px;cursor:pointer;color:#999;">×</button>
+    <div id="author-profile-content" style="min-height:150px;"></div>
+  </div>
+</div>
+
+<script>
+// 获取游戏ID和作者信息
+const gameId = '56292c31-b632-4b83-bbec-c7312ae4184c';
+const gameTitle = '2048';
+const authorToken = 'b754e320-baf7-4f9d-b000-e19ff68d56d8';
+const authorName = '匿名';
+const API_BASE = '/api/games';
+
+// 调试日志
+console.log('[DEBUG] 游戏页面初始化');
+console.log('[DEBUG] gameId:', gameId);
+console.log('[DEBUG] authorToken:', authorToken);
+console.log('[DEBUG] authorName:', authorName);
+
+// 辅助函数
+function showPromoModal() {
+  console.log('[DEBUG] showPromoModal 被调用');
+  document.getElementById('promo-modal').style.display = 'flex';
+}
+
+function getUserToken() {
+  return localStorage.getItem('aigame-user-token') || '';
+}
+
+function getAuthHeaders() {
+  const headers = { 'Content-Type': 'application/json' };
+  const token = getUserToken();
+  if (token) {
+    headers['X-User-Token'] = token;
+  }
+  return headers;
+}
+
+// 记录游玩
+(function(){
+  try {
+    fetch(API_BASE + '/' + gameId + '/play', { method: 'POST', headers: getAuthHeaders() }).catch(function(){});
+  } catch(e) {}
+})();
+
+// 获取统计数据和用户状态
+function loadStats() {
+  // 获取游戏统计
+  fetch(API_BASE + '/' + gameId, { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        const likesEl = document.getElementById('stat-likes');
+        const count = data.game.likes_count || data.game.like_count || 0;
+        likesEl.innerText = count;
+        document.getElementById('stat-plays').innerText = data.game.play_count || 0;
+        document.getElementById('stat-favs').innerText = data.game.favorite_count || 0;
+        // 更新作者名（从数据库获取最新昵称）
+        if (data.game.author_name) {
+          const authorNameEl = document.getElementById('author-name');
+          if (authorNameEl) authorNameEl.innerText = data.game.author_name;
+        }
+      }
+    })
+    .catch(err => console.error('加载统计失败', err));
+  
+  // 获取作者最新昵称
+  if (authorToken) {
+    fetch('/api/users/' + authorToken + '/profile', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.user && data.user.nickname) {
+          const authorNameEl = document.getElementById('author-name');
+          if (authorNameEl) authorNameEl.innerText = data.user.nickname;
+        }
+      })
+      .catch(() => {});
+  }
+  
+  // 获取用户点赞状态
+  const userToken = getUserToken();
+  if (userToken) {
+    fetch(API_BASE + '/' + gameId + '/like-status', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.liked) {
+          document.getElementById('stat-like-btn').classList.add('liked');
+        }
+      })
+      .catch(() => {});
+    
+    // 获取用户收藏状态
+    fetch(API_BASE + '/' + gameId + '/favorite-status', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.favorited) {
+          document.getElementById('stat-fav-btn').classList.add('favorited');
+        }
+      })
+      .catch(() => {});
+    
+    // 检查关注状态
+    if (authorToken && authorToken !== userToken) {
+      checkFollowStatus();
+    } else if (authorToken === userToken) {
+      // 隐藏自己的关注按钮
+      const followBtn = document.getElementById('tiktok-follow-btn');
+      if (followBtn) followBtn.style.display = 'none';
+    }
+  }
+}
+
+// 点赞（支持取消）
+function likeGame() {
+  const btn = document.getElementById('stat-like-btn');
+  const isLiked = btn.classList.contains('liked');
+  const countEl = document.getElementById('stat-likes');
+  let count = parseInt(countEl.innerText) || 0;
+  
+  // 乐观UI更新
+  if (isLiked) {
+    btn.classList.remove('liked');
+    countEl.innerText = Math.max(0, count - 1);
+  } else {
+    btn.classList.add('liked');
+    countEl.innerText = count + 1;
+  }
+  
+  fetch(API_BASE + '/' + gameId + '/like', { 
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        // 更新实际数量
+        countEl.innerText = data.like_count || data.likeCount || countEl.innerText;
+        if (data.liked !== undefined) {
+          btn.classList.toggle('liked', data.liked);
+        }
+      } else {
+        // 失败回滚
+        btn.classList.toggle('liked', isLiked);
+        countEl.innerText = count;
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      btn.classList.toggle('liked', isLiked);
+      countEl.innerText = count;
+    });
+}
+
+// 收藏
+function toggleFavorite() {
+  const btn = document.getElementById('stat-fav-btn');
+  const countEl = document.getElementById('stat-favs');
+  const isFav = btn.classList.contains('favorited');
+  let count = parseInt(countEl.innerText) || 0;
+  
+  // 乐观UI切换
+  btn.classList.toggle('favorited', !isFav);
+  if (isFav) {
+    countEl.innerText = Math.max(0, count - 1);
+  } else {
+    countEl.innerText = count + 1;
+  }
+  
+  fetch(API_BASE + '/' + gameId + '/favorite', { 
+    method: 'POST', 
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (data.favorited !== undefined) {
+          btn.classList.toggle('favorited', data.favorited);
+        }
+        // 更新实际数量
+        if (data.favorite_count !== undefined) {
+          countEl.innerText = data.favorite_count;
+        }
+      } else {
+        // 失败回滚
+        btn.classList.toggle('favorited', isFav);
+        countEl.innerText = count;
+      }
+    })
+    .catch(() => {
+      // 失败回滚
+      btn.classList.toggle('favorited', isFav);
+      countEl.innerText = count;
+    });
+}
+
+// 打开分享面板
+function openSharePanel() {
+  const url = window.location.href;
+  const shareText = '🎮 我发现了一个有趣的AI游戏：「' + gameTitle + '」\n\n👆 点击链接立即游玩：\n' + url + '\n\n💡 关注公众号「游戏开发技术教程」，一句话免费生成你的专属游戏！';
+  document.getElementById('share-text').value = shareText;
+  document.getElementById('share-panel').style.display = 'flex';
+}
+
+// 关闭分享面板
+function closeSharePanel() {
+  document.getElementById('share-panel').style.display = 'none';
+}
+
+// 复制分享内容
+function copyShareText() {
+  const text = document.getElementById('share-text').value;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('分享内容已复制，快去分享给好友吧！');
+      closeSharePanel();
+    }).catch(() => {
+      fallbackCopy(text);
+    });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textarea);
+  alert('分享内容已复制，快去分享给好友吧！');
+  closeSharePanel();
+}
+
+// 打开作者主页
+function openAuthorProfile() {
+  console.log('[DEBUG] openAuthorProfile 被调用, authorToken:', authorToken);
+  if (!authorToken) {
+    console.log('[DEBUG] authorToken为空，显示推广弹窗');
+    showPromoModal();
+    return;
+  }
+  
+  console.log('[DEBUG] 显示作者主页弹窗');
+  const modal = document.getElementById('author-profile-modal');
+  const content = document.getElementById('author-profile-content');
+  content.innerHTML = '<div style="padding:20px;color:#999;">加载中...</div>';
+  modal.style.display = 'flex';
+  
+  // 加载作者信息
+  Promise.all([
+    fetch('/api/users/' + authorToken + '/profile', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/users/' + authorToken + '/follow-stats', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/users/' + authorToken + '/games?limit=4', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({ games: [] }))
+  ]).then(([profileData, statsData, gamesData]) => {
+    const nickname = (profileData.profile && profileData.profile.nickname) || authorName || '游戏创作者';
+    const accountId = (profileData.profile && profileData.profile.accountId) || '';
+    const followers = statsData.followerCount || statsData.followers || 0;
+    const following = statsData.followingCount || statsData.following || 0;
+    const games = gamesData.games || [];
+    const userToken = getUserToken();
+    const isSelf = authorToken === userToken;
+    
+    let gamesHtml = '';
+    if (games.length > 0) {
+      gamesHtml = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:15px;">' +
+        games.slice(0, 4).map(g => '<a href="/g/' + g.id.substring(0,2) + '/' + g.id + '.html" style="background:#f5f5f5;border-radius:8px;padding:10px;text-decoration:none;color:#333;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎮 ' + (g.title || '未命名').substring(0, 10) + '</a>').join('') +
+        '</div>';
+    }
+    
+    // 账号ID显示（小字、浅色、带@前缀）
+    const accountIdHtml = accountId ? '<div style="font-size:12px;color:#999;margin-top:2px;">@' + accountId + '</div>' : '';
+    
+    // 如果是自己，不显示关注按钮
+    const followBtnHtml = isSelf ? '' : '<button id="profile-follow-btn" onclick="toggleFollowFromProfile()" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>';
+    
+    content.innerHTML = 
+      '<div style="margin-bottom:15px;">' +
+        '<div style="width:60px;height:60px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:28px;">👤</div>' +
+        '<div style="font-size:18px;font-weight:600;color:#333;">' + nickname + '</div>' +
+        accountIdHtml +
+      '</div>' +
+      '<div style="display:flex;justify-content:center;gap:30px;margin-bottom:15px;">' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + following + '</strong><span style="color:#999;font-size:12px;">关注</span></div>' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + followers + '</strong><span style="color:#999;font-size:12px;">粉丝</span></div>' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + games.length + '</strong><span style="color:#999;font-size:12px;">作品</span></div>' +
+      '</div>' +
+      followBtnHtml +
+      gamesHtml;
+    
+    // 检查关注状态（只有不是自己时才检查）
+    if (!isSelf) {
+      checkFollowStatusForProfile();
+    }
+  }).catch(() => {
+    content.innerHTML = '<div style="padding:20px;color:#999;">加载失败</div>';
+  });
+}
+
+// 关闭作者主页
+function closeAuthorProfile() {
+  document.getElementById('author-profile-modal').style.display = 'none';
+}
+
+// 打开评论者主页（用于点击评论头像）
+function openCommentAuthorProfile(commentAuthorToken) {
+  if (!commentAuthorToken) return;
+  
+  const currentUserToken = getUserToken();
+  // 如果是自己的评论，不跳转
+  if (commentAuthorToken === currentUserToken) {
+    alert('这是您自己的评论');
+    return;
+  }
+  
+  // 使用已有的作者主页弹窗展示评论者信息
+  const modal = document.getElementById('author-profile-modal');
+  const content = document.getElementById('author-profile-content');
+  content.innerHTML = '<div style="padding:20px;color:#999;">加载中...</div>';
+  modal.style.display = 'flex';
+  
+  // 加载评论者信息
+  Promise.all([
+    fetch('/api/users/' + commentAuthorToken + '/profile', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/users/' + commentAuthorToken + '/follow-stats', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/users/' + commentAuthorToken + '/games?limit=4', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({ games: [] }))
+  ]).then(([profileData, statsData, gamesData]) => {
+    const nickname = (profileData.profile && profileData.profile.nickname) || '游戏玩家';
+    const accountId = (profileData.profile && profileData.profile.accountId) || '';
+    const followers = statsData.followerCount || statsData.followers || 0;
+    const following = statsData.followingCount || statsData.following || 0;
+    const games = gamesData.games || [];
+    
+    let gamesHtml = '';
+    if (games.length > 0) {
+      gamesHtml = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:15px;">' +
+        games.slice(0, 4).map(g => '<a href="/g/' + g.id.substring(0,2) + '/' + g.id + '.html" style="background:#f5f5f5;border-radius:8px;padding:10px;text-decoration:none;color:#333;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎮 ' + (g.title || '未命名').substring(0, 10) + '</a>').join('') +
+        '</div>';
+    }
+    
+    // 账号ID显示（小字、浅色、带@前缀）
+    const accountIdHtml = accountId ? '<div style="font-size:12px;color:#999;margin-top:2px;">@' + accountId + '</div>' : '';
+    
+    content.innerHTML = 
+      '<div style="margin-bottom:15px;">' +
+        '<div style="width:60px;height:60px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:28px;">👤</div>' +
+        '<div style="font-size:18px;font-weight:600;color:#333;">' + nickname + '</div>' +
+        accountIdHtml +
+      '</div>' +
+      '<div style="display:flex;justify-content:center;gap:30px;margin-bottom:15px;">' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + following + '</strong><span style="color:#999;font-size:12px;">关注</span></div>' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + followers + '</strong><span style="color:#999;font-size:12px;">粉丝</span></div>' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + games.length + '</strong><span style="color:#999;font-size:12px;">作品</span></div>' +
+      '</div>' +
+      '<button onclick="toggleFollowCommentAuthor(\'' + commentAuthorToken + '\')" id="comment-author-follow-btn" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>' +
+      gamesHtml;
+    
+    // 检查是否已关注
+    fetch('/api/users/' + commentAuthorToken + '/follow-status', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.following) {
+          const btn = document.getElementById('comment-author-follow-btn');
+          if (btn) {
+            btn.textContent = '已关注';
+            btn.style.background = '#f5f5f5';
+            btn.style.color = '#999';
+          }
+        }
+      }).catch(() => {});
+  }).catch(() => {
+    content.innerHTML = '<div style="padding:20px;color:#999;">加载失败</div>';
+  });
+}
+
+// 关注/取关评论者
+function toggleFollowCommentAuthor(targetToken) {
+  const userToken = getUserToken();
+  if (!userToken) {
+    alert('请先登录后再关注');
+    return;
+  }
+  
+  const btn = document.getElementById('comment-author-follow-btn');
+  const isFollowing = btn && btn.textContent === '已关注';
+  
+  fetch('/api/users/' + targetToken + '/follow', {
+    method: isFollowing ? 'DELETE' : 'POST',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && btn) {
+        if (isFollowing) {
+          btn.textContent = '+ 关注';
+          btn.style.background = '#fe2c55';
+          btn.style.color = '#fff';
+        } else {
+          btn.textContent = '已关注';
+          btn.style.background = '#f5f5f5';
+          btn.style.color = '#999';
+        }
+      }
+    }).catch(() => {
+      alert('操作失败，请重试');
+    });
+}
+
+// 检查关注状态
+function checkFollowStatus() {
+  if (!authorToken) return;
+  fetch('/api/users/' + authorToken + '/follow-status', { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.following) {
+        const btn = document.getElementById('tiktok-follow-btn');
+        if (btn) {
+          btn.classList.add('following');
+          btn.innerHTML = '✓ 已关注';
+        }
+      }
+    })
+    .catch(() => {});
+}
+
+// 检查关注状态（主页弹窗）
+function checkFollowStatusForProfile() {
+  if (!authorToken) return;
+  fetch('/api/users/' + authorToken + '/follow-status', { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(data => {
+      const btn = document.getElementById('profile-follow-btn');
+      if (btn && data.success && data.following) {
+        btn.style.background = '#eee';
+        btn.style.color = '#666';
+        btn.innerHTML = '✓ 已关注';
+      }
+    })
+    .catch(() => {});
+}
+
+// 切换关注状态
+function toggleFollow() {
+  console.log('[DEBUG] toggleFollow 被调用, authorToken:', authorToken);
+  if (!authorToken) {
+    console.log('[DEBUG] authorToken为空，显示推广弹窗');
+    showPromoModal();
+    return;
+  }
+  
+  const userToken = getUserToken();
+  console.log('[DEBUG] userToken:', userToken);
+  if (!userToken) {
+    alert('请先登录');
+    return;
+  }
+  if (authorToken === userToken) {
+    alert('不能关注自己哦');
+    return;
+  }
+  
+  const btn = document.getElementById('tiktok-follow-btn');
+  const isFollowing = btn.classList.contains('following');
+  
+  // 乐观更新
+  if (isFollowing) {
+    btn.classList.remove('following');
+    btn.innerHTML = '<span class="follow-icon">+</span> 关注';
+  } else {
+    btn.classList.add('following');
+    btn.innerHTML = '✓ 已关注';
+  }
+  
+  fetch('/api/users/' + authorToken + '/follow', {
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        btn.classList.toggle('following', data.following);
+        btn.innerHTML = data.following ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+      } else {
+        // 回滚
+        btn.classList.toggle('following', isFollowing);
+        btn.innerHTML = isFollowing ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+      }
+    })
+    .catch(() => {
+      btn.classList.toggle('following', isFollowing);
+      btn.innerHTML = isFollowing ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+    });
+}
+
+// 从主页弹窗切换关注
+function toggleFollowFromProfile() {
+  if (!authorToken) return;
+  
+  const userToken = getUserToken();
+  if (!userToken) {
+    alert('请先登录');
+    return;
+  }
+  
+  if (authorToken === userToken) {
+    alert('不能关注自己哦');
+    return;
+  }
+  
+  const btn = document.getElementById('profile-follow-btn');
+  const isFollowing = btn.innerHTML.includes('已关注');
+  
+  // 乐观更新
+  if (isFollowing) {
+    btn.style.background = '#fe2c55';
+    btn.style.color = '#fff';
+    btn.innerHTML = '+ 关注';
+  } else {
+    btn.style.background = '#eee';
+    btn.style.color = '#666';
+    btn.innerHTML = '✓ 已关注';
+  }
+  
+  fetch('/api/users/' + authorToken + '/follow', {
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (data.following) {
+          btn.style.background = '#eee';
+          btn.style.color = '#666';
+          btn.innerHTML = '✓ 已关注';
+        } else {
+          btn.style.background = '#fe2c55';
+          btn.style.color = '#fff';
+          btn.innerHTML = '+ 关注';
+        }
+        // 同步更新底部的关注按钮
+        const tikBtn = document.getElementById('tiktok-follow-btn');
+        if (tikBtn) {
+          tikBtn.classList.toggle('following', data.following);
+          tikBtn.innerHTML = data.following ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+        }
+      }
+    })
+    .catch(() => {});
+}
+
+// ==================== 留言板功能 ====================
+
+// 切换留言板面板
+function toggleCommentsPanel() {
+  const panel = document.getElementById('game-comments-section');
+  const sidebar = document.querySelector('.tiktok-sidebar');
+  const authorInfo = document.getElementById('tiktok-author-info');
+  const overlay = document.getElementById('comments-overlay');
+  if (panel) {
+    const isExpanding = !panel.classList.contains('expanded');
+    panel.classList.toggle('expanded');
+    // 评论面板展开时隐藏右侧按钮和作者信息（使用class覆盖!important）
+    if (sidebar) {
+      sidebar.classList.toggle('comments-open', isExpanding);
+    }
+    if (authorInfo) {
+      authorInfo.classList.toggle('comments-open', isExpanding);
+    }
+    // 控制蒙版显示
+    if (overlay) {
+      overlay.classList.toggle('visible', isExpanding);
+    }
+  }
+}
+
+// 留言板状态
+let commentsData = {
+  comments: [],
+  total: 0,
+  offset: 0,
+  hasMore: false,
+  isLoading: false
+};
+
+// 加载留言列表
+function loadGameComments(isRefresh = true) {
+  if (commentsData.isLoading) return;
+  commentsData.isLoading = true;
+  
+  const limit = 20;
+  const offset = isRefresh ? 0 : commentsData.offset;
+  
+  fetch('/api/games/' + gameId + '/comments?limit=' + limit + '&offset=' + offset, {
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (isRefresh) {
+          commentsData.comments = data.comments;
+          commentsData.offset = data.comments.length;
+        } else {
+          commentsData.comments = commentsData.comments.concat(data.comments);
+          commentsData.offset += data.comments.length;
+        }
+        commentsData.total = data.total;
+        commentsData.hasMore = data.hasMore;
+        renderComments();
+        updateCommentsCount();
+      }
+    })
+    .catch(err => console.error('加载留言失败:', err))
+    .finally(() => { commentsData.isLoading = false; });
+}
+
+// 渲染留言列表
+function renderComments() {
+  const listEl = document.getElementById('game-comments-list');
+  const loadMoreBtn = document.getElementById('comments-load-more-btn');
+  
+  if (!listEl) return;
+  
+  if (commentsData.comments.length === 0) {
+    listEl.innerHTML = '<div style="text-align:center;padding:30px;color:#999;">💬 还没有留言，快来抢沙发！</div>';
+    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+    return;
+  }
+  
+  let html = '';
+  commentsData.comments.forEach(function(comment) {
+    const timeStr = formatCommentTime(comment.created_at);
+    const avatarInitial = comment.author_name ? comment.author_name.charAt(0).toUpperCase() : '?';
+    const currentUserToken = getUserToken();
+    const canDelete = comment.is_mine || (currentUserToken && comment.user_token === currentUserToken);
+    const commentUserToken = comment.user_token || '';
+    const clickableClass = commentUserToken ? 'comment-clickable' : '';
+    const onClickAttr = commentUserToken ? 'onclick="openCommentAuthorProfile(\'' + commentUserToken + '\')"' : '';
+    
+    html += '<div class="comment-item" data-id="' + comment.id + '">' +
+      '<div class="comment-header">' +
+        '<div class="comment-author-info">' +
+          '<div class="comment-avatar ' + clickableClass + '" ' + onClickAttr + '>' + avatarInitial + '</div>' +
+          '<span class="comment-author-name ' + clickableClass + '" ' + onClickAttr + '>' + escapeHtml(comment.author_name) + '</span>' +
+          '<span class="comment-time">' + timeStr + '</span>' +
+        '</div>' +
+        (canDelete ? '<button class="comment-delete-btn" onclick="deleteGameComment(' + comment.id + ')">删除</button>' : '') +
+      '</div>' +
+      '<div class="comment-content">' + escapeHtml(comment.content) + '</div>' +
+    '</div>';
+  });
+  
+  listEl.innerHTML = html;
+  
+  if (loadMoreBtn) {
+    loadMoreBtn.style.display = commentsData.hasMore ? 'block' : 'none';
+  }
+}
+
+// 更新评论数量
+function updateCommentsCount() {
+  const countEl = document.getElementById('stat-comments');
+  if (countEl) countEl.textContent = commentsData.total;
+}
+
+// 格式化留言时间
+function formatCommentTime(dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = now - date;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  
+  if (minutes < 1) return '刚刚';
+  if (minutes < 60) return minutes + '分钟前';
+  if (hours < 24) return hours + '小时前';
+  if (days < 7) return days + '天前';
+  return (date.getMonth() + 1) + '/' + date.getDate();
+}
+
+// HTML转义
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// 发布留言
+function submitGameComment() {
+  const inputEl = document.getElementById('game-comment-input');
+  const submitBtn = document.getElementById('game-comment-submit');
+  
+  if (!inputEl || !submitBtn) return;
+  
+  const content = inputEl.value.trim();
+  if (!content) {
+    alert('请输入留言内容');
+    return;
+  }
+  if (content.length > 500) {
+    alert('留言内容不能超过500字');
+    return;
+  }
+  
+  const userToken = getUserToken();
+  if (!userToken) {
+    alert('请先登录后再留言');
+    return;
+  }
+  
+  submitBtn.disabled = true;
+  submitBtn.textContent = '发布中...';
+  
+  fetch('/api/games/' + gameId + '/comments', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ content: content })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        inputEl.value = '';
+        commentsData.comments.unshift(data.comment);
+        commentsData.total++;
+        renderComments();
+        updateCommentsCount();
+      } else {
+        alert(data.error || '发布失败');
+      }
+    })
+    .catch(err => {
+      console.error('发布留言失败:', err);
+      alert('网络错误，请重试');
+    })
+    .finally(() => {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '发布';
+    });
+}
+
+// 删除留言
+function deleteGameComment(commentId) {
+  if (!confirm('确定要删除这条留言吗？')) return;
+  
+  fetch('/api/games/' + gameId + '/comments/' + commentId, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        commentsData.comments = commentsData.comments.filter(function(c) { return c.id !== commentId; });
+        commentsData.total--;
+        renderComments();
+        updateCommentsCount();
+      } else {
+        alert(data.error || '删除失败');
+      }
+    })
+    .catch(err => {
+      console.error('删除留言失败:', err);
+      alert('网络错误，请重试');
+    });
+}
+
+// 加载更多留言
+function loadMoreGameComments() {
+  if (!commentsData.hasMore || commentsData.isLoading) return;
+  loadGameComments(false);
+}
+
+// 更新留言输入区域显示
+function updateCommentInputUI() {
+  const loginHint = document.getElementById('comment-login-hint');
+  const inputArea = document.getElementById('comment-input-area');
+  const userToken = getUserToken();
+  
+  if (loginHint && inputArea) {
+    if (userToken) {
+      loginHint.style.display = 'none';
+      inputArea.style.display = 'flex';
+    } else {
+      loginHint.style.display = 'block';
+      inputArea.style.display = 'none';
+    }
+  }
+}
+
+// 初始化
+window.addEventListener('load', function() {
+  loadStats();
+  updateCommentInputUI();
+  loadGameComments(true);
+});
+</script>
+
+</body>
+</html>

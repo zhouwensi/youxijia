@@ -13,35 +13,35 @@ const JavaScriptObfuscator = require('javascript-obfuscator');
 const SRC_DIR = path.join(__dirname, 'src', 'js');
 const DIST_DIR = path.join(__dirname, 'public', 'js');
 
-// 混淆配置 - 高强度混淆
+// 混淆配置 - 平衡安全与体积
 const obfuscatorOptions = {
   compact: true,
-  controlFlowFlattening: true,
-  controlFlowFlatteningThreshold: 0.5,  // 降低阈值，避免过度复杂
-  deadCodeInjection: true,
-  deadCodeInjectionThreshold: 0.3,      // 降低死代码注入比例
-  debugProtection: false,               // 我们自己实现了更好的
-  disableConsoleOutput: false,          // 我们自己控制console
+  controlFlowFlattening: false,              // 关闭! 这是体积膨胀主因
+  controlFlowFlatteningThreshold: 0,
+  deadCodeInjection: false,                  // 关闭! 会注入大量无用代码
+  deadCodeInjectionThreshold: 0,
+  debugProtection: false,
+  disableConsoleOutput: false,
   identifierNamesGenerator: 'hexadecimal',
   log: false,
-  numbersToExpressions: true,
+  numbersToExpressions: false,               // 关闭! 减少体积
   renameGlobals: false,
-  selfDefending: false,                 // 关闭! 与我们的console检测冲突
+  selfDefending: false,
   simplify: true,
-  splitStrings: true,
+  splitStrings: false,                       // 关闭! 减少体积
   splitStringsChunkLength: 10,
   stringArray: true,
-  stringArrayCallsTransform: true,
-  stringArrayEncoding: ['base64'],
+  stringArrayCallsTransform: false,          // 关闭! 减少体积
+  stringArrayEncoding: [],                   // 不编码，减少体积
   stringArrayIndexShift: true,
   stringArrayRotate: true,
   stringArrayShuffle: true,
-  stringArrayWrappersCount: 2,
-  stringArrayWrappersChainedCalls: true,
-  stringArrayWrappersParametersMaxCount: 4,
-  stringArrayWrappersType: 'function',
-  stringArrayThreshold: 0.75,
-  transformObjectKeys: true,
+  stringArrayWrappersCount: 1,               // 减少包装器数量
+  stringArrayWrappersChainedCalls: false,
+  stringArrayWrappersParametersMaxCount: 2,
+  stringArrayWrappersType: 'variable',
+  stringArrayThreshold: 0.5,                 // 降低阈值
+  transformObjectKeys: false,                // 关闭! 减少体积
   unicodeEscapeSequence: false
 };
 
