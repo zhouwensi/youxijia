@@ -171,48 +171,26 @@ function generateStandaloneGameHtml(gameCode, gameInfo) {
   bottom: 0 !important;
   left: 0 !important;
   right: 0 !important;
-  height: 60px !important;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
-  padding: 8px 12px !important;
+  height: 32px !important;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.95) 0%, rgba(139, 92, 246, 0.95) 100%) !important;
+  padding: 0 2rem 0 0.75rem !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 10px !important;
+  gap: 0 !important;
   z-index: 999999 !important;
-  box-shadow: 0 -2px 15px rgba(99, 102, 241, 0.4) !important;
+  backdrop-filter: blur(4px) !important;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 }
 .yxj-promo-bar.yxj-hidden {
   display: none !important;
 }
-.yxj-promo-qr {
-  width: 44px !important;
-  height: 44px !important;
-  background: #fff !important;
-  border-radius: 6px !important;
-  padding: 2px !important;
-  flex-shrink: 0 !important;
-}
-.yxj-promo-qr img {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  display: block !important;
-}
-.yxj-promo-info {
+.yxj-promo-text {
   color: #fff !important;
-  font-size: 12px !important;
-  line-height: 1.3 !important;
-  text-align: left !important;
-}
-.yxj-promo-info strong {
-  display: block !important;
-  font-size: 13px !important;
-  margin-bottom: 2px !important;
-}
-.yxj-promo-info span {
-  opacity: 0.9 !important;
-  font-size: 11px !important;
+  font-size: 0.75rem !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  overflow: hidden !important;
 }
 .yxj-promo-close {
   position: absolute !important;
@@ -251,12 +229,12 @@ function generateStandaloneGameHtml(gameCode, gameInfo) {
 /* TikTok 风格组件 */
 .tiktok-author-info {
   position: fixed !important;
-  left: 16px !important;
-  bottom: 80px !important;
+  left: 12px !important;
+  bottom: 44px !important;
   display: flex !important;
   align-items: flex-start !important;
   flex-direction: column !important;
-  gap: 8px !important;
+  gap: 4px !important;
   z-index: 999998 !important;
   padding: 0 !important;
   pointer-events: auto !important;
@@ -264,38 +242,38 @@ function generateStandaloneGameHtml(gameCode, gameInfo) {
 .tiktok-author-row {
   display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 8px !important;
 }
 .tiktok-author-avatar {
-  width: 44px !important;
-  height: 44px !important;
+  width: 32px !important;
+  height: 32px !important;
   border-radius: 50% !important;
   background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 1.5rem !important;
-  border: 2px solid rgba(255, 255, 255, 0.5) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+  font-size: 1rem !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
   cursor: pointer !important;
   transition: transform 0.2s, box-shadow 0.2s !important;
   text-decoration: none !important;
 }
 .tiktok-author-avatar:hover {
   transform: scale(1.05) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5) !important;
 }
 .tiktok-author-details {
   display: flex !important;
   flex-direction: row !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 8px !important;
 }
 .tiktok-author-name {
   color: white !important;
-  font-size: 1rem !important;
-  font-weight: 700 !important;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8) !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8) !important;
   cursor: pointer !important;
   transition: opacity 0.2s !important;
 }
@@ -304,22 +282,22 @@ function generateStandaloneGameHtml(gameCode, gameInfo) {
 }
 .tiktok-publish-time {
   color: rgba(255, 255, 255, 0.6) !important;
-  font-size: 0.75rem !important;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8) !important;
-  margin-top: 2px !important;
+  font-size: 0.6875rem !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+  margin-top: 1px !important;
 }
 .tiktok-follow-btn {
   background: #fe2c55 !important;
   color: white !important;
   border: none !important;
-  padding: 6px 16px !important;
-  border-radius: 4px !important;
-  font-size: 0.8125rem !important;
+  padding: 4px 10px !important;
+  border-radius: 3px !important;
+  font-size: 0.6875rem !important;
   font-weight: 600 !important;
   cursor: pointer !important;
   display: flex !important;
   align-items: center !important;
-  gap: 4px !important;
+  gap: 3px !important;
   transition: all 0.2s ease !important;
   text-shadow: none !important;
 }
@@ -407,7 +385,7 @@ function generateStandaloneGameHtml(gameCode, gameInfo) {
 }
 /* 为推广栏预留底部空间 */
 body {
-  padding-bottom: 65px !important;
+  padding-bottom: 36px !important;
 }
 /* ====== 留言板样式 ====== */
 .comments-overlay {
@@ -682,13 +660,7 @@ body {
 <!-- 游戏家推广栏 -->
 <div class="yxj-promo-bar" id="yxj-promo" onclick="showPromoModal()" style="cursor:pointer;">
   <button class="yxj-promo-close" onclick="event.stopPropagation();document.getElementById('yxj-promo').classList.add('yxj-hidden');document.body.style.paddingBottom='0';">×</button>
-  <div class="yxj-promo-qr">
-    <img src="/images/getqrcode.png" alt="公众号">
-  </div>
-  <div class="yxj-promo-info">
-    <strong>🎮 关注「游戏开发技术教程」</strong>
-    <span>一句话免费生成你的专属游戏！</span>
-  </div>
+  <span class="yxj-promo-text">👉 点击关注微信公众号「游戏开发技术教程」，一句话免费做游戏！</span>
 </div>
 
 <!-- 分享面板 -->
@@ -1806,44 +1778,163 @@ const WEEKLY_CHALLENGES = [
   },
 ];
 
-// 支持的LLM模型配置
+// 支持的LLM模型配置 (含积分消耗和速度评级)
+// 注意：默认积分为 1，可在后台修改
 const LLM_MODELS = {
-  // DeepSeek 系列 - 性价比之王
-  'deepseek-v3': { name: 'DeepSeek V3', provider: 'deepseek', model: 'deepseek-chat', baseUrl: 'https://api.deepseek.com', tier: 'free', recommended: true },
-  'deepseek-r1': { name: 'DeepSeek R1', provider: 'deepseek', model: 'deepseek-reasoner', baseUrl: 'https://api.deepseek.com', tier: 'free' },
+  // DeepSeek 系列 - 性价比之王 (高质量但可能较慢)
+  'deepseek-v3': { name: 'DeepSeek V3', provider: 'deepseek', model: 'deepseek-chat', baseUrl: 'https://api.deepseek.com', tier: 'standard', creditCost: 1, speed: 'slow', quality: 'high', recommended: true },
+  'deepseek-r1': { name: 'DeepSeek R1', provider: 'deepseek', model: 'deepseek-reasoner', baseUrl: 'https://api.deepseek.com', tier: 'standard', creditCost: 1, speed: 'slow', quality: 'very-high' },
   
-  // OpenAI 系列
-  'gpt-4o': { name: 'GPT-4o', provider: 'openai', model: 'gpt-4o', baseUrl: 'https://api.openai.com', tier: 'pro' },
-  'gpt-4o-mini': { name: 'GPT-4o Mini', provider: 'openai', model: 'gpt-4o-mini', baseUrl: 'https://api.openai.com', tier: 'free' },
-  'gpt-5': { name: 'GPT 5', provider: 'openai', model: 'gpt-5', baseUrl: 'https://api.openai.com', tier: 'pro' },
-  'gpt-5.1': { name: 'GPT 5.1', provider: 'openai', model: 'gpt-5.1', baseUrl: 'https://api.openai.com', tier: 'pro' },
-  'gpt-5.1-codex': { name: 'GPT 5.1 Codex', provider: 'openai', model: 'gpt-5.1-codex', baseUrl: 'https://api.openai.com', tier: 'pro' },
+  // OpenAI 系列 - Turbo加速选项
+  'gpt-4o': { name: 'GPT-4o', provider: 'openai', model: 'gpt-4o', baseUrl: 'https://api.openai.com', tier: 'pro', creditCost: 1, speed: 'medium', quality: 'very-high' },
+  'gpt-4o-mini': { name: 'GPT-4o Mini', provider: 'openai', model: 'gpt-4o-mini', baseUrl: 'https://api.openai.com', tier: 'turbo', creditCost: 1, speed: 'fast', quality: 'medium', turboRecommended: true },
+  'gpt-5': { name: 'GPT 5', provider: 'openai', model: 'gpt-5', baseUrl: 'https://api.openai.com', tier: 'pro', creditCost: 1, speed: 'medium', quality: 'excellent' },
+  'gpt-5.1': { name: 'GPT 5.1', provider: 'openai', model: 'gpt-5.1', baseUrl: 'https://api.openai.com', tier: 'pro', creditCost: 1, speed: 'medium', quality: 'excellent' },
+  'gpt-5.1-codex': { name: 'GPT 5.1 Codex', provider: 'openai', model: 'gpt-5.1-codex', baseUrl: 'https://api.openai.com', tier: 'pro', creditCost: 1, speed: 'medium', quality: 'excellent' },
   
   // Claude 系列
-  'claude-4.5-opus': { name: 'Claude 4.5 Opus', provider: 'anthropic', model: 'claude-sonnet-4-5-20250514', baseUrl: 'https://api.anthropic.com', tier: 'pro', new: true },
-  'claude-4.5-sonnet': { name: 'Claude 4.5 Sonnet', provider: 'anthropic', model: 'claude-4.5-sonnet', baseUrl: 'https://api.anthropic.com', tier: 'pro' },
-  'claude-4.5-haiku': { name: 'Claude 4.5 Haiku', provider: 'anthropic', model: 'claude-4.5-haiku', baseUrl: 'https://api.anthropic.com', tier: 'free' },
-  'claude-4-sonnet': { name: 'Claude 4 Sonnet', provider: 'anthropic', model: 'claude-4-sonnet', baseUrl: 'https://api.anthropic.com', tier: 'pro' },
-  'claude-3.7-sonnet': { name: 'Claude 3.7 Sonnet', provider: 'anthropic', model: 'claude-3-7-sonnet-20250219', baseUrl: 'https://api.anthropic.com', tier: 'free' },
+  'claude-4.5-opus': { name: 'Claude 4.5 Opus', provider: 'anthropic', model: 'claude-sonnet-4-5-20250514', baseUrl: 'https://api.anthropic.com', tier: 'pro', creditCost: 1, speed: 'medium', quality: 'excellent', new: true },
+  'claude-4.5-sonnet': { name: 'Claude 4.5 Sonnet', provider: 'anthropic', model: 'claude-4.5-sonnet', baseUrl: 'https://api.anthropic.com', tier: 'pro', creditCost: 1, speed: 'medium', quality: 'very-high' },
+  'claude-4.5-haiku': { name: 'Claude 4.5 Haiku', provider: 'anthropic', model: 'claude-4.5-haiku', baseUrl: 'https://api.anthropic.com', tier: 'turbo', creditCost: 1, speed: 'fast', quality: 'medium' },
+  'claude-4-sonnet': { name: 'Claude 4 Sonnet', provider: 'anthropic', model: 'claude-4-sonnet', baseUrl: 'https://api.anthropic.com', tier: 'pro', creditCost: 1, speed: 'medium', quality: 'high' },
+  'claude-3.7-sonnet': { name: 'Claude 3.7 Sonnet', provider: 'anthropic', model: 'claude-3-7-sonnet-20250219', baseUrl: 'https://api.anthropic.com', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'high' },
   
   // Google Gemini 系列
-  'gemini-3-pro': { name: 'Gemini 3 Pro', provider: 'google', model: 'gemini-3-pro', baseUrl: 'https://generativelanguage.googleapis.com', tier: 'pro', new: true },
-  'gemini-2.5-pro': { name: 'Gemini 2.5 Pro', provider: 'google', model: 'gemini-2.5-pro', baseUrl: 'https://generativelanguage.googleapis.com', tier: 'free' },
+  // Google Gemini 系列 - 通过 OpenRouter 代理访问（国内可用）
+  'gemini-3-pro': { name: 'Gemini 3 Pro', provider: 'openrouter', model: 'google/gemini-3-pro-preview', baseUrl: 'https://openrouter.ai/api', tier: 'pro', creditCost: 1, speed: 'fast', quality: 'very-high', new: true },
+  'gemini-2.5-pro': { name: 'Gemini 2.5 Pro', provider: 'openrouter', model: 'google/gemini-2.5-pro', baseUrl: 'https://openrouter.ai/api', tier: 'pro', creditCost: 1, speed: 'fast', quality: 'very-high' },
+  'gemini-2.5-flash': { name: 'Gemini 2.5 Flash', provider: 'openrouter', model: 'google/gemini-2.5-flash', baseUrl: 'https://openrouter.ai/api', tier: 'standard', creditCost: 1, speed: 'very-fast', quality: 'high' },
+  'gemini-2.0-flash': { name: 'Gemini 2.0 Flash', provider: 'openrouter', model: 'google/gemini-2.0-flash-001', baseUrl: 'https://openrouter.ai/api', tier: 'standard', creditCost: 1, speed: 'very-fast', quality: 'high' },
   
   // 国产模型
-  'glm-4.7': { name: 'GLM 4.7', provider: 'zhipu', model: 'glm-4.7', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', tier: 'free', new: true },
-  'glm-4.6': { name: 'GLM 4.6', provider: 'zhipu', model: 'glm-4.6', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', tier: 'free' },
-  'glm-4.5': { name: 'GLM 4.5', provider: 'zhipu', model: 'glm-4.5', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', tier: 'free' },
-  'kimi-k2': { name: 'Kimi K2', provider: 'moonshot', model: 'kimi-k2', baseUrl: 'https://api.moonshot.cn', tier: 'free' },
-  'qwen3-coder-plus': { name: 'Qwen3 Coder Plus', provider: 'alibaba', model: 'qwen-coder-plus', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode', tier: 'free' },
+  'glm-4.7': { name: 'GLM 4.7', provider: 'zhipu', model: 'glm-4.7', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'high', new: true },
+  'glm-4.6': { name: 'GLM 4.6', provider: 'zhipu', model: 'glm-4.6', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'medium' },
+  'glm-4.5': { name: 'GLM 4.5', provider: 'zhipu', model: 'glm-4.5', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'medium' },
+  'kimi-k2': { name: 'Kimi K2', provider: 'moonshot', model: 'kimi-k2', baseUrl: 'https://api.moonshot.cn', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'high' },
+  'qwen3-coder-plus': { name: 'Qwen3 Coder Plus', provider: 'alibaba', model: 'qwen-coder-plus', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'high' },
 };
+
+// 获取模型的积分消耗（优先从配置读取，否则使用默认值）
+function getModelCreditCost(modelId) {
+  // 尝试从数据库配置读取
+  const configKey = `llm_credits_${modelId}`;
+  const configValue = getConfig(configKey, null);
+  if (configValue !== null) {
+    return parseInt(configValue, 10) || 0;
+  }
+  // 使用默认值
+  const model = LLM_MODELS[modelId];
+  return model ? model.creditCost : 0;
+}
+
+// 获取模型的效果等级（优先从配置读取）
+function getModelQuality(modelId) {
+  const configKey = `llm_quality_${modelId}`;
+  const configValue = getConfig(configKey, null);
+  if (configValue !== null) {
+    return configValue;
+  }
+  const model = LLM_MODELS[modelId];
+  return model ? model.quality : 'medium';
+}
+
+// 检查模型是否启用（默认只启用 deepseek 和 gemini 相关的模型）
+function isModelEnabled(modelId) {
+  const configKey = `llm_enabled_${modelId}`;
+  const configValue = getConfig(configKey, null);
+  
+  // 如果有配置值，使用配置值
+  if (configValue !== null) {
+    return configValue === 'true' || configValue === '1';
+  }
+  
+  // 默认启用的模型：deepseek 和 gemini 相关
+  const defaultEnabled = ['deepseek-v3', 'deepseek-r1', 'gemini-3-pro', 'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'];
+  return defaultEnabled.includes(modelId);
+}
+
+// 获取可用的模型列表（用于前端显示，包括免费和付费模型）
+function getTurboModels() {
+  return Object.entries(LLM_MODELS)
+    .filter(([key, config]) => isModelEnabled(key))  // 只返回启用的模型
+    .map(([key, config]) => {
+      const creditCost = getModelCreditCost(key);
+      const quality = getModelQuality(key);
+      const apiKeyKey = `llm_apikey_${key}`;
+      const hasDefaultKey = getConfig(apiKeyKey, null) !== null && getConfig(apiKeyKey, '').length > 0;
+      
+      return {
+        id: key,
+        name: config.name,
+        creditCost: creditCost,
+        speed: config.speed,
+        quality: quality,
+        turboRecommended: config.turboRecommended || false,
+        hasDefaultKey: hasDefaultKey,  // 是否配置了默认API Key
+        needsUserKey: creditCost === 0 && !hasDefaultKey  // 需要用户自己配置Key
+      };
+    })
+    .sort((a, b) => {
+      // 先按积分排序，积分相同时按quality排序
+      if (a.creditCost !== b.creditCost) {
+        return a.creditCost - b.creditCost;
+      }
+      const qualityOrder = { 'medium': 1, 'high': 2, 'very-high': 3, 'excellent': 4 };
+      return (qualityOrder[b.quality] || 0) - (qualityOrder[a.quality] || 0);
+    });
+}
+
+// ============ 请求追踪系统 ============
+// 用于追踪活跃的生成请求，支持取消功能
+const activeGenerations = new Map(); // requestId -> { userToken, startTime, cancelled }
+
+// 清理过期的请求记录（超过10分钟的）
+function cleanupOldGenerations() {
+  const now = Date.now();
+  const expireTime = 10 * 60 * 1000; // 10分钟
+  for (const [requestId, info] of activeGenerations.entries()) {
+    if (now - info.startTime > expireTime) {
+      activeGenerations.delete(requestId);
+    }
+  }
+}
+
+// 每5分钟清理一次过期请求
+setInterval(cleanupOldGenerations, 5 * 60 * 1000);
+
+// 检查请求是否已被取消
+function isGenerationCancelled(requestId) {
+  const info = activeGenerations.get(requestId);
+  return info ? info.cancelled : false;
+}
+
+// 标记请求为已取消，并尝试中断 LLM 请求
+function cancelGeneration(requestId) {
+  const info = activeGenerations.get(requestId);
+  if (info) {
+    info.cancelled = true;
+    // 如果有 AbortController，触发中断
+    if (info.abortController) {
+      try {
+        info.abortController.abort();
+        console.log(`[CANCEL] 已中断 LLM 请求: ${requestId}`);
+      } catch (e) {
+        console.log(`[CANCEL] 中断 LLM 请求失败: ${e.message}`);
+      }
+    }
+    console.log(`[CANCEL] 请求已标记为取消: ${requestId}`);
+    return true;
+  }
+  return false;
+}
 
 // ==================== 安全中间件配置 ====================
 
 // 1. Helmet 安全头（必须在最前面）
 app.use(security.getHelmetConfig());
 
-// 2. CORS 配置（使用安全模块的配置）
+// 2. CORS 配置（使用安全模块的配置，从数据库读取白名单）
+security.setCorsWhitelistGetter(getCorsWhitelist);
 app.use(cors(security.getCorsConfig()));
 
 // 3. 请求体解析（带大小限制）
@@ -1934,7 +2025,8 @@ app.use('/api/admin', security.createAuditMiddleware('ADMIN_ACCESS'));
 
 // 13. 管理员认证中间件（统一处理认证和失败记录）
 const adminAuthMiddleware = (req, res, next) => {
-  const adminKey = req.headers['x-admin-key'];
+  // 支持从header或query参数获取adminKey（用于下载等场景）
+  const adminKey = req.headers['x-admin-key'] || req.query.key;
   const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
              req.headers['x-real-ip'] || 
              req.ip;
@@ -2967,6 +3059,61 @@ app.post('/api/account/secure-recover', (req, res) => {
 
 // ==================== 积分系统 API ====================
 
+// 获取可用的加速模型列表
+app.get('/api/turbo-models', (req, res) => {
+  try {
+    const turboModels = getTurboModels();
+    
+    // 获取默认模型设置
+    const defaultModelId = getConfig('llm_default_model', 'deepseek-v3');
+    
+    res.json({
+      success: true,
+      models: turboModels,
+      defaultModel: defaultModelId  // 返回默认模型ID
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 取消生成请求（用于加速切换时取消旧的慢速请求）
+app.post('/api/cancel-generation', (req, res) => {
+  try {
+    const { requestId } = req.body;
+    const userToken = req.headers['x-user-token'];
+    
+    if (!requestId) {
+      return res.status(400).json({ success: false, error: '缺少请求ID' });
+    }
+    
+    // 验证请求属于当前用户
+    const info = activeGenerations.get(requestId);
+    if (!info) {
+      // 请求可能已完成或过期，这不是错误
+      console.log(`[CANCEL] 请求不存在或已完成: ${requestId}`);
+      return res.json({ success: true, message: '请求不存在或已完成' });
+    }
+    
+    if (info.userToken !== userToken) {
+      console.log(`[CANCEL] 用户无权取消此请求: ${requestId}`);
+      return res.status(403).json({ success: false, error: '无权取消此请求' });
+    }
+    
+    // 标记请求为已取消
+    cancelGeneration(requestId);
+    
+    res.json({ 
+      success: true, 
+      message: '请求已标记为取消',
+      requestId 
+    });
+  } catch (error) {
+    console.error('[ERROR] 取消请求失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // 获取用户积分信息
 app.get('/api/credits', (req, res) => {
   try {
@@ -3610,6 +3757,9 @@ app.post('/api/generate', async (req, res) => {
   const startTime = Date.now();
   console.log('\n========== 开始生成游戏 ==========');
   
+  // 提前提取 requestId，以便在 catch 块中也能访问
+  const requestId = req.body?.requestId || null;
+  
   try {
     // 首先检查创作封禁状态
     const banStatus = checkBanStatus(req, BAN_TYPES.CREATE);
@@ -3624,14 +3774,81 @@ app.post('/api/generate', async (req, res) => {
       });
     }
     
-    const { prompt, llmConfig, draftId, advancedSettings } = req.body;
+    const { prompt, llmConfig, draftId, advancedSettings, turboModel, isTurboSwitch } = req.body;
     const userToken = req.headers['x-user-token'] || null;
     const authorToken = req.headers['x-author-token'] || null;
-    console.log('[INFO] 收到生成请求:', { prompt, provider: llmConfig?.provider, user: userToken, draftId, advancedSettings });
+    console.log('[INFO] 收到生成请求:', { 
+      prompt, 
+      provider: llmConfig?.provider, 
+      user: userToken, 
+      draftId, 
+      advancedSettings,
+      turboModel: turboModel || '无',
+      isTurboSwitch: isTurboSwitch || false,
+      requestId: requestId || '无'
+    });
+    
+    // 创建 AbortController 用于中断 LLM 请求
+    const llmAbortController = new AbortController();
+    
+    // 注册请求到活跃请求追踪器
+    if (requestId) {
+      activeGenerations.set(requestId, {
+        userToken,
+        startTime: Date.now(),
+        cancelled: false,
+        isTurbo: !!turboModel,
+        abortController: llmAbortController  // 保存 AbortController 引用
+      });
+      console.log(`[TRACK] 已注册请求: ${requestId}`);
+    }
     
     if (!prompt || prompt.trim().length === 0) {
       console.log('[ERROR] 游戏描述为空');
       return res.status(400).json({ success: false, error: '请输入游戏描述' });
+    }
+
+    // 处理加速模型切换：检查积分并扣除
+    let turboModelConfig = null;
+    let turboCreditCost = 0;
+    if (turboModel && isTurboSwitch) {
+      turboModelConfig = LLM_MODELS[turboModel];
+      if (!turboModelConfig) {
+        console.log('[ERROR] 无效的加速模型:', turboModel);
+        return res.status(400).json({ success: false, error: '无效的加速模型' });
+      }
+      
+      // 从配置读取积分消耗（优先数据库配置，否则使用默认值）
+      turboCreditCost = getModelCreditCost(turboModel);
+      
+      if (turboCreditCost > 0 && userToken) {
+        // 检查用户积分
+        const userCredits = ensureUserCredits(userToken);
+        if (userCredits.credits < turboCreditCost) {
+          console.log('[ERROR] 积分不足:', { need: turboCreditCost, have: userCredits.credits });
+          return res.status(400).json({ 
+            success: false, 
+            error: `积分不足，需要 ${turboCreditCost} 积分`,
+            creditsNeeded: turboCreditCost,
+            creditsHave: userCredits.credits
+          });
+        }
+        
+        // 扣除积分
+        db.prepare(`
+          UPDATE user_credits 
+          SET credits = credits - ?, total_used = total_used + ?, updated_at = CURRENT_TIMESTAMP 
+          WHERE user_token = ?
+        `).run(turboCreditCost, turboCreditCost, userToken);
+        
+        // 记录积分消耗
+        db.prepare(`
+          INSERT INTO credit_logs (user_token, amount, type, description) 
+          VALUES (?, ?, 'turbo_generate', ?)
+        `).run(userToken, -turboCreditCost, `加速生成：使用 ${turboModelConfig.name}`);
+        
+        console.log(`[Credits] 用户 ${userToken.substring(0, 8)}... 消耗 ${turboCreditCost} 积分用于加速生成`);
+      }
     }
 
     // 测试模式：直接返回本地HTML文件
@@ -3692,27 +3909,142 @@ app.post('/api/generate', async (req, res) => {
       return 'deepseek';
     };
 
-    // 确定使用的模型和配置 - 用户配置优先，否则使用默认配置
-    const useUserConfig = llmConfig?.apiKey && llmConfig.apiKey.length > 0;
-    const finalModel = useUserConfig ? (llmConfig?.model || defaultModel) : defaultModel;
-    const finalProvider = getProviderFromModel(finalModel);
+    // 判断用户是否提供了自己的API Key
+    const useUserApiKey = llmConfig?.apiKey && llmConfig.apiKey.length > 0;
     
     // 根据provider确定默认baseUrl
     const getDefaultBaseUrl = (provider) => {
       switch (provider) {
         case 'anthropic': return 'https://api.anthropic.com';
         case 'openai': return 'https://api.openai.com';
-        case 'google': return 'https://generativelanguage.googleapis.com';
+        case 'google': return 'https://generativelanguage.googleapis.com/v1beta/openai';
         case 'qwen': return 'https://dashscope.aliyuncs.com/compatible-mode';
+        case 'zhipu': return 'https://open.bigmodel.cn/api/paas/v4';
+        case 'moonshot': return 'https://api.moonshot.cn/v1';
+        case 'alibaba': return 'https://dashscope.aliyuncs.com/compatible-mode/v1';
         default: return 'https://api.deepseek.com';
       }
     };
 
+    // ========== 模型选择逻辑 ==========
+    // 优先级：加速模型(turboModel) > 前端传的modelId > 默认模型
+    let finalModel, finalProvider, finalBaseUrl;
+    let selectedModelId = null;
+    
+    if (turboModelConfig) {
+      // 使用加速模型
+      finalModel = turboModelConfig.model;
+      finalProvider = turboModelConfig.provider;
+      finalBaseUrl = turboModelConfig.baseUrl;
+      selectedModelId = turboModel;
+      console.log('[TURBO] 使用加速模型:', turboModelConfig.name);
+    } else {
+      // 检查前端传来的 modelId（从 llmConfig.provider 获取，前端用这个字段传模型ID）
+      const requestedModelId = llmConfig?.provider || null;
+      
+      // 优先从后端 LLM_MODELS 中获取配置（确保配置一致性）
+      if (requestedModelId && LLM_MODELS[requestedModelId]) {
+        // 用户选择了一个已知的模型，使用后端配置
+        const modelConfig = LLM_MODELS[requestedModelId];
+        finalModel = modelConfig.model;
+        finalProvider = modelConfig.provider;
+        finalBaseUrl = modelConfig.baseUrl;
+        selectedModelId = requestedModelId;
+        console.log(`[INFO] 使用后端配置的模型: ${modelConfig.name} (${selectedModelId})`);
+      } else if (requestedModelId === 'custom' && useUserApiKey) {
+        // 用户使用自定义接口（需要自己提供Key和配置）
+        finalModel = llmConfig?.model || 'deepseek-chat';
+        finalProvider = 'custom';
+        finalBaseUrl = llmConfig?.baseUrl || 'https://api.deepseek.com';
+        selectedModelId = null;
+        console.log('[INFO] 使用用户自定义接口配置');
+      } else {
+        // 使用后台配置的默认模型
+        // 先检查默认模型是否在 LLM_MODELS 中
+        if (defaultModel && LLM_MODELS[defaultModel]) {
+          const modelConfig = LLM_MODELS[defaultModel];
+          finalModel = modelConfig.model;
+          finalProvider = modelConfig.provider;
+          finalBaseUrl = modelConfig.baseUrl;
+          selectedModelId = defaultModel;
+        } else {
+          // 尝试通过 model 名称匹配
+          const matchedId = Object.keys(LLM_MODELS).find(key => LLM_MODELS[key].model === defaultModel);
+          if (matchedId) {
+            const modelConfig = LLM_MODELS[matchedId];
+            finalModel = modelConfig.model;
+            finalProvider = modelConfig.provider;
+            finalBaseUrl = modelConfig.baseUrl;
+            selectedModelId = matchedId;
+          } else {
+            // 最终回退：使用 deepseek-v3
+            const fallbackConfig = LLM_MODELS['deepseek-v3'];
+            finalModel = fallbackConfig.model;
+            finalProvider = fallbackConfig.provider;
+            finalBaseUrl = fallbackConfig.baseUrl;
+            selectedModelId = 'deepseek-v3';
+          }
+        }
+        console.log(`[INFO] 使用默认模型: ${selectedModelId}`);
+      }
+    }
+
+    // ========== 积分/Key 验证逻辑 ==========
+    // 获取该模型的积分消耗配置
+    const modelCreditCost = selectedModelId ? getModelCreditCost(selectedModelId) : 0;
+    
+    // 获取模型特定的API Key配置（从数据库）
+    const getModelApiKey = (modelId) => {
+      if (!modelId) return null;
+      const apiKeyKey = `llm_apikey_${modelId}`;
+      const configuredKey = getConfig(apiKeyKey, null);
+      if (configuredKey && configuredKey.length > 0) {
+        return configuredKey;
+      }
+      return null;
+    };
+    
+    // 确定API Key来源
+    let finalApiKey = null;
+    let keySource = '';
+    
+    // API Key优先级（从高到低）：
+    // 1. 用户自己配置的Key（如果提供了）
+    // 2. 该模型在后台配置的专属Key（llm_apikey_${modelId}）
+    // 3. 后台配置的默认Key（llm_default_api_key）
+    // 4. 环境变量中的Key（DEEPSEEK_API_KEY）
+    
+    if (useUserApiKey && llmConfig.apiKey) {
+      // 用户自己配置的Key优先级最高
+      finalApiKey = llmConfig.apiKey;
+      keySource = 'user';
+      console.log('[INFO] 使用用户自己配置的API Key');
+    } else {
+      // 尝试获取模型特定的Key
+      const modelSpecificKey = getModelApiKey(selectedModelId);
+      if (modelSpecificKey) {
+        finalApiKey = modelSpecificKey;
+        keySource = 'model_specific';
+        console.log(`[INFO] 使用模型 ${selectedModelId} 的专属API Key`);
+      } else if (defaultApiKey) {
+        finalApiKey = defaultApiKey;
+        keySource = 'default';
+        console.log('[INFO] 使用后台默认API Key');
+      } else if (process.env.DEEPSEEK_API_KEY) {
+        finalApiKey = process.env.DEEPSEEK_API_KEY;
+        keySource = 'env';
+        console.log('[INFO] 使用环境变量API Key');
+      }
+    }
+
     const config = {
       provider: finalProvider,
-      apiKey: useUserConfig ? llmConfig.apiKey : (defaultApiKey || process.env.DEEPSEEK_API_KEY),
-      baseUrl: useUserConfig ? (llmConfig?.baseUrl || getDefaultBaseUrl(finalProvider)) : (defaultBaseUrl || getDefaultBaseUrl(finalProvider)),
-      model: finalModel
+      apiKey: finalApiKey,
+      baseUrl: finalBaseUrl,
+      model: finalModel,
+      isTurbo: !!turboModelConfig,
+      turboCreditCost: turboCreditCost,
+      keySource: keySource
     };
     
     // 调试：显示API Key信息（隐藏中间部分）
@@ -3724,12 +4056,74 @@ app.post('/api/generate', async (req, res) => {
       baseUrl: config.baseUrl, 
       model: config.model,
       apiKeyPreview: keyPreview,
-      apiKeyLength: config.apiKey?.length || 0
+      apiKeyLength: config.apiKey?.length || 0,
+      keySource: keySource,
+      modelCreditCost: modelCreditCost
     });
+    
+    // ========== 积分扣除逻辑（非Turbo模式）==========
+    // 规则：用户有自己的Key = 免费，使用后台Key = 扣积分
+    let actualCreditCost = 0;
+    if (!turboModelConfig && keySource !== 'user' && userToken && selectedModelId) {
+      // 使用后台Key，需要扣积分
+      actualCreditCost = modelCreditCost;
+      
+      if (actualCreditCost > 0) {
+        // 检查用户积分
+        const userCredits = ensureUserCredits(userToken);
+        if (userCredits.credits < actualCreditCost) {
+          console.log('[ERROR] 积分不足:', { need: actualCreditCost, have: userCredits.credits });
+          return res.status(400).json({ 
+            success: false, 
+            error: `积分不足，需要 ${actualCreditCost} 积分`,
+            creditsNeeded: actualCreditCost,
+            creditsHave: userCredits.credits
+          });
+        }
+        
+        // 扣除积分
+        db.prepare(`
+          UPDATE user_credits 
+          SET credits = credits - ?, total_used = total_used + ?, updated_at = CURRENT_TIMESTAMP 
+          WHERE user_token = ?
+        `).run(actualCreditCost, actualCreditCost, userToken);
+        
+        // 记录积分消耗
+        const modelName = LLM_MODELS[selectedModelId]?.name || selectedModelId;
+        db.prepare(`
+          INSERT INTO credit_logs (user_token, amount, type, description) 
+          VALUES (?, ?, 'generate', ?)
+        `).run(userToken, -actualCreditCost, `生成游戏：使用 ${modelName}`);
+        
+        console.log(`[Credits] 用户 ${userToken.substring(0, 8)}... 消耗 ${actualCreditCost} 积分`);
+      }
+    } else if (keySource === 'user') {
+      console.log('[INFO] 用户使用自己的API Key，免费生成');
+    }
 
+    // Key验证：如果不是积分付费模式，必须有Key
     if (!config.apiKey) {
       console.log('[ERROR] API Key未配置');
-      return res.status(400).json({ success: false, error: '请配置API Key' });
+      
+      // 根据模型类型给出具体的提示
+      const modelName = selectedModelId ? (LLM_MODELS[selectedModelId]?.name || selectedModelId) : finalModel;
+      const providerName = {
+        'deepseek': 'DeepSeek',
+        'openai': 'OpenAI',
+        'anthropic': 'Claude',
+        'google': 'Google',
+        'zhipu': '智谱AI',
+        'moonshot': 'Moonshot',
+        'alibaba': '阿里云'
+      }[finalProvider] || finalProvider;
+      
+      return res.status(400).json({ 
+        success: false, 
+        error: `使用 ${modelName} 需要配置 ${providerName} 的 API Key`,
+        needApiKey: true,
+        provider: finalProvider,
+        hint: `请在设置中配置您的 ${providerName} API Key，或选择其他模型`
+      });
     }
     
     // 验证API Key格式（DeepSeek的Key通常以sk-开头）
@@ -3866,6 +4260,18 @@ ${advancedHint}${gameNameHint}
     console.log('[INFO] 开始调用LLM API...');
     const apiStartTime = Date.now();
     
+    // 检查是否在发起请求前就被取消了
+    if (requestId && isGenerationCancelled(requestId)) {
+      console.log(`[CANCELLED] 请求在发起LLM调用前被取消: ${requestId}`);
+      activeGenerations.delete(requestId);
+      return res.json({
+        success: false,
+        cancelled: true,
+        message: '请求已被取消',
+        requestId
+      });
+    }
+    
     const response = await fetch(`${config.baseUrl}/v1/chat/completions`, {
       method: 'POST',
       headers: {
@@ -3879,8 +4285,9 @@ ${advancedHint}${gameNameHint}
           { role: 'user', content: `请生成游戏：${prompt}` }
         ],
         temperature: 0.7,
-        max_tokens: 8192
-      })
+        max_tokens: 3000
+      }),
+      signal: llmAbortController.signal  // 支持中断 LLM 请求
     });
 
     const apiTime = Date.now() - apiStartTime;
@@ -3937,6 +4344,20 @@ ${advancedHint}${gameNameHint}
     code = injectBrandWatermark(code);
     console.log('[INFO] 已注入品牌水印');
 
+    // 检查请求是否已被取消（用户切换到加速模式）
+    if (requestId && isGenerationCancelled(requestId)) {
+      console.log(`[CANCELLED] 请求已被取消，跳过草稿更新: ${requestId}`);
+      // 清理请求记录
+      activeGenerations.delete(requestId);
+      // 返回特殊响应，告知前端这个结果已过期
+      return res.json({
+        success: false,
+        cancelled: true,
+        message: '此请求已被取消（用户已切换到加速模式）',
+        requestId
+      });
+    }
+
     // 如果有草稿ID，自动更新草稿为已发布状态
     if (draftId && authorToken) {
       try {
@@ -3976,12 +4397,19 @@ ${advancedHint}${gameNameHint}
     console.log(`[SUCCESS] 游戏生成完成，总耗时: ${totalTime}ms`);
     console.log('========================================\n');
 
+    // 清理请求记录
+    if (requestId) {
+      activeGenerations.delete(requestId);
+      console.log(`[TRACK] 已清理请求记录: ${requestId}`);
+    }
+
     res.json({ 
       success: true, 
       code,
       title,
       prompt,
       draftId: draftId || null,  // 返回草稿ID供前端使用
+      requestId: requestId || null, // 返回请求ID供前端确认
       debug: {
         codeLength: code.length,
         apiTime,
@@ -3991,8 +4419,29 @@ ${advancedHint}${gameNameHint}
     });
   } catch (error) {
     const totalTime = Date.now() - startTime;
+    
+    // 检查是否是中断错误（用户切换到加速模式）
+    if (error.name === 'AbortError') {
+      console.log(`[ABORTED] LLM请求被中断 (耗时${totalTime}ms): ${requestId || '无ID'}`);
+      console.log('========================================\n');
+      // 清理请求记录
+      if (requestId) {
+        activeGenerations.delete(requestId);
+      }
+      return res.json({ 
+        success: false, 
+        cancelled: true, 
+        message: 'LLM请求已被中断（用户切换到加速模式）',
+        requestId 
+      });
+    }
+    
     console.error(`[ERROR] 生成游戏失败 (耗时${totalTime}ms):`, error.message);
     console.log('========================================\n');
+    // 清理请求记录
+    if (requestId) {
+      activeGenerations.delete(requestId);
+    }
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -4824,6 +5273,28 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_share_logs_game ON share_logs(game_id);
 `);
 
+// 创建邀请关系表（用于首次生成游戏时触发奖励）
+db.exec(`
+  CREATE TABLE IF NOT EXISTS referrals (
+    invitee_account_id TEXT PRIMARY KEY,
+    inviter_code TEXT NOT NULL,
+    rewarded INTEGER DEFAULT 0,
+    rewarded_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+// 创建邀请者每日奖励计数表
+db.exec(`
+  CREATE TABLE IF NOT EXISTS daily_referral_counts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    inviter_code TEXT NOT NULL,
+    date TEXT NOT NULL,
+    count INTEGER DEFAULT 0,
+    UNIQUE(inviter_code, date)
+  )
+`);
+
 // ==================== 辅助函数 ====================
 
 // 敏感词检测
@@ -5078,7 +5549,7 @@ app.post('/api/trial/generate', async (req, res) => {
               { role: 'user', content: `请生成游戏：${enhancedPrompt}` }
             ],
             temperature: 0.7,
-            max_tokens: 8192
+            max_tokens: 3000
           }),
           signal: controller.signal
         });
@@ -5514,6 +5985,158 @@ app.post('/api/invite/use', (req, res) => {
   }
 });
 
+// ==================== 邀请关系系统（延迟奖励） ====================
+
+// 每日邀请奖励上限
+const DAILY_REFERRAL_LIMIT = 100;
+// 每次邀请奖励积分
+const REFERRAL_REWARD_POINTS = 1;
+
+// 记录邀请关系（不立即发放奖励，等首次成功生成游戏时再发放）
+app.post('/api/referral/record', (req, res) => {
+  try {
+    const { inviterCode } = req.body;
+    const inviteeAccountId = req.headers['x-account-id'];
+    
+    if (!inviterCode) {
+      return res.status(400).json({ success: false, error: '缺少邀请码' });
+    }
+    
+    if (!inviteeAccountId) {
+      return res.status(400).json({ success: false, error: '缺少账户ID' });
+    }
+    
+    // 检查是否已有邀请关系
+    const existingReferral = db.prepare('SELECT * FROM referrals WHERE invitee_account_id = ?').get(inviteeAccountId);
+    if (existingReferral) {
+      return res.json({ 
+        success: true, 
+        recorded: false, 
+        reason: '已有邀请关系',
+        alreadyRecorded: true
+      });
+    }
+    
+    // 不能自己邀请自己（邀请码通常是账户ID的前8位）
+    if (inviteeAccountId.toUpperCase().startsWith(inviterCode.toUpperCase())) {
+      return res.json({ 
+        success: false, 
+        error: '不能使用自己的邀请链接'
+      });
+    }
+    
+    // 记录邀请关系
+    db.prepare('INSERT INTO referrals (invitee_account_id, inviter_code) VALUES (?, ?)').run(inviteeAccountId, inviterCode.toUpperCase());
+    
+    console.log(`[REFERRAL] 记录邀请关系: 邀请者=${inviterCode}, 被邀请者=${inviteeAccountId}`);
+    
+    return res.json({
+      success: true,
+      recorded: true,
+      message: '邀请关系已记录，首次成功生成游戏后双方各得1积分'
+    });
+    
+  } catch (error) {
+    console.error('记录邀请关系失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 触发邀请奖励（首次成功生成游戏时调用）
+app.post('/api/referral/reward', (req, res) => {
+  try {
+    const accountId = req.headers['x-account-id'];
+    
+    if (!accountId) {
+      return res.status(400).json({ success: false, error: '缺少账户ID' });
+    }
+    
+    // 检查该用户是否有被邀请记录
+    const referral = db.prepare('SELECT * FROM referrals WHERE invitee_account_id = ?').get(accountId);
+    
+    if (!referral) {
+      // 没有邀请关系，不需要处理
+      return res.json({ success: true, rewarded: false, reason: '无邀请关系' });
+    }
+    
+    if (referral.rewarded) {
+      // 已经奖励过了
+      return res.json({ success: true, rewarded: false, reason: '已奖励过' });
+    }
+    
+    // 检查邀请者今日奖励次数是否已达上限
+    const today = new Date().toISOString().slice(0, 10);
+    const dailyCount = db.prepare('SELECT count FROM daily_referral_counts WHERE inviter_code = ? AND date = ?').get(referral.inviter_code, today);
+    
+    if (dailyCount && dailyCount.count >= DAILY_REFERRAL_LIMIT) {
+      // 邀请者今日已达上限，仍标记为已处理但不发放奖励
+      db.prepare('UPDATE referrals SET rewarded = 1, rewarded_at = CURRENT_TIMESTAMP WHERE invitee_account_id = ?').run(accountId);
+      return res.json({ 
+        success: true, 
+        rewarded: false, 
+        reason: '邀请者今日奖励已达上限',
+        dailyLimit: DAILY_REFERRAL_LIMIT
+      });
+    }
+    
+    // 发放奖励
+    // 1. 标记邀请关系已奖励
+    db.prepare('UPDATE referrals SET rewarded = 1, rewarded_at = CURRENT_TIMESTAMP WHERE invitee_account_id = ?').run(accountId);
+    
+    // 2. 增加邀请者今日奖励计数
+    db.prepare(`
+      INSERT INTO daily_referral_counts (inviter_code, date, count) 
+      VALUES (?, ?, 1) 
+      ON CONFLICT(inviter_code, date) DO UPDATE SET count = count + 1
+    `).run(referral.inviter_code, today);
+    
+    // 3. 通过邀请码查找邀请者的账户
+    const inviter = db.prepare('SELECT creator_token FROM invite_codes WHERE code = ?').get(referral.inviter_code);
+    
+    if (inviter) {
+      // 给邀请者增加积分
+      db.prepare('UPDATE user_credits SET credits = credits + ?, total_earned = total_earned + ? WHERE user_token = ?')
+        .run(REFERRAL_REWARD_POINTS, REFERRAL_REWARD_POINTS, inviter.creator_token);
+      db.prepare('INSERT INTO credit_logs (user_token, amount, type, description) VALUES (?, ?, ?, ?)')
+        .run(inviter.creator_token, REFERRAL_REWARD_POINTS, 'referral_inviter', '邀请好友成功生成游戏奖励');
+    }
+    
+    // 4. 给被邀请者增加积分（当前用户）
+    // 需要查找当前用户的 user_token
+    const currentUser = db.prepare('SELECT user_token FROM user_credits WHERE user_token LIKE ?').get(accountId + '%');
+    if (currentUser) {
+      db.prepare('UPDATE user_credits SET credits = credits + ?, total_earned = total_earned + ? WHERE user_token = ?')
+        .run(REFERRAL_REWARD_POINTS, REFERRAL_REWARD_POINTS, currentUser.user_token);
+      db.prepare('INSERT INTO credit_logs (user_token, amount, type, description) VALUES (?, ?, ?, ?)')
+        .run(currentUser.user_token, REFERRAL_REWARD_POINTS, 'referral_invitee', '通过邀请链接成功生成游戏奖励');
+    } else {
+      // 如果找不到，尝试用 accountId 直接操作
+      const exists = db.prepare('SELECT 1 FROM user_credits WHERE user_token = ?').get(accountId);
+      if (exists) {
+        db.prepare('UPDATE user_credits SET credits = credits + ?, total_earned = total_earned + ? WHERE user_token = ?')
+          .run(REFERRAL_REWARD_POINTS, REFERRAL_REWARD_POINTS, accountId);
+        db.prepare('INSERT INTO credit_logs (user_token, amount, type, description) VALUES (?, ?, ?, ?)')
+          .run(accountId, REFERRAL_REWARD_POINTS, 'referral_invitee', '通过邀请链接成功生成游戏奖励');
+      }
+    }
+    
+    console.log(`[REFERRAL] 邀请奖励触发: 邀请者=${referral.inviter_code}, 被邀请者=${accountId}, 双方各得${REFERRAL_REWARD_POINTS}积分`);
+    
+    return res.json({
+      success: true,
+      rewarded: true,
+      inviter: referral.inviter_code,
+      invitee: accountId,
+      rewardPoints: REFERRAL_REWARD_POINTS,
+      message: `🎉 邀请奖励已发放！你和邀请者各获得 ${REFERRAL_REWARD_POINTS} 积分`
+    });
+    
+  } catch (error) {
+    console.error('处理邀请奖励失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ==================== 排行榜 ====================
 
 // 热门游戏排行
@@ -5649,6 +6272,102 @@ app.get('/api/templates', (req, res) => {
 
 // ==================== 管理员API扩展 ====================
 
+// 获取所有大模型列表（管理员用，包含完整信息）
+app.get('/api/admin/models', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const models = Object.entries(LLM_MODELS).map(([id, config]) => {
+      const timeKey = `llm_time_${id}`;
+      const creditsKey = `llm_credits_${id}`;
+      const qualityKey = `llm_quality_${id}`;
+      const apiKeyKey = `llm_apikey_${id}`;
+      
+      // 从数据库获取配置值
+      const configuredTime = getConfig(timeKey, null);
+      const configuredCredits = getConfig(creditsKey, null);
+      const configuredQuality = getConfig(qualityKey, null);
+      const configuredApiKey = getConfig(apiKeyKey, null);
+      
+      // 实际使用的quality（优先使用配置值）
+      const effectiveQuality = configuredQuality || config.quality;
+      
+      // 遮蔽 API Key，只显示前4位和后4位
+      let maskedApiKey = null;
+      if (configuredApiKey && configuredApiKey.length > 0) {
+        if (configuredApiKey.length <= 8) {
+          maskedApiKey = configuredApiKey.substring(0, 2) + '****';
+        } else {
+          const prefix = configuredApiKey.substring(0, 4);
+          const suffix = configuredApiKey.substring(configuredApiKey.length - 4);
+          maskedApiKey = `${prefix}****${suffix}`;
+        }
+      }
+      
+      return {
+        id,
+        name: config.name,
+        provider: config.provider,
+        model: config.model,
+        baseUrl: config.baseUrl,
+        tier: config.tier,
+        speed: config.speed,
+        quality: effectiveQuality,  // 使用实际生效的quality
+        defaultQuality: config.quality,  // 保留默认值供参考
+        // 默认值
+        defaultCredits: config.creditCost,
+        defaultTime: getDefaultModelTime(id),
+        // 配置值（如果有）
+        configuredTime: configuredTime !== null ? parseInt(configuredTime) : null,
+        configuredCredits: configuredCredits !== null ? parseInt(configuredCredits) : null,
+        configuredQuality: configuredQuality,
+        hasApiKey: configuredApiKey !== null && configuredApiKey.length > 0,
+        maskedApiKey: maskedApiKey,  // 遮蔽后的 API Key
+        // 实际使用的值
+        creditCost: getModelCreditCost(id),
+        estimatedTime: configuredTime !== null ? parseInt(configuredTime) : getDefaultModelTime(id),
+        // 是否启用
+        enabled: isModelEnabled(id)
+      };
+    });
+    
+    res.json({ success: true, models });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 获取模型的默认生成时间
+function getDefaultModelTime(modelId) {
+  const defaultTimes = {
+    'deepseek-v3': 360,
+    'deepseek-r1': 450,
+    'gpt-4o': 400,
+    'gpt-4o-mini': 250,
+    'gpt-5': 350,
+    'gpt-5.1': 350,
+    'gpt-5.1-codex': 400,
+    'claude-4.5-opus': 450,
+    'claude-4.5-sonnet': 400,
+    'claude-4.5-haiku': 300,
+    'claude-4-sonnet': 350,
+    'claude-3.7-sonnet': 350,
+    'gemini-3-pro': 300,
+    'gemini-2.5-pro': 300,
+    'gemini-2.5-flash': 200,
+    'gemini-2.0-flash': 200,
+    'glm-4.7': 300,
+    'glm-4.6': 300,
+    'glm-4.5': 300,
+    'kimi-k2': 350,
+    'qwen3-coder-plus': 320
+  };
+  return defaultTimes[modelId] || 300;
+}
+
 // 获取所有系统配置
 app.get('/api/admin/config', (req, res) => {
   const adminKey = req.headers['x-admin-key'];
@@ -5664,6 +6383,11 @@ app.get('/api/admin/config', (req, res) => {
   }
 });
 
+// 删除系统配置
+function deleteConfig(key) {
+  db.prepare('DELETE FROM system_config WHERE key = ?').run(key);
+}
+
 // 更新系统配置
 app.put('/api/admin/config', (req, res) => {
   const adminKey = req.headers['x-admin-key'];
@@ -5678,8 +6402,20 @@ app.put('/api/admin/config', (req, res) => {
     }
     
     configs.forEach(({ key, value }) => {
-      if (key && value !== undefined) {
-        setConfig(key, value);
+      if (key) {
+        if (value === '' || value === null || value === undefined) {
+          // 空值表示删除配置
+          deleteConfig(key);
+          console.log(`[CONFIG] 删除配置: ${key}`);
+        } else {
+          setConfig(key, value);
+          // API Key 只打印前几位
+          if (key.includes('apikey')) {
+            console.log(`[CONFIG] 设置配置: ${key} = ${value.substring(0, 8)}...`);
+          } else {
+            console.log(`[CONFIG] 设置配置: ${key} = ${value}`);
+          }
+        }
       }
     });
     
@@ -5796,6 +6532,39 @@ app.post('/api/admin/games/:id/repair', (req, res) => {
     }
   } catch (error) {
     console.error('[ERROR] 修复游戏失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 下载游戏原始源码（AI直接返回的代码）
+app.get('/api/admin/games/:id/source', (req, res) => {
+  const adminKey = req.headers['x-admin-key'] || req.query.key;
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { id } = req.params;
+    
+    const game = db.prepare('SELECT id, title, code FROM games WHERE id = ?').get(id);
+    if (!game) {
+      return res.status(404).json({ success: false, error: '游戏不存在' });
+    }
+    
+    if (!game.code) {
+      return res.status(400).json({ success: false, error: '游戏源码为空' });
+    }
+    
+    // 生成安全的文件名
+    const safeTitle = (game.title || 'game').replace(/[<>:"/\\|?*]/g, '_').slice(0, 50);
+    const filename = `${safeTitle}_${id.slice(0, 8)}.html`;
+    
+    // 设置下载响应头
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
+    res.send(game.code);
+  } catch (error) {
+    console.error('[ERROR] 下载源码失败:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -6058,8 +6827,50 @@ const ensureBanTables = () => {
     }
   }
   console.log('[DB] DevTools白名单表已初始化，默认白名单IP: 127.0.0.1, localhost, ::1');
+  
+  // CORS 白名单表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS cors_whitelist (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      origin TEXT UNIQUE NOT NULL,
+      description TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  
+  // 默认CORS白名单
+  const defaultOrigins = [
+    { origin: '*', description: '允许所有来源（开发环境）' },
+    { origin: 'http://127.0.0.1', description: '本地开发' },
+    { origin: 'http://127.0.0.1:80', description: '本地开发(80端口)' },
+    { origin: 'http://127.0.0.1:3000', description: '本地开发(3000端口)' },
+    { origin: 'http://localhost', description: '本地开发' },
+    { origin: 'http://localhost:80', description: '本地开发(80端口)' },
+    { origin: 'http://localhost:3000', description: '本地开发(3000端口)' }
+  ];
+  for (const item of defaultOrigins) {
+    try {
+      db.prepare(`INSERT OR IGNORE INTO cors_whitelist (origin, description) VALUES (?, ?)`).run(item.origin, item.description);
+    } catch (e) {
+      // 已存在，忽略
+    }
+  }
+  console.log('[DB] CORS白名单表已初始化');
 };
 ensureBanTables();
+
+// ==================== CORS白名单函数 ====================
+
+// 获取CORS白名单（供安全模块使用）
+function getCorsWhitelist() {
+  try {
+    const origins = db.prepare(`SELECT origin FROM cors_whitelist`).all().map(r => r.origin);
+    return origins;
+  } catch (error) {
+    console.error('[ERROR] 获取CORS白名单失败:', error);
+    return ['*']; // 出错时返回允许所有
+  }
+}
 
 // ==================== 封禁检查函数 ====================
 
@@ -6693,6 +7504,7 @@ app.get('/api/games', (req, res) => {
     const sort = req.query.sort || 'newest';
     const category = req.query.category || 'all';
     const orientation = req.query.orientation || 'all';
+    const search = req.query.search?.trim() || '';
     
     // 构建排序条件
     let orderBy = 'created_at DESC';
@@ -6717,9 +7529,18 @@ app.get('/api/games', (req, res) => {
         break;
     }
     
+    // 构建搜索条件
+    let searchWhere = '';
+    const params = [];
+    
+    if (search) {
+      searchWhere = `AND (g.title LIKE ? OR g.prompt LIKE ? OR g.author_name LIKE ?)`;
+      const searchPattern = `%${search}%`;
+      params.push(searchPattern, searchPattern, searchPattern);
+    }
+    
     // 构建分类条件
     let categoryWhere = '';
-    const params = [];
     
     if (category && category !== 'all') {
       // 简单的关键词匹配分类
@@ -6749,7 +7570,7 @@ app.get('/api/games', (req, res) => {
     }
     
     // 获取总数（排除草稿和私密）
-    const countSql = `SELECT COUNT(*) as total FROM games WHERE is_hidden = 0 AND (is_public = 1 OR is_public IS NULL) AND COALESCE(status, 'published') = 'published' ${categoryWhere} ${orientationWhere}`;
+    const countSql = `SELECT COUNT(*) as total FROM games g WHERE g.is_hidden = 0 AND (g.is_public = 1 OR g.is_public IS NULL) AND COALESCE(g.status, 'published') = 'published' ${searchWhere} ${categoryWhere} ${orientationWhere}`;
     const totalResult = db.prepare(countSql).get(...params);
     const total = totalResult ? totalResult.total : 0;
     
@@ -6759,7 +7580,7 @@ app.get('/api/games', (req, res) => {
              (g.play_count + g.like_count * 5 + g.favorite_count * 3) as hot_score,
              (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) as comment_count
       FROM games g
-      WHERE g.is_hidden = 0 AND (g.is_public = 1 OR g.is_public IS NULL) AND COALESCE(g.status, 'published') = 'published' ${categoryWhere.replace(/title/g, 'g.title').replace(/prompt/g, 'g.prompt')} ${orientationWhere.replace(/orientation/g, 'g.orientation')}
+      WHERE g.is_hidden = 0 AND (g.is_public = 1 OR g.is_public IS NULL) AND COALESCE(g.status, 'published') = 'published' ${searchWhere} ${categoryWhere.replace(/title/g, 'g.title').replace(/prompt/g, 'g.prompt')} ${orientationWhere.replace(/orientation/g, 'g.orientation')}
       ORDER BY ${orderBy.replace(/play_count/g, 'g.play_count').replace(/like_count/g, 'g.like_count').replace(/favorite_count/g, 'g.favorite_count').replace(/created_at/g, 'g.created_at')}
       LIMIT ? OFFSET ?
     `;
@@ -7514,6 +8335,94 @@ app.delete('/api/admin/devtools', (req, res) => {
     });
   } catch (error) {
     console.error('[ERROR] 移除DevTools白名单失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==================== CORS 白名单管理 ====================
+
+// 获取 CORS 白名单
+app.get('/api/admin/cors', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const origins = db.prepare(`SELECT id, origin, description, created_at FROM cors_whitelist ORDER BY created_at DESC`).all();
+    
+    res.json({
+      success: true,
+      origins
+    });
+  } catch (error) {
+    console.error('[ERROR] 获取CORS白名单失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 添加到 CORS 白名单
+app.put('/api/admin/cors', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { origin, description } = req.body;
+    
+    if (!origin) {
+      return res.status(400).json({ success: false, error: '缺少origin参数' });
+    }
+    
+    // 验证origin格式（允许*或http/https开头的URL）
+    const trimmedOrigin = origin.trim();
+    if (trimmedOrigin !== '*' && !trimmedOrigin.match(/^https?:\/\//)) {
+      return res.status(400).json({ success: false, error: 'Origin格式无效，应为 * 或以 http:// 或 https:// 开头' });
+    }
+    
+    db.prepare(`INSERT OR IGNORE INTO cors_whitelist (origin, description) VALUES (?, ?)`).run(trimmedOrigin, description || '');
+    
+    // 返回更新后的白名单
+    const origins = db.prepare(`SELECT id, origin, description, created_at FROM cors_whitelist ORDER BY created_at DESC`).all();
+    
+    res.json({
+      success: true,
+      message: '已添加到CORS白名单',
+      origins
+    });
+  } catch (error) {
+    console.error('[ERROR] 添加CORS白名单失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 从 CORS 白名单移除
+app.delete('/api/admin/cors', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { origin } = req.body;
+    
+    if (!origin) {
+      return res.status(400).json({ success: false, error: '缺少origin参数' });
+    }
+    
+    db.prepare(`DELETE FROM cors_whitelist WHERE origin = ?`).run(origin.trim());
+    
+    // 返回更新后的白名单
+    const origins = db.prepare(`SELECT id, origin, description, created_at FROM cors_whitelist ORDER BY created_at DESC`).all();
+    
+    res.json({
+      success: true,
+      message: '已从CORS白名单移除',
+      origins
+    });
+  } catch (error) {
+    console.error('[ERROR] 移除CORS白名单失败:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

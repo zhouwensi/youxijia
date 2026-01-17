@@ -567,6 +567,7 @@
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('dashboard')">📊 仪表盘</button>
       <button class="tab-btn" onclick="switchTab('config')">⚙️ 系统配置</button>
+      <button class="tab-btn" onclick="switchTab('models')">🤖 大模型</button>
       <button class="tab-btn" onclick="switchTab('games')">🎮 游戏管理</button>
       <button class="tab-btn" onclick="switchTab('users')">👥 用户管理</button>
       <button class="tab-btn" onclick="switchTab('comments')">💬 留言管理</button>
@@ -676,108 +677,6 @@
       </div>
 
       <div class="config-section">
-        <h2>🤖 LLM模型配置</h2>
-        <div class="config-grid">
-          <div class="config-item">
-            <label>启用LLM生成</label>
-            <select id="config-llm_enabled" style="width: 100%; padding: 0.5rem; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 4px;">
-              <option value="true">启用</option>
-              <option value="false">禁用</option>
-            </select>
-          </div>
-          <div class="config-item">
-            <label>默认模型</label>
-            <select id="config-llm_default_model" style="width: 100%; padding: 0.5rem; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 4px;">
-              <optgroup label="DeepSeek">
-                <option value="deepseek-chat">DeepSeek Chat</option>
-                <option value="deepseek-reasoner">DeepSeek R1</option>
-              </optgroup>
-              <optgroup label="Anthropic Claude">
-                <option value="claude-4.5-opus">Claude 4.5 Opus (最强)</option>
-                <option value="claude-4.5-sonnet">Claude 4.5 Sonnet</option>
-                <option value="claude-4.5-haiku">Claude 4.5 Haiku</option>
-                <option value="claude-4-sonnet">Claude 4 Sonnet</option>
-              </optgroup>
-              <optgroup label="OpenAI">
-                <option value="gpt-4.1">GPT-4.1</option>
-                <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
-                <option value="o3">O3</option>
-                <option value="o4-mini">O4 Mini</option>
-              </optgroup>
-              <optgroup label="Google">
-                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-              </optgroup>
-              <optgroup label="阿里通义">
-                <option value="qwen-max">通义千问 Max</option>
-                <option value="qwen-plus">通义千问 Plus</option>
-              </optgroup>
-            </select>
-          </div>
-          <div class="config-item" style="grid-column: 1 / -1;">
-            <label>默认API密钥</label>
-            <input type="password" id="config-llm_default_api_key" placeholder="sk-xxxx... (用于没有配置自己Key的用户)">
-            <p style="color: #64748b; font-size: 0.75rem; margin-top: 0.5rem;">
-              ⚠️ 此密钥将用于所有未配置自己API Key的用户，请注意费用控制
-            </p>
-          </div>
-          <div class="config-item" style="grid-column: 1 / -1;">
-            <label>自定义API地址（可选）</label>
-            <input type="text" id="config-llm_default_base_url" placeholder="留空使用官方地址，或填入代理地址">
-          </div>
-        </div>
-      </div>
-
-      <div class="config-section">
-        <h2>⏱️ 模型预计生成时间</h2>
-        <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1rem;">
-          配置各模型的预计生成时间（秒），用于在生成界面显示预计等待时间
-        </p>
-        <div class="config-grid">
-          <div class="config-item">
-            <label>DeepSeek V3</label>
-            <input type="number" id="config-llm_time_deepseek-v3" placeholder="30" min="10" max="300">
-          </div>
-          <div class="config-item">
-            <label>DeepSeek R1</label>
-            <input type="number" id="config-llm_time_deepseek-r1" placeholder="45" min="10" max="300">
-          </div>
-          <div class="config-item">
-            <label>GPT-4o</label>
-            <input type="number" id="config-llm_time_gpt-4o" placeholder="40" min="10" max="300">
-          </div>
-          <div class="config-item">
-            <label>GPT-4o Mini</label>
-            <input type="number" id="config-llm_time_gpt-4o-mini" placeholder="25" min="10" max="300">
-          </div>
-          <div class="config-item">
-            <label>Claude 4 Sonnet</label>
-            <input type="number" id="config-llm_time_claude-4-sonnet" placeholder="35" min="10" max="300">
-          </div>
-          <div class="config-item">
-            <label>Claude 4.5 Sonnet</label>
-            <input type="number" id="config-llm_time_claude-4.5-sonnet" placeholder="40" min="10" max="300">
-          </div>
-          <div class="config-item">
-            <label>Gemini 2.5 Pro</label>
-            <input type="number" id="config-llm_time_gemini-2.5-pro" placeholder="35" min="10" max="300">
-          </div>
-          <div class="config-item">
-            <label>GLM 4.7</label>
-            <input type="number" id="config-llm_time_glm-4.7" placeholder="30" min="10" max="300">
-          </div>
-          <div class="config-item">
-            <label>Kimi K2</label>
-            <input type="number" id="config-llm_time_kimi-k2" placeholder="35" min="10" max="300">
-          </div>
-          <div class="config-item">
-            <label>默认时间（未配置模型）</label>
-            <input type="number" id="config-llm_time_default" placeholder="30" min="10" max="300">
-          </div>
-        </div>
-      </div>
-
-      <div class="config-section">
         <h2>💡 提示语配置 (Tips)</h2>
         <div class="config-grid" style="grid-template-columns: 1fr;">
           <div class="config-item" style="grid-column: 1 / -1;">
@@ -804,6 +703,72 @@
       </div>
 
       <button class="btn-save" onclick="saveConfig()">💾 保存配置</button>
+    </div>
+
+    <!-- 大模型配置 -->
+    <div class="tab-content" id="tab-models">
+      <div class="config-section" style="margin-bottom: 1.5rem;">
+        <h2>🤖 大模型配置</h2>
+        <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1rem;">
+          配置可用的AI大模型，包括预计生成时间、积分消耗、API Key等
+        </p>
+      </div>
+      
+      <!-- 默认模型设置 -->
+      <div class="config-section" style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.3);">
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+          <label style="color: #10b981; font-weight: bold; white-space: nowrap;">⭐ 默认模型：</label>
+          <select id="default-model-select" style="padding: 0.5rem 1rem; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 6px; min-width: 200px;">
+            <option value="">加载中...</option>
+          </select>
+          <button class="btn" onclick="saveDefaultModel()" style="padding: 0.5rem 1rem; background: #10b981; white-space: nowrap;">
+            💾 保存默认模型
+          </button>
+          <span style="color: #94a3b8; font-size: 0.8rem;">
+            用户未选择模型时将使用此模型
+          </span>
+        </div>
+      </div>
+      
+      <div class="table-container" style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+          <thead>
+            <tr style="background: rgba(255,255,255,0.05); text-align: left;">
+              <th style="padding: 0.75rem; border-bottom: 1px solid #334155; text-align: center; width: 80px;">启用</th>
+              <th style="padding: 0.75rem; border-bottom: 1px solid #334155;">模型名称</th>
+              <th style="padding: 0.75rem; border-bottom: 1px solid #334155;">提供商</th>
+              <th style="padding: 0.75rem; border-bottom: 1px solid #334155; text-align: center;">预计时间(秒)</th>
+              <th style="padding: 0.75rem; border-bottom: 1px solid #334155; text-align: center;">效果等级</th>
+              <th style="padding: 0.75rem; border-bottom: 1px solid #334155; text-align: center;">消耗积分</th>
+              <th style="padding: 0.75rem; border-bottom: 1px solid #334155;">默认 API Key</th>
+              <th style="padding: 0.75rem; border-bottom: 1px solid #334155; text-align: center;">状态</th>
+            </tr>
+          </thead>
+          <tbody id="models-table-body">
+            <!-- 动态加载 -->
+          </tbody>
+        </table>
+      </div>
+      
+      <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+        <button class="btn" onclick="saveAllModelsConfig()" style="width: auto; padding: 0.75rem 2rem;">
+          💾 保存所有配置
+        </button>
+        <button class="btn" onclick="loadModelsConfig()" style="width: auto; padding: 0.75rem 1.5rem; background: #475569;">
+          🔄 刷新
+        </button>
+      </div>
+      
+      <div style="margin-top: 1rem; padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.3);">
+        <p style="color: #94a3b8; font-size: 0.8rem; line-height: 1.6;">
+          💡 <strong>配置说明：</strong><br>
+          • <strong>启用开关</strong>：只有启用的模型才会在前端显示供用户选择（默认只启用 DeepSeek 和 Gemini）<br>
+          • <strong>预计时间</strong>：用于前端显示生成进度预估<br>
+          • <strong>消耗积分</strong>：设为0表示免费使用（需用户自备Key或使用默认Key）<br>
+          • <strong>默认 API Key</strong>：当用户未配置自己的Key时使用，留空则需用户自行配置<br>
+          • <strong>效果等级</strong>：仅供参考，不影响实际使用
+        </p>
+      </div>
     </div>
 
     <!-- 游戏管理 -->
@@ -1145,10 +1110,71 @@
           </div>
         </div>
       </div>
+      
+      <!-- CORS白名单 -->
+      <div class="config-section">
+        <h2>🌐 CORS 跨域白名单</h2>
+        <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1rem;">
+          配置允许跨域访问的来源域名。通过代理访问时需要将代理的域名添加到此白名单。<br>
+          <span style="color: #f59e0b;">💡 提示：添加 <code>*</code> 可允许所有来源（仅建议开发环境使用）</span>
+        </p>
+        
+        <div id="cors-origins-list" style="background: rgba(0,0,0,0.2); border-radius: 0.5rem; padding: 0.75rem; min-height: 100px; max-height: 300px; overflow-y: auto; margin-bottom: 1rem;">
+          <p style="color: #64748b; font-size: 0.85rem;">正在加载...</p>
+        </div>
+        
+        <div style="display: flex; gap: 0.5rem; align-items: flex-start; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 200px;">
+            <input type="text" id="cors-add-origin" placeholder="来源域名，如 https://example.com 或 *" 
+              style="width: 100%; padding: 0.5rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+          </div>
+          <div style="flex: 1; min-width: 200px;">
+            <input type="text" id="cors-add-description" placeholder="备注说明（可选）" 
+              style="width: 100%; padding: 0.5rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+          </div>
+          <button onclick="addCorsOrigin()" style="background: #10b981; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; white-space: nowrap;">➕ 添加</button>
+        </div>
+        
+        <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.75rem;">
+          ⚠️ 修改后立即生效，无需重启服务器。常见格式：<code>http://IP:端口</code> 或 <code>https://域名</code>
+        </p>
+      </div>
     </div>
 
     <!-- 数据工具 -->
     <div class="tab-content" id="tab-tools">
+      <div class="config-section">
+        <h2>📄 静态游戏文件管理</h2>
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+          <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 1rem; flex: 1;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span style="color: #a5b4fc; font-size: 0.9rem;">已生成静态文件</span>
+                <div style="font-size: 1.5rem; font-weight: bold; color: #fff;" id="static-files-count">-</div>
+              </div>
+              <div>
+                <span style="color: #a5b4fc; font-size: 0.9rem;">已发布游戏总数</span>
+                <div style="font-size: 1.5rem; font-weight: bold; color: #fff;" id="published-games-count">-</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <button class="btn-save" onclick="generateMissingStaticFiles()" style="background: linear-gradient(135deg, #10b981, #059669);">
+            📄 生成缺失的静态文件
+          </button>
+          <button class="btn-save" onclick="regenerateAllStaticFiles()" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+            🔄 强制重新生成所有文件
+          </button>
+          <button class="btn-save" onclick="refreshStaticFilesStats()" style="background: linear-gradient(135deg, #64748b, #475569);">
+            📊 刷新统计
+          </button>
+        </div>
+        <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.75rem;">
+          💡 静态文件用于微信等环境的游戏展示。"生成缺失"只会为没有文件的游戏创建，"强制重新生成"会更新所有游戏文件（如有界面改动时使用）。
+        </p>
+      </div>
+
       <div class="config-section">
         <h2>🔄 用户数据重置</h2>
         <div class="config-grid">
@@ -1227,38 +1253,6 @@
         </p>
       </div>
 
-      <div class="config-section">
-        <h2>📄 静态游戏文件管理</h2>
-        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-          <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 1rem; flex: 1;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <span style="color: #a5b4fc; font-size: 0.9rem;">已生成静态文件</span>
-                <div style="font-size: 1.5rem; font-weight: bold; color: #fff;" id="static-files-count">-</div>
-              </div>
-              <div>
-                <span style="color: #a5b4fc; font-size: 0.9rem;">已发布游戏总数</span>
-                <div style="font-size: 1.5rem; font-weight: bold; color: #fff;" id="published-games-count">-</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-          <button class="btn-save" onclick="generateMissingStaticFiles()" style="background: linear-gradient(135deg, #10b981, #059669);">
-            📄 生成缺失的静态文件
-          </button>
-          <button class="btn-save" onclick="regenerateAllStaticFiles()" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
-            🔄 强制重新生成所有文件
-          </button>
-          <button class="btn-save" onclick="refreshStaticFilesStats()" style="background: linear-gradient(135deg, #64748b, #475569);">
-            📊 刷新统计
-          </button>
-        </div>
-        <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.75rem;">
-          💡 静态文件用于微信等环境的游戏展示。"生成缺失"只会为没有文件的游戏创建，"强制重新生成"会更新所有游戏文件（如有界面改动时使用）。
-        </p>
-      </div>
-
       <!-- 操作日志 -->
       <div class="config-section">
         <h2>📝 最近操作日志</h2>
@@ -1332,6 +1326,9 @@
           break;
         case 'config':
           loadConfig();
+          break;
+        case 'models':
+          loadModelsConfig();
           break;
         case 'games':
           loadGames(1);
@@ -1455,22 +1452,6 @@
         'credits_share_game',
         'site_name',
         'site_announcement',
-        // LLM配置
-        'llm_enabled',
-        'llm_default_model',
-        'llm_default_api_key',
-        'llm_default_base_url',
-        // 模型预计生成时间
-        'llm_time_deepseek-v3',
-        'llm_time_deepseek-r1',
-        'llm_time_gpt-4o',
-        'llm_time_gpt-4o-mini',
-        'llm_time_claude-4-sonnet',
-        'llm_time_claude-4.5-sonnet',
-        'llm_time_gemini-2.5-pro',
-        'llm_time_glm-4.7',
-        'llm_time_kimi-k2',
-        'llm_time_default',
         // Tips提示配置
         'tips_create',
         // 分享文案配置
@@ -1578,6 +1559,7 @@
             </button>
             <button class="btn-action btn-delete" onclick="deleteGame('${game.id}')">软删除</button>
             <button class="btn-action" style="background: rgba(59, 130, 246, 0.2); color: #60a5fa;" onclick="repairGame('${game.id}')" title="修复游戏文件">🔧</button>
+            <button class="btn-action" style="background: rgba(16, 185, 129, 0.2); color: #34d399;" onclick="downloadSource('${game.id}')" title="下载原始源码">📥</button>
           `;
         }
         
@@ -1725,6 +1707,13 @@
       } catch (error) {
         showToast('修复失败: ' + error.message, 'error');
       }
+    }
+
+    // 下载原始源码
+    function downloadSource(gameId) {
+      // 通过URL参数传递adminKey，触发下载
+      const url = `/api/admin/games/${gameId}/source?key=${encodeURIComponent(adminKey)}`;
+      window.open(url, '_blank');
     }
 
     // 永久删除游戏
@@ -2457,6 +2446,7 @@
     async function loadSecurityData() {
       await loadBannedList();
       await loadDevToolsWhitelist();
+      await loadCorsWhitelist();
     }
 
     // 加载封禁列表 (供用户管理页面调用)
@@ -2888,6 +2878,112 @@
       }
     }
 
+    // ==================== CORS白名单管理 ====================
+
+    // 加载CORS白名单
+    async function loadCorsWhitelist() {
+      try {
+        const response = await fetch('/api/admin/cors', {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          renderCorsWhitelist(data.origins);
+        }
+      } catch (error) {
+        console.error('加载CORS白名单失败:', error);
+        document.getElementById('cors-origins-list').innerHTML = 
+          '<p style="color: #ef4444; font-size: 0.85rem;">加载失败，请刷新重试</p>';
+      }
+    }
+
+    // 渲染CORS白名单
+    function renderCorsWhitelist(origins) {
+      const listContainer = document.getElementById('cors-origins-list');
+      
+      if (origins && origins.length > 0) {
+        listContainer.innerHTML = origins.map(item => `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+            <div style="flex: 1;">
+              <span style="font-family: monospace; font-size: 0.9rem; color: ${item.origin === '*' ? '#f59e0b' : '#10b981'};">${escapeHtml(item.origin)}</span>
+              ${item.description ? `<span style="color: #64748b; font-size: 0.8rem; margin-left: 0.5rem;">(${escapeHtml(item.description)})</span>` : ''}
+            </div>
+            <button onclick="removeCorsOrigin('${escapeHtml(item.origin)}')" 
+              style="background: #ef4444; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">移除</button>
+          </div>
+        `).join('');
+      } else {
+        listContainer.innerHTML = '<p style="color: #64748b; font-size: 0.85rem;">暂无白名单域名，请添加允许的来源</p>';
+      }
+    }
+
+    // 添加CORS白名单
+    async function addCorsOrigin() {
+      const origin = document.getElementById('cors-add-origin').value.trim();
+      const description = document.getElementById('cors-add-description').value.trim();
+      
+      if (!origin) {
+        showToast('请输入来源域名', 'error');
+        return;
+      }
+      
+      // 基本格式验证
+      if (origin !== '*' && !origin.match(/^https?:\/\//)) {
+        showToast('格式无效，应为 * 或以 http:// 或 https:// 开头', 'error');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/admin/cors', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ origin, description })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          document.getElementById('cors-add-origin').value = '';
+          document.getElementById('cors-add-description').value = '';
+          renderCorsWhitelist(data.origins);
+        } else {
+          showToast(data.error || '添加失败', 'error');
+        }
+      } catch (error) {
+        showToast('添加失败: ' + error.message, 'error');
+      }
+    }
+
+    // 从CORS白名单移除
+    async function removeCorsOrigin(origin) {
+      if (!confirm(`确定要从CORS白名单移除 ${origin} 吗？\n\n⚠️ 移除后该来源的跨域请求将被阻止！`)) return;
+      
+      try {
+        const response = await fetch('/api/admin/cors', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ origin })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          renderCorsWhitelist(data.origins);
+        } else {
+          showToast(data.error || '移除失败', 'error');
+        }
+      } catch (error) {
+        showToast('移除失败: ' + error.message, 'error');
+      }
+    }
+
     // 回车登录
     document.getElementById('admin-key-input').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') login();
@@ -3185,6 +3281,347 @@
       const hours = String(date.getHours()).padStart(2, '0');
       const minutes = String(date.getMinutes()).padStart(2, '0');
       return `${year}-${month}-${day} ${hours}:${minutes}`;
+    }
+
+    // ========== 大模型配置功能 ==========
+    
+    // 大模型列表（从后端动态获取）
+    let MODEL_LIST = [];
+    
+    // 加载大模型配置（从后端获取模型列表和配置）
+    async function loadModelsConfig() {
+      const tbody = document.getElementById('models-table-body');
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: #64748b;">加载中...</td></tr>';
+      
+      try {
+        // 从后端获取模型列表
+        const response = await fetch('/api/admin/models', {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+        
+        if (data.success && data.models) {
+          MODEL_LIST = data.models;
+        } else {
+          throw new Error(data.error || '获取模型列表失败');
+        }
+        
+        // 渲染表格
+        renderModelsTable();
+        
+        // 填充默认模型下拉框
+        populateDefaultModelSelect();
+      } catch (error) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem; color: #ef4444;">加载失败: ${error.message}</td></tr>`;
+      }
+    }
+    
+    // 质量映射
+    function getQualityLabel(quality) {
+      const map = {
+        'low': '低',
+        'medium': '中',
+        'high': '高',
+        'very-high': '很高',
+        'excellent': '极佳'
+      };
+      return map[quality] || quality;
+    }
+    
+    // 提供商显示名称映射
+    function getProviderLabel(provider) {
+      const map = {
+        'deepseek': 'DeepSeek',
+        'openai': 'OpenAI',
+        'anthropic': 'Anthropic',
+        'google': 'Google',
+        'zhipu': '智谱AI',
+        'moonshot': 'Moonshot',
+        'alibaba': '阿里云'
+      };
+      return map[provider] || provider;
+    }
+    
+    // 渲染大模型表格
+    function renderModelsTable() {
+      const tbody = document.getElementById('models-table-body');
+      
+      if (MODEL_LIST.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #64748b;">暂无模型数据</td></tr>';
+        return;
+      }
+      
+      const rows = MODEL_LIST.map(model => {
+        // 使用后端返回的实际值
+        const time = model.estimatedTime;
+        const credits = model.creditCost;
+        const hasKey = model.hasApiKey;
+        const qualityLabel = getQualityLabel(model.quality);
+        const providerLabel = getProviderLabel(model.provider);
+        const isEnabled = model.enabled !== false;  // 默认启用
+        
+        // 判断状态：有Key或积分>0表示可用
+        const isAvailable = hasKey || credits > 0;
+        const statusHtml = isAvailable 
+          ? '<span style="color: #10b981;">✅ 可用</span>'
+          : '<span style="color: #f59e0b;">⚠️ 需配Key</span>';
+        
+        return `
+          <tr style="border-bottom: 1px solid #334155; ${!isEnabled ? 'opacity: 0.5;' : ''}">
+            <td style="padding: 0.75rem; text-align: center;">
+              <label class="toggle-switch" style="display: inline-flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="model-enabled-${model.id}" ${isEnabled ? 'checked' : ''} 
+                  style="width: 18px; height: 18px; cursor: pointer; accent-color: #10b981;">
+              </label>
+            </td>
+            <td style="padding: 0.75rem;">
+              <strong>${model.name}</strong>
+            </td>
+            <td style="padding: 0.75rem; color: #94a3b8;">${providerLabel}</td>
+            <td style="padding: 0.75rem; text-align: center;">
+              <input type="number" id="model-time-${model.id}" value="${time}" 
+                style="width: 80px; padding: 0.375rem; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 4px; text-align: center;"
+                min="30" max="1800">
+            </td>
+            <td style="padding: 0.75rem; text-align: center;">
+              <select id="model-quality-${model.id}" 
+                style="padding: 0.375rem; background: #1e293b; border: 1px solid #334155; color: ${getQualityColor(qualityLabel)}; border-radius: 4px; font-weight: bold;">
+                <option value="medium" ${model.quality === 'medium' ? 'selected' : ''} style="color: #f59e0b;">中</option>
+                <option value="high" ${model.quality === 'high' ? 'selected' : ''} style="color: #10b981;">高</option>
+                <option value="very-high" ${model.quality === 'very-high' ? 'selected' : ''} style="color: #6366f1;">很高</option>
+                <option value="excellent" ${model.quality === 'excellent' ? 'selected' : ''} style="color: #ec4899;">极佳</option>
+              </select>
+            </td>
+            <td style="padding: 0.75rem; text-align: center;">
+              <input type="number" id="model-credits-${model.id}" value="${credits}" 
+                style="width: 70px; padding: 0.375rem; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 4px; text-align: center;"
+                min="0" max="100">
+            </td>
+            <td style="padding: 0.75rem;">
+              <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                ${hasKey ? `<div style="font-size: 0.75rem; color: #10b981; font-family: monospace;">当前: ${model.maskedApiKey || '****'}</div>` : ''}
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <input type="text" id="model-apikey-${model.id}" value="" 
+                    placeholder="${hasKey ? '输入新Key会覆盖' : '留空则需用户配置'}"
+                    style="width: 200px; padding: 0.375rem; background: ${hasKey ? '#1e3a2f' : '#1e293b'}; border: 1px solid ${hasKey ? '#10b981' : '#334155'}; color: white; border-radius: 4px; font-size: 0.8rem;">
+                  ${hasKey ? `<button onclick="clearModelApiKey('${model.id}', '${model.name}')" style="padding: 0.25rem 0.5rem; background: #dc2626; border: none; color: white; border-radius: 4px; cursor: pointer; font-size: 0.75rem;" title="清除此模型的API Key">🗑️</button>` : ''}
+                </div>
+              </div>
+            </td>
+            <td style="padding: 0.75rem; text-align: center;">${statusHtml}</td>
+          </tr>
+        `;
+      }).join('');
+      
+      tbody.innerHTML = rows;
+    }
+    
+    // 获取质量等级颜色
+    function getQualityColor(quality) {
+      const colors = {
+        '中': '#f59e0b',
+        '高': '#10b981',
+        '很高': '#6366f1',
+        '极佳': '#ec4899'
+      };
+      return colors[quality] || '#94a3b8';
+    }
+    
+    // 保存所有模型配置
+    async function saveAllModelsConfig() {
+      const configs = [];
+      let apiKeyCount = 0;
+      
+      MODEL_LIST.forEach(model => {
+        const timeInput = document.getElementById(`model-time-${model.id}`);
+        const creditsInput = document.getElementById(`model-credits-${model.id}`);
+        const qualitySelect = document.getElementById(`model-quality-${model.id}`);
+        const apiKeyInput = document.getElementById(`model-apikey-${model.id}`);
+        const enabledCheckbox = document.getElementById(`model-enabled-${model.id}`);
+        
+        // 启用状态配置（始终保存）
+        if (enabledCheckbox) {
+          configs.push({ key: `llm_enabled_${model.id}`, value: enabledCheckbox.checked ? 'true' : 'false' });
+        }
+        // 时间配置（始终保存，即使是默认值）
+        if (timeInput && timeInput.value !== '') {
+          configs.push({ key: `llm_time_${model.id}`, value: timeInput.value });
+        }
+        // 积分配置（始终保存）
+        if (creditsInput && creditsInput.value !== '') {
+          configs.push({ key: `llm_credits_${model.id}`, value: creditsInput.value });
+        }
+        // 质量配置（始终保存）
+        if (qualitySelect && qualitySelect.value !== '') {
+          configs.push({ key: `llm_quality_${model.id}`, value: qualitySelect.value });
+        }
+        // API Key（只有输入了才保存）
+        if (apiKeyInput && apiKeyInput.value.trim() !== '') {
+          configs.push({ key: `llm_apikey_${model.id}`, value: apiKeyInput.value.trim() });
+          apiKeyCount++;
+          console.log(`[保存] ${model.name} 的 API Key: ${apiKeyInput.value.substring(0, 8)}...`);
+        }
+      });
+      
+      if (configs.length === 0) {
+        showMessage('没有需要保存的配置', 'error');
+        return;
+      }
+      
+      console.log(`[保存] 共 ${configs.length} 项配置，其中 ${apiKeyCount} 个 API Key`);
+      
+      try {
+        const response = await fetch('/api/admin/config', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ configs })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showMessage(`保存成功！共 ${configs.length} 项配置`, 'success');
+          // 刷新显示
+          loadModelsConfig();
+        } else {
+          showMessage('保存失败: ' + (data.error || '未知错误'), 'error');
+        }
+      } catch (error) {
+        console.error('保存失败:', error);
+        showMessage('保存失败: ' + error.message, 'error');
+      }
+    }
+    
+    // 清除模型的 API Key
+    async function clearModelApiKey(modelId, modelName) {
+      if (!confirm(`确定要清除 ${modelName} 的 API Key 吗？\n\n清除后用户需要自己配置Key才能使用此模型。`)) {
+        return;
+      }
+      
+      try {
+        // 发送空值来清除 Key
+        const response = await fetch('/api/admin/config', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ 
+            configs: [{ key: `llm_apikey_${modelId}`, value: '' }]
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showMessage(`${modelName} 的 API Key 已清除`, 'success');
+          // 刷新显示
+          loadModelsConfig();
+        } else {
+          showMessage('清除失败: ' + (data.error || '未知错误'), 'error');
+        }
+      } catch (error) {
+        showMessage('清除失败: ' + error.message, 'error');
+      }
+    }
+    
+    // 显示消息
+    function showMessage(msg, type) {
+      const color = type === 'success' ? '#10b981' : '#ef4444';
+      const div = document.createElement('div');
+      div.style.cssText = `position: fixed; top: 20px; right: 20px; background: ${color}; color: white; padding: 1rem 1.5rem; border-radius: 8px; z-index: 9999; animation: fadeIn 0.3s;`;
+      div.textContent = msg;
+      document.body.appendChild(div);
+      setTimeout(() => div.remove(), 3000);
+    }
+    
+    // 填充默认模型下拉框
+    function populateDefaultModelSelect() {
+      const select = document.getElementById('default-model-select');
+      if (!select || MODEL_LIST.length === 0) return;
+      
+      select.innerHTML = '';
+      
+      // 只显示启用的模型
+      MODEL_LIST.filter(model => model.enabled !== false).forEach(model => {
+        const option = document.createElement('option');
+        option.value = model.id;
+        
+        let displayName = model.name;
+        if (model.hasApiKey) {
+          displayName += ' ✅';
+        } else if (model.creditCost === 0) {
+          displayName += ' (需配Key)';
+        } else {
+          displayName += ` (${model.creditCost}积分)`;
+        }
+        
+        option.textContent = displayName;
+        select.appendChild(option);
+      });
+      
+      // 加载当前默认模型设置
+      loadCurrentDefaultModel();
+    }
+    
+    // 加载当前默认模型设置
+    async function loadCurrentDefaultModel() {
+      try {
+        const response = await fetch('/api/admin/config', {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+        
+        if (data.success && data.configs) {
+          const defaultModelConfig = data.configs.find(c => c.key === 'llm_default_model');
+          if (defaultModelConfig) {
+            const select = document.getElementById('default-model-select');
+            if (select) {
+              select.value = defaultModelConfig.value;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('加载默认模型配置失败:', error);
+      }
+    }
+    
+    // 保存默认模型
+    async function saveDefaultModel() {
+      const select = document.getElementById('default-model-select');
+      if (!select) return;
+      
+      const modelId = select.value;
+      if (!modelId) {
+        showMessage('请选择默认模型', 'error');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/admin/config', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ 
+            configs: [{ key: 'llm_default_model', value: modelId }]
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showMessage('默认模型已保存！', 'success');
+        } else {
+          showMessage('保存失败: ' + (data.error || '未知错误'), 'error');
+        }
+      } catch (error) {
+        showMessage('保存失败: ' + error.message, 'error');
+      }
     }
 
     // 检查已保存的登录状态

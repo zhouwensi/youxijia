@@ -13,7 +13,7 @@
     /* 页面专属样式 */
     .games-page {
       min-height: 100vh;
-      padding-top: 60px;
+      padding-top: 0;
     }
     
     .games-page-header {
@@ -111,26 +111,165 @@
     
     .games-grid-large {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1rem;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
     }
     
     @media (min-width: 640px) {
       .games-grid-large {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
     }
     
     @media (min-width: 1024px) {
       .games-grid-large {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 1.25rem;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
       }
     }
     
     @media (min-width: 1280px) {
       .games-grid-large {
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+    }
+    
+    /* 游戏卡片 - 与主页保持一致的横向布局 */
+    .game-card-compact {
+      background: var(--bg-card, rgba(30, 41, 59, 0.5));
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      min-width: 0;
+      overflow: hidden;
+    }
+    
+    .game-card-compact:active {
+      transform: scale(0.98);
+    }
+    
+    .game-card-compact:hover {
+      border-color: var(--primary, #6366f1);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .game-card-compact .card-icon {
+      font-size: 1.5rem;
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+    
+    .game-card-compact .card-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+      overflow: hidden;
+    }
+    
+    .game-card-compact .card-title {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-primary, #f1f5f9);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.3;
+    }
+    
+    .game-card-compact .card-author {
+      font-size: 0.6875rem;
+      color: var(--text-muted, #64748b);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .game-card-compact .card-stats {
+      display: flex;
+      gap: 0.5rem;
+      font-size: 0.625rem;
+      color: var(--text-muted, #64748b);
+      flex-wrap: nowrap;
+    }
+    
+    .game-card-compact .card-stats span {
+      display: flex;
+      align-items: center;
+      gap: 0.125rem;
+      white-space: nowrap;
+    }
+    
+    /* 小屏手机优化 */
+    @media (max-width: 359px) {
+      .games-grid-large {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+      }
+      
+      .game-card-compact {
+        padding: 0.625rem;
+      }
+      
+      .game-card-compact .card-icon {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        font-size: 1.75rem;
+      }
+      
+      .game-card-compact .card-title {
+        font-size: 0.875rem;
+      }
+    }
+    
+    /* 平板优化 */
+    @media (min-width: 640px) {
+      .game-card-compact {
+        padding: 0.625rem;
+      }
+      
+      .game-card-compact .card-icon {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        font-size: 1.75rem;
+      }
+      
+      .game-card-compact .card-title {
+        font-size: 0.875rem;
+      }
+    }
+    
+    /* 桌面端优化 */
+    @media (min-width: 1024px) {
+      .game-card-compact {
+        padding: 0.75rem;
+        gap: 0.75rem;
+      }
+      
+      .game-card-compact .card-icon {
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+        font-size: 2rem;
+      }
+      
+      .game-card-compact .card-title {
+        font-size: 0.9375rem;
       }
     }
     
@@ -338,6 +477,10 @@
     const PAGE_SIZE = 20;
     // 保存初始排序方式（用于刚进入页面时的默认排序）
     let initialSort = 'newest';
+    // 数据来源：all（全部游戏）、my-games（我的作品）、my-likes（我的点赞）、my-favorites（我的收藏）
+    let currentSource = 'all';
+    // 缓存"我的"类数据源的所有游戏（用于前端分页）
+    let cachedSourceGames = null;
     
     // 页面标题配置
     const PAGE_TITLES = {
@@ -359,8 +502,34 @@
         sports: { icon: '⚽', text: '体育游戏' },
         shooting: { icon: '🔫', text: '射击游戏' },
         card: { icon: '🃏', text: '卡牌游戏' }
+      },
+      source: {
+        'all': { icon: '🎮', text: '全部游戏' },
+        'my-games': { icon: '🎨', text: '我的作品' },
+        'my-likes': { icon: '❤️', text: '我的点赞' },
+        'my-favorites': { icon: '⭐', text: '我的收藏' }
       }
     };
+    
+    // ==================== Token 管理 ====================
+    // 与 app.js 保持一致的 token key
+    function getAuthorToken() {
+      // 尝试多个可能的 key，与 app.js 保持一致
+      let token = localStorage.getItem('aigame-author-token') || 
+                  localStorage.getItem('authorToken') ||
+                  localStorage.getItem('author_token');
+      // 如果还没有token，不自动创建新的（否则会导致看不到数据）
+      return token || '';
+    }
+    
+    function getUserToken() {
+      // 尝试多个可能的 key，与 app.js 保持一致
+      let token = localStorage.getItem('aigame-user-token') || 
+                  localStorage.getItem('user_token') ||
+                  localStorage.getItem('userToken');
+      // 如果还没有token，不自动创建新的（否则会导致看不到数据）
+      return token || '';
+    }
     
     // ==================== 初始化 ====================
     document.addEventListener('DOMContentLoaded', () => {
@@ -370,11 +539,12 @@
       currentCategory = urlParams.get('category') || 'all';
       currentOrientation = urlParams.get('orientation') || 'all';
       currentGameType = urlParams.get('gameType') || 'all';
+      currentSource = urlParams.get('source') || 'all';
       
       // 保存初始排序方式
       initialSort = currentSort;
       
-      // 更新页面标题
+      // 更新页面标题（根据数据来源优先设置）
       updatePageTitle();
       
       // 设置初始选中状态
@@ -397,16 +567,22 @@
     function updatePageTitle() {
       const iconEl = document.getElementById('page-title-icon');
       const textEl = document.getElementById('page-title-text');
+      const backLink = document.querySelector('.back-link');
       
       let icon = '🎮';
       let text = '全部游戏';
       
-      // 优先根据游戏类型设置标题
-      if (currentGameType !== 'all' && PAGE_TITLES.gameType[currentGameType]) {
+      // 最优先根据数据来源设置标题
+      if (currentSource !== 'all' && PAGE_TITLES.source[currentSource]) {
+        icon = PAGE_TITLES.source[currentSource].icon;
+        text = PAGE_TITLES.source[currentSource].text;
+      }
+      // 其次根据游戏类型设置标题
+      else if (currentGameType !== 'all' && PAGE_TITLES.gameType[currentGameType]) {
         icon = PAGE_TITLES.gameType[currentGameType].icon;
         text = PAGE_TITLES.gameType[currentGameType].text;
       } 
-      // 其次根据排序方式设置标题
+      // 最后根据排序方式设置标题
       else if (PAGE_TITLES.sort[currentSort]) {
         icon = PAGE_TITLES.sort[currentSort].icon;
         text = PAGE_TITLES.sort[currentSort].text;
@@ -414,6 +590,15 @@
       
       if (iconEl) iconEl.textContent = icon;
       if (textEl) textEl.textContent = text;
+      
+      // 更新返回链接：如果是从"我的"页面进入，返回时应回到"我的"标签页
+      if (backLink) {
+        if (currentSource === 'my-games' || currentSource === 'my-likes' || currentSource === 'my-favorites') {
+          backLink.href = '/?tab=profile';
+        } else {
+          backLink.href = '/';
+        }
+      }
       
       // 更新浏览器标题
       document.title = `${text} - AI Game Generator`;
@@ -504,6 +689,7 @@
       if (isReset) {
         currentOffset = 0;
         hasMore = true;
+        cachedSourceGames = null; // 重置缓存
         document.getElementById('games-grid').innerHTML = '';
       }
       
@@ -513,37 +699,82 @@
       updateLoadingUI(true);
       
       try {
-        const url = `/api/games?sort=${currentSort}&category=${currentCategory}&orientation=${currentOrientation}&gameType=${currentGameType}&limit=${PAGE_SIZE}&offset=${currentOffset}`;
-        const response = await fetch(url);
-        const data = await response.json();
+        let games = [];
         
-        if (data.success) {
-          const grid = document.getElementById('games-grid');
-          
-          if (data.games.length === 0 && currentOffset === 0) {
-            // 空状态
-            grid.innerHTML = `
-              <div class="empty-state" style="grid-column: 1/-1;">
-                <div class="empty-state-icon">🎮</div>
-                <div class="empty-state-text">暂无游戏</div>
-                <div class="empty-state-hint">快去创建第一个游戏吧！</div>
-              </div>
-            `;
-            hasMore = false;
-          } else {
-            // 渲染游戏卡片
-            data.games.forEach(game => {
-              grid.innerHTML += createGameCard(game);
-            });
+        // 根据数据来源决定处理方式
+        if (currentSource !== 'all') {
+          // "我的"类数据源：使用缓存或请求API
+          if (cachedSourceGames === null) {
+            let url = '';
+            let headers = {};
             
-            currentOffset += data.games.length;
-            hasMore = data.pagination ? data.pagination.hasMore : (data.games.length >= PAGE_SIZE);
+            if (currentSource === 'my-games') {
+              url = '/api/my-games';
+              headers = { 'X-Author-Token': getAuthorToken() };
+            } else if (currentSource === 'my-likes') {
+              url = '/api/my-likes';
+              headers = { 'X-User-Token': getUserToken() };
+            } else if (currentSource === 'my-favorites') {
+              url = '/api/my-favorites';
+              headers = { 'X-User-Token': getUserToken() };
+            }
+            
+            const response = await fetch(url, { headers });
+            const data = await response.json();
+            
+            if (data.success) {
+              cachedSourceGames = data.games || [];
+            } else {
+              cachedSourceGames = [];
+            }
           }
+          
+          // 前端筛选
+          let filtered = filterGames(cachedSourceGames);
+          // 前端排序
+          filtered = sortGames(filtered);
+          // 前端分页
+          const total = filtered.length;
+          games = filtered.slice(currentOffset, currentOffset + PAGE_SIZE);
+          hasMore = currentOffset + PAGE_SIZE < total;
           
           // 更新计数
-          if (data.pagination) {
-            document.getElementById('games-count').textContent = `共 ${data.pagination.total} 个游戏`;
+          document.getElementById('games-count').textContent = `共 ${total} 个游戏`;
+        } else {
+          // 全部游戏：直接请求后端API
+          const url = `/api/games?sort=${currentSort}&category=${currentCategory}&orientation=${currentOrientation}&gameType=${currentGameType}&limit=${PAGE_SIZE}&offset=${currentOffset}`;
+          const response = await fetch(url);
+          const data = await response.json();
+          
+          if (data.success) {
+            games = data.games || [];
+            hasMore = data.pagination ? data.pagination.hasMore : (games.length >= PAGE_SIZE);
+            if (data.pagination) {
+              document.getElementById('games-count').textContent = `共 ${data.pagination.total} 个游戏`;
+            }
           }
+        }
+        
+        const grid = document.getElementById('games-grid');
+        
+        if (games.length === 0 && currentOffset === 0) {
+          // 空状态
+          const emptyHint = getEmptyHint();
+          grid.innerHTML = `
+            <div class="empty-state" style="grid-column: 1/-1;">
+              <div class="empty-state-icon">${emptyHint.icon}</div>
+              <div class="empty-state-text">${emptyHint.text}</div>
+              <div class="empty-state-hint">${emptyHint.hint}</div>
+            </div>
+          `;
+          hasMore = false;
+        } else {
+          // 渲染游戏卡片
+          games.forEach(game => {
+            grid.innerHTML += createGameCard(game);
+          });
+          
+          currentOffset += games.length;
         }
       } catch (error) {
         console.error('加载游戏失败:', error);
@@ -552,6 +783,83 @@
         isLoading = false;
         updateLoadingUI(false);
       }
+    }
+    
+    // 获取空状态提示
+    function getEmptyHint() {
+      switch(currentSource) {
+        case 'my-games':
+          return { icon: '🎨', text: '暂无作品', hint: '快去创建第一个游戏吧！' };
+        case 'my-likes':
+          return { icon: '❤️', text: '暂无点赞', hint: '去发现好玩的游戏并点赞吧！' };
+        case 'my-favorites':
+          return { icon: '⭐', text: '暂无收藏', hint: '去收藏喜欢的游戏吧！' };
+        default:
+          return { icon: '🎮', text: '暂无游戏', hint: '快去创建第一个游戏吧！' };
+      }
+    }
+    
+    // 前端筛选游戏
+    function filterGames(games) {
+      let filtered = games;
+      
+      // 分类筛选
+      if (currentCategory !== 'all') {
+        filtered = filtered.filter(g => g.category === currentCategory);
+      }
+      
+      // 游戏类型筛选
+      if (currentGameType !== 'all') {
+        filtered = filtered.filter(g => g.game_type === currentGameType || g.type === currentGameType);
+      }
+      
+      // 横竖屏筛选
+      if (currentOrientation !== 'all') {
+        filtered = filtered.filter(g => {
+          const gameOrientation = g.orientation || 'auto';
+          if (currentOrientation === 'portrait') {
+            return gameOrientation === 'portrait' || gameOrientation === 'vertical';
+          } else if (currentOrientation === 'landscape') {
+            return gameOrientation === 'landscape' || gameOrientation === 'horizontal';
+          }
+          return true;
+        });
+      }
+      
+      return filtered;
+    }
+    
+    // 前端排序游戏
+    function sortGames(games) {
+      const sorted = [...games];
+      
+      switch (currentSort) {
+        case 'hot':
+          sorted.sort((a, b) => {
+            const hotA = (a.play_count || 0) + (a.like_count || 0) * 5 + (a.favorite_count || 0) * 3;
+            const hotB = (b.play_count || 0) + (b.like_count || 0) * 5 + (b.favorite_count || 0) * 3;
+            return hotB - hotA;
+          });
+          break;
+        case 'likes':
+          sorted.sort((a, b) => (b.like_count || 0) - (a.like_count || 0));
+          break;
+        case 'favorites':
+          sorted.sort((a, b) => (b.favorite_count || 0) - (a.favorite_count || 0));
+          break;
+        case 'plays':
+          sorted.sort((a, b) => (b.play_count || 0) - (a.play_count || 0));
+          break;
+        case 'comments':
+          sorted.sort((a, b) => (b.comment_count || 0) - (a.comment_count || 0));
+          break;
+        case 'newest':
+        default:
+          sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          break;
+      }
+      
+      return sorted;
     }
     
     function loadMoreGames() {
@@ -615,27 +923,17 @@
     
     // ==================== 游戏卡片 ====================
     function createGameCard(game) {
-      const date = new Date(game.created_at);
-      const dateStr = `${date.getMonth() + 1}/${date.getDate()}`;
-      const hotScore = game.hot_score || (game.play_count + (game.like_count || 0) * 5 + (game.favorite_count || 0) * 3);
-      
+      // 与主页保持一致的横向紧凑布局
       return `
-        <div class="game-card" onclick="openGame('${game.id}')">
-          <div class="game-card-preview">
-            <div class="game-card-icon">🎮</div>
-          </div>
-          <div class="game-card-info">
-            <h3 class="game-card-title">${escapeHtml(game.title)}</h3>
-            <p class="game-card-prompt">${escapeHtml(game.prompt || '')}</p>
-            <div class="game-card-meta">
-              <span class="game-card-author">👤 ${escapeHtml(game.author_name || '匿名')}</span>
-              <span class="game-card-date">${dateStr}</span>
-            </div>
-            <div class="game-card-stats">
-              <span title="游玩">👁️ ${game.play_count || 0}</span>
-              <span title="点赞">❤️ ${game.like_count || 0}</span>
-              <span title="收藏">⭐ ${game.favorite_count || 0}</span>
-              <span title="热度">🔥 ${hotScore}</span>
+        <div class="game-card-compact" onclick="openGame('${game.id}')">
+          <div class="card-icon">🎮</div>
+          <div class="card-info">
+            <div class="card-title">${escapeHtml(game.title)}</div>
+            <div class="card-author">👤 ${escapeHtml(game.author_name || '匿名')}</div>
+            <div class="card-stats">
+              <span>👁 ${game.play_count || 0}</span>
+              <span>❤️ ${game.like_count || 0}</span>
+              <span>💬 ${game.comment_count || 0}</span>
             </div>
           </div>
         </div>

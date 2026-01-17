@@ -128,6 +128,9 @@
       position: relative;
       display: flex;
       align-items: center;
+      border: none;
+      outline: none;
+      box-shadow: none;
     }
     .search-input-icon {
       position: absolute;
@@ -143,10 +146,11 @@
       color: #fff;
       font-size: 15px;
       outline: none;
+      box-shadow: none;
+      -webkit-appearance: none;
     }
     #search-input:focus {
       border-color: rgba(0, 255, 255, 0.5);
-      box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
     }
     #search-input::placeholder {
       color: rgba(255, 255, 255, 0.4);
@@ -341,10 +345,14 @@
     
     /* 搜索结果 */
     .search-results {
+      display: none;
       flex: 1;
-      display: flex;
       flex-direction: column;
       overflow: hidden;
+      min-height: 0;
+    }
+    .search-results.active {
+      display: flex;
     }
     .search-results-header {
       display: flex;
@@ -367,53 +375,91 @@
     .search-results-list {
       flex: 1;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       padding: 12px;
       display: grid;
       grid-template-columns: repeat(2, 1fr);
+      grid-auto-rows: min-content;
       gap: 12px;
       align-content: start;
+      min-height: 0;
     }
+    /* 搜索结果卡片 - 与主页保持一致的横向布局 */
     .result-card {
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(30, 41, 59, 0.5);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      overflow: hidden;
+      border-radius: 8px;
+      padding: 0.5rem;
       cursor: pointer;
       transition: all 0.2s;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      min-width: 0;
+      overflow: hidden;
     }
     .result-card:active {
-      transform: scale(0.97);
+      transform: scale(0.98);
+    }
+    .result-card:hover {
+      border-color: #6366f1;
+      background: rgba(255, 255, 255, 0.05);
     }
     .result-card-cover {
-      width: 100%;
-      aspect-ratio: 16/9;
-      object-fit: cover;
-      background: rgba(0, 0, 0, 0.3);
+      display: none;
     }
     .result-card-placeholder {
-      width: 100%;
-      aspect-ratio: 16/9;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      font-size: 1.5rem;
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 48px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+      border-radius: 8px;
+      flex-shrink: 0;
     }
     .result-card-info {
-      padding: 10px 12px;
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+      overflow: hidden;
+      padding: 0;
+      background: none;
     }
     .result-card-title {
-      font-size: 14px;
+      font-size: 0.8125rem;
       font-weight: 600;
-      color: #fff;
+      color: #f1f5f9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.3;
+    }
+    .result-card-author {
+      font-size: 0.6875rem;
+      color: #64748b;
+      margin-top: 0;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .result-card-category {
-      font-size: 12px;
-      color: rgba(255, 255, 255, 0.5);
-      margin-top: 4px;
+    .result-card-stats {
+      display: flex;
+      gap: 0.5rem;
+      font-size: 0.625rem;
+      color: #64748b;
+      flex-wrap: nowrap;
+      margin-top: 0;
+    }
+    .result-card-stats span {
+      display: flex;
+      align-items: center;
+      gap: 0.125rem;
+      white-space: nowrap;
     }
     .search-loading {
       display: flex;
@@ -594,10 +640,6 @@
     <div id="create-page" class="page">
       <div class="page-header">
         <h2>✨ 创作游戏</h2>
-        <button class="header-model-tag header-model-btn" onclick="openModelSelector()" title="点击切换AI模型">
-          🤖 <span id="create-model-display">DeepSeek V3</span>
-          <span class="model-arrow">▼</span>
-        </button>
       </div>
       <div class="create-page-body">
         <div class="create-hero">
@@ -719,36 +761,12 @@
                   <option value="pastel">柔和淡雅</option>
                 </select>
               </div>
-            </div>
-            <!-- LLM设置（本次生成） -->
-            <div class="advanced-llm-section">
-              <div class="llm-section-header" onclick="toggleAdvancedLLM()">
-                <span>🤖 AI模型设置（仅本次生成）</span>
-                <span class="toggle-arrow" id="adv-llm-arrow">▶</span>
-              </div>
-              <div class="advanced-llm-content" id="advanced-llm-content" style="display:none;">
-                <div class="setting-group">
-                  <label>选择模型</label>
-                  <select id="adv-llm-model" onchange="onAdvModelChange()">
-                    <option value="">使用全局设置</option>
-                    <optgroup label="🚀 DeepSeek">
-                      <option value="deepseek-v3">DeepSeek V3 ⭐推荐</option>
-                      <option value="deepseek-r1">DeepSeek R1</option>
-                    </optgroup>
-                    <optgroup label="🌟 OpenAI">
-                      <option value="gpt-4o">GPT-4o</option>
-                      <option value="gpt-4o-mini">GPT-4o Mini</option>
-                    </optgroup>
-                    <optgroup label="🎭 Claude">
-                      <option value="claude-3.5-sonnet">Claude 3.5 Sonnet</option>
-                      <option value="claude-3-opus">Claude 3 Opus</option>
-                    </optgroup>
-                  </select>
-                </div>
-                <div class="setting-group" id="adv-api-key-group" style="display:none;">
-                  <label>API Key（本次使用）</label>
-                  <input type="password" id="adv-api-key" placeholder="留空则使用全局设置">
-                </div>
+              <!-- AI模型 -->
+              <div class="setting-group">
+                <label>🤖 AI模型</label>
+                <select id="adv-llm-model" onchange="onAdvModelChange()">
+                  <option value="">加载中...</option>
+                </select>
               </div>
             </div>
           </div>
@@ -1072,6 +1090,11 @@
     <!-- 生成中的遮罩 -->
     <div id="generating-overlay" class="overlay">
       <div class="overlay-content">
+        <!-- 右上角操作按钮 -->
+        <div class="generating-header-actions">
+          <button class="gen-action-btn" onclick="minimizeGenerating()" title="最小化">📥</button>
+          <button class="gen-action-btn gen-action-close" onclick="confirmCloseGeneration()" title="关闭">✕</button>
+        </div>
         <div class="generating-animation">
           <div class="pulse-ring"></div>
           <div class="emoji-center">🎮</div>
@@ -1079,9 +1102,6 @@
         <h3>AI 正在创作游戏...</h3>
         <p class="generating-tip" id="generating-status">正在连接 AI 服务</p>
         <p class="generating-time" id="generating-time">已用时: 0秒</p>
-        <p class="generating-speed-tip" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
-          ⏱️ 生成速度取决于所选AI模型，通常需要1-7分钟
-        </p>
         <div class="generating-progress">
           <div class="generating-progress-bar" id="generating-progress-bar"></div>
         </div>
@@ -1095,11 +1115,12 @@
           <div class="tips-text" id="generating-tips-text">提示：添加具体的游戏玩法描述，效果会更好哦！</div>
         </div>
         
-        <div class="generating-actions">
-          <button class="btn btn-secondary btn-minimize" onclick="minimizeGenerating()" title="最小化，继续浏览">
-            <span>📥</span> 最小化
+        <!-- 切换模型区域（始终显示） -->
+        <div class="model-switch-section" id="model-switch-section">
+          <div class="model-switch-tip">💡 不同模型的生成速度和效果不同</div>
+          <button class="btn-model-switch" id="btn-model-switch" onclick="showTurboOptions()">
+            🔄 切换模型
           </button>
-          <!-- 取消按钮已移除：LLM请求无法取消 -->
         </div>
       </div>
     </div>
@@ -1112,7 +1133,7 @@
         <span class="float-time" id="float-time">0s</span>
       </div>
       <button class="float-restore" onclick="restoreGenerating()" title="展开">📤</button>
-      <!-- 取消按钮已移除：LLM请求无法取消 -->
+      <button class="float-cancel" onclick="confirmCloseGeneration()" title="关闭">✖</button>
     </div>
     
     <!-- 生成完成通知（取消/最小化后生成成功时显示） -->
@@ -1125,109 +1146,209 @@
       </div>
     </div>
 
-    <!-- 设置弹窗 -->
-    <div id="settings-modal" class="modal">
-      <div class="modal-content">
+    <!-- 加速模型选择弹窗 -->
+    <div id="turbo-modal" class="modal turbo-modal">
+      <div class="modal-content turbo-modal-content">
         <div class="modal-header">
-          <h3>⚙️ 设置</h3>
-          <button class="btn btn-icon btn-close" onclick="closeSettings()">×</button>
+          <h3>⚡ 选择加速模式</h3>
+          <button class="btn btn-icon btn-close" onclick="closeTurboModal()">×</button>
         </div>
         <div class="modal-body">
-          <div class="settings-section">
-            <h4>🤖 AI 模型</h4>
-            <div class="form-group">
-              <label>选择模型</label>
-              <select id="llm-model-select" onchange="onModelSelectChange()">
-                <optgroup label="🔥 推荐 - 性价比之王">
-                  <option value="deepseek-v3">DeepSeek V3 ⭐推荐</option>
-                  <option value="deepseek-r1">DeepSeek R1 (推理增强)</option>
-                </optgroup>
-                <optgroup label="🇨🇳 国产模型">
-                  <option value="glm-4.7">GLM 4.7 🆕</option>
-                  <option value="glm-4.6">GLM 4.6</option>
-                  <option value="glm-4.5">GLM 4.5</option>
-                  <option value="kimi-k2">Kimi K2</option>
-                  <option value="qwen3-coder-plus">Qwen3 Coder Plus</option>
-                </optgroup>
-                <optgroup label="🌐 OpenAI">
-                  <option value="gpt-4o-mini">GPT-4o Mini</option>
-                  <option value="gpt-4o">GPT-4o</option>
-                  <option value="gpt-5">GPT 5</option>
-                  <option value="gpt-5.1">GPT 5.1</option>
-                  <option value="gpt-5.1-codex">GPT 5.1 Codex</option>
-                </optgroup>
-                <optgroup label="🎭 Claude">
-                  <option value="claude-3.7-sonnet">Claude 3.7 Sonnet</option>
-                  <option value="claude-4-sonnet">Claude 4 Sonnet</option>
-                  <option value="claude-4.5-haiku">Claude 4.5 Haiku</option>
-                  <option value="claude-4.5-sonnet">Claude 4.5 Sonnet</option>
-                  <option value="claude-4.5-opus">Claude 4.5 Opus 🆕</option>
-                </optgroup>
-                <optgroup label="💎 Google">
-                  <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-                  <option value="gemini-3-pro">Gemini 3 Pro 🆕</option>
-                </optgroup>
-                <optgroup label="⚙️ 自定义">
-                  <option value="custom">自定义接口...</option>
-                </optgroup>
-              </select>
-              <p class="form-hint" id="model-hint">DeepSeek V3 性价比最高，推荐使用</p>
-            </div>
-            <div class="form-group">
-              <label>API Key</label>
-              <div class="input-with-toggle">
-                <input type="password" id="llm-api-key" placeholder="输入你的 API Key">
-                <button class="btn-toggle-pwd" onclick="toggleApiKeyVisibility()">👁️</button>
-              </div>
-            </div>
-            <div class="form-group" id="base-url-group" style="display:none;">
-              <label>API 地址</label>
-              <input type="text" id="llm-base-url" placeholder="https://api.example.com/v1">
-            </div>
-            <div class="form-group" id="custom-model-group" style="display:none;">
-              <label>模型名称</label>
-              <input type="text" id="llm-model" placeholder="gpt-4o">
-            </div>
+          <p class="turbo-modal-desc">切换到更快的AI模型，加速游戏生成。当前生成将被中断并重新开始。</p>
+          <div class="turbo-models-list" id="turbo-models-list">
+            <!-- 动态填充 -->
           </div>
-          <div class="settings-section">
-            <h4>👤 个人信息</h4>
-            <div class="form-group">
-              <label>你的昵称</label>
-              <input type="text" id="author-name" placeholder="创作游戏时显示的名字" maxlength="20">
-            </div>
-          </div>
-          <div class="settings-section">
-            <h4>🔧 开发选项</h4>
-            <div class="form-group form-switch">
-              <label>
-                <input type="checkbox" id="debug-mode" onchange="toggleDebugMode()">
-                <span>显示调试信息</span>
-              </label>
-            </div>
-          </div>
-          <div class="settings-section">
-            <h4>🔐 账号管理</h4>
-            <div class="form-group">
-              <div class="account-id-display">
-                <span class="account-id-label">当前账号ID：</span>
-                <code class="account-id-value" id="settings-account-id">未知</code>
-                <button class="btn btn-icon btn-small" onclick="copyAccountId()" title="复制">📋</button>
-              </div>
-            </div>
-            <div class="form-group account-actions-row">
-              <button class="btn btn-secondary" onclick="closeSettings(); showLoginDialog();">
-                🔄 切换/恢复账号
-              </button>
-              <button class="btn btn-danger" onclick="logoutAccount()">
-                🚪 退出登录
-              </button>
-            </div>
-            <p class="form-hint">💡 退出前请记住账号ID，换设备时输入即可恢复数据</p>
+          <div class="turbo-warning">
+            <span class="warning-icon">⚠️</span>
+            <span>加速模式需要消耗积分，切换后将从头开始生成</span>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary" onclick="closeSettings()">取消</button>
-          <button class="btn btn-primary" onclick="saveSettings()">保存</button>
+          <button class="btn btn-secondary" onclick="closeTurboModal()">继续等待</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 全屏设置页面 -->
+    <div id="settings-page" class="settings-fullpage">
+      <div class="settings-fullpage-container">
+        <!-- 左侧导航 -->
+        <div class="settings-sidebar">
+          <div class="settings-sidebar-header">
+            <button class="settings-back-btn" onclick="closeSettings()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+              </svg>
+              <span>设置</span>
+            </button>
+          </div>
+          <nav class="settings-nav">
+            <button class="settings-nav-item active" data-section="llm" onclick="switchSettingsSection('llm')">
+              <span class="settings-nav-icon">🤖</span>
+              <span class="settings-nav-text">LLM 设置</span>
+            </button>
+            <button class="settings-nav-item" data-section="profile" onclick="switchSettingsSection('profile')">
+              <span class="settings-nav-icon">👤</span>
+              <span class="settings-nav-text">个人信息</span>
+            </button>
+            <button class="settings-nav-item" data-section="account" onclick="switchSettingsSection('account')">
+              <span class="settings-nav-icon">🔐</span>
+              <span class="settings-nav-text">账号管理</span>
+            </button>
+            <button class="settings-nav-item" data-section="dev" onclick="switchSettingsSection('dev')">
+              <span class="settings-nav-icon">🔧</span>
+              <span class="settings-nav-text">开发选项</span>
+            </button>
+          </nav>
+        </div>
+        
+        <!-- 右侧内容区 -->
+        <div class="settings-content">
+          <!-- LLM 设置 -->
+          <div class="settings-panel active" id="settings-panel-llm">
+            <div class="settings-panel-header">
+              <h2>LLM 设置</h2>
+              <p class="settings-panel-desc">配置 AI 模型和 API Key</p>
+            </div>
+            <div class="settings-panel-body">
+              <!-- 默认模型选择 -->
+              <div class="settings-group">
+                <h3>默认模型</h3>
+                <div class="form-group">
+                  <label>选择模型</label>
+                  <select id="llm-model-select" onchange="onModelSelectChange()">
+                    <option value="deepseek-v3">DeepSeek V3 ⭐</option>
+                    <option value="deepseek-r1">DeepSeek R1</option>
+                    <option value="glm-4.7">GLM 4.7</option>
+                    <option value="kimi-k2">Kimi K2</option>
+                    <option value="qwen3-coder-plus">Qwen3 Coder</option>
+                    <option value="gpt-4o-mini">GPT-4o Mini</option>
+                    <option value="gpt-4o">GPT-4o</option>
+                    <option value="claude-4-sonnet">Claude 4 Sonnet</option>
+                    <option value="claude-4.5-haiku">Claude 4.5 Haiku</option>
+                    <option value="gemini-3-pro">Gemini 3 Pro ⭐</option>
+                    <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                    <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                    <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                    <option value="custom">自定义接口...</option>
+                  </select>
+                </div>
+              </div>
+              
+              <!-- API Keys 列表 -->
+              <div class="settings-group">
+                <h3>API Keys 配置</h3>
+                <p class="settings-group-hint">为各模型配置您自己的 API Key，留空则使用平台默认配置</p>
+                <div class="llm-keys-list" id="llm-keys-list">
+                  <!-- 动态生成 -->
+                </div>
+              </div>
+              
+              <!-- 自定义接口设置 -->
+              <div class="settings-group" id="custom-api-group" style="display:none;">
+                <h3>自定义接口</h3>
+                <div class="form-group">
+                  <label>API 地址</label>
+                  <input type="text" id="llm-base-url" placeholder="https://api.example.com/v1">
+                </div>
+                <div class="form-group">
+                  <label>模型名称</label>
+                  <input type="text" id="llm-model" placeholder="gpt-4o">
+                </div>
+                <div class="form-group">
+                  <label>API Key</label>
+                  <div class="input-with-toggle">
+                    <input type="password" id="llm-custom-api-key" placeholder="输入您的 API Key">
+                    <button class="btn-toggle-pwd" onclick="toggleCustomApiKeyVisibility()">👁️</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 个人信息 -->
+          <div class="settings-panel" id="settings-panel-profile">
+            <div class="settings-panel-header">
+              <h2>个人信息</h2>
+              <p class="settings-panel-desc">设置您的个人资料</p>
+            </div>
+            <div class="settings-panel-body">
+              <div class="settings-group">
+                <div class="form-group">
+                  <label>你的昵称</label>
+                  <input type="text" id="author-name" placeholder="创作游戏时显示的名字" maxlength="20">
+                  <p class="form-hint">此昵称将显示在您创作的游戏上</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 账号管理 -->
+          <div class="settings-panel" id="settings-panel-account">
+            <div class="settings-panel-header">
+              <h2>账号管理</h2>
+              <p class="settings-panel-desc">管理您的账号信息</p>
+            </div>
+            <div class="settings-panel-body">
+              <div class="settings-group">
+                <h3>当前账号</h3>
+                <div class="account-info-card">
+                  <div class="account-info-row">
+                    <span class="account-info-label">账号 ID</span>
+                    <div class="account-info-value">
+                      <code id="settings-account-id">未知</code>
+                      <button class="btn btn-icon btn-small" onclick="copyAccountId()" title="复制">📋</button>
+                    </div>
+                  </div>
+                </div>
+                <p class="form-hint">💡 退出前请记住账号ID，换设备时输入即可恢复数据</p>
+              </div>
+              
+              <div class="settings-group">
+                <h3>账号操作</h3>
+                <div class="settings-actions-list">
+                  <button class="settings-action-btn" onclick="closeSettings(); showLoginDialog();">
+                    <span class="settings-action-icon">🔄</span>
+                    <span class="settings-action-text">切换/恢复账号</span>
+                    <span class="settings-action-arrow">›</span>
+                  </button>
+                  <button class="settings-action-btn danger" onclick="logoutAccount()">
+                    <span class="settings-action-icon">🚪</span>
+                    <span class="settings-action-text">退出登录</span>
+                    <span class="settings-action-arrow">›</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 开发选项 -->
+          <div class="settings-panel" id="settings-panel-dev">
+            <div class="settings-panel-header">
+              <h2>开发选项</h2>
+              <p class="settings-panel-desc">开发者调试设置</p>
+            </div>
+            <div class="settings-panel-body">
+              <div class="settings-group">
+                <div class="settings-toggle-item">
+                  <div class="settings-toggle-info">
+                    <span class="settings-toggle-label">显示调试信息</span>
+                    <span class="settings-toggle-desc">在控制台输出详细日志</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="debug-mode" onchange="toggleDebugMode()">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 底部保存按钮 -->
+          <div class="settings-footer">
+            <button class="btn btn-secondary" onclick="closeSettings()">取消</button>
+            <button class="btn btn-primary" onclick="saveSettings()">保存设置</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1527,39 +1648,28 @@
               
               <!-- AI 模型配置 -->
               <div class="settings-card">
-                <h4>🤖 AI 模型配置</h4>
+                <h4>🤖 AI 模型</h4>
                 <div class="form-group">
                   <label>选择模型</label>
                   <select id="profile-model-select" onchange="onProfileModelChange()">
-                    <optgroup label="🔥 推荐">
-                      <option value="deepseek-v3">DeepSeek V3 ⭐推荐</option>
-                      <option value="deepseek-r1">DeepSeek R1</option>
-                    </optgroup>
-                    <optgroup label="🇨🇳 国产模型">
-                      <option value="glm-4.7">GLM 4.7</option>
-                      <option value="kimi-k2">Kimi K2</option>
-                      <option value="qwen3-coder-plus">Qwen3 Coder</option>
-                    </optgroup>
-                    <optgroup label="🌐 OpenAI">
-                      <option value="gpt-4o-mini">GPT-4o Mini</option>
-                      <option value="gpt-4o">GPT-4o</option>
-                    </optgroup>
-                    <optgroup label="🎭 Claude">
-                      <option value="claude-4-sonnet">Claude 4 Sonnet</option>
-                      <option value="claude-4.5-sonnet">Claude 4.5 Sonnet</option>
-                    </optgroup>
-                    <optgroup label="⚙️ 自定义">
-                      <option value="custom">自定义接口...</option>
-                    </optgroup>
+                    <option value="deepseek-v3">DeepSeek V3 ⭐</option>
+                    <option value="deepseek-r1">DeepSeek R1</option>
+                    <option value="glm-4.7">GLM 4.7</option>
+                    <option value="kimi-k2">Kimi K2</option>
+                    <option value="qwen3-coder-plus">Qwen3 Coder</option>
+                    <option value="gpt-4o-mini">GPT-4o Mini</option>
+                    <option value="gpt-4o">GPT-4o</option>
+                    <option value="claude-4-sonnet">Claude 4 Sonnet</option>
+                    <option value="claude-4.5-haiku">Claude 4.5 Haiku</option>
+                    <option value="custom">自定义接口...</option>
                   </select>
                 </div>
                 <div class="form-group">
-                  <label>API Key</label>
+                  <label>API Key <span class="optional-hint">(可选)</span></label>
                   <div class="input-with-toggle">
-                    <input type="password" id="profile-api-key" placeholder="输入 API Key">
+                    <input type="password" id="profile-api-key" placeholder="留空使用默认配置">
                     <button class="btn-toggle-pwd" onclick="toggleProfileApiKeyVisibility()">👁️</button>
                   </div>
-                  <p class="form-hint" id="profile-model-hint">DeepSeek 性价比最高</p>
                 </div>
                 <div class="form-group" id="profile-base-url-group" style="display:none;">
                   <label>API 地址</label>
@@ -1694,7 +1804,7 @@
       </div>
       
       <!-- 搜索结果区域 -->
-      <div class="search-results" id="search-results" style="display:none;">
+      <div class="search-results" id="search-results">
         <div class="search-results-header">
           <span class="results-count" id="search-results-count">找到 0 个结果</span>
           <button class="results-close-btn" onclick="clearSearchResults()">返回</button>
@@ -1805,7 +1915,7 @@
       
       // 显示默认内容，隐藏结果
       document.getElementById('search-default-content').style.display = 'block';
-      document.getElementById('search-results').style.display = 'none';
+      document.getElementById('search-results').classList.remove('active');
     };
     
     // 执行搜索
@@ -1830,7 +1940,7 @@
       const loading = document.getElementById('search-loading');
       
       defaultContent.style.display = 'none';
-      resultsContainer.style.display = 'block';
+      resultsContainer.classList.add('active');
       loading.style.display = 'flex';
       resultsList.innerHTML = '';
       
@@ -1870,32 +1980,42 @@
     // 渲染搜索结果
     function renderSearchResults(games) {
       const resultsList = document.getElementById('search-results-list');
-      resultsList.innerHTML = games.map(game => {
-        // 获取游戏封面：优先使用截图，否则用默认emoji背景
-        const coverUrl = game.coverUrl || game.screenshot;
+      if (!resultsList) {
+        console.error('search-results-list not found');
+        return;
+      }
+      
+      let html = '';
+      for (let i = 0; i < games.length; i++) {
+        const game = games[i];
         const gameEmoji = getGameEmoji(game.title);
+        const title = escapeHtml(game.title) || '未命名游戏';
+        const author = escapeHtml(game.author_name) || '匿名';
+        const plays = game.play_count || 0;
+        const likes = game.like_count || 0;
+        const comments = game.comment_count || 0;
+        const gameId = game.id || '';
         
-        return `
-          <div class="result-card" onclick="goToGame('${game.id}')">
-            ${coverUrl ? 
-              `<img class="result-card-cover" 
-                    src="${coverUrl}" 
-                    alt="${escapeHtml(game.title)}"
-                    onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-               <div class="result-card-placeholder" style="display:none;">${gameEmoji}</div>` :
-              `<div class="result-card-placeholder">${gameEmoji}</div>`
-            }
-            <div class="result-card-info">
-              <div class="result-card-title">${escapeHtml(game.title)}</div>
-              <div class="result-card-category">${game.category || '未分类'}</div>
-            </div>
-          </div>
-        `;
-      }).join('');
+        html += '<div class="result-card" onclick="goToGame(\'' + gameId + '\')">';
+        html += '<div class="result-card-placeholder">' + gameEmoji + '</div>';
+        html += '<div class="result-card-info">';
+        html += '<div class="result-card-title">' + title + '</div>';
+        html += '<div class="result-card-author">👤 ' + author + '</div>';
+        html += '<div class="result-card-stats">';
+        html += '<span>👁 ' + plays + '</span>';
+        html += '<span>❤️ ' + likes + '</span>';
+        html += '<span>💬 ' + comments + '</span>';
+        html += '</div>';
+        html += '</div></div>';
+      }
+      
+      resultsList.innerHTML = html;
     }
     
     // 根据游戏标题获取emoji
     function getGameEmoji(title) {
+      if (!title) return '🎮';
+      
       const emojiMap = {
         '贪吃蛇': '🐍', '蛇': '🐍',
         '2048': '🔢', '数字': '🔢',
@@ -1912,8 +2032,9 @@
         '休闲': '🎪', '弹球': '🎱'
       };
       
+      const titleLower = String(title).toLowerCase();
       for (const [key, emoji] of Object.entries(emojiMap)) {
-        if (title && title.toLowerCase().includes(key.toLowerCase())) {
+        if (titleLower.includes(key.toLowerCase())) {
           return emoji;
         }
       }
@@ -1952,7 +2073,7 @@
       if (input) input.value = '';
       
       document.getElementById('search-default-content').style.display = 'block';
-      document.getElementById('search-results').style.display = 'none';
+      document.getElementById('search-results').classList.remove('active');
     };
     
     // 加载搜索历史
@@ -1989,7 +2110,7 @@
       
       try {
         // 尝试获取热门游戏作为热搜
-        const response = await fetch('/api/games?sortBy=playCount&limit=10');
+        const response = await fetch('/api/games?sort=plays&limit=10');
         const data = await response.json();
         
         if (data.success && data.games && data.games.length > 0) {
@@ -2002,7 +2123,7 @@
                 <span class="hot-rank ${rankClass}">${index + 1}</span>
                 <div class="hot-info">
                   <div class="hot-title">${escapeHtml(game.title)}</div>
-                  <div class="hot-meta">${game.playCount || 0} 次游玩</div>
+                  <div class="hot-meta">${game.play_count || 0} 次游玩</div>
                 </div>
                 ${badge}
               </div>
@@ -2069,8 +2190,9 @@
     
     // HTML转义
     function escapeHtml(text) {
+      if (text == null) return '';
       const div = document.createElement('div');
-      div.textContent = text;
+      div.textContent = String(text);
       return div.innerHTML;
     }
     

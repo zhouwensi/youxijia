@@ -1,152 +1,196 @@
-// ==================== 模型注册表 ====================
-const MODEL_REGISTRY = {
-  // DeepSeek 系列
-  'deepseek-v3': {
-    provider: 'deepseek',
-    baseUrl: 'https://api.deepseek.com',
-    model: 'deepseek-chat',
-    name: 'DeepSeek V3',
-    hint: 'DeepSeek V3 性价比最高，推荐使用'
-  },
-  'deepseek-r1': {
-    provider: 'deepseek',
-    baseUrl: 'https://api.deepseek.com',
-    model: 'deepseek-reasoner',
-    name: 'DeepSeek R1',
-    hint: '推理增强模型，适合复杂游戏逻辑'
-  },
-  // 国产模型
-  'glm-4.7': {
-    provider: 'zhipu',
-    baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-    model: 'glm-4-plus',
-    name: 'GLM 4.7',
-    hint: '智谱最新模型'
-  },
-  'glm-4.6': {
-    provider: 'zhipu',
-    baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-    model: 'glm-4',
-    name: 'GLM 4.6',
-    hint: '智谱GLM-4'
-  },
-  'glm-4.5': {
-    provider: 'zhipu',
-    baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-    model: 'glm-4-flash',
-    name: 'GLM 4.5',
-    hint: '智谱GLM-4 Flash，快速响应'
-  },
-  'kimi-k2': {
-    provider: 'moonshot',
-    baseUrl: 'https://api.moonshot.cn/v1',
-    model: 'moonshot-v1-128k',
-    name: 'Kimi K2',
-    hint: 'Moonshot Kimi大模型'
-  },
-  'qwen3-coder-plus': {
-    provider: 'aliyun',
-    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-    model: 'qwen-coder-plus',
-    name: 'Qwen3 Coder Plus',
-    hint: '阿里通义千问编程专用模型'
-  },
-  // OpenAI 系列
-  'gpt-4o-mini': {
-    provider: 'openai',
-    baseUrl: 'https://api.openai.com/v1',
-    model: 'gpt-4o-mini',
-    name: 'GPT-4o Mini',
-    hint: '性价比高的GPT-4o版本'
-  },
-  'gpt-4o': {
-    provider: 'openai',
-    baseUrl: 'https://api.openai.com/v1',
-    model: 'gpt-4o',
-    name: 'GPT-4o',
-    hint: 'OpenAI旗舰多模态模型'
-  },
-  'gpt-5': {
-    provider: 'openai',
-    baseUrl: 'https://api.openai.com/v1',
-    model: 'gpt-5',
-    name: 'GPT 5',
-    hint: 'OpenAI最新模型（需要有权限）'
-  },
-  'gpt-5.1': {
-    provider: 'openai',
-    baseUrl: 'https://api.openai.com/v1',
-    model: 'gpt-5.1',
-    name: 'GPT 5.1',
-    hint: 'GPT-5升级版'
-  },
-  'gpt-5.1-codex': {
-    provider: 'openai',
-    baseUrl: 'https://api.openai.com/v1',
-    model: 'gpt-5.1-codex',
-    name: 'GPT 5.1 Codex',
-    hint: '代码生成专用'
-  },
-  // Claude 系列
-  'claude-3.7-sonnet': {
-    provider: 'anthropic',
-    baseUrl: 'https://api.anthropic.com',
-    model: 'claude-3-5-sonnet-20241022',
-    name: 'Claude 3.7 Sonnet',
-    hint: 'Claude 3.5 Sonnet'
-  },
-  'claude-4-sonnet': {
-    provider: 'anthropic',
-    baseUrl: 'https://api.anthropic.com',
-    model: 'claude-sonnet-4-20250514',
-    name: 'Claude 4 Sonnet',
-    hint: 'Claude 4 Sonnet'
-  },
-  'claude-4.5-haiku': {
-    provider: 'anthropic',
-    baseUrl: 'https://api.anthropic.com',
-    model: 'claude-haiku-4-20250514',
-    name: 'Claude 4.5 Haiku',
-    hint: '快速响应版Claude'
-  },
-  'claude-4.5-sonnet': {
-    provider: 'anthropic',
-    baseUrl: 'https://api.anthropic.com',
-    model: 'claude-4-5-sonnet',
-    name: 'Claude 4.5 Sonnet',
-    hint: 'Claude 4.5 Sonnet'
-  },
-  'claude-4.5-opus': {
-    provider: 'anthropic',
-    baseUrl: 'https://api.anthropic.com',
-    model: 'claude-4-5-opus',
-    name: 'Claude 4.5 Opus',
-    hint: 'Anthropic最强模型'
-  },
-  // Google 系列
-  'gemini-2.5-pro': {
-    provider: 'google',
-    baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-    model: 'gemini-2.5-pro',
-    name: 'Gemini 2.5 Pro',
-    hint: 'Google Gemini专业版'
-  },
-  'gemini-3-pro': {
-    provider: 'google',
-    baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-    model: 'gemini-3-pro',
-    name: 'Gemini 3 Pro',
-    hint: 'Google最新Gemini'
-  },
-  // 自定义
-  'custom': {
-    provider: 'custom',
-    baseUrl: '',
-    model: '',
-    name: '自定义接口',
-    hint: '使用自定义API接口'
+// ==================== 模型注册表（从后端动态加载） ====================
+// 模型列表缓存，从后端 /api/turbo-models 获取
+let MODEL_REGISTRY = {};
+let modelsLoaded = false;
+let serverDefaultModel = 'deepseek-v3';  // 后端配置的默认模型
+
+// 加载模型注册表
+async function loadModelRegistry() {
+  if (modelsLoaded && Object.keys(MODEL_REGISTRY).length > 0) {
+    return MODEL_REGISTRY;
   }
-};
+  
+  try {
+    const response = await fetch('/api/turbo-models');
+    const data = await response.json();
+    if (data.success && data.models) {
+      // 将数组转换为对象格式
+      MODEL_REGISTRY = {};
+      data.models.forEach(model => {
+        MODEL_REGISTRY[model.id] = {
+          id: model.id,
+          name: model.name,
+          creditCost: model.creditCost,
+          speed: model.speed,
+          quality: model.quality,
+          hasDefaultKey: model.hasDefaultKey,
+          needsUserKey: model.needsUserKey,
+          turboRecommended: model.turboRecommended
+        };
+      });
+      
+      // 添加自定义选项
+      MODEL_REGISTRY['custom'] = {
+        id: 'custom',
+        name: '自定义接口',
+        creditCost: 0,
+        needsUserKey: true
+      };
+      
+      // 保存后端默认模型设置
+      if (data.defaultModel) {
+        serverDefaultModel = data.defaultModel;
+        console.log('[INFO] 后端默认模型:', serverDefaultModel);
+        
+        // 如果用户没有选择过模型，使用后端默认模型
+        if (!state.settings.llmProvider || state.settings.llmProvider === 'deepseek-v3') {
+          state.settings.llmProvider = serverDefaultModel;
+          state.settings.llmModelId = serverDefaultModel;
+        }
+      }
+      
+      modelsLoaded = true;
+      console.log('[INFO] 模型列表已加载:', Object.keys(MODEL_REGISTRY).length, '个模型');
+    }
+  } catch (error) {
+    console.error('加载模型列表失败:', error);
+    // 回退到基础配置
+    MODEL_REGISTRY = {
+      'deepseek-v3': { id: 'deepseek-v3', name: 'DeepSeek V3', creditCost: 0 },
+      'custom': { id: 'custom', name: '自定义接口', creditCost: 0, needsUserKey: true }
+    };
+  }
+  
+  return MODEL_REGISTRY;
+}
+
+// 获取后端默认模型
+function getServerDefaultModel() {
+  return serverDefaultModel;
+}
+
+// 获取模型信息
+function getModelInfo(modelId) {
+  return MODEL_REGISTRY[modelId] || null;
+}
+
+// 填充高级设置的模型下拉框
+function populateAdvancedModelSelect() {
+  const select = document.getElementById('adv-llm-model');
+  if (!select) return;
+  
+  // 清空现有选项
+  select.innerHTML = '';
+  
+  // 获取已保存的模型选择，优先使用用户设置，否则使用后端默认
+  const savedModel = state.settings.llmProvider || serverDefaultModel || 'deepseek-v3';
+  
+  // 判断用户是否有自己的 Key
+  const userHasKey = state.settings.llmApiKey && state.settings.llmApiKey.trim().length > 0;
+  
+  // 添加 onchange 事件监听，选择需配Key的模型时跳转到设置
+  select.onchange = function() {
+    const selectedModelId = this.value;
+    const modelInfo = MODEL_REGISTRY[selectedModelId];
+    
+    // 检查当前用户是否有Key（高级设置中的Key或全局设置中的Key）
+    const advKeyInput = document.getElementById('adv-llm-key');
+    const advKey = advKeyInput?.value?.trim();
+    const currentUserHasKey = (advKey && advKey.length > 0) || (state.settings.llmApiKey && state.settings.llmApiKey.trim().length > 0);
+    
+    // 如果选择了需配Key的模型（后台没Key且用户也没Key）
+    if (selectedModelId !== 'custom' && modelInfo && !modelInfo.hasDefaultKey && !currentUserHasKey) {
+      // 延迟一点执行，让下拉框先关闭
+      setTimeout(() => {
+        showToast(`${modelInfo.name} 需要配置 API Key`, 'info');
+        openSettings(selectedModelId);
+      }, 100);
+    }
+    
+    // 自定义接口也需要配置
+    if (selectedModelId === 'custom' && !currentUserHasKey) {
+      setTimeout(() => {
+        showToast('自定义接口需要配置 API Key', 'info');
+        openSettings('custom');
+      }, 100);
+    }
+  };
+  
+  // 质量标签
+  const qualityLabels = {
+    'medium': '标准',
+    'high': '高',
+    'very-high': '很高',
+    'excellent': '极佳'
+  };
+  
+  // 添加模型选项
+  Object.keys(MODEL_REGISTRY).forEach(modelId => {
+    const model = MODEL_REGISTRY[modelId];
+    if (modelId === 'custom') return; // 自定义选项最后添加
+    
+    const option = document.createElement('option');
+    option.value = modelId;
+    
+    // 构建显示名称
+    let displayName = model.name;
+    
+    // 标记默认模型
+    if (modelId === serverDefaultModel) {
+      displayName += ' 🌟';
+    }
+    
+    // 添加状态标识
+    // 规则：用户有Key=免费，后台有Key=消耗积分，都没有=需配Key
+    if (userHasKey) {
+      // 用户有自己的Key，所有模型都免费
+      displayName += ' 🆓';
+    } else if (model.hasDefaultKey) {
+      // 后台有Key，显示积分消耗
+      if (model.creditCost > 0) {
+        displayName += ` (${model.creditCost}积分)`;
+      } else {
+        displayName += ' 🆓';
+      }
+    } else {
+      // 后台没Key，需要用户配置
+      displayName += ' 🔑需配Key';
+    }
+    
+    // 添加质量标识
+    if (model.quality && qualityLabels[model.quality]) {
+      displayName += ` [${qualityLabels[model.quality]}]`;
+    }
+    
+    option.textContent = displayName;
+    select.appendChild(option);
+  });
+  
+  // 添加自定义接口选项
+  const customOption = document.createElement('option');
+  customOption.value = 'custom';
+  customOption.textContent = '🔧 自定义接口（需配Key）';
+  select.appendChild(customOption);
+  
+  // 恢复选中的值：优先用户保存的，否则用后端默认
+  if (savedModel && select.querySelector(`option[value="${savedModel}"]`)) {
+    select.value = savedModel;
+  } else if (serverDefaultModel && select.querySelector(`option[value="${serverDefaultModel}"]`)) {
+    select.value = serverDefaultModel;
+  } else if (Object.keys(MODEL_REGISTRY).length > 0) {
+    // 如果都不在列表中，选择第一个非custom的模型
+    const firstModel = Object.keys(MODEL_REGISTRY).find(id => id !== 'custom');
+    if (firstModel) {
+      select.value = firstModel;
+    }
+  }
+  
+  // 更新 state
+  state.settings.llmProvider = select.value;
+  state.settings.llmModelId = select.value;
+  
+  console.log('[INFO] 高级设置模型下拉框已填充，当前选择:', select.value);
+}
 
 // ==================== 应用状态 ====================
 const DEFAULT_CREDITS = 5;  // 初始积分
@@ -157,6 +201,7 @@ const state = {
   recentGamesOffset: 0,
   isGenerating: false,
   abortController: null,
+  currentRequestId: null, // 当前生成请求的唯一ID，用于取消功能
   debugMode: false,
   credits: DEFAULT_CREDITS,
   creditsConfig: null,
@@ -852,11 +897,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 加载模型预计生成时间配置
   await loadModelEstimatedTimes();
   
+  // 加载模型列表（从后端获取）
+  await loadModelRegistry();
+  
+  // 填充高级设置的模型下拉框
+  populateAdvancedModelSelect();
+  
   // 加载Tips配置
   await loadTipsConfig();
   
-  initMainTabs();  // 初始化主标签页
+  // 先检查路由，决定显示哪个页面（避免先显示首页再切换的闪烁）
   handleRouting();
+  
+  // 初始化主标签页数据（如果当前在首页才加载首页数据）
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialTab = urlParams.get('tab');
+  if (!initialTab) {
+    initMainTabs();  // 只有默认显示首页时才初始化首页数据
+  }
+  
   initBetaBanner();
   
   // 检查是否有未完成的生成任务
@@ -1393,8 +1452,69 @@ function handleRouting() {
     const gameId = gameMatch[1];
     loadGameById(gameId);
   } else {
-    showHome();
+    // 检查URL参数中是否指定了tab
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    
+    if (tab === 'profile' || tab === 'create') {
+      // 立即隐藏首页，避免闪烁
+      const homePage = document.getElementById('home-page');
+      if (homePage) homePage.classList.remove('active');
+      
+      // 直接切换到对应标签页
+      directSwitchToTab(tab);
+      // 清除URL中的tab参数，保持干净的URL
+      history.replaceState(null, '', '/');
+    } else {
+      showHome();
+    }
   }
+}
+
+// 直接切换到指定标签页（无动画，用于页面初始加载时）
+function directSwitchToTab(tabName) {
+  // 更新导航样式
+  document.querySelectorAll('.bottom-nav .nav-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.nav === tabName);
+  });
+  
+  // 隐藏所有页面
+  document.querySelectorAll('.page').forEach(page => {
+    page.classList.remove('active');
+  });
+  
+  // 显示对应页面
+  const settingsBtn = document.getElementById('profile-settings-btn');
+  
+  if (tabName === 'home') {
+    document.getElementById('home-page').classList.add('active');
+    if (settingsBtn) settingsBtn.classList.remove('visible');
+  } else if (tabName === 'create') {
+    document.getElementById('create-page').classList.add('active');
+    // 更新积分显示
+    const creditsEl = document.getElementById('create-credits-count');
+    if (creditsEl) creditsEl.textContent = state.credits || 0;
+    // 更新当前模型显示
+    updateCreateModelDisplay();
+    // 初始化Tips滚动
+    initCreateTips();
+    if (settingsBtn) settingsBtn.classList.remove('visible');
+  } else if (tabName === 'profile') {
+    document.getElementById('profile-page').classList.add('active');
+    loadProfilePageData();
+    // 初始化我的页面下拉刷新（只初始化一次）
+    if (!state.profilePullRefreshInited) {
+      initPullToRefresh('profile-page', 'profile-pull-refresh-indicator', async () => {
+        await loadProfilePageData();
+      });
+      state.profilePullRefreshInited = true;
+    }
+    // 显示设置按钮
+    if (settingsBtn) settingsBtn.classList.add('visible');
+  }
+  
+  // 显示底部导航
+  document.getElementById('bottom-nav').style.display = 'flex';
 }
 
 // 显示首页（或返回上一层级）
@@ -2115,11 +2235,6 @@ const LIST_PAGE_LIMIT = 20;
 
 // 显示更多游戏（打开独立列表页面）
 function showMoreGames(category) {
-  let title = '';
-  let apiUrl = '';
-  let headers = {};
-  let isMyGames = false;
-  
   // 首页分类跳转到 games.html 页面
   const homeCategoryMap = {
     'recent': 'newest',
@@ -2135,29 +2250,17 @@ function showMoreGames(category) {
     return;
   }
   
-  switch(category) {
-    // 个人页面分类
-    case 'my-games':
-      title = '🎨 我的作品';
-      apiUrl = '/api/my-games';
-      headers = { 'X-Author-Token': getAuthorToken() };
-      isMyGames = true;
-      break;
-    case 'my-likes':
-      title = '❤️ 我点赞的';
-      apiUrl = '/api/my-likes';
-      headers = { 'X-User-Token': getUserToken() };
-      break;
-    case 'my-favs':
-      title = '⭐ 我的收藏';
-      apiUrl = '/api/my-favorites';
-      headers = { 'X-User-Token': getUserToken() };
-      break;
-    default:
-      return;
-  }
+  // 个人页面分类也跳转到 games.html 页面，使用 source 参数
+  const mySourceMap = {
+    'my-games': 'my-games',
+    'my-likes': 'my-likes',
+    'my-favs': 'my-favorites'
+  };
   
-  openGameListPage(title, apiUrl, headers, isMyGames, category);
+  if (mySourceMap[category]) {
+    window.location.href = `games.html?source=${mySourceMap[category]}`;
+    return;
+  }
 }
 
 // 打开游戏列表页面
@@ -2536,13 +2639,13 @@ function showDraftInProgressModal(draftId, title) {
   const modal = document.createElement('div');
   modal.id = 'draft-progress-modal';
   modal.className = 'modal active';
-  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  modal.onclick = (e) => { if (e.target === modal) closeDraftProgressModal(); };
   
   modal.innerHTML = `
     <div class="modal-content modal-small" style="text-align: center;">
       <div class="modal-header">
         <h3>🎨 游戏生成中</h3>
-        <button class="btn btn-icon btn-close" onclick="document.getElementById('draft-progress-modal').remove()">×</button>
+        <button class="btn btn-icon btn-close" onclick="closeDraftProgressModal()">×</button>
       </div>
       <div class="modal-body">
         <div style="font-size: 48px; margin-bottom: 16px; animation: pulse 2s infinite;">🎮</div>
@@ -2560,7 +2663,7 @@ function showDraftInProgressModal(draftId, title) {
         </p>
       </div>
       <div class="modal-footer" style="justify-content: center; gap: 12px;">
-        <button class="btn btn-secondary" onclick="document.getElementById('draft-progress-modal').remove()">知道了</button>
+        <button class="btn btn-secondary" onclick="closeDraftProgressModal()">知道了</button>
         <button class="btn btn-danger-outline" onclick="confirmDeleteDraft('${draftId}')">取消生成</button>
       </div>
     </div>
@@ -2573,6 +2676,15 @@ function showDraftInProgressModal(draftId, title) {
   if (draftPollingId !== draftId) {
     startDraftPolling(draftId);
   }
+}
+
+// 关闭草稿进度弹窗
+function closeDraftProgressModal() {
+  const modal = document.getElementById('draft-progress-modal');
+  if (modal) {
+    modal.remove();
+  }
+  document.body.classList.remove('modal-open');
 }
 
 // 确认删除草稿
@@ -3062,9 +3174,26 @@ async function saveSettings() {
     
     const newNickname = document.getElementById('author-name')?.value?.trim() || '';
     
+    // 保存各模型的 API Keys
+    const llmKeys = {};
+    document.querySelectorAll('.llm-key-item').forEach(item => {
+      const modelId = item.dataset.modelId;
+      const input = item.querySelector('input');
+      if (modelId && input) {
+        const keyValue = input.value.trim();
+        if (keyValue) {
+          llmKeys[modelId] = keyValue;
+        }
+      }
+    });
+    localStorage.setItem('llm-api-keys', JSON.stringify(llmKeys));
+    
+    // 获取当前选中模型的 Key
+    const currentModelKey = llmKeys[selectedModel] || '';
+    
     const settings = {
       llmProvider: selectedModel,  // 使用模型ID作为provider
-      llmApiKey: document.getElementById('llm-api-key')?.value || '',
+      llmApiKey: currentModelKey,  // 使用当前选中模型的 Key
       llmBaseUrl: document.getElementById('llm-base-url')?.value || modelConfig.baseUrl || '',
       llmModel: document.getElementById('llm-model')?.value || modelConfig.model || selectedModel,
       authorName: newNickname
@@ -3124,10 +3253,84 @@ function toggleApiKeyVisibility() {
   }
 }
 
-// 打开设置弹窗
-function openSettings() {
-  const modal = document.getElementById('settings-modal');
-  modal.classList.add('active');
+// 动态加载设置弹窗的模型列表
+async function loadSettingsModelList() {
+  const modelSelect = document.getElementById('llm-model-select');
+  if (!modelSelect) return;
+  
+  try {
+    // 从 API 获取模型列表
+    const models = await fetchTurboModels();
+    if (!models || models.length === 0) {
+      console.warn('未获取到模型列表，使用默认列表');
+      return;
+    }
+    
+    // 保存当前选中的值，优先用户设置，否则用后端默认
+    const currentValue = state.settings.llmProvider || serverDefaultModel || 'deepseek-v3';
+    
+    // 判断用户是否有自己的 Key
+    const userHasKey = state.settings.llmApiKey && state.settings.llmApiKey.trim().length > 0;
+    
+    // 清空现有选项
+    modelSelect.innerHTML = '';
+    
+    // 添加模型选项
+    models.forEach(model => {
+      const option = document.createElement('option');
+      option.value = model.id;
+      
+      // 构建显示名称
+      let displayName = model.name;
+      
+      // 标记默认模型
+      if (model.id === serverDefaultModel) {
+        displayName += ' 🌟';
+      }
+      
+      // 规则：用户有Key=免费，后台有Key=消耗积分，都没有=需配Key
+      if (userHasKey) {
+        displayName += ' 🆓';
+      } else if (model.hasDefaultKey) {
+        if (model.creditCost > 0) {
+          displayName += ` (${model.creditCost}积分)`;
+        } else {
+          displayName += ' 🆓';
+        }
+      } else {
+        displayName += ' 🔑需配Key';
+      }
+      
+      option.textContent = displayName;
+      modelSelect.appendChild(option);
+    });
+    
+    // 添加自定义接口选项
+    const customOption = document.createElement('option');
+    customOption.value = 'custom';
+    customOption.textContent = '🔧 自定义接口（需配Key）';
+    modelSelect.appendChild(customOption);
+    
+    // 恢复选中的值：优先用户设置，否则用后端默认
+    if (currentValue && modelSelect.querySelector(`option[value="${currentValue}"]`)) {
+      modelSelect.value = currentValue;
+    } else if (serverDefaultModel && modelSelect.querySelector(`option[value="${serverDefaultModel}"]`)) {
+      modelSelect.value = serverDefaultModel;
+    } else if (models.length > 0) {
+      // 如果都不在列表中，选择第一个
+      modelSelect.value = models[0].id;
+    }
+    
+  } catch (error) {
+    console.error('加载模型列表失败:', error);
+  }
+}
+
+// 打开设置页面
+// preSelectModelId: 可选，预先选择指定的模型
+async function openSettings(preSelectModelId = null) {
+  const page = document.getElementById('settings-page');
+  page.classList.add('active');
   document.body.classList.add('modal-open');
   
   // 显示当前账号ID
@@ -3136,15 +3339,21 @@ function openSettings() {
     accountIdEl.textContent = state.account.visibleId || state.account.visibleToken || getUserToken() || '未登录';
   }
   
+  // 动态加载模型列表
+  await loadSettingsModelList();
+  
+  // 渲染 LLM Keys 列表
+  await renderLLMKeysList();
+  
   // 填充当前设置
   const modelSelect = document.getElementById('llm-model-select');
   if (modelSelect) {
-    // 尝试匹配保存的模型
-    modelSelect.value = state.settings.llmProvider || 'deepseek-v3';
+    // 优先使用传入的预选模型，其次是已保存的模型
+    const targetModel = preSelectModelId || state.settings.llmProvider || 'deepseek-v3';
+    if (modelSelect.querySelector(`option[value="${targetModel}"]`)) {
+      modelSelect.value = targetModel;
+    }
   }
-  
-  const apiKeyInput = document.getElementById('llm-api-key');
-  if (apiKeyInput) apiKeyInput.value = state.settings.llmApiKey || '';
   
   const baseUrlInput = document.getElementById('llm-base-url');
   if (baseUrlInput) baseUrlInput.value = state.settings.llmBaseUrl || '';
@@ -3162,12 +3371,112 @@ function openSettings() {
   
   // 触发模型选择变更以更新UI
   onModelSelectChange();
+  
+  // 如果有预选模型，切换到 LLM 设置面板
+  if (preSelectModelId) {
+    switchSettingsSection('llm');
+  }
 }
 
-// 关闭设置弹窗
+// 关闭设置页面
 function closeSettings() {
-  document.getElementById('settings-modal').classList.remove('active');
+  document.getElementById('settings-page').classList.remove('active');
   document.body.classList.remove('modal-open');
+}
+
+// 切换设置面板
+function switchSettingsSection(section) {
+  // 更新导航项
+  document.querySelectorAll('.settings-nav-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.section === section);
+  });
+  
+  // 更新面板
+  document.querySelectorAll('.settings-panel').forEach(panel => {
+    panel.classList.toggle('active', panel.id === `settings-panel-${section}`);
+  });
+}
+
+// 渲染 LLM Keys 列表
+async function renderLLMKeysList() {
+  const listContainer = document.getElementById('llm-keys-list');
+  if (!listContainer) return;
+  
+  // 获取模型列表
+  const models = await fetchTurboModels();
+  if (!models || models.length === 0) {
+    listContainer.innerHTML = '<p class="text-muted">无法加载模型列表</p>';
+    return;
+  }
+  
+  // 获取已保存的 API Keys
+  const savedKeys = JSON.parse(localStorage.getItem('llm-api-keys') || '{}');
+  
+  // 渲染列表
+  listContainer.innerHTML = models
+    .filter(model => model.id !== 'custom') // 排除自定义接口
+    .map(model => {
+      const savedKey = savedKeys[model.id] || '';
+      const hasKey = savedKey.length > 0;
+      const isFree = model.free || model.hasBackendKey;
+      
+      return `
+        <div class="llm-key-item" data-model-id="${model.id}">
+          <div class="llm-key-info">
+            <div class="llm-key-name">
+              ${escapeHtml(model.name)}
+              ${isFree ? '<span class="badge free">免费</span>' : '<span class="badge need-key">需配Key</span>'}
+            </div>
+            <div class="llm-key-status ${hasKey ? 'configured' : ''}">
+              ${hasKey ? '✓ 已配置' : (isFree ? '使用平台默认配置' : '未配置')}
+            </div>
+          </div>
+          <div class="llm-key-input">
+            <input type="password" 
+                   id="llm-key-${model.id}" 
+                   value="${escapeHtml(savedKey)}"
+                   placeholder="${isFree ? '可选，留空使用默认' : '输入您的 API Key'}"
+                   onchange="onLLMKeyChange('${model.id}')">
+          </div>
+        </div>
+      `;
+    }).join('');
+}
+
+// LLM Key 变更处理
+function onLLMKeyChange(modelId) {
+  const input = document.getElementById(`llm-key-${modelId}`);
+  if (!input) return;
+  
+  const value = input.value.trim();
+  const item = input.closest('.llm-key-item');
+  const statusEl = item?.querySelector('.llm-key-status');
+  
+  if (statusEl) {
+    if (value) {
+      statusEl.textContent = '✓ 已配置';
+      statusEl.classList.add('configured');
+    } else {
+      const isFree = item.querySelector('.badge.free');
+      statusEl.textContent = isFree ? '使用平台默认配置' : '未配置';
+      statusEl.classList.remove('configured');
+    }
+  }
+}
+
+// 切换自定义 API Key 可见性
+function toggleCustomApiKeyVisibility() {
+  const input = document.getElementById('llm-custom-api-key');
+  const btn = input?.parentElement?.querySelector('.btn-toggle-pwd');
+  if (input) {
+    if (input.type === 'password') {
+      input.type = 'text';
+      if (btn) btn.textContent = '🙈';
+    } else {
+      input.type = 'password';
+      if (btn) btn.textContent = '👁️';
+    }
+  }
 }
 
 // 提供商切换
@@ -3651,6 +3960,415 @@ const GENERATING_TIPS = [
   '好的游戏描述 = 好的游戏效果',
 ];
 
+// ==================== 加速生成相关 ====================
+
+// 加速模型列表缓存
+let turboModelsCache = null;
+let turboShowTimer = null;
+
+// 获取加速模型列表
+async function fetchTurboModels() {
+  if (turboModelsCache) return turboModelsCache;
+  
+  try {
+    const response = await fetch('/api/turbo-models');
+    const data = await response.json();
+    if (data.success) {
+      turboModelsCache = data.models;
+      
+      // 同时更新默认模型设置
+      if (data.defaultModel) {
+        serverDefaultModel = data.defaultModel;
+      }
+      
+      return data.models;
+    }
+  } catch (error) {
+    console.error('获取加速模型失败:', error);
+  }
+  return [];
+}
+
+// 显示切换模型按钮（现在始终显示，保留函数兼容性）
+function showTurboButton() {
+  // 切换模型按钮现在始终可见，无需操作
+}
+
+// 隐藏切换模型按钮（保留函数兼容性）
+function hideTurboButton() {
+  // 切换模型按钮现在始终可见，无需操作
+}
+
+// 延迟显示（保留函数兼容性）
+function scheduleTurboButtonShow() {
+  // 切换模型按钮现在始终可见，无需延迟
+}
+
+// 显示加速模型选择弹窗
+async function showTurboOptions() {
+  const modal = document.getElementById('turbo-modal');
+  const listContainer = document.getElementById('turbo-models-list');
+  
+  if (!modal || !listContainer) return;
+  
+  // 获取可用的加速模型
+  const models = await fetchTurboModels();
+  
+  if (models.length === 0) {
+    showToast('暂无可用的加速模型', 'error');
+    return;
+  }
+  
+  // 判断用户是否有自己的 Key
+  const userHasKey = state.settings.llmApiKey && state.settings.llmApiKey.trim().length > 0;
+  
+  // 翻译质量等级
+  const qualityLabels = {
+    'low': '基础',
+    'medium': '标准',
+    'high': '高',
+    'very-high': '很高',
+    'excellent': '极佳'
+  };
+  
+  // 渲染模型列表
+  listContainer.innerHTML = models.map(model => {
+    const backendHasKey = model.hasDefaultKey === true;
+    
+    // 显示积分或免费标识
+    // 规则：用户有Key=免费，后台有Key=消耗积分，都没有=需配Key
+    let costDisplay = '';
+    let clickable = true;
+    
+    if (userHasKey) {
+      // 用户有自己的Key，所有模型都免费
+      costDisplay = `
+        <div class="turbo-model-cost free">
+          <div class="turbo-model-cost-value" style="color: #10b981;">🆓 免费</div>
+          <div class="turbo-model-cost-label" style="color: #94a3b8;">使用您的Key</div>
+        </div>
+      `;
+    } else if (backendHasKey) {
+      // 后台有Key，显示积分
+      if (model.creditCost > 0) {
+        costDisplay = `
+          <div class="turbo-model-cost">
+            <div class="turbo-model-cost-value">${model.creditCost}</div>
+            <div class="turbo-model-cost-label">积分</div>
+          </div>
+        `;
+      } else {
+        costDisplay = `
+          <div class="turbo-model-cost free">
+            <div class="turbo-model-cost-value" style="color: #10b981;">🆓 免费</div>
+            <div class="turbo-model-cost-label" style="color: #94a3b8;">0积分</div>
+          </div>
+        `;
+      }
+    } else {
+      // 后台没Key，需要用户配置（点击后跳转设置）
+      costDisplay = `
+        <div class="turbo-model-cost free needs-key">
+          <div class="turbo-model-cost-value" style="font-size: 0.8rem; color: #f59e0b;">🔑 需配Key</div>
+          <div class="turbo-model-cost-label" style="color: #94a3b8;">点击配置</div>
+        </div>
+      `;
+    }
+    
+    // 判断点击行为
+    const needsKeySetup = !userHasKey && !backendHasKey;
+    const onClickAction = needsKeySetup 
+      ? `goToSettingsForModel('${model.id}', '${model.name}')`
+      : `selectTurboModel('${model.id}', ${userHasKey ? 0 : model.creditCost}, false)`;
+    
+    return `
+      <div class="turbo-model-item ${model.turboRecommended ? 'recommended' : ''} ${needsKeySetup ? 'needs-key-setup' : ''}" 
+           onclick="${onClickAction}"
+           ${needsKeySetup ? 'title="点击配置API Key"' : ''}>
+        <div class="turbo-model-info">
+          <div class="turbo-model-name">${model.name}</div>
+          <div class="turbo-model-meta">
+            <span class="turbo-model-speed">快速</span>
+            <span class="turbo-model-quality">质量: ${qualityLabels[model.quality] || model.quality}</span>
+          </div>
+        </div>
+        ${costDisplay}
+      </div>
+    `;
+  }).join('');
+  
+  modal.classList.add('active');
+}
+
+// 关闭加速模型选择弹窗
+function closeTurboModal() {
+  const modal = document.getElementById('turbo-modal');
+  if (modal) {
+    modal.classList.remove('active');
+  }
+}
+
+// 选择并切换到加速模型
+async function selectTurboModel(modelId, creditCost, needsUserKey = false) {
+  // 如果需要用户自备Key，直接打开设置弹窗让用户配置
+  if (needsUserKey) {
+    // 获取用户配置的API Key
+    const userApiKey = localStorage.getItem(`user_apikey_${modelId}`) || localStorage.getItem('user_default_apikey') || state.settings.llmApiKey;
+    if (!userApiKey) {
+      closeTurboModal();
+      // 直接打开设置弹窗
+      openSettings();
+      // 在设置弹窗中选择对应的模型
+      setTimeout(() => {
+        const modelSelect = document.getElementById('llm-model-select');
+        if (modelSelect) {
+          modelSelect.value = modelId;
+          onModelSelectChange();
+        }
+        showToast('请先配置此模型的 API Key', 'info');
+      }, 100);
+      return;
+    }
+  }
+  
+  // 检查积分（免费模型跳过积分检查）
+  if (creditCost > 0 && state.credits < creditCost) {
+    showToast(`积分不足，需要 ${creditCost} 积分`, 'error');
+    closeTurboModal();
+    openNoCreditsModal();
+    return;
+  }
+  
+  // 确认切换
+  let confirmMsg = '';
+  if (creditCost === 0) {
+    confirmMsg = `确定切换到 ${modelId} 模型吗？\n\n当前生成将被中断，使用新模型重新开始。`;
+  } else {
+    confirmMsg = `确定使用 ${creditCost} 积分切换到加速模式吗？\n\n当前生成将被中断，使用新模型重新开始。`;
+  }
+  const confirmed = confirm(confirmMsg);
+  if (!confirmed) return;
+  
+  closeTurboModal();
+  
+  // 保存旧请求ID，用于通知后端取消
+  const oldRequestId = state.currentRequestId;
+  
+  // 中断当前请求（前端）
+  if (state.abortController) {
+    state.abortController.abort();
+    console.log('[TURBO] 已中断前端请求');
+  }
+  
+  // 通知后端取消旧请求（防止旧请求完成后覆盖草稿）
+  if (oldRequestId) {
+    try {
+      const userToken = getUserToken();
+      await fetch('/api/cancel-generation', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-User-Token': userToken || ''
+        },
+        body: JSON.stringify({ requestId: oldRequestId })
+      });
+      console.log(`[TURBO] 已通知后端取消请求: ${oldRequestId}`);
+    } catch (cancelError) {
+      console.warn('[TURBO] 通知后端取消失败（不影响继续）:', cancelError);
+    }
+  }
+  
+  // 保存当前的 prompt
+  const currentPrompt = backgroundTask.prompt || document.getElementById('prompt-input')?.value?.trim();
+  
+  if (!currentPrompt) {
+    showToast('无法获取当前描述', 'error');
+    return;
+  }
+  
+  // 清理当前生成状态
+  stopGeneratingTimer();
+  hideTurboButton();
+  
+  // 显示加速状态
+  showToast(`⚡ 切换到加速模式，消耗 ${creditCost} 积分`, 'info');
+  log(`⚡ 切换到加速模式，使用模型: ${modelId}`, 'info');
+  
+  // 更新UI状态
+  const overlay = document.getElementById('generating-overlay');
+  overlay.classList.add('turbo-mode');
+  
+  // 更新状态显示
+  updateGeneratingStatus('⚡ 加速模式生成中...');
+  
+  // 预先扣除本地积分（服务端会真正扣除）
+  state.credits -= creditCost;
+  saveCredits();
+  updateCreditsDisplay();
+  
+  // 重新开始生成
+  await generateGameWithTurbo(currentPrompt, modelId);
+}
+
+// 使用加速模型生成游戏
+async function generateGameWithTurbo(prompt, turboModelId) {
+  state.isGenerating = true;
+  state.abortController = new AbortController();
+  
+  // 重置后台任务状态
+  backgroundTask.isActive = true;
+  backgroundTask.isCancelled = false;
+  backgroundTask.prompt = prompt;
+  backgroundTask.result = null;
+  
+  // 重新开始计时（不再显示加速按钮）
+  startGeneratingTimer();
+  
+  // 更新显示
+  const turboCreditsDisplay = document.getElementById('turbo-credits-display');
+  if (turboCreditsDisplay) {
+    turboCreditsDisplay.textContent = state.credits;
+  }
+  
+  try {
+    const userToken = getUserToken();
+    const authorToken = getAuthorToken();
+    
+    // 生成新的请求ID
+    const requestId = `req_turbo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    state.currentRequestId = requestId;
+    console.log(`[TURBO] 新请求ID: ${requestId}`);
+    
+    // 获取当前高级设置
+    const advancedSettings = getCurrentAdvancedSettings();
+    
+    const response = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-User-Token': userToken || '',
+        'X-Author-Token': authorToken || ''
+      },
+      body: JSON.stringify({ 
+        prompt,
+        turboModel: turboModelId,
+        isTurboSwitch: true,
+        requestId,  // 携带请求ID
+        advancedSettings
+      }),
+      signal: state.abortController.signal
+    });
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || '生成失败');
+    }
+    
+    log(`✅ 加速生成成功: ${data.title}`, 'success');
+    
+    // 处理生成结果
+    handleGenerationSuccess(data, prompt);
+    
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      log('加速生成被中断', 'warn');
+      return;
+    }
+    
+    console.error('加速生成失败:', error);
+    log(`❌ 加速生成失败: ${error.message}`, 'error');
+    showToast(`生成失败: ${error.message}`, 'error');
+    
+    // 恢复状态
+    state.isGenerating = false;
+    stopGeneratingTimer();
+    hideGeneratingOverlay();
+    document.getElementById('generating-overlay').classList.remove('turbo-mode');
+    document.getElementById('generating-float').classList.remove('active');
+  }
+}
+
+// 处理生成成功（复用逻辑）
+function handleGenerationSuccess(data, prompt) {
+  // 获取草稿ID
+  let draftId = null;
+  try {
+    const savedState = localStorage.getItem('aigame-generating-state');
+    if (savedState) {
+      const generatingState = JSON.parse(savedState);
+      draftId = generatingState.draftId;
+    }
+  } catch (e) {
+    console.error('获取草稿ID失败:', e);
+  }
+  
+  // 判断是否在后台模式
+  if (backgroundTask.isMinimized) {
+    backgroundTask.result = {
+      title: data.title,
+      code: data.code,
+      draftId: draftId
+    };
+    
+    document.getElementById('generating-float').classList.remove('active');
+    showGenerationNotify();
+    
+    log(`后台生成完成: ${data.title}`, 'success');
+    showToast('游戏生成完成！点击通知查看', 'success');
+  } else {
+    state.currentGame = {
+      title: data.title,
+      prompt: prompt,
+      code: data.code,
+      isNew: true,
+      draftId: draftId
+    };
+    state.currentGameId = draftId || null;
+    
+    // 隐藏生成遮罩
+    document.getElementById('generating-overlay').classList.remove('active');
+    document.getElementById('generating-overlay').classList.remove('turbo-mode');
+    document.body.classList.remove('overlay-open');
+    document.getElementById('generating-float').classList.remove('active');
+    
+    // 显示保存弹窗
+    state.isGenerating = false;
+    stopGeneratingTimer();
+    hideTurboButton();
+    clearGeneratingState();
+    
+    openSaveModal();
+    showToast('游戏生成完成！', 'success');
+  }
+}
+
+// 获取当前高级设置
+function getCurrentAdvancedSettings() {
+  // 尝试从DOM获取当前高级设置
+  const gameName = document.getElementById('advanced-game-name')?.value;
+  const gameType = document.getElementById('advanced-game-type')?.value;
+  const artStyle = document.getElementById('advanced-art-style')?.value;
+  const orientation = document.getElementById('advanced-orientation')?.value;
+  const platform = document.getElementById('advanced-platform')?.value;
+  const difficulty = document.getElementById('advanced-difficulty')?.value;
+  const soundEffect = document.getElementById('advanced-sound')?.value;
+  const visibility = document.querySelector('input[name="visibility"]:checked')?.value;
+  
+  return {
+    gameName,
+    gameType,
+    artStyle,
+    orientation,
+    platform,
+    difficulty,
+    soundEffect,
+    visibility
+  };
+}
+
+// ==================== 生成计时相关 ====================
+
 // 开始计时
 function startGeneratingTimer() {
   generatingStartTime = Date.now();
@@ -3659,6 +4377,9 @@ function startGeneratingTimer() {
   
   // 启动tips轮换
   startGeneratingTips();
+  
+  // 启动加速按钮延迟显示
+  scheduleTurboButtonShow();
 }
 
 // 停止计时
@@ -3671,6 +4392,9 @@ function stopGeneratingTimer() {
   
   // 停止tips轮换
   stopGeneratingTips();
+  
+  // 隐藏加速按钮
+  hideTurboButton();
 }
 
 // 启动生成中tips轮换
@@ -3743,22 +4467,174 @@ function hideGeneratingOverlay() {
   document.body.classList.remove('overlay-open');
 }
 
+// 确认关闭生成（显示选择对话框）
+function confirmCloseGeneration() {
+  // 创建确认对话框
+  const existingDialog = document.getElementById('close-generation-dialog');
+  if (existingDialog) {
+    existingDialog.remove();
+  }
+  
+  const dialog = document.createElement('div');
+  dialog.id = 'close-generation-dialog';
+  dialog.className = 'confirm-dialog-overlay';
+  dialog.innerHTML = `
+    <div class="confirm-dialog">
+      <div class="confirm-dialog-icon">🎮</div>
+      <h3 class="confirm-dialog-title">AI 正在努力创作中</h3>
+      <p class="confirm-dialog-message">游戏生成需要一点时间，您希望：</p>
+      <div class="confirm-dialog-buttons">
+        <button class="confirm-btn confirm-btn-minimize" id="confirm-btn-minimize">
+          📥 后台继续
+          <span class="confirm-btn-desc">最小化后继续生成</span>
+        </button>
+        <button class="confirm-btn confirm-btn-cancel" id="confirm-btn-cancel">
+          ✖ 取消生成
+          <span class="confirm-btn-desc">放弃本次创作</span>
+        </button>
+      </div>
+      <button class="confirm-dialog-close" id="confirm-dialog-close">×</button>
+    </div>
+  `;
+  
+  document.body.appendChild(dialog);
+  
+  // 绑定按钮事件 - 最小化
+  const btnMinimize = document.getElementById('confirm-btn-minimize');
+  if (btnMinimize) {
+    btnMinimize.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // 先关闭对话框
+      const dlg = document.getElementById('close-generation-dialog');
+      if (dlg) dlg.remove();
+      // 再执行最小化
+      setTimeout(() => {
+        minimizeGenerating();
+      }, 50);
+    });
+  }
+  
+  // 绑定按钮事件 - 取消生成
+  const btnCancel = document.getElementById('confirm-btn-cancel');
+  if (btnCancel) {
+    btnCancel.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // 先关闭对话框
+      const dlg = document.getElementById('close-generation-dialog');
+      if (dlg) dlg.remove();
+      // 再执行取消
+      setTimeout(() => {
+        cancelGeneration();
+      }, 50);
+    });
+  }
+  
+  // 绑定按钮事件 - 关闭对话框（返回生成界面）
+  const btnClose = document.getElementById('confirm-dialog-close');
+  if (btnClose) {
+    btnClose.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const dlg = document.getElementById('close-generation-dialog');
+      if (dlg) dlg.remove();
+    });
+  }
+  
+  // 点击遮罩关闭
+  dialog.addEventListener('click', (e) => {
+    if (e.target === dialog) {
+      closeConfirmDialog();
+    }
+  });
+}
+
+// 关闭确认对话框
+function closeConfirmDialog() {
+  const dialog = document.getElementById('close-generation-dialog');
+  if (dialog) {
+    dialog.remove();
+  }
+}
+
 // 取消生成
-function cancelGeneration() {
+async function cancelGeneration() {
   backgroundTask.isCancelled = true;
   
+  // 保存当前请求ID，用于通知后端
+  const requestIdToCancel = state.currentRequestId;
+  
+  // 获取草稿ID（在清理状态之前）
+  let draftIdToDelete = null;
+  try {
+    const savedState = localStorage.getItem('aigame-generating-state');
+    if (savedState) {
+      const parsed = JSON.parse(savedState);
+      draftIdToDelete = parsed.draftId;
+    }
+  } catch (e) {
+    console.warn('[CANCEL] 获取草稿ID失败:', e);
+  }
+  
+  // 中断前端请求
   if (state.abortController) {
     state.abortController.abort();
     state.abortController = null;
   }
   
+  // 通知后端取消 LLM 请求（节省 Token）
+  if (requestIdToCancel) {
+    try {
+      const userToken = getUserToken();
+      await fetch('/api/cancel-generation', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-User-Token': userToken || ''
+        },
+        body: JSON.stringify({ requestId: requestIdToCancel })
+      });
+      console.log(`[CANCEL] 已通知后端取消请求: ${requestIdToCancel}`);
+    } catch (cancelError) {
+      console.warn('[CANCEL] 通知后端取消失败:', cancelError);
+    }
+    state.currentRequestId = null;
+  }
+  
+  // 删除草稿（如果存在）
+  if (draftIdToDelete) {
+    try {
+      const authorToken = getAuthorToken();
+      const response = await fetch(`/api/games/${draftIdToDelete}`, {
+        method: 'DELETE',
+        headers: {
+          'X-Author-Token': authorToken || ''
+        }
+      });
+      if (response.ok) {
+        console.log(`[CANCEL] 已删除草稿: ${draftIdToDelete}`);
+      }
+    } catch (deleteError) {
+      console.warn('[CANCEL] 删除草稿失败:', deleteError);
+    }
+  }
+  
+  // 停止草稿轮询
+  stopDraftPolling();
+  
   state.isGenerating = false;
   stopGeneratingTimer();
+  hideTurboButton();
   
-  // setGenerateButtonLoading(false);
+  // 隐藏所有生成相关UI
   document.getElementById('generating-overlay').classList.remove('active');
+  document.getElementById('generating-overlay').classList.remove('turbo-mode');
   document.body.classList.remove('overlay-open');
   document.getElementById('generating-float').classList.remove('active');
+  
+  // 清理生成状态
+  clearGeneratingState();
   
   showToast('已取消生成');
   log('用户取消了生成', 'warn');
@@ -3832,29 +4708,80 @@ async function generateGame(advancedSettings = null) {
     return;
   }
   
-  // 检查积分（首次生成和编辑免费）
-  const creditCheck = checkCreditsForGeneration();
-  if (!creditCheck.canGenerate) {
+  // 获取当前选择的模型
+  // 优先使用高级设置中选择的模型，其次是全局设置
+  const advModelSelect = document.getElementById('adv-llm-model');
+  const advSelectedModel = advModelSelect?.value?.trim();
+  const selectedModel = advSelectedModel || state.settings.llmProvider || serverDefaultModel || 'deepseek-v3';
+  const modelInfo = MODEL_REGISTRY[selectedModel];
+  
+  // 判断用户是否有自己的 Key
+  // 检查高级设置中的Key，或者全局设置中的Key
+  const advKeyInput = document.getElementById('adv-llm-key');
+  const advKey = advKeyInput?.value?.trim();
+  const userHasKey = (advKey && advKey.length > 0) || (state.settings.llmApiKey && state.settings.llmApiKey.trim().length > 0);
+  const backendHasKey = modelInfo?.hasDefaultKey === true;
+  const modelCreditCost = modelInfo?.creditCost || 1;
+  
+  // 自定义接口必须用户配置
+  if (selectedModel === 'custom') {
+    if (!state.settings.llmApiKey || !state.settings.llmBaseUrl) {
+      showToast('使用自定义接口需要配置 API Key 和接口地址', 'error');
+      openSettings();
+      return;
+    }
+  }
+  
+  // 检查 Key 可用性
+  // 规则：用户没Key + 后台也没Key = 不能生成
+  if (!userHasKey && !backendHasKey && selectedModel !== 'custom') {
+    showNeedApiKeyForModelModal(modelInfo?.name || selectedModel, selectedModel);
+    return;
+  }
+  
+  // 计算本次生成需要的积分
+  // 规则：用户有Key = 免费，用户没Key但后台有Key = 消耗后台配置的积分
+  let creditCostThisTime = 0;
+  let isFreeGeneration = false;
+  let freeReason = '';
+  
+  if (userHasKey) {
+    // 用户有自己的 Key，免费
+    creditCostThisTime = 0;
+    isFreeGeneration = true;
+    freeReason = '使用自己的 API Key，免费生成';
+  } else if (state.isEditMode) {
+    // 编辑模式免费
+    creditCostThisTime = 0;
+    isFreeGeneration = true;
+    freeReason = '编辑模式免费';
+  } else if (state.isFirstGeneration) {
+    // 首次生成免费
+    creditCostThisTime = 0;
+    isFreeGeneration = true;
+    freeReason = '首次生成免费';
+  } else {
+    // 使用后台 Key，消耗积分
+    creditCostThisTime = modelCreditCost;
+  }
+  
+  // 检查积分是否足够
+  if (creditCostThisTime > 0 && state.credits < creditCostThisTime) {
     openNoCreditsModal();
     return;
   }
   
-  // 立即扣除积分并刷新显示（在发起请求前）
-  if (!creditCheck.isFree) {
-    state.credits--;
-    saveCredits();
-    updateCreditsDisplay();
-    showToast(`💎 消耗1积分，剩余: ${state.credits}`, 'info');
+  // 显示积分提示（实际扣除由后端完成）
+  if (creditCostThisTime > 0) {
+    showToast(`💎 本次将消耗 ${creditCostThisTime} 积分`, 'info');
   } else {
-    showToast(`💎 ${creditCheck.message} | 当前积分: ${state.credits}`, 'success');
+    showToast(`🆓 ${freeReason}`, 'success');
     // 标记首次生成已使用
-    if (state.isFirstGeneration) {
+    if (state.isFirstGeneration && freeReason.includes('首次')) {
       state.isFirstGeneration = false;
       localStorage.setItem('aigame-first-generation', 'false');
     }
   }
-  
-  // 不再强制要求API Key，使用服务器默认配置
   
   state.isGenerating = true;
   state.abortController = new AbortController();
@@ -3873,8 +4800,7 @@ async function generateGame(advancedSettings = null) {
   document.getElementById('generating-overlay').classList.add('active');
   document.body.classList.add('overlay-open');
   
-  // 获取当前模型的预计生成时间
-  const selectedModel = state.settings.llmProvider || 'deepseek-v3';
+  // 获取当前模型的预计生成时间（selectedModel 已在前面定义）
   currentModelEstimatedTime = modelEstimatedTimes[selectedModel] || 30; // 默认30秒
   
   startGeneratingTimer();
@@ -3888,50 +4814,24 @@ async function generateGame(advancedSettings = null) {
   updateGeneratingStatus('正在连接 AI 服务...');
   
   try {
-    // 构建LLM配置 - 使用模型注册表
-    const modelConfig = MODEL_REGISTRY[selectedModel];
-    
+    // 构建LLM配置 - 只传递 modelId 和用户的 apiKey（如果有）
+    // 后端会根据 modelId 从 LLM_MODELS 获取完整配置
     const llmConfig = {
-      apiKey: state.settings.llmApiKey
+      provider: selectedModel,  // 这里传 modelId，后端会解析
+      apiKey: state.settings.llmApiKey || ''  // 用户自己的Key（如果有）
     };
     
-    if (modelConfig) {
-      // 使用注册表中的配置
-      llmConfig.provider = modelConfig.provider || selectedModel;
-      llmConfig.baseUrl = modelConfig.baseUrl;
-      llmConfig.model = modelConfig.model;
-    } else if (selectedModel === 'custom') {
-      // 自定义配置
-      llmConfig.provider = 'custom';
+    // 如果是自定义接口，需要传递完整配置
+    if (selectedModel === 'custom') {
       llmConfig.baseUrl = state.settings.llmBaseUrl;
       llmConfig.model = state.settings.llmModel;
-    } else {
-      // 后备：尝试从旧的provider名推断
-      if (selectedModel.startsWith('deepseek')) {
-        llmConfig.provider = 'deepseek';
-        llmConfig.baseUrl = 'https://api.deepseek.com';
-        llmConfig.model = selectedModel === 'deepseek-r1' ? 'deepseek-reasoner' : 'deepseek-chat';
-      } else if (selectedModel.startsWith('gpt')) {
-        llmConfig.provider = 'openai';
-        llmConfig.baseUrl = 'https://api.openai.com/v1';
-        llmConfig.model = selectedModel;
-      } else if (selectedModel.startsWith('claude')) {
-        llmConfig.provider = 'anthropic';
-        llmConfig.baseUrl = 'https://api.anthropic.com';
-        llmConfig.model = selectedModel;
-      } else {
-        // 最后的后备
-        llmConfig.provider = 'deepseek';
-        llmConfig.baseUrl = 'https://api.deepseek.com';
-        llmConfig.model = 'deepseek-chat';
-      }
     }
     
-    // 开发者信息仅在控制台输出，不显示给用户
-    console.log(`[DEBUG] 使用 ${llmConfig.provider} 模型: ${llmConfig.model}`);
-    console.log(`[DEBUG] API地址: ${llmConfig.baseUrl}`);
+    // 开发者信息仅在控制台输出（modelInfo 已在前面定义）
+    console.log(`[DEBUG] 选择的模型ID: ${selectedModel}`);
+    console.log(`[DEBUG] 用户Key: ${llmConfig.apiKey ? '已配置' : '未配置'}`);
     
-    const modelDisplayName = MODEL_REGISTRY[selectedModel]?.name || selectedModel;
+    const modelDisplayName = modelInfo?.name || selectedModel;
     log(`🤖 正在使用 ${modelDisplayName} 模型`);
     updateGeneratingStatus('AI 正在思考创意...');
     
@@ -3940,6 +4840,11 @@ async function generateGame(advancedSettings = null) {
     // 获取用户token和作者token
     const userToken = getUserToken();
     const authorToken = getAuthorToken();
+    
+    // 生成唯一请求ID，用于取消功能
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    state.currentRequestId = requestId;
+    console.log(`[DEBUG] 生成请求ID: ${requestId}`);
     
     // 如果高级设置中有LLM覆盖，应用到llmConfig
     if (advancedSettings?.llmOverride) {
@@ -3961,6 +4866,7 @@ async function generateGame(advancedSettings = null) {
         prompt, 
         llmConfig,
         draftId: createdDraftId,  // 传递草稿ID，后端生成完成后会自动更新
+        requestId,  // 请求ID，用于取消功能
         advancedSettings: advancedSettings ? {
           gameName: advancedSettings.gameName,
           gameType: advancedSettings.gameType,
@@ -3981,6 +4887,13 @@ async function generateGame(advancedSettings = null) {
     const data = await response.json();
     
     if (!data.success) {
+      // 检查是否需要配置 API Key
+      if (data.needApiKey) {
+        // 后端明确告知需要配置 API Key
+        showNeedApiKeyModal(data.error, data.hint, data.provider);
+        throw new Error(data.error);
+      }
+      
       // 检查是否是 API Key 相关错误
       const errorMsg = data.error || '生成失败';
       const isApiKeyError = errorMsg.includes('401') || 
@@ -5206,6 +6119,177 @@ function showApiKeyErrorModal(errorMsg) {
     </div>
   `;
   document.body.appendChild(modal);
+}
+
+// 显示模型需要用户配置 API Key 的弹窗（后台未配置Key时）
+// modelName: 模型显示名称, modelId: 模型ID（可选，用于跳转设置时预选）
+function showNeedApiKeyForModelModal(modelName, modelId = null) {
+  // 保存当前需要配置的模型ID，供跳转设置时使用
+  window._pendingModelIdForSettings = modelId || state.settings.llmProvider;
+  
+  // 创建弹窗
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.id = 'need-model-key-modal';
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 450px;">
+      <div class="modal-header">
+        <h2>🔑 需要配置 API Key</h2>
+        <button class="btn-close" onclick="closeNeedModelKeyModal()">×</button>
+      </div>
+      <div class="modal-body" style="text-align: center; padding: 1.5rem;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🔐</div>
+        <p style="color: #fbbf24; margin-bottom: 0.75rem; font-size: 1rem; font-weight: bold;">
+          ${escapeHtml(modelName)} 未配置默认 API Key
+        </p>
+        <p style="color: #94a3b8; margin-bottom: 1.5rem; font-size: 0.9rem; line-height: 1.6;">
+          管理员尚未为此模型配置公共 API Key，<br>
+          您需要在设置中配置自己的 API Key 才能使用。
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <button class="btn-primary" onclick="goToSettingsWithPendingModel();" style="width: 100%; padding: 0.75rem;">
+            ⚙️ 去设置中配置我的 API Key
+          </button>
+          <button class="btn-secondary" onclick="switchToAvailableModel()" style="width: 100%; padding: 0.75rem;">
+            🔄 切换到其他可用模型
+          </button>
+          <button class="btn-ghost" onclick="closeNeedModelKeyModal()" style="width: 100%; padding: 0.5rem; color: #64748b;">
+            取消
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+// 关闭模型需要 Key 弹窗
+function closeNeedModelKeyModal() {
+  const modal = document.getElementById('need-model-key-modal');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+// 切换到有可用 Key 的模型
+function switchToAvailableModel() {
+  closeNeedModelKeyModal();
+  
+  // 找到一个有默认 Key 的模型
+  const availableModel = Object.entries(MODEL_REGISTRY).find(([id, info]) => {
+    return id !== 'custom' && info.hasDefaultKey === true;
+  });
+  
+  if (availableModel) {
+    state.settings.llmProvider = availableModel[0];
+    state.settings.llmModelId = availableModel[0];
+    localStorage.setItem('aigame-settings', JSON.stringify(state.settings));
+    showToast(`已切换到 ${availableModel[1].name}`, 'success');
+    
+    // 更新下拉框
+    const modelSelect = document.getElementById('adv-llm-model');
+    if (modelSelect) {
+      modelSelect.value = availableModel[0];
+    }
+  } else {
+    showToast('没有找到已配置 Key 的模型，请在设置中配置您的 API Key', 'error');
+    openSettings();
+  }
+}
+
+// 显示需要配置 API Key 的提示弹窗
+function showNeedApiKeyModal(errorMsg, hint, provider) {
+  // 关闭生成遮罩
+  hideGeneratingOverlay();
+  stopGeneratingTimer();
+  hideTurboButton();
+  state.isGenerating = false;
+  document.getElementById('generating-float').classList.remove('active');
+  
+  // 创建弹窗
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.id = 'need-api-key-modal';
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 420px;">
+      <div class="modal-header">
+        <h2>🔑 需要配置 API Key</h2>
+        <button class="btn-close" onclick="closeNeedApiKeyModal()">×</button>
+      </div>
+      <div class="modal-body" style="text-align: center; padding: 1.5rem;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🔐</div>
+        <p style="color: #fbbf24; margin-bottom: 1rem; font-size: 0.95rem;">
+          ${escapeHtml(errorMsg)}
+        </p>
+        <p style="color: #94a3b8; margin-bottom: 1.5rem; font-size: 0.85rem;">
+          ${escapeHtml(hint || '请在设置中配置您的 API Key')}
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <button class="btn-primary" onclick="goToSettingsForApiKey()" style="width: 100%; padding: 0.75rem;">
+            ⚙️ 去设置中配置 API Key
+          </button>
+          <button class="btn-secondary" onclick="switchToFreeModel()" style="width: 100%; padding: 0.75rem;">
+            🆓 切换到免费模型 (DeepSeek)
+          </button>
+          <button class="btn-ghost" onclick="closeNeedApiKeyModal()" style="width: 100%; padding: 0.5rem; color: #64748b;">
+            取消
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+// 关闭需要 API Key 弹窗
+function closeNeedApiKeyModal() {
+  const modal = document.getElementById('need-api-key-modal');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+// 去设置中配置 API Key
+function goToSettingsForApiKey() {
+  closeNeedApiKeyModal();
+  openSettings();
+}
+
+// 去设置中配置 API Key（带预选模型，从创作界面弹窗调用）
+function goToSettingsWithPendingModel() {
+  const modelId = window._pendingModelIdForSettings;
+  closeNeedModelKeyModal();
+  openSettings(modelId);
+  // 清理临时变量
+  delete window._pendingModelIdForSettings;
+}
+
+// 去设置中配置指定模型的 API Key（从加速模型弹窗调用）
+function goToSettingsForModel(modelId, modelName) {
+  // 关闭加速模型弹窗
+  closeTurboModal();
+  
+  // 显示提示
+  showToast(`请配置 ${modelName} 的 API Key`, 'info');
+  
+  // 打开设置弹窗，并预选该模型
+  openSettings(modelId);
+}
+
+// 切换到免费模型
+function switchToFreeModel() {
+  closeNeedApiKeyModal();
+  // 设置为 DeepSeek V3（免费模型）
+  state.settings.llmProvider = 'deepseek-v3';
+  saveSettings();
+  
+  // 更新高级设置中的模型选择
+  const advModelSelect = document.getElementById('adv-llm-model');
+  if (advModelSelect) {
+    advModelSelect.value = 'deepseek-v3';
+  }
+  
+  showToast('已切换到 DeepSeek V3（免费模型）', 'success');
 }
 
 // 关闭 API Key 错误弹窗
@@ -6596,15 +7680,22 @@ function onModelSelectChange() {
   if (!select) return;
   
   const modelId = select.value;
+  
+  // 新版设置页面的自定义接口区域
+  const customApiGroup = document.getElementById('custom-api-group');
+  
+  // 旧版设置弹窗的元素（兼容）
   const baseUrlGroup = document.getElementById('base-url-group');
   const customModelGroup = document.getElementById('custom-model-group');
   const modelHint = document.getElementById('model-hint');
   
   if (modelId === 'custom') {
+    if (customApiGroup) customApiGroup.style.display = 'block';
     if (baseUrlGroup) baseUrlGroup.style.display = 'block';
     if (customModelGroup) customModelGroup.style.display = 'block';
     if (modelHint) modelHint.textContent = '输入自定义的 API 地址和模型名称';
   } else {
+    if (customApiGroup) customApiGroup.style.display = 'none';
     if (baseUrlGroup) baseUrlGroup.style.display = 'none';
     if (customModelGroup) customModelGroup.style.display = 'none';
     

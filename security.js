@@ -509,11 +509,22 @@ function bodySizeCheck(maxSize = 1024 * 1024) { // 默认1MB
 
 // ==================== CORS 配置 ====================
 
+// CORS白名单获取函数（可被外部设置）
+let corsWhitelistGetter = null;
+
+/**
+ * 设置CORS白名单获取函数
+ * @param {Function} getter - 返回白名单数组的函数
+ */
+function setCorsWhitelistGetter(getter) {
+  corsWhitelistGetter = getter;
+}
+
 /**
  * 获取CORS配置
  */
 function getCorsConfig() {
-  // 默认允许的域名（生产环境）
+  // 默认允许的域名
   const defaultOrigins = [
     'http://localhost', 
     'http://localhost:80', 
@@ -526,26 +537,35 @@ function getCorsConfig() {
     'https://yijuhuayouxi.com'
   ];
   
-  const allowedOrigins = process.env.ALLOWED_ORIGINS 
-    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-    : defaultOrigins;
-  
   return {
     origin: function(origin, callback) {
       // 允许无origin的请求（如移动端app、Postman等）
       if (!origin) return callback(null, true);
       
-      // 生产环境：检查白名单
-      if (process.env.NODE_ENV === 'production') {
-        if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
-          callback(null, true);
-        } else {
-          console.log(`[SECURITY] CORS阻止来源: ${origin}`);
-          callback(new Error('Not allowed by CORS'));
+      // 优先从数据库获取白名单
+      let allowedOrigins = defaultOrigins;
+      if (corsWhitelistGetter) {
+        try {
+          const dbOrigins = corsWhitelistGetter();
+          if (dbOrigins && dbOrigins.length > 0) {
+            allowedOrigins = dbOrigins;
+          }
+        } catch (e) {
+          console.error('[SECURITY] 获取CORS白名单失败:', e);
         }
       } else {
-        // 开发环境：允许所有
+        // 回退到环境变量配置
+        allowedOrigins = process.env.ALLOWED_ORIGINS 
+          ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+          : defaultOrigins;
+      }
+      
+      // 检查白名单
+      if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
         callback(null, true);
+      } else {
+        console.log(`[SECURITY] CORS阻止来源: ${origin}，当前白名单: ${allowedOrigins.join(', ')}`);
+        callback(new Error('Not allowed by CORS'));
       }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -554,7 +574,8 @@ function getCorsConfig() {
       'X-User-Token', 
       'X-Admin-Key', 
       'X-Author-Token',
-      'X-Requested-With'
+      'X-Requested-With',
+      'X-Account-Id'
     ],
     credentials: true,
     maxAge: 86400, // 预检请求缓存24小时
@@ -640,6 +661,7 @@ module.exports = {
   
   // CORS
   getCorsConfig,
+  setCorsWhitelistGetter,
   
   // 密码
   hashPasswordSecure,
