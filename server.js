@@ -1782,36 +1782,43 @@ const WEEKLY_CHALLENGES = [
 // 注意：默认积分为 1，可在后台修改
 const LLM_MODELS = {
   // DeepSeek 系列 - 性价比之王 (高质量但可能较慢)
-  'deepseek-v3': { name: 'DeepSeek V3', provider: 'deepseek', model: 'deepseek-chat', baseUrl: 'https://api.deepseek.com', tier: 'standard', creditCost: 1, speed: 'slow', quality: 'high', recommended: true },
-  'deepseek-r1': { name: 'DeepSeek R1', provider: 'deepseek', model: 'deepseek-reasoner', baseUrl: 'https://api.deepseek.com', tier: 'standard', creditCost: 1, speed: 'slow', quality: 'very-high' },
+  // DeepSeek V3/R1 最大输出 8192 tokens
+  'deepseek-v3': { name: 'DeepSeek V3', provider: 'deepseek', model: 'deepseek-chat', baseUrl: 'https://api.deepseek.com', tier: 'standard', creditCost: 1, speed: 'slow', quality: 'high', maxTokens: 8192, recommended: true },
+  'deepseek-r1': { name: 'DeepSeek R1', provider: 'deepseek', model: 'deepseek-reasoner', baseUrl: 'https://api.deepseek.com', tier: 'standard', creditCost: 1, speed: 'slow', quality: 'very-high', maxTokens: 8192 },
   
   // OpenAI 系列 - Turbo加速选项
-  'gpt-4o': { name: 'GPT-4o', provider: 'openai', model: 'gpt-4o', baseUrl: 'https://api.openai.com', tier: 'pro', creditCost: 1, speed: 'medium', quality: 'very-high' },
-  'gpt-4o-mini': { name: 'GPT-4o Mini', provider: 'openai', model: 'gpt-4o-mini', baseUrl: 'https://api.openai.com', tier: 'turbo', creditCost: 1, speed: 'fast', quality: 'medium', turboRecommended: true },
-  'gpt-5': { name: 'GPT 5', provider: 'openai', model: 'gpt-5', baseUrl: 'https://api.openai.com', tier: 'pro', creditCost: 1, speed: 'medium', quality: 'excellent' },
-  'gpt-5.1': { name: 'GPT 5.1', provider: 'openai', model: 'gpt-5.1', baseUrl: 'https://api.openai.com', tier: 'pro', creditCost: 1, speed: 'medium', quality: 'excellent' },
-  'gpt-5.1-codex': { name: 'GPT 5.1 Codex', provider: 'openai', model: 'gpt-5.1-codex', baseUrl: 'https://api.openai.com', tier: 'pro', creditCost: 1, speed: 'medium', quality: 'excellent' },
+  // GPT-4o/4o-mini 最大输出 16384 tokens
+  'gpt-4o': { name: 'GPT-4o', provider: 'openai', model: 'gpt-4o', baseUrl: 'https://api.openai.com', tier: 'pro', creditCost: 1, speed: 'medium', quality: 'very-high', maxTokens: 16384 },
+  'gpt-4o-mini': { name: 'GPT-4o Mini', provider: 'openai', model: 'gpt-4o-mini', baseUrl: 'https://api.openai.com', tier: 'turbo', creditCost: 1, speed: 'fast', quality: 'medium', maxTokens: 16384, turboRecommended: true },
+  // GPT-5 系列（假设更大输出能力）
+  'gpt-5': { name: 'GPT 5', provider: 'openai', model: 'gpt-5', baseUrl: 'https://api.openai.com', tier: 'pro', creditCost: 1, speed: 'medium', quality: 'excellent', maxTokens: 32768 },
+  'gpt-5.1': { name: 'GPT 5.1', provider: 'openai', model: 'gpt-5.1', baseUrl: 'https://api.openai.com', tier: 'pro', creditCost: 1, speed: 'medium', quality: 'excellent', maxTokens: 32768 },
+  'gpt-5.1-codex': { name: 'GPT 5.1 Codex', provider: 'openai', model: 'gpt-5.1-codex', baseUrl: 'https://api.openai.com', tier: 'pro', creditCost: 1, speed: 'medium', quality: 'excellent', maxTokens: 32768 },
   
   // Claude 系列
-  'claude-4.5-opus': { name: 'Claude 4.5 Opus', provider: 'anthropic', model: 'claude-sonnet-4-5-20250514', baseUrl: 'https://api.anthropic.com', tier: 'pro', creditCost: 1, speed: 'medium', quality: 'excellent', new: true },
-  'claude-4.5-sonnet': { name: 'Claude 4.5 Sonnet', provider: 'anthropic', model: 'claude-4.5-sonnet', baseUrl: 'https://api.anthropic.com', tier: 'pro', creditCost: 1, speed: 'medium', quality: 'very-high' },
-  'claude-4.5-haiku': { name: 'Claude 4.5 Haiku', provider: 'anthropic', model: 'claude-4.5-haiku', baseUrl: 'https://api.anthropic.com', tier: 'turbo', creditCost: 1, speed: 'fast', quality: 'medium' },
-  'claude-4-sonnet': { name: 'Claude 4 Sonnet', provider: 'anthropic', model: 'claude-4-sonnet', baseUrl: 'https://api.anthropic.com', tier: 'pro', creditCost: 1, speed: 'medium', quality: 'high' },
-  'claude-3.7-sonnet': { name: 'Claude 3.7 Sonnet', provider: 'anthropic', model: 'claude-3-7-sonnet-20250219', baseUrl: 'https://api.anthropic.com', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'high' },
+  // Claude 4.5 Opus 最大输出 16384 tokens，其他 Claude 最大 8192 tokens
+  'claude-4.5-opus': { name: 'Claude 4.5 Opus', provider: 'anthropic', model: 'claude-sonnet-4-5-20250514', baseUrl: 'https://api.anthropic.com', tier: 'pro', creditCost: 1, speed: 'medium', quality: 'excellent', maxTokens: 16384, new: true },
+  'claude-4.5-sonnet': { name: 'Claude 4.5 Sonnet', provider: 'anthropic', model: 'claude-4.5-sonnet', baseUrl: 'https://api.anthropic.com', tier: 'pro', creditCost: 1, speed: 'medium', quality: 'very-high', maxTokens: 16384 },
+  'claude-4.5-haiku': { name: 'Claude 4.5 Haiku', provider: 'anthropic', model: 'claude-4.5-haiku', baseUrl: 'https://api.anthropic.com', tier: 'turbo', creditCost: 1, speed: 'fast', quality: 'medium', maxTokens: 8192 },
+  'claude-4-sonnet': { name: 'Claude 4 Sonnet', provider: 'anthropic', model: 'claude-4-sonnet', baseUrl: 'https://api.anthropic.com', tier: 'pro', creditCost: 1, speed: 'medium', quality: 'high', maxTokens: 8192 },
+  'claude-3.7-sonnet': { name: 'Claude 3.7 Sonnet', provider: 'anthropic', model: 'claude-3-7-sonnet-20250219', baseUrl: 'https://api.anthropic.com', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'high', maxTokens: 8192 },
   
-  // Google Gemini 系列
   // Google Gemini 系列 - 通过 OpenRouter 代理访问（国内可用）
-  'gemini-3-pro': { name: 'Gemini 3 Pro', provider: 'openrouter', model: 'google/gemini-3-pro-preview', baseUrl: 'https://openrouter.ai/api', tier: 'pro', creditCost: 1, speed: 'fast', quality: 'very-high', new: true },
-  'gemini-2.5-pro': { name: 'Gemini 2.5 Pro', provider: 'openrouter', model: 'google/gemini-2.5-pro', baseUrl: 'https://openrouter.ai/api', tier: 'pro', creditCost: 1, speed: 'fast', quality: 'very-high' },
-  'gemini-2.5-flash': { name: 'Gemini 2.5 Flash', provider: 'openrouter', model: 'google/gemini-2.5-flash', baseUrl: 'https://openrouter.ai/api', tier: 'standard', creditCost: 1, speed: 'very-fast', quality: 'high' },
-  'gemini-2.0-flash': { name: 'Gemini 2.0 Flash', provider: 'openrouter', model: 'google/gemini-2.0-flash-001', baseUrl: 'https://openrouter.ai/api', tier: 'standard', creditCost: 1, speed: 'very-fast', quality: 'high' },
+  // Gemini 2.5 Pro 最大输出 65536 tokens，Flash 系列 8192 tokens
+  'gemini-3-pro': { name: 'Gemini 3 Pro', provider: 'openrouter', model: 'google/gemini-3-pro-preview', baseUrl: 'https://openrouter.ai/api', tier: 'pro', creditCost: 1, speed: 'fast', quality: 'very-high', maxTokens: 65536, new: true },
+  'gemini-2.5-pro': { name: 'Gemini 2.5 Pro', provider: 'openrouter', model: 'google/gemini-2.5-pro', baseUrl: 'https://openrouter.ai/api', tier: 'pro', creditCost: 1, speed: 'fast', quality: 'very-high', maxTokens: 65536 },
+  'gemini-2.5-flash': { name: 'Gemini 2.5 Flash', provider: 'openrouter', model: 'google/gemini-2.5-flash', baseUrl: 'https://openrouter.ai/api', tier: 'standard', creditCost: 1, speed: 'very-fast', quality: 'high', maxTokens: 8192 },
+  'gemini-2.0-flash': { name: 'Gemini 2.0 Flash', provider: 'openrouter', model: 'google/gemini-2.0-flash-001', baseUrl: 'https://openrouter.ai/api', tier: 'standard', creditCost: 1, speed: 'very-fast', quality: 'high', maxTokens: 8192 },
   
   // 国产模型
-  'glm-4.7': { name: 'GLM 4.7', provider: 'zhipu', model: 'glm-4.7', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'high', new: true },
-  'glm-4.6': { name: 'GLM 4.6', provider: 'zhipu', model: 'glm-4.6', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'medium' },
-  'glm-4.5': { name: 'GLM 4.5', provider: 'zhipu', model: 'glm-4.5', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'medium' },
-  'kimi-k2': { name: 'Kimi K2', provider: 'moonshot', model: 'kimi-k2', baseUrl: 'https://api.moonshot.cn', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'high' },
-  'qwen3-coder-plus': { name: 'Qwen3 Coder Plus', provider: 'alibaba', model: 'qwen-coder-plus', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'high' },
+  // GLM-4 系列最大输出 4096 tokens
+  'glm-4.7': { name: 'GLM 4.7', provider: 'zhipu', model: 'glm-4.7', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'high', maxTokens: 4096, new: true },
+  'glm-4.6': { name: 'GLM 4.6', provider: 'zhipu', model: 'glm-4.6', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'medium', maxTokens: 4096 },
+  'glm-4.5': { name: 'GLM 4.5', provider: 'zhipu', model: 'glm-4.5', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'medium', maxTokens: 4096 },
+  // Kimi K2 支持超长上下文，最大输出 131072 tokens
+  'kimi-k2': { name: 'Kimi K2', provider: 'moonshot', model: 'kimi-k2', baseUrl: 'https://api.moonshot.cn', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'high', maxTokens: 131072 },
+  // Qwen Coder Plus 最大输出 8192 tokens
+  'qwen3-coder-plus': { name: 'Qwen3 Coder Plus', provider: 'alibaba', model: 'qwen-coder-plus', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'high', maxTokens: 8192 },
 };
 
 // 获取模型的积分消耗（优先从配置读取，否则使用默认值）
@@ -1825,6 +1832,19 @@ function getModelCreditCost(modelId) {
   // 使用默认值
   const model = LLM_MODELS[modelId];
   return model ? model.creditCost : 0;
+}
+
+// 获取模型的最大Token数（优先从配置读取，否则使用默认值）
+function getModelMaxTokens(modelId) {
+  // 尝试从数据库配置读取
+  const configKey = `llm_maxtokens_${modelId}`;
+  const configValue = getConfig(configKey, null);
+  if (configValue !== null) {
+    return parseInt(configValue, 10) || 8000;
+  }
+  // 使用默认值
+  const model = LLM_MODELS[modelId];
+  return model ? (model.maxTokens || 8000) : 8000;
 }
 
 // 获取模型的效果等级（优先从配置读取）
@@ -1880,6 +1900,7 @@ function getTurboModels() {
     .map(([key, config]) => {
       const creditCost = getModelCreditCost(key);
       const quality = getModelQuality(key);
+      const maxTokens = getModelMaxTokens(key);
       const apiKeyKey = `llm_apikey_${key}`;
       const hasDefaultKey = getConfig(apiKeyKey, null) !== null && getConfig(apiKeyKey, '').length > 0;
       
@@ -1892,6 +1913,7 @@ function getTurboModels() {
         creditCost: creditCost,
         speedLevel: speedLevel,  // 返回速度等级（ultra/fast/normal/slow/very-slow）
         quality: quality,
+        maxTokens: maxTokens,  // 最大Token数
         turboRecommended: config.turboRecommended || false,
         hasDefaultKey: hasDefaultKey,  // 是否配置了默认API Key
         needsUserKey: creditCost === 0 && !hasDefaultKey  // 需要用户自己配置Key
@@ -4295,6 +4317,10 @@ ${advancedHint}${gameNameHint}
       });
     }
     
+    // 获取模型的最大Token配置
+    const maxTokens = selectedModelId ? getModelMaxTokens(selectedModelId) : 8000;
+    console.log(`[INFO] 使用最大Token数: ${maxTokens} (模型: ${selectedModelId || 'default'})`);
+    
     const response = await fetch(`${config.baseUrl}/v1/chat/completions`, {
       method: 'POST',
       headers: {
@@ -4308,7 +4334,7 @@ ${advancedHint}${gameNameHint}
           { role: 'user', content: `请生成游戏：${prompt}` }
         ],
         temperature: 0.7,
-        max_tokens: 3000
+        max_tokens: maxTokens
       }),
       signal: llmAbortController.signal  // 支持中断 LLM 请求
     });
@@ -5547,6 +5573,11 @@ app.post('/api/trial/generate', async (req, res) => {
       throw new Error('游客模式未配置API Key');
     }
 
+    // 获取试玩模式使用的模型的最大Token配置
+    const defaultModel = getConfig('llm_default_model', 'deepseek-v3');
+    const trialMaxTokens = getModelMaxTokens(defaultModel);
+    console.log(`[TRIAL] 使用最大Token数: ${trialMaxTokens} (模型: ${defaultModel})`);
+
     // 带重试机制的API请求
     const MAX_RETRIES = 2;
     let response;
@@ -5572,7 +5603,7 @@ app.post('/api/trial/generate', async (req, res) => {
               { role: 'user', content: `请生成游戏：${enhancedPrompt}` }
             ],
             temperature: 0.7,
-            max_tokens: 3000
+            max_tokens: trialMaxTokens
           }),
           signal: controller.signal
         });
@@ -6308,11 +6339,13 @@ app.get('/api/admin/models', (req, res) => {
       const creditsKey = `llm_credits_${id}`;
       const qualityKey = `llm_quality_${id}`;
       const apiKeyKey = `llm_apikey_${id}`;
+      const maxTokensKey = `llm_maxtokens_${id}`;
       
       // 从数据库获取配置值
       const configuredCredits = getConfig(creditsKey, null);
       const configuredQuality = getConfig(qualityKey, null);
       const configuredApiKey = getConfig(apiKeyKey, null);
+      const configuredMaxTokens = getConfig(maxTokensKey, null);
       
       // 实际使用的quality（优先使用配置值）
       const effectiveQuality = configuredQuality || config.quality;
@@ -6344,13 +6377,16 @@ app.get('/api/admin/models', (req, res) => {
         defaultQuality: config.quality,  // 保留默认值供参考
         // 默认值
         defaultCredits: config.creditCost,
+        defaultMaxTokens: config.maxTokens || 8000,  // 默认最大Token数
         // 配置值（如果有）
         configuredCredits: configuredCredits !== null ? parseInt(configuredCredits) : null,
         configuredQuality: configuredQuality,
+        configuredMaxTokens: configuredMaxTokens !== null ? parseInt(configuredMaxTokens) : null,
         hasApiKey: configuredApiKey !== null && configuredApiKey.length > 0,
         maskedApiKey: maskedApiKey,  // 遮蔽后的 API Key
         // 实际使用的值
         creditCost: getModelCreditCost(id),
+        maxTokens: getModelMaxTokens(id),  // 实际使用的最大Token数
         // 是否启用
         enabled: isModelEnabled(id)
       };
