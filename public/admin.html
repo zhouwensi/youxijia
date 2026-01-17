@@ -737,7 +737,7 @@
               <th style="padding: 0.75rem; border-bottom: 1px solid #334155; text-align: center; width: 80px;">启用</th>
               <th style="padding: 0.75rem; border-bottom: 1px solid #334155;">模型名称</th>
               <th style="padding: 0.75rem; border-bottom: 1px solid #334155;">提供商</th>
-              <th style="padding: 0.75rem; border-bottom: 1px solid #334155; text-align: center;">预计时间(秒)</th>
+              <th style="padding: 0.75rem; border-bottom: 1px solid #334155; text-align: center;">速度</th>
               <th style="padding: 0.75rem; border-bottom: 1px solid #334155; text-align: center;">效果等级</th>
               <th style="padding: 0.75rem; border-bottom: 1px solid #334155; text-align: center;">消耗积分</th>
               <th style="padding: 0.75rem; border-bottom: 1px solid #334155;">默认 API Key</th>
@@ -3351,9 +3351,21 @@
         return;
       }
       
+      // 速度等级颜色映射
+      function getSpeedColor(speed) {
+        const colors = {
+          'ultra': '#ec4899',
+          'fast': '#6366f1',
+          'normal': '#10b981',
+          'slow': '#f59e0b',
+          'very-slow': '#94a3b8'
+        };
+        return colors[speed] || '#94a3b8';
+      }
+      
       const rows = MODEL_LIST.map(model => {
         // 使用后端返回的实际值
-        const time = model.estimatedTime;
+        const speedLevel = model.speedLevel || 'normal';
         const credits = model.creditCost;
         const hasKey = model.hasApiKey;
         const qualityLabel = getQualityLabel(model.quality);
@@ -3379,9 +3391,14 @@
             </td>
             <td style="padding: 0.75rem; color: #94a3b8;">${providerLabel}</td>
             <td style="padding: 0.75rem; text-align: center;">
-              <input type="number" id="model-time-${model.id}" value="${time}" 
-                style="width: 80px; padding: 0.375rem; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 4px; text-align: center;"
-                min="30" max="1800">
+              <select id="model-speed-${model.id}" 
+                style="padding: 0.375rem; background: #1e293b; border: 1px solid #334155; color: ${getSpeedColor(speedLevel)}; border-radius: 4px; font-weight: bold;">
+                <option value="ultra" ${speedLevel === 'ultra' ? 'selected' : ''} style="color: #ec4899;">极速</option>
+                <option value="fast" ${speedLevel === 'fast' ? 'selected' : ''} style="color: #6366f1;">快速</option>
+                <option value="normal" ${speedLevel === 'normal' ? 'selected' : ''} style="color: #10b981;">普通</option>
+                <option value="slow" ${speedLevel === 'slow' ? 'selected' : ''} style="color: #f59e0b;">较慢</option>
+                <option value="very-slow" ${speedLevel === 'very-slow' ? 'selected' : ''} style="color: #94a3b8;">缓慢</option>
+              </select>
             </td>
             <td style="padding: 0.75rem; text-align: center;">
               <select id="model-quality-${model.id}" 
@@ -3433,7 +3450,7 @@
       let apiKeyCount = 0;
       
       MODEL_LIST.forEach(model => {
-        const timeInput = document.getElementById(`model-time-${model.id}`);
+        const speedSelect = document.getElementById(`model-speed-${model.id}`);
         const creditsInput = document.getElementById(`model-credits-${model.id}`);
         const qualitySelect = document.getElementById(`model-quality-${model.id}`);
         const apiKeyInput = document.getElementById(`model-apikey-${model.id}`);
@@ -3443,9 +3460,9 @@
         if (enabledCheckbox) {
           configs.push({ key: `llm_enabled_${model.id}`, value: enabledCheckbox.checked ? 'true' : 'false' });
         }
-        // 时间配置（始终保存，即使是默认值）
-        if (timeInput && timeInput.value !== '') {
-          configs.push({ key: `llm_time_${model.id}`, value: timeInput.value });
+        // 速度等级配置（始终保存）
+        if (speedSelect && speedSelect.value !== '') {
+          configs.push({ key: `llm_speed_${model.id}`, value: speedSelect.value });
         }
         // 积分配置（始终保存）
         if (creditsInput && creditsInput.value !== '') {

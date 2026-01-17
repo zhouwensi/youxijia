@@ -1,3 +1,46 @@
+// ==================== 模型配置常量（统一定义） ====================
+
+// 速度等级标签映射
+const SPEED_LABELS = {
+  'ultra': '极速',
+  'fast': '快速',
+  'normal': '普通',
+  'slow': '较慢',
+  'very-slow': '缓慢'
+};
+
+// 速度等级详细信息（用于加速弹窗显示）
+const SPEED_INFO = {
+  'ultra': { label: '极速', icon: '⚡', className: 'speed-ultra' },
+  'fast': { label: '快速', icon: '⚡', className: 'speed-fast' },
+  'normal': { label: '普通', icon: '🚀', className: 'speed-normal' },
+  'slow': { label: '较慢', icon: '🐢', className: 'speed-slow' },
+  'very-slow': { label: '缓慢', icon: '🐌', className: 'speed-very-slow' }
+};
+
+// 质量等级标签映射
+const QUALITY_LABELS = {
+  'medium': '标准',
+  'high': '高',
+  'very-high': '很高',
+  'excellent': '极佳'
+};
+
+// 获取速度标签
+function getSpeedLabelText(speedLevel) {
+  return SPEED_LABELS[speedLevel] || SPEED_LABELS['normal'];
+}
+
+// 获取速度详细信息（含图标和样式类名）
+function getSpeedInfo(speedLevel) {
+  return SPEED_INFO[speedLevel] || SPEED_INFO['normal'];
+}
+
+// 获取质量标签
+function getQualityLabelText(quality) {
+  return QUALITY_LABELS[quality] || QUALITY_LABELS['medium'];
+}
+
 // ==================== 模型注册表（从后端动态加载） ====================
 // 模型列表缓存，从后端 /api/turbo-models 获取
 let MODEL_REGISTRY = {};
@@ -21,7 +64,7 @@ async function loadModelRegistry() {
           id: model.id,
           name: model.name,
           creditCost: model.creditCost,
-          speed: model.speed,
+          speedLevel: model.speedLevel,  // 速度等级（ultra/fast/normal/slow/very-slow）
           quality: model.quality,
           hasDefaultKey: model.hasDefaultKey,
           needsUserKey: model.needsUserKey,
@@ -116,14 +159,6 @@ function populateAdvancedModelSelect() {
     }
   };
   
-  // 质量标签
-  const qualityLabels = {
-    'medium': '标准',
-    'high': '高',
-    'very-high': '很高',
-    'excellent': '极佳'
-  };
-  
   // 添加模型选项
   Object.keys(MODEL_REGISTRY).forEach(modelId => {
     const model = MODEL_REGISTRY[modelId];
@@ -157,10 +192,8 @@ function populateAdvancedModelSelect() {
       displayName += ' 🔑需配Key';
     }
     
-    // 添加质量标识
-    if (model.quality && qualityLabels[model.quality]) {
-      displayName += ` [${qualityLabels[model.quality]}]`;
-    }
+    // 添加速度和质量标识 [速度|质量]
+    displayName += ` [${getSpeedLabelText(model.speedLevel)}|${getQualityLabelText(model.quality)}]`;
     
     option.textContent = displayName;
     select.appendChild(option);
@@ -3301,6 +3334,9 @@ async function loadSettingsModelList() {
         displayName += ' 🔑需配Key';
       }
       
+      // 添加速度和质量标识 [速度|质量]
+      displayName += ` [${getSpeedLabelText(model.speedLevel)}|${getQualityLabelText(model.quality)}]`;
+      
       option.textContent = displayName;
       modelSelect.appendChild(option);
     });
@@ -4022,15 +4058,6 @@ async function showTurboOptions() {
   // 判断用户是否有自己的 Key
   const userHasKey = state.settings.llmApiKey && state.settings.llmApiKey.trim().length > 0;
   
-  // 翻译质量等级
-  const qualityLabels = {
-    'low': '基础',
-    'medium': '标准',
-    'high': '高',
-    'very-high': '很高',
-    'excellent': '极佳'
-  };
-  
   // 渲染模型列表
   listContainer.innerHTML = models.map(model => {
     const backendHasKey = model.hasDefaultKey === true;
@@ -4081,6 +4108,9 @@ async function showTurboOptions() {
       ? `goToSettingsForModel('${model.id}', '${model.name}')`
       : `selectTurboModel('${model.id}', ${userHasKey ? 0 : model.creditCost}, false)`;
     
+    // 根据后台配置的速度等级获取显示信息
+    const speedInfo = getSpeedInfo(model.speedLevel || 'normal');
+    
     return `
       <div class="turbo-model-item ${model.turboRecommended ? 'recommended' : ''} ${needsKeySetup ? 'needs-key-setup' : ''}" 
            onclick="${onClickAction}"
@@ -4088,8 +4118,8 @@ async function showTurboOptions() {
         <div class="turbo-model-info">
           <div class="turbo-model-name">${model.name}</div>
           <div class="turbo-model-meta">
-            <span class="turbo-model-speed">快速</span>
-            <span class="turbo-model-quality">质量: ${qualityLabels[model.quality] || model.quality}</span>
+            <span class="turbo-model-speed ${speedInfo.className}">${speedInfo.icon} ${speedInfo.label}</span>
+            <span class="turbo-model-quality">质量: ${getQualityLabelText(model.quality)}</span>
           </div>
         </div>
         ${costDisplay}

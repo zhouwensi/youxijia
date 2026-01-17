@@ -1854,6 +1854,26 @@ function isModelEnabled(modelId) {
 }
 
 // 获取可用的模型列表（用于前端显示，包括免费和付费模型）
+// 获取模型的速度等级（从数据库配置或使用默认值）
+function getModelSpeedLevel(modelId) {
+  const configKey = `llm_speed_${modelId}`;
+  const configuredSpeed = getConfig(configKey, null);
+  if (configuredSpeed) {
+    return configuredSpeed;
+  }
+  // 根据模型默认speed字段映射到速度等级
+  const model = LLM_MODELS[modelId];
+  if (!model) return 'normal';
+  const speedMap = {
+    'very-fast': 'ultra',
+    'fast': 'fast',
+    'medium': 'normal',
+    'slow': 'slow',
+    'very-slow': 'very-slow'
+  };
+  return speedMap[model.speed] || 'normal';
+}
+
 function getTurboModels() {
   return Object.entries(LLM_MODELS)
     .filter(([key, config]) => isModelEnabled(key))  // 只返回启用的模型
@@ -1863,11 +1883,14 @@ function getTurboModels() {
       const apiKeyKey = `llm_apikey_${key}`;
       const hasDefaultKey = getConfig(apiKeyKey, null) !== null && getConfig(apiKeyKey, '').length > 0;
       
+      // 获取配置的速度等级
+      const speedLevel = getModelSpeedLevel(key);
+      
       return {
         id: key,
         name: config.name,
         creditCost: creditCost,
-        speed: config.speed,
+        speedLevel: speedLevel,  // 返回速度等级（ultra/fast/normal/slow/very-slow）
         quality: quality,
         turboRecommended: config.turboRecommended || false,
         hasDefaultKey: hasDefaultKey,  // 是否配置了默认API Key
@@ -6281,19 +6304,21 @@ app.get('/api/admin/models', (req, res) => {
   
   try {
     const models = Object.entries(LLM_MODELS).map(([id, config]) => {
-      const timeKey = `llm_time_${id}`;
+      const speedKey = `llm_speed_${id}`;
       const creditsKey = `llm_credits_${id}`;
       const qualityKey = `llm_quality_${id}`;
       const apiKeyKey = `llm_apikey_${id}`;
       
       // 从数据库获取配置值
-      const configuredTime = getConfig(timeKey, null);
       const configuredCredits = getConfig(creditsKey, null);
       const configuredQuality = getConfig(qualityKey, null);
       const configuredApiKey = getConfig(apiKeyKey, null);
       
       // 实际使用的quality（优先使用配置值）
       const effectiveQuality = configuredQuality || config.quality;
+      
+      // 获取速度等级
+      const speedLevel = getModelSpeedLevel(id);
       
       // 遮蔽 API Key，只显示前4位和后4位
       let maskedApiKey = null;
@@ -6314,21 +6339,18 @@ app.get('/api/admin/models', (req, res) => {
         model: config.model,
         baseUrl: config.baseUrl,
         tier: config.tier,
-        speed: config.speed,
+        speedLevel: speedLevel,  // 速度等级（ultra/fast/normal/slow/very-slow）
         quality: effectiveQuality,  // 使用实际生效的quality
         defaultQuality: config.quality,  // 保留默认值供参考
         // 默认值
         defaultCredits: config.creditCost,
-        defaultTime: getDefaultModelTime(id),
         // 配置值（如果有）
-        configuredTime: configuredTime !== null ? parseInt(configuredTime) : null,
         configuredCredits: configuredCredits !== null ? parseInt(configuredCredits) : null,
         configuredQuality: configuredQuality,
         hasApiKey: configuredApiKey !== null && configuredApiKey.length > 0,
         maskedApiKey: maskedApiKey,  // 遮蔽后的 API Key
         // 实际使用的值
         creditCost: getModelCreditCost(id),
-        estimatedTime: configuredTime !== null ? parseInt(configuredTime) : getDefaultModelTime(id),
         // 是否启用
         enabled: isModelEnabled(id)
       };
