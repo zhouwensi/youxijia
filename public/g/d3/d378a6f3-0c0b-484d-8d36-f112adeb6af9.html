@@ -21,48 +21,26 @@
   bottom: 0 !important;
   left: 0 !important;
   right: 0 !important;
-  height: 60px !important;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
-  padding: 8px 12px !important;
+  height: 32px !important;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.95) 0%, rgba(139, 92, 246, 0.95) 100%) !important;
+  padding: 0 2rem 0 0.75rem !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 10px !important;
+  gap: 0 !important;
   z-index: 999999 !important;
-  box-shadow: 0 -2px 15px rgba(99, 102, 241, 0.4) !important;
+  backdrop-filter: blur(4px) !important;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 }
 .yxj-promo-bar.yxj-hidden {
   display: none !important;
 }
-.yxj-promo-qr {
-  width: 44px !important;
-  height: 44px !important;
-  background: #fff !important;
-  border-radius: 6px !important;
-  padding: 2px !important;
-  flex-shrink: 0 !important;
-}
-.yxj-promo-qr img {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  display: block !important;
-}
-.yxj-promo-info {
+.yxj-promo-text {
   color: #fff !important;
-  font-size: 12px !important;
-  line-height: 1.3 !important;
-  text-align: left !important;
-}
-.yxj-promo-info strong {
-  display: block !important;
-  font-size: 13px !important;
-  margin-bottom: 2px !important;
-}
-.yxj-promo-info span {
-  opacity: 0.9 !important;
-  font-size: 11px !important;
+  font-size: 0.75rem !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  overflow: hidden !important;
 }
 .yxj-promo-close {
   position: absolute !important;
@@ -101,12 +79,12 @@
 /* TikTok 风格组件 */
 .tiktok-author-info {
   position: fixed !important;
-  left: 16px !important;
-  bottom: 80px !important;
+  left: 12px !important;
+  bottom: 44px !important;
   display: flex !important;
   align-items: flex-start !important;
   flex-direction: column !important;
-  gap: 8px !important;
+  gap: 4px !important;
   z-index: 999998 !important;
   padding: 0 !important;
   pointer-events: auto !important;
@@ -114,38 +92,38 @@
 .tiktok-author-row {
   display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 8px !important;
 }
 .tiktok-author-avatar {
-  width: 44px !important;
-  height: 44px !important;
+  width: 32px !important;
+  height: 32px !important;
   border-radius: 50% !important;
   background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 1.5rem !important;
-  border: 2px solid rgba(255, 255, 255, 0.5) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+  font-size: 1rem !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
   cursor: pointer !important;
   transition: transform 0.2s, box-shadow 0.2s !important;
   text-decoration: none !important;
 }
 .tiktok-author-avatar:hover {
   transform: scale(1.05) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5) !important;
 }
 .tiktok-author-details {
   display: flex !important;
   flex-direction: row !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 8px !important;
 }
 .tiktok-author-name {
   color: white !important;
-  font-size: 1rem !important;
-  font-weight: 700 !important;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8) !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8) !important;
   cursor: pointer !important;
   transition: opacity 0.2s !important;
 }
@@ -154,22 +132,22 @@
 }
 .tiktok-publish-time {
   color: rgba(255, 255, 255, 0.6) !important;
-  font-size: 0.75rem !important;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8) !important;
-  margin-top: 2px !important;
+  font-size: 0.6875rem !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+  margin-top: 1px !important;
 }
 .tiktok-follow-btn {
   background: #fe2c55 !important;
   color: white !important;
   border: none !important;
-  padding: 6px 16px !important;
-  border-radius: 4px !important;
-  font-size: 0.8125rem !important;
+  padding: 4px 10px !important;
+  border-radius: 3px !important;
+  font-size: 0.6875rem !important;
   font-weight: 600 !important;
   cursor: pointer !important;
   display: flex !important;
   align-items: center !important;
-  gap: 4px !important;
+  gap: 3px !important;
   transition: all 0.2s ease !important;
   text-shadow: none !important;
 }
@@ -255,9 +233,15 @@
   opacity: 0.7 !important;
   pointer-events: none !important;
 }
+#stat-edit-btn {
+  display: none !important;
+}
+#stat-edit-btn.visible {
+  display: flex !important;
+}
 /* 为推广栏预留底部空间 */
 body {
-  padding-bottom: 65px !important;
+  padding-bottom: 36px !important;
 }
 /* ====== 留言板样式 ====== */
 .comments-overlay {
@@ -1246,6 +1230,11 @@ body {
     </div>
     <span class="tiktok-count" id="stat-plays">0</span>
   </div>
+  <div class="tiktok-action" id="stat-edit-btn" onclick="openGameEditorPage()" title="编辑游戏" style="display:none;">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    </div>
+  </div>
 </div>
 
 <!-- 关注弹窗 -->
@@ -1279,13 +1268,7 @@ body {
 <!-- 游戏家推广栏 -->
 <div class="yxj-promo-bar" id="yxj-promo" onclick="showPromoModal()" style="cursor:pointer;">
   <button class="yxj-promo-close" onclick="event.stopPropagation();document.getElementById('yxj-promo').classList.add('yxj-hidden');document.body.style.paddingBottom='0';">×</button>
-  <div class="yxj-promo-qr">
-    <img src="/images/getqrcode.png" alt="公众号">
-  </div>
-  <div class="yxj-promo-info">
-    <strong>🎮 关注「游戏开发技术教程」</strong>
-    <span>一句话免费生成你的专属游戏！</span>
-  </div>
+  <span class="yxj-promo-text">👉 点击关注微信公众号「游戏开发技术教程」，一句话免费做游戏！</span>
 </div>
 
 <!-- 分享面板 -->
@@ -1413,7 +1396,30 @@ function loadStats() {
       const followBtn = document.getElementById('tiktok-follow-btn');
       if (followBtn) followBtn.style.display = 'none';
     }
+    
+    // 检查是否为作者，显示编辑按钮
+    checkIsAuthorAndShowEditBtn();
   }
+}
+
+// 检查是否为作者并显示编辑按钮
+function checkIsAuthorAndShowEditBtn() {
+  const userToken = getUserToken();
+  if (!userToken || !authorToken) return;
+  
+  // 如果当前用户是作者，显示编辑按钮
+  if (userToken === authorToken) {
+    const editBtn = document.getElementById('stat-edit-btn');
+    if (editBtn) {
+      editBtn.classList.add('visible');
+    }
+  }
+}
+
+// 打开游戏编辑页面
+function openGameEditorPage() {
+  // 跳转到主站的编辑页面
+  window.location.href = '/?edit=' + gameId;
 }
 
 // 点赞（支持取消）

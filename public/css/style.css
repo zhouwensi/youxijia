@@ -4344,6 +4344,14 @@ body.modal-open .modal-content {
   border-color: #fbbf24;
 }
 
+/* 编辑按钮（仅作者可见） */
+#stat-edit-btn {
+  display: none !important;
+}
+#stat-edit-btn.visible {
+  display: flex !important;
+}
+
 /* 信息类按钮（不可点击感） */
 .tiktok-action.tiktok-info {
   cursor: default;
@@ -9467,5 +9475,437 @@ a:hover {
   
   .settings-footer .btn {
     max-width: none;
+  }
+}
+  
+/* ==================== ��Ϸ�༭��ҳ����ʽ ==================== */ 
+/* ==================== 游戏编辑器页面样式 ==================== */
+#game-editor-page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-color);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#game-editor-page:not(.active) {
+  display: none;
+}
+
+/* 编辑器顶部导航栏 */
+.editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  min-height: 56px;
+  gap: 0.75rem;
+}
+
+.editor-header .btn-back {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.editor-header .btn-back:hover {
+  background: var(--bg-tertiary);
+}
+
+.editor-title {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow: hidden;
+}
+
+.editor-title-text {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.editor-status {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  background: var(--primary-light);
+  color: var(--primary-color);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.btn-editor-save {
+  padding: 0.5rem 1rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-editor-save:hover {
+  opacity: 0.9;
+}
+
+/* 预览区域 */
+.editor-preview-section {
+  flex: 0 0 45%;
+  position: relative;
+  background: #000;
+  overflow: hidden;
+}
+
+.editor-preview-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+#editor-preview-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #000;
+}
+
+.editor-preview-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: white;
+  font-size: 0.875rem;
+}
+
+.editor-preview-loading .spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* AI 建议标签区域 */
+.editor-suggestions-section {
+  padding: 0.75rem 1rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.suggestions-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.suggestions-scroll {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.suggestions-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.suggestion-tag {
+  flex-shrink: 0;
+  padding: 0.375rem 0.75rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.suggestion-tag:hover {
+  background: var(--primary-light);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* 对话区域 */
+.editor-chat-section {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-messages {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.chat-message {
+  display: flex;
+  gap: 0.75rem;
+  max-width: 90%;
+}
+
+.chat-message.user {
+  flex-direction: row-reverse;
+  align-self: flex-end;
+}
+
+.chat-message.assistant {
+  align-self: flex-start;
+}
+
+.chat-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.chat-bubble {
+  padding: 0.75rem 1rem;
+  border-radius: 16px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.chat-message.user .chat-bubble {
+  background: var(--primary-color);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.chat-message.assistant .chat-bubble {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-bottom-left-radius: 4px;
+}
+
+/* 聊天气泡内的积分提示 */
+.chat-credit-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+}
+
+.chat-credit-notice.free {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.chat-credit-notice.cost {
+  background: rgba(234, 179, 8, 0.15);
+  color: #eab308;
+}
+
+.chat-credit-notice .credit-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.chat-credit-notice .credit-text {
+  flex: 1;
+}
+
+.chat-credit-notice .credit-balance {
+  padding: 0.125rem 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+/* 输入区域 */
+.editor-input-section {
+  padding: 0.75rem 1rem;
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0));
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+}
+
+.editor-input-wrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  background: var(--bg-tertiary);
+  border-radius: 24px;
+  padding: 0.5rem;
+  padding-left: 1rem;
+}
+
+.editor-input-wrapper textarea {
+  flex: 1;
+  border: none;
+  background: transparent;
+  resize: none;
+  font-size: 0.9375rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+  max-height: 120px;
+  min-height: 24px;
+  outline: none;
+  padding: 0.25rem 0;
+}
+
+.editor-input-wrapper textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.btn-send-edit {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: var(--primary-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.btn-send-edit:hover {
+  opacity: 0.9;
+}
+
+.btn-send-edit:active {
+  transform: scale(0.95);
+}
+
+.btn-send-edit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 保存选项弹窗 */
+.save-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.save-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.save-option-btn:hover {
+  background: var(--bg-color);
+  border-color: var(--primary-color);
+}
+
+.save-option-icon {
+  font-size: 1.5rem;
+}
+
+.save-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.save-option-text strong {
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.save-option-text small {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+/* 移动端适配 */
+@media (max-width: 640px) {
+  .editor-preview-section {
+    flex: 0 0 40%;
+  }
+  
+  .chat-message {
+    max-width: 95%;
+  }
+  
+  .chat-bubble {
+    font-size: 0.875rem;
+    padding: 0.625rem 0.875rem;
+  }
+}
+
+/* 横屏适配 */
+@media (max-height: 500px) and (orientation: landscape) {
+  .editor-preview-section {
+    flex: 0 0 35%;
+  }
+  
+  .editor-suggestions-section {
+    padding: 0.5rem 1rem;
+  }
+  
+  .editor-input-section {
+    padding: 0.5rem 1rem;
   }
 }

@@ -1454,19 +1454,15 @@ async function doLogin() {
 
 // 检查是否有足够积分或是否为免费操作
 function checkCreditsForGeneration() {
-  // 首次生成和编辑游戏都免费
+  // 首次生成免费
   if (state.isFirstGeneration) {
     return { canGenerate: true, isFree: true, message: '首次生成免费！' };
   }
-  
-  if (state.currentGame && state.currentGame.isEditing) {
-    return { canGenerate: true, isFree: true, message: '编辑游戏免费！' };
-  }
-  
+
   if (state.credits > 0) {
     return { canGenerate: true, isFree: false, message: `将消耗 1 积分，当前剩余 ${state.credits} 积分` };
   }
-  
+
   return { canGenerate: false, isFree: false, message: '积分不足' };
 }
 
@@ -1485,9 +1481,24 @@ function handleRouting() {
     const gameId = gameMatch[1];
     loadGameById(gameId);
   } else {
-    // 检查URL参数中是否指定了tab
+    // 检查URL参数中是否指定了tab或edit
     const urlParams = new URLSearchParams(window.location.search);
     const tab = urlParams.get('tab');
+    const editGameId = urlParams.get('edit');
+    
+    // 如果有edit参数，打开游戏编辑器
+    if (editGameId) {
+      // 清除URL中的edit参数
+      history.replaceState(null, '', '/');
+      // 隐藏所有页面，避免闪烁
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('bottom-nav').style.display = 'none';
+      // 延迟打开编辑器，确保页面加载完成
+      setTimeout(() => {
+        openGameEditor(editGameId);
+      }, 100);
+      return;
+    }
     
     if (tab === 'profile' || tab === 'create') {
       // 立即隐藏首页，避免闪烁
@@ -4780,11 +4791,6 @@ async function generateGame(advancedSettings = null) {
     creditCostThisTime = 0;
     isFreeGeneration = true;
     freeReason = '使用自己的 API Key，免费生成';
-  } else if (state.isEditMode) {
-    // 编辑模式免费
-    creditCostThisTime = 0;
-    isFreeGeneration = true;
-    freeReason = '编辑模式免费';
   } else if (state.isFirstGeneration) {
     // 首次生成免费
     creditCostThisTime = 0;
@@ -5930,14 +5936,26 @@ function applySourceCodeChanges() {
   }
 }
 
-// 检查是否为作者（编辑功能已禁用，因为已生成的游戏无法继续对话编辑）
+// 检查是否为作者，显示编辑按钮
 async function checkIsAuthor(gameId) {
-  const editBtn = document.getElementById('edit-btn');
-  // 编辑功能已禁用 - 始终隐藏编辑按钮
-  if (editBtn) {
-    editBtn.style.display = 'none';
+  const editBtn = document.getElementById('stat-edit-btn');
+  const userToken = getUserToken();
+  
+  if (!editBtn || !userToken || !state.currentGame) {
+    if (editBtn) editBtn.classList.remove('visible');
+    return false;
   }
-  return false;
+  
+  // 检查当前用户是否为游戏作者
+  const isAuthor = state.currentGame.author_token === userToken;
+  
+  if (isAuthor) {
+    editBtn.classList.add('visible');
+    return true;
+  } else {
+    editBtn.classList.remove('visible');
+    return false;
+  }
 }
 
 // 保存游戏作者令牌映射
@@ -7538,6 +7556,10 @@ function showGameActionMenu(card, event) {
   // 设置菜单项
   const menuItems = menu.querySelector('.action-menu-items');
   menuItems.innerHTML = `
+    <button class="action-menu-item" onclick="openGameEditor('${gameId}'); closeGameActionMenu();">
+      <span class="action-icon">✏️</span>
+      <span class="action-text">高级编辑</span>
+    </button>
     <button class="action-menu-item" onclick="toggleGameVisibility('${gameId}', '${visibility}'); closeGameActionMenu();">
       <span class="action-icon">${isPrivate ? '🔓' : '🔒'}</span>
       <span class="action-text">${isPrivate ? '设为公开' : '设为私密'}</span>
@@ -9197,6 +9219,561 @@ document.addEventListener('DOMContentLoaded', () => {
   // 延迟加载关注统计
   setTimeout(loadUserFollowStats, 1000);
 });
+
+// =============================================
+// 游戏高级编辑功能
+// =============================================
+
+// 编辑会话状态
+let editSession = {
+  gameId: null,
+  sessionId: null,
+  currentCode: null,
+  messages: [],
+  suggestions: [],
+  isEditing: false
+};
+
+// 打开游戏编辑器
+async function openGameEditor(gameId) {
+  showToast('正在准备编辑器...', 'info');
+  
+  try {
+    // 调用开始编辑 API
+    const response = await fetch(`/api/games/${gameId}/edit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Token': getUserToken()
+      },
+      body: JSON.stringify({ action: 'start' })
+    });
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      showToast(data.error || '无法编辑此游戏', 'error');
+      return;
+    }
+    
+    // 初始化编辑会话
+    editSession = {
+      gameId: gameId,
+      sessionId: data.sessionId,
+      currentCode: data.game?.code || '',
+      messages: [{
+        role: 'assistant',
+        content: `🎮 游戏「${data.game?.title || ''}」已加载完成！\n\n我分析了这个游戏，发现以下可以优化的方向：`
+      }],
+      suggestions: data.suggestions || [],
+      isEditing: true
+    };
+    
+    // 显示编辑页面
+    showGameEditorPage(data.game, data.suggestions);
+    
+  } catch (error) {
+    console.error('打开编辑器失败:', error);
+    showToast('网络错误，请稍后重试', 'error');
+  }
+}
+
+// 显示游戏编辑页面
+function showGameEditorPage(game, suggestions) {
+  // 隐藏其他页面
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('bottom-nav').style.display = 'none';
+  
+  // 创建或获取编辑页面
+  let editorPage = document.getElementById('game-editor-page');
+  if (!editorPage) {
+    editorPage = document.createElement('div');
+    editorPage.id = 'game-editor-page';
+    editorPage.className = 'page active';
+    document.body.appendChild(editorPage);
+  }
+  
+  // 计算积分消耗信息
+  const editorCreditInfo = getEditorCreditInfo();
+  const creditNoticeHtml = editorCreditInfo.isFree 
+    ? `<div class="chat-credit-notice free"><span class="credit-icon">🆓</span><span class="credit-text">${editorCreditInfo.message}</span></div>`
+    : `<div class="chat-credit-notice cost"><span class="credit-icon">💎</span><span class="credit-text">${editorCreditInfo.message}</span><span class="credit-balance">余额: ${state.credits}</span></div>`;
+  
+  // 渲染编辑页面内容
+  editorPage.innerHTML = `
+    <div class="editor-header">
+      <button class="btn-back" onclick="closeGameEditor()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+      </button>
+      <div class="editor-title">
+        <span class="editor-title-text">${escapeHtml(game?.title || '游戏编辑')}</span>
+        <span class="editor-status">编辑中</span>
+      </div>
+      <div class="editor-actions">
+        <button class="btn-editor-save" onclick="showEditorSaveOptions()">保存</button>
+      </div>
+    </div>
+    
+    <div class="editor-preview-section">
+      <div class="editor-preview-container">
+        <iframe id="editor-preview-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+        <div class="editor-preview-loading" id="editor-preview-loading" style="display: none;">
+          <div class="spinner"></div>
+          <span>正在生成预览...</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="editor-suggestions-section">
+      <div class="suggestions-label">💡 AI 建议：</div>
+      <div class="suggestions-scroll">
+        ${suggestions.map(s => `<button class="suggestion-tag" onclick="applySuggestion('${escapeHtml(s)}')">${escapeHtml(s)}</button>`).join('')}
+      </div>
+    </div>
+    
+    <div class="editor-chat-section">
+      <div class="chat-messages" id="editor-chat-messages">
+        <div class="chat-message assistant">
+          <div class="chat-avatar">🤖</div>
+          <div class="chat-bubble">
+            🎮 游戏「${escapeHtml(game?.title || '')}」已加载完成！
+            ${creditNoticeHtml}
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="editor-input-section">
+      <div class="editor-input-wrapper">
+        <textarea id="editor-input" placeholder="描述你想要的修改，如：添加背景音乐、增加难度选择..." rows="1" oninput="autoResizeEditorInput(this)"></textarea>
+        <button class="btn-send-edit" id="btn-send-edit" onclick="sendEditMessage()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  `;
+  
+  editorPage.classList.add('active');
+  
+  // 加载预览
+  updateEditorPreview(editSession.currentCode);
+}
+
+// 获取编辑器积分消耗信息
+function getEditorCreditInfo() {
+  const selectedModel = state.settings.llmProvider || serverDefaultModel || 'deepseek-v3';
+  const modelInfo = MODEL_REGISTRY[selectedModel];
+  const userHasKey = (state.settings.llmApiKey && state.settings.llmApiKey.trim().length > 0);
+  const backendHasKey = modelInfo?.hasDefaultKey === true;
+  const modelCreditCost = modelInfo?.creditCost || 1;
+  const modelName = modelInfo?.name || selectedModel;
+  
+  if (userHasKey) {
+    return {
+      isFree: true,
+      creditCost: 0,
+      message: '使用自己的 API Key，点击发送免费编辑'
+    };
+  } else if (backendHasKey) {
+    if (modelCreditCost > 0) {
+      return {
+        isFree: false,
+        creditCost: modelCreditCost,
+        message: `点击发送执行编辑，每次消耗 ${modelCreditCost} 积分（${modelName}）`
+      };
+    } else {
+      return {
+        isFree: true,
+        creditCost: 0,
+        message: `点击发送免费编辑（${modelName}）`
+      };
+    }
+  } else {
+    return {
+      isFree: false,
+      creditCost: 0,
+      message: '当前模型需要配置 API Key'
+    };
+  }
+}
+
+// 更新编辑器积分提示（更新聊天气泡内的提示）
+function updateEditorCreditNotice() {
+  const chatMessages = document.getElementById('editor-chat-messages');
+  if (!chatMessages) return;
+  
+  // 找到第一条 AI 消息中的积分提示
+  const firstAssistantBubble = chatMessages.querySelector('.chat-message.assistant .chat-bubble');
+  if (!firstAssistantBubble) return;
+  
+  const existingNotice = firstAssistantBubble.querySelector('.chat-credit-notice');
+  if (!existingNotice) return;
+  
+  const editorCreditInfo = getEditorCreditInfo();
+  existingNotice.className = `chat-credit-notice ${editorCreditInfo.isFree ? 'free' : 'cost'}`;
+  existingNotice.innerHTML = editorCreditInfo.isFree 
+    ? `<span class="credit-icon">🆓</span><span class="credit-text">${editorCreditInfo.message}</span>`
+    : `<span class="credit-icon">💎</span><span class="credit-text">${editorCreditInfo.message}</span><span class="credit-balance">余额: ${state.credits}</span>`;
+}
+
+// 更新编辑器预览
+function updateEditorPreview(code) {
+  const frame = document.getElementById('editor-preview-frame');
+  if (frame && code) {
+    frame.srcdoc = code;
+  }
+}
+
+// 自动调整输入框高度
+function autoResizeEditorInput(textarea) {
+  textarea.style.height = 'auto';
+  textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+}
+
+// 应用建议
+function applySuggestion(suggestion) {
+  const input = document.getElementById('editor-input');
+  if (input) {
+    input.value = suggestion;
+    input.focus();
+    autoResizeEditorInput(input);
+  }
+}
+
+// 获取编辑器使用的 LLM 配置（与生成游戏时保持一致）
+function getEditorLLMConfig() {
+  // 获取用户选择的模型ID（优先使用下拉框的值，否则使用保存的设置）
+  const modelSelect = document.getElementById('llm-model-select');
+  const selectedModelId = modelSelect?.value || state.settings.llmModelId || 'deepseek-v3';
+  
+  const llmConfig = {
+    provider: selectedModelId,  // 传递 modelId，后端会从 LLM_MODELS 获取完整配置
+    apiKey: state.settings.llmApiKey || ''  // 用户自己的Key（如果有）
+  };
+  
+  // 如果是自定义接口，需要传递完整配置
+  if (selectedModelId === 'custom') {
+    llmConfig.baseUrl = state.settings.llmBaseUrl;
+    llmConfig.model = state.settings.llmModel;
+  }
+  
+  return llmConfig;
+}
+
+// 发送编辑消息
+async function sendEditMessage() {
+  const input = document.getElementById('editor-input');
+  const message = input?.value?.trim();
+  
+  if (!message) {
+    showToast('请输入修改需求', 'error');
+    return;
+  }
+  
+  if (!editSession.sessionId) {
+    showToast('编辑会话已过期，请重新进入', 'error');
+    return;
+  }
+  
+  // 获取 LLM 配置（后端会处理 API Key，如果用户没配置则使用系统默认）
+  const llmConfig = getEditorLLMConfig();
+  
+  // 检查积分（编辑也需要消耗积分，规则与生成游戏一致）
+  const selectedModel = llmConfig.provider || state.settings.llmProvider || serverDefaultModel || 'deepseek-v3';
+  const modelInfo = MODEL_REGISTRY[selectedModel];
+  const userHasKey = (state.settings.llmApiKey && state.settings.llmApiKey.trim().length > 0);
+  const backendHasKey = modelInfo?.hasDefaultKey === true;
+  const modelCreditCost = modelInfo?.creditCost || 1;
+  
+  // 计算本次编辑需要的积分
+  let creditCostThisTime = 0;
+  if (userHasKey) {
+    // 用户有自己的 Key，免费
+    creditCostThisTime = 0;
+  } else if (backendHasKey) {
+    // 使用后台 Key，消耗积分
+    creditCostThisTime = modelCreditCost;
+  } else {
+    // 没有可用的 Key
+    showToast('当前模型需要配置 API Key', 'error');
+    return;
+  }
+  
+  // 检查积分是否足够
+  if (creditCostThisTime > 0 && state.credits < creditCostThisTime) {
+    openNoCreditsModal();
+    return;
+  }
+  
+  // 显示积分提示
+  if (creditCostThisTime > 0) {
+    showToast(`💎 本次编辑将消耗 ${creditCostThisTime} 积分`, 'info');
+  }
+  
+  // 清空输入框
+  input.value = '';
+  autoResizeEditorInput(input);
+  
+  // 添加用户消息到聊天
+  appendEditorMessage('user', message);
+  
+  // 显示加载状态
+  const loadingEl = document.getElementById('editor-preview-loading');
+  if (loadingEl) loadingEl.style.display = 'flex';
+  
+  const sendBtn = document.getElementById('btn-send-edit');
+  if (sendBtn) sendBtn.disabled = true;
+  
+  // 添加 AI 思考中提示
+  const thinkingMsgId = appendEditorMessage('assistant', '🤔 AI 正在分析并修改游戏代码...');
+  
+  try {
+    const response = await fetch(`/api/games/${editSession.gameId}/edit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Token': getUserToken()
+      },
+      body: JSON.stringify({
+        action: 'message',
+        sessionId: editSession.sessionId,
+        message: message,
+        llmConfig: llmConfig
+      })
+    });
+    
+    const data = await response.json();
+    
+    // 移除思考中提示
+    removeEditorMessage(thinkingMsgId);
+    
+    if (data.success) {
+      // 更新当前代码
+      editSession.currentCode = data.code;
+      
+      // 更新预览
+      updateEditorPreview(data.code);
+      
+      // 显示 AI 回复
+      let replyContent = `✅ ${data.message || '修改完成！'}`;
+      if (data.changes && data.changes.length > 0) {
+        replyContent += '\n\n修改内容：\n' + data.changes.map(c => `• ${c}`).join('\n');
+      }
+      appendEditorMessage('assistant', replyContent);
+      
+      // 编辑成功后，刷新积分并更新提示
+      if (creditCostThisTime > 0) {
+        state.credits = Math.max(0, state.credits - creditCostThisTime);
+        updateCreditsDisplay();
+        updateEditorCreditNotice();
+      }
+      
+    } else {
+      appendEditorMessage('assistant', `❌ ${data.error || '修改失败，请重试'}`);
+    }
+    
+  } catch (error) {
+    console.error('发送编辑消息失败:', error);
+    removeEditorMessage(thinkingMsgId);
+    appendEditorMessage('assistant', '❌ 网络错误，请检查网络后重试');
+  } finally {
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (sendBtn) sendBtn.disabled = false;
+  }
+}
+
+// 添加编辑器消息
+let editorMsgCounter = 0;
+function appendEditorMessage(role, content) {
+  const chatContainer = document.getElementById('editor-chat-messages');
+  if (!chatContainer) return null;
+  
+  const msgId = `editor-msg-${++editorMsgCounter}`;
+  const msgDiv = document.createElement('div');
+  msgDiv.id = msgId;
+  msgDiv.className = `chat-message ${role}`;
+  
+  const avatar = role === 'user' ? '👤' : '🤖';
+  msgDiv.innerHTML = `
+    <div class="chat-avatar">${avatar}</div>
+    <div class="chat-bubble">${escapeHtml(content).replace(/\n/g, '<br>')}</div>
+  `;
+  
+  chatContainer.appendChild(msgDiv);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+  
+  return msgId;
+}
+
+// 移除编辑器消息
+function removeEditorMessage(msgId) {
+  if (!msgId) return;
+  const msgEl = document.getElementById(msgId);
+  if (msgEl) msgEl.remove();
+}
+
+// 显示保存选项
+function showEditorSaveOptions() {
+  // 创建保存选项弹窗
+  let saveModal = document.getElementById('editor-save-modal');
+  if (saveModal) saveModal.remove();
+  
+  saveModal = document.createElement('div');
+  saveModal.id = 'editor-save-modal';
+  saveModal.className = 'modal active';
+  saveModal.onclick = (e) => {
+    if (e.target === saveModal) saveModal.remove();
+  };
+  
+  saveModal.innerHTML = `
+    <div class="modal-content modal-small">
+      <div class="modal-header">
+        <h3>💾 保存游戏</h3>
+        <button class="btn btn-icon btn-close" onclick="document.getElementById('editor-save-modal').remove()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="save-options">
+          <button class="save-option-btn" onclick="saveGameEdit(false)">
+            <span class="save-option-icon">📝</span>
+            <span class="save-option-text">
+              <strong>更新原游戏</strong>
+              <small>覆盖现有版本</small>
+            </span>
+          </button>
+          <button class="save-option-btn" onclick="showSaveAsNewDialog()">
+            <span class="save-option-icon">🆕</span>
+            <span class="save-option-text">
+              <strong>另存为新游戏</strong>
+              <small>保留原版，创建副本</small>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(saveModal);
+}
+
+// 显示另存为新游戏对话框
+function showSaveAsNewDialog() {
+  const saveModal = document.getElementById('editor-save-modal');
+  if (!saveModal) return;
+  
+  saveModal.querySelector('.modal-content').innerHTML = `
+    <div class="modal-header">
+      <h3>🆕 另存为新游戏</h3>
+      <button class="btn btn-icon btn-close" onclick="document.getElementById('editor-save-modal').remove()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>新游戏标题</label>
+        <input type="text" id="new-game-title" placeholder="输入新游戏的标题" value="">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="showEditorSaveOptions()">返回</button>
+      <button class="btn btn-primary" onclick="saveGameEdit(true)">保存</button>
+    </div>
+  `;
+}
+
+// 保存游戏编辑
+async function saveGameEdit(saveAsNew) {
+  const saveModal = document.getElementById('editor-save-modal');
+  
+  let newTitle = '';
+  if (saveAsNew) {
+    const titleInput = document.getElementById('new-game-title');
+    newTitle = titleInput?.value?.trim();
+    if (!newTitle) {
+      showToast('请输入新游戏标题', 'error');
+      return;
+    }
+  }
+  
+  showToast('正在保存...', 'info');
+  
+  try {
+    const response = await fetch(`/api/games/${editSession.gameId}/edit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Token': getUserToken()
+      },
+      body: JSON.stringify({
+        action: 'save',
+        sessionId: editSession.sessionId,
+        saveAsNew: saveAsNew,
+        title: newTitle
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      showToast(data.message || '保存成功！', 'success');
+      if (saveModal) saveModal.remove();
+      
+      // 关闭编辑器
+      closeGameEditor();
+      
+      // 保存后跳转到游戏详情页（完整的URL，包含平台UI）
+      const gameId = saveAsNew ? data.gameId : editSession.gameId;
+      if (gameId) {
+        // 跳转到游戏详情页（不是静态HTML页面）
+        setTimeout(() => {
+          window.location.href = `/game/${gameId}`;
+        }, 500);
+      } else {
+        // 刷新相关页面
+        loadProfilePageData();
+        loadHomeSections();
+      }
+      
+    } else {
+      showToast(data.error || '保存失败', 'error');
+    }
+    
+  } catch (error) {
+    console.error('保存游戏失败:', error);
+    showToast('网络错误，请稍后重试', 'error');
+  }
+}
+
+// 关闭游戏编辑器
+function closeGameEditor() {
+  const editorPage = document.getElementById('game-editor-page');
+  if (editorPage) {
+    editorPage.classList.remove('active');
+  }
+  
+  // 重置编辑会话
+  editSession = {
+    gameId: null,
+    sessionId: null,
+    currentCode: null,
+    messages: [],
+    suggestions: [],
+    isEditing: false
+  };
+  
+  // 返回个人页
+  document.getElementById('profile-page').classList.add('active');
+  document.getElementById('bottom-nav').style.display = 'flex';
+  
+  // 更新底部导航状态
+  document.querySelectorAll('.bottom-nav .nav-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.tab === 'profile');
+  });
+  
+  // 刷新个人页数据
+  loadProfilePageData();
+}
 
 // =============================================
 // 游戏全屏模式功能

@@ -233,6 +233,12 @@
   opacity: 0.7 !important;
   pointer-events: none !important;
 }
+#stat-edit-btn {
+  display: none !important;
+}
+#stat-edit-btn.visible {
+  display: flex !important;
+}
 /* 为推广栏预留底部空间 */
 body {
   padding-bottom: 36px !important;
@@ -1158,7 +1164,7 @@ body {
     <div class="tiktok-author-details">
       <div style="display:flex;flex-direction:column;">
         <div style="display:flex;align-items:center;gap:10px;">
-          <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">匿名</span>
+          <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">MarsZhou</span>
           <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="bc4f918d-df7f-42ac-96ba-dc2e46a88d29" onclick="toggleFollow()">
             <span class="follow-icon">+</span> 关注
           </button>
@@ -1199,6 +1205,11 @@ body {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
     </div>
     <span class="tiktok-count" id="stat-plays">0</span>
+  </div>
+  <div class="tiktok-action" id="stat-edit-btn" onclick="openGameEditorPage()" title="编辑游戏" style="display:none;">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    </div>
   </div>
 </div>
 
@@ -1262,7 +1273,7 @@ body {
 const gameId = '7dd372c6-f737-4a51-897b-376af040a704';
 const gameTitle = '贪吃蛇';
 const authorToken = 'bc4f918d-df7f-42ac-96ba-dc2e46a88d29';
-const authorName = '匿名';
+const authorName = 'MarsZhou';
 const API_BASE = '/api/games';
 
 // 调试日志
@@ -1361,7 +1372,30 @@ function loadStats() {
       const followBtn = document.getElementById('tiktok-follow-btn');
       if (followBtn) followBtn.style.display = 'none';
     }
+    
+    // 检查是否为作者，显示编辑按钮
+    checkIsAuthorAndShowEditBtn();
   }
+}
+
+// 检查是否为作者并显示编辑按钮
+function checkIsAuthorAndShowEditBtn() {
+  const userToken = getUserToken();
+  if (!userToken || !authorToken) return;
+  
+  // 如果当前用户是作者，显示编辑按钮
+  if (userToken === authorToken) {
+    const editBtn = document.getElementById('stat-edit-btn');
+    if (editBtn) {
+      editBtn.classList.add('visible');
+    }
+  }
+}
+
+// 打开游戏编辑页面
+function openGameEditorPage() {
+  // 跳转到主站的编辑页面
+  window.location.href = '/?edit=' + gameId;
 }
 
 // 点赞（支持取消）

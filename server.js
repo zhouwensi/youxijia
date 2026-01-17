@@ -383,6 +383,12 @@ function generateStandaloneGameHtml(gameCode, gameInfo) {
   opacity: 0.7 !important;
   pointer-events: none !important;
 }
+#stat-edit-btn {
+  display: none !important;
+}
+#stat-edit-btn.visible {
+  display: flex !important;
+}
 /* 为推广栏预留底部空间 */
 body {
   padding-bottom: 36px !important;
@@ -627,6 +633,11 @@ body {
     </div>
     <span class="tiktok-count" id="stat-plays">0</span>
   </div>
+  <div class="tiktok-action" id="stat-edit-btn" onclick="openGameEditorPage()" title="编辑游戏" style="display:none;">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    </div>
+  </div>
 </div>
 
 <!-- 关注弹窗 -->
@@ -788,7 +799,30 @@ function loadStats() {
       const followBtn = document.getElementById('tiktok-follow-btn');
       if (followBtn) followBtn.style.display = 'none';
     }
+    
+    // 检查是否为作者，显示编辑按钮
+    checkIsAuthorAndShowEditBtn();
   }
+}
+
+// 检查是否为作者并显示编辑按钮
+function checkIsAuthorAndShowEditBtn() {
+  const userToken = getUserToken();
+  if (!userToken || !authorToken) return;
+  
+  // 如果当前用户是作者，显示编辑按钮
+  if (userToken === authorToken) {
+    const editBtn = document.getElementById('stat-edit-btn');
+    if (editBtn) {
+      editBtn.classList.add('visible');
+    }
+  }
+}
+
+// 打开游戏编辑页面
+function openGameEditorPage() {
+  // 跳转到主站的编辑页面
+  window.location.href = '/?edit=' + gameId;
 }
 
 // 点赞（支持取消）
@@ -4720,6 +4754,505 @@ app.get('/api/my-games', (req, res) => {
   } catch (error) {
     console.error('[ERROR] 获取我的游戏失败:', error);
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==================== 游戏高级编辑 ====================
+
+// 编辑系统提示词
+const EDIT_SYSTEM_PROMPT = `你是一个专业的HTML5游戏优化专家。用户会给你一个已有的HTML游戏代码，然后提出修改需求。
+
+【核心要求】：
+1. 理解现有代码的逻辑和结构，在此基础上进行修改
+2. 尽量保持原有功能不被破坏
+3. 只修改必要的部分，不要重写整个代码
+4. 保持代码风格一致
+
+【内容合规要求】：
+1. 游戏内容必须健康积极
+2. 不得添加违法、暴力、色情、赌博等不良内容
+3. 适合全年龄段用户
+
+【技术要求】：
+1. 返回完整的HTML文件（包含<!DOCTYPE html>、<html>、<head>、<body>）
+2. 所有CSS写在<style>标签内，JS写在<script>标签内
+3. 确保游戏在修改后仍能正常运行
+4. 保持手机和电脑的兼容性
+
+【输出格式】：
+只返回完整的HTML代码，用\`\`\`html和\`\`\`包裹，不要有任何解释文字。`;
+
+// 确保编辑相关表存在
+function ensureEditTablesExist() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS game_edit_sessions (
+      id TEXT PRIMARY KEY,
+      game_id TEXT NOT NULL,
+      user_token TEXT NOT NULL,
+      original_code TEXT NOT NULL,
+      current_code TEXT NOT NULL,
+      status TEXT DEFAULT 'active',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS game_edit_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT NOT NULL,
+      role TEXT NOT NULL,
+      content TEXT NOT NULL,
+      code_snapshot TEXT,
+      tokens_used INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS game_versions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      game_id TEXT NOT NULL,
+      version_number INTEGER NOT NULL,
+      code TEXT NOT NULL,
+      change_summary TEXT,
+      created_by TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
+// 获取编辑建议
+function getEditSuggestions(code) {
+  const suggestions = [];
+  
+  if (!code.includes('audio') && !code.includes('Audio')) {
+    suggestions.push('🔊 添加背景音乐和音效');
+  }
+  if (!code.includes('localStorage')) {
+    suggestions.push('💾 添加存档功能');
+  }
+  if (!code.includes('level') && !code.includes('关卡')) {
+    suggestions.push('🎯 添加多个难度等级');
+  }
+  if (!code.includes('particle') && !code.includes('粒子')) {
+    suggestions.push('✨ 添加粒子特效');
+  }
+  if (!code.includes('pause') && !code.includes('暂停')) {
+    suggestions.push('⏸️ 添加暂停功能');
+  }
+  
+  if (suggestions.length === 0) {
+    suggestions.push('🎮 优化游戏手感');
+    suggestions.push('📱 改善移动端体验');
+    suggestions.push('🏆 添加成就系统');
+  }
+  
+  return suggestions.slice(0, 5);
+}
+
+// 检测代码变化
+function detectCodeChanges(oldCode, newCode) {
+  const changes = [];
+  
+  if (newCode.length > oldCode.length * 1.1) {
+    changes.push('增加了新功能');
+  }
+  if (newCode.includes('audio') && !oldCode.includes('audio')) {
+    changes.push('添加了音效');
+  }
+  if (newCode.includes('particle') && !oldCode.includes('particle')) {
+    changes.push('添加了粒子效果');
+  }
+  
+  return changes.length > 0 ? changes : ['代码已更新'];
+}
+
+// 游戏编辑 API
+app.post('/api/games/:id/edit', async (req, res) => {
+  console.log('[编辑API] 收到请求:', { 
+    gameId: req.params.id, 
+    body: req.body, 
+    headers: { 
+      'content-type': req.headers['content-type'],
+      'x-user-token': req.headers['x-user-token'] ? '***' : 'missing'
+    }
+  });
+  
+  const userToken = req.headers['x-user-token'] || req.headers['x-author-token'];
+  const gameId = req.params.id;
+  
+  if (!userToken) {
+    return res.status(401).json({ success: false, error: '请先登录' });
+  }
+  
+  try {
+    // 验证游戏是否存在且属于当前用户
+    const game = db.prepare('SELECT * FROM games WHERE id = ?').get(gameId);
+    if (!game) {
+      return res.status(404).json({ success: false, error: '游戏不存在' });
+    }
+    
+    if (game.author_token !== userToken) {
+      return res.status(403).json({ success: false, error: '只能编辑自己的游戏' });
+    }
+    
+    const { action } = req.body || {};
+    
+    console.log('[编辑API] action:', action);
+    
+    if (!action) {
+      return res.status(400).json({ success: false, error: '缺少 action 参数' });
+    }
+    
+    // 确保表存在
+    ensureEditTablesExist();
+    
+    switch (action) {
+      case 'start': {
+        // 开始新的编辑会话
+        const sessionId = require('crypto').randomUUID();
+        
+        db.prepare(`
+          INSERT INTO game_edit_sessions (id, game_id, user_token, original_code, current_code)
+          VALUES (?, ?, ?, ?, ?)
+        `).run(sessionId, game.id, userToken, game.code, game.code);
+        
+        // 记录初始版本
+        const existingVersions = db.prepare('SELECT COUNT(*) as count FROM game_versions WHERE game_id = ?').get(game.id);
+        if (existingVersions.count === 0) {
+          db.prepare(`
+            INSERT INTO game_versions (game_id, version_number, code, change_summary, created_by)
+            VALUES (?, 1, ?, '初始版本', ?)
+          `).run(game.id, game.code, userToken);
+        }
+        
+        return res.json({
+          success: true,
+          sessionId,
+          game: {
+            id: game.id,
+            title: game.title,
+            prompt: game.prompt,
+            code: game.code
+          },
+          suggestions: getEditSuggestions(game.code)
+        });
+      }
+      
+      case 'message': {
+        // 处理编辑消息
+        const { sessionId, message } = req.body;
+        
+        if (!sessionId) {
+          return res.status(400).json({ success: false, error: '缺少会话ID' });
+        }
+        
+        if (!message || message.trim().length === 0) {
+          return res.status(400).json({ success: false, error: '请输入修改要求' });
+        }
+        
+        const session = db.prepare('SELECT * FROM game_edit_sessions WHERE id = ?').get(sessionId);
+        if (!session) {
+          return res.status(404).json({ success: false, error: '编辑会话不存在或已过期' });
+        }
+        
+        if (session.user_token !== userToken) {
+          return res.status(403).json({ success: false, error: '无权访问此会话' });
+        }
+        
+        // 获取历史对话
+        const history = db.prepare(`
+          SELECT role, content FROM game_edit_messages 
+          WHERE session_id = ? 
+          ORDER BY created_at ASC
+        `).all(sessionId);
+        
+        // 构建对话上下文
+        const messages = [
+          { role: 'system', content: EDIT_SYSTEM_PROMPT },
+          { role: 'user', content: `这是当前的游戏代码：\n\n\`\`\`html\n${session.current_code}\n\`\`\`` }
+        ];
+        
+        history.forEach(msg => {
+          messages.push({ role: msg.role, content: msg.content });
+        });
+        
+        messages.push({ role: 'user', content: `请按照以下要求修改游戏：${message}` });
+        
+        // 保存用户消息
+        db.prepare(`
+          INSERT INTO game_edit_messages (session_id, role, content)
+          VALUES (?, 'user', ?)
+        `).run(sessionId, message);
+        
+        // ========== 获取 LLM 配置（复用游戏生成的逻辑）==========
+        const { llmConfig } = req.body;
+        
+        // 获取后台配置
+        const defaultModel = getConfig('llm_default_model', 'deepseek-v3');
+        const defaultApiKey = getConfig('llm_default_api_key', '');
+        
+        // 获取模型特定的 API Key
+        const getModelApiKey = (modelId) => {
+          if (!modelId) return null;
+          const apiKeyKey = `llm_apikey_${modelId}`;
+          const configuredKey = getConfig(apiKeyKey, null);
+          if (configuredKey && configuredKey.length > 0) {
+            return configuredKey;
+          }
+          return null;
+        };
+        
+        let finalModel, finalProvider, finalBaseUrl, selectedModelId;
+        
+        // 检查前端传来的 modelId
+        const requestedModelId = llmConfig?.provider || null;
+        
+        if (requestedModelId && LLM_MODELS[requestedModelId]) {
+          // 用户选择了已知模型，使用后端配置
+          const modelConfig = LLM_MODELS[requestedModelId];
+          finalModel = modelConfig.model;
+          finalProvider = modelConfig.provider;
+          finalBaseUrl = modelConfig.baseUrl;
+          selectedModelId = requestedModelId;
+        } else if (requestedModelId === 'custom' && llmConfig?.apiKey) {
+          // 用户使用自定义接口
+          finalModel = llmConfig?.model || 'deepseek-chat';
+          finalProvider = 'custom';
+          finalBaseUrl = llmConfig?.baseUrl || 'https://api.deepseek.com';
+          selectedModelId = null;
+        } else {
+          // 使用后台配置的默认模型
+          if (defaultModel && LLM_MODELS[defaultModel]) {
+            const modelConfig = LLM_MODELS[defaultModel];
+            finalModel = modelConfig.model;
+            finalProvider = modelConfig.provider;
+            finalBaseUrl = modelConfig.baseUrl;
+            selectedModelId = defaultModel;
+          } else {
+            // 回退到 deepseek-v3
+            const fallbackConfig = LLM_MODELS['deepseek-v3'];
+            finalModel = fallbackConfig.model;
+            finalProvider = fallbackConfig.provider;
+            finalBaseUrl = fallbackConfig.baseUrl;
+            selectedModelId = 'deepseek-v3';
+          }
+        }
+        
+        // 确定 API Key（优先级：用户Key > 模型专属Key > 默认Key > 环境变量）
+        let finalApiKey = null;
+        const useUserApiKey = llmConfig?.apiKey && llmConfig.apiKey.length > 0;
+        
+        if (useUserApiKey) {
+          finalApiKey = llmConfig.apiKey;
+          console.log('[编辑] 使用用户自己配置的 API Key');
+        } else {
+          const modelSpecificKey = getModelApiKey(selectedModelId);
+          if (modelSpecificKey) {
+            finalApiKey = modelSpecificKey;
+            console.log(`[编辑] 使用模型 ${selectedModelId} 的专属 API Key`);
+          } else if (defaultApiKey) {
+            finalApiKey = defaultApiKey;
+            console.log('[编辑] 使用后台默认 API Key');
+          } else if (process.env.DEEPSEEK_API_KEY) {
+            finalApiKey = process.env.DEEPSEEK_API_KEY;
+            console.log('[编辑] 使用环境变量 API Key');
+          }
+        }
+        
+        if (!finalApiKey) {
+          return res.status(400).json({ success: false, error: 'API Key 未配置，请联系管理员或在设置中配置您的 API Key' });
+        }
+        
+        const provider = finalProvider;
+        const model = finalModel;
+        const baseUrl = finalBaseUrl;
+        const apiKey = finalApiKey;
+        
+        // 获取模型的 maxTokens 配置
+        const modelMaxTokens = selectedModelId ? getModelMaxTokens(selectedModelId) : 8192;
+        
+        console.log(`[编辑] 使用模型: ${model}, Provider: ${provider}, MaxTokens: ${modelMaxTokens}`);
+        console.log('[编辑] 开始调用LLM优化游戏...');
+        const startTime = Date.now();
+        
+        // 根据 provider 调整 API 调用
+        let apiUrl = `${baseUrl}/v1/chat/completions`;
+        let headers = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        };
+        
+        // Anthropic 需要特殊处理
+        if (provider === 'anthropic') {
+          apiUrl = `${baseUrl}/v1/messages`;
+          headers = {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01'
+          };
+        }
+        
+        // OpenRouter 需要添加站点信息
+        if (provider === 'openrouter') {
+          headers['HTTP-Referer'] = 'https://youxijia.fun';
+          headers['X-Title'] = 'GameMaker AI Editor';
+        }
+        
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(provider === 'anthropic' ? {
+            model: model,
+            max_tokens: modelMaxTokens,
+            messages: messages.filter(m => m.role !== 'system').map(m => ({
+              role: m.role,
+              content: m.content
+            })),
+            system: EDIT_SYSTEM_PROMPT
+          } : {
+            model: model,
+            messages: messages,
+            temperature: 0.7,
+            max_tokens: modelMaxTokens
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.text();
+          throw new Error(`LLM API错误: ${response.status} - ${errorData}`);
+        }
+        
+        const data = await response.json();
+        const apiTime = Date.now() - startTime;
+        console.log(`[编辑] LLM响应时间: ${apiTime}ms`);
+        
+        // 根据 provider 提取内容
+        let newCode;
+        if (provider === 'anthropic') {
+          newCode = data.content?.[0]?.text || '';
+        } else {
+          newCode = data.choices?.[0]?.message?.content || '';
+        }
+        
+        // 提取HTML代码
+        const htmlMatch = newCode.match(/```html\n?([\s\S]*?)```/);
+        if (htmlMatch) {
+          newCode = htmlMatch[1].trim();
+        } else {
+          const altMatch = newCode.match(/```\n?([\s\S]*?)```/);
+          if (altMatch) {
+            newCode = altMatch[1].trim();
+          }
+        }
+        
+        // 验证代码结构
+        if (!newCode.includes('<html') && !newCode.includes('<!DOCTYPE')) {
+          return res.status(400).json({ success: false, error: 'AI返回的代码格式不正确，请重试' });
+        }
+        
+        // 保存AI回复
+        db.prepare(`
+          INSERT INTO game_edit_messages (session_id, role, content, code_snapshot, tokens_used)
+          VALUES (?, 'assistant', ?, ?, ?)
+        `).run(sessionId, '已完成修改', newCode, data.usage?.total_tokens || 0);
+        
+        // 更新会话的当前代码
+        db.prepare(`
+          UPDATE game_edit_sessions SET current_code = ?, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `).run(newCode, sessionId);
+        
+        return res.json({
+          success: true,
+          code: newCode,
+          message: '修改完成！可以预览效果或继续优化',
+          changes: detectCodeChanges(session.current_code, newCode),
+          tokensUsed: data.usage?.total_tokens || 0,
+          apiTime
+        });
+      }
+      
+      case 'save': {
+        // 保存编辑结果
+        const { sessionId, saveAsNew, title } = req.body;
+        
+        if (!sessionId) {
+          return res.status(400).json({ success: false, error: '缺少会话ID' });
+        }
+        
+        const session = db.prepare('SELECT * FROM game_edit_sessions WHERE id = ?').get(sessionId);
+        if (!session) {
+          return res.status(404).json({ success: false, error: '会话不存在' });
+        }
+        
+        if (saveAsNew) {
+          // 另存为新游戏
+          const newGameId = require('crypto').randomUUID();
+          const newTitle = title || game.title + ' (编辑版)';
+          
+          db.prepare(`
+            INSERT INTO games (id, title, prompt, code, author_name, author_token, llm_model)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `).run(newGameId, newTitle, game.prompt + ' [编辑优化]', session.current_code, game.author_name, userToken, game.llm_model);
+          
+          // 保存静态文件
+          const gameDir = path.join(__dirname, 'public', 'g', newGameId.substring(0, 2));
+          if (!fs.existsSync(gameDir)) {
+            fs.mkdirSync(gameDir, { recursive: true });
+          }
+          fs.writeFileSync(path.join(gameDir, `${newGameId}.html`), session.current_code, 'utf-8');
+          
+          db.prepare(`UPDATE game_edit_sessions SET status = 'completed' WHERE id = ?`).run(sessionId);
+          
+          return res.json({
+            success: true,
+            gameId: newGameId,
+            title: newTitle,
+            message: '已保存为新游戏'
+          });
+        } else {
+          // 更新原游戏
+          const latestVersion = db.prepare(`
+            SELECT MAX(version_number) as max_version FROM game_versions WHERE game_id = ?
+          `).get(game.id);
+          
+          const newVersionNumber = (latestVersion?.max_version || 0) + 1;
+          
+          db.prepare(`
+            INSERT INTO game_versions (game_id, version_number, code, change_summary, created_by)
+            VALUES (?, ?, ?, ?, ?)
+          `).run(game.id, newVersionNumber, session.current_code, '编辑优化', userToken);
+          
+          db.prepare(`
+            UPDATE games SET code = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+          `).run(session.current_code, game.id);
+          
+          // 更新静态文件
+          const gameDir = path.join(__dirname, 'public', 'g', game.id.substring(0, 2));
+          const gamePath = path.join(gameDir, `${game.id}.html`);
+          if (fs.existsSync(gamePath)) {
+            fs.writeFileSync(gamePath, session.current_code, 'utf-8');
+          }
+          
+          db.prepare(`UPDATE game_edit_sessions SET status = 'completed' WHERE id = ?`).run(sessionId);
+          
+          return res.json({
+            success: true,
+            gameId: game.id,
+            version: newVersionNumber,
+            message: '游戏已更新'
+          });
+        }
+      }
+      
+      default:
+        return res.status(400).json({ success: false, error: '未知的操作类型' });
+    }
+  } catch (error) {
+    console.error('[编辑API错误]', error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
