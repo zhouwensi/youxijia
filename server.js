@@ -66,11 +66,22 @@ function saveGameStaticFile(gameId, gameCode, gameInfo) {
     // 确保目录存在
     ensureGameDir(gameId);
     
+    console.log(`[INFO] saveGameStaticFile 被调用: gameId=${gameId}, gameInfo=`, JSON.stringify({
+      title: gameInfo.title,
+      authorName: gameInfo.authorName,
+      authorToken: gameInfo.authorToken ? '***' : '(empty)',
+      prompt: gameInfo.prompt?.substring(0, 50)
+    }));
+    
     // 生成独立页面HTML
     const standaloneHtml = generateStandaloneGameHtml(gameCode, {
       ...gameInfo,
       gameId
     });
+    
+    // 检查生成的 HTML 是否包含平台 UI
+    const hasPlatformUI = standaloneHtml.includes('tiktok-sidebar') && standaloneHtml.includes('yxj-promo-bar');
+    console.log(`[INFO] 生成的 HTML 长度: ${standaloneHtml.length}, 包含平台UI: ${hasPlatformUI}`);
     
     // 写入文件
     const filePath = getGameFilePath(gameId);
@@ -80,6 +91,7 @@ function saveGameStaticFile(gameId, gameCode, gameInfo) {
     return true;
   } catch (error) {
     console.error(`[ERROR] 保存游戏静态文件失败: ${error.message}`);
+    console.error(error.stack);
     return false;
   }
 }
@@ -162,6 +174,14 @@ function generateStandaloneGameHtml(gameCode, gameInfo) {
   bodyContent = bodyContent.replace(/<a[^>]*class="aigame-watermark"[^>]*>[\s\S]*?<\/a>/gi, '');
   // 移除相关的样式（如果在style标签内）
   headContent = headContent.replace(/\.aigame-watermark[\s\S]*?(?=\})\}/g, '');
+  
+  // 移除已有的平台 UI 元素（防止编辑保存时重复添加）
+  // 使用标记注释来精确匹配和移除
+  bodyContent = bodyContent.replace(/<!-- YXJ-PLATFORM-UI-START -->[\s\S]*?<!-- YXJ-PLATFORM-UI-END -->/gi, '');
+  // 移除平台 UI 相关的样式
+  headContent = headContent.replace(/<!-- YXJ-PLATFORM-STYLE-START -->[\s\S]*?<!-- YXJ-PLATFORM-STYLE-END -->/gi, '');
+  // 移除平台 UI 相关的脚本
+  bodyContent = bodyContent.replace(/<!-- YXJ-PLATFORM-SCRIPT-START -->[\s\S]*?<!-- YXJ-PLATFORM-SCRIPT-END -->/gi, '');
   
   // 底部推广栏的样式和HTML（会注入到游戏页面底部）
   const promoBarStyle = `
@@ -1674,16 +1694,18 @@ window.addEventListener('load', function() {
   <meta property="og:type" content="website">
   <title>${safeTitle} - AI游戏</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
-  <!-- 推广栏样式 -->
+  <!-- YXJ-PLATFORM-STYLE-START -->
   <style>${promoBarStyle}</style>
+  <!-- YXJ-PLATFORM-STYLE-END -->
   <!-- 原游戏head内容 -->
   ${headContent}
 </head>
 <body${bodyAttrs}>
   <!-- 原游戏body内容 -->
   ${bodyContent}
-  <!-- 推广栏 -->
+  <!-- YXJ-PLATFORM-UI-START -->
   ${promoBarHtml}
+  <!-- YXJ-PLATFORM-UI-END -->
 </body>
 </html>`;
 
@@ -1790,10 +1812,16 @@ function extractHtmlFromResponse(response) {
       code = code.slice(0, -3);
     }
     console.log('[INFO] 手动清理 markdown 标记');
-    return code.trim();
   }
   
-  console.log('[WARN] 无法识别代码格式，原样返回');
+  // 最终清理：移除代码中残留的任何 markdown 代码块标记
+  // 这些可能出现在代码中间（比如 AI 错误地在代码中间插入了 markdown 标记）
+  code = code.replace(/```html\s*\n?/gi, '');
+  code = code.replace(/```\s*$/gm, '');
+  // 只移除独立成行的 ``` （不影响模板字符串中的反引号）
+  code = code.replace(/^```\s*$/gm, '');
+  
+  console.log('[INFO] 代码提取完成');
   return code.trim();
 }
 
@@ -2112,6 +2140,34 @@ function getTurboModels() {
 // ============ 请求追踪系统 ============
 // 用于追踪活跃的生成请求，支持取消功能
 const activeGenerations = new Map(); // requestId -> { userToken, startTime, cancelled }
+
+// 用于追踪活跃的编辑请求，支持取消功能
+const activeEdits = new Map(); // sessionId -> { userToken, startTime, cancelled, abortController }
+
+// 标记编辑请求为已取消
+function cancelEditRequest(sessionId) {
+  const info = activeEdits.get(sessionId);
+  if (info) {
+    info.cancelled = true;
+    if (info.abortController) {
+      try {
+        info.abortController.abort();
+        console.log(`[编辑取消] 已中断 LLM 请求: ${sessionId}`);
+      } catch (e) {
+        console.log(`[编辑取消] 中断 LLM 请求失败: ${e.message}`);
+      }
+    }
+    console.log(`[编辑取消] 请求已标记为取消: ${sessionId}`);
+    return true;
+  }
+  return false;
+}
+
+// 检查编辑请求是否已被取消
+function isEditCancelled(sessionId) {
+  const info = activeEdits.get(sessionId);
+  return info ? info.cancelled : false;
+}
 
 // 清理过期的请求记录（超过10分钟的）
 function cleanupOldGenerations() {
@@ -3335,6 +3391,42 @@ app.post('/api/cancel-generation', (req, res) => {
     });
   } catch (error) {
     console.error('[ERROR] 取消请求失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 取消编辑请求
+app.post('/api/cancel-edit', (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    const userToken = req.headers['x-user-token'];
+    
+    if (!sessionId) {
+      return res.status(400).json({ success: false, error: '缺少会话ID' });
+    }
+    
+    // 验证请求属于当前用户
+    const info = activeEdits.get(sessionId);
+    if (!info) {
+      console.log(`[编辑取消] 请求不存在或已完成: ${sessionId}`);
+      return res.json({ success: true, message: '请求不存在或已完成' });
+    }
+    
+    if (info.userToken !== userToken) {
+      console.log(`[编辑取消] 用户无权取消此请求: ${sessionId}`);
+      return res.status(403).json({ success: false, error: '无权取消此请求' });
+    }
+    
+    // 标记请求为已取消
+    cancelEditRequest(sessionId);
+    
+    res.json({ 
+      success: true, 
+      message: '编辑请求已取消',
+      sessionId 
+    });
+  } catch (error) {
+    console.error('[ERROR] 取消编辑请求失败:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -5223,6 +5315,17 @@ app.post('/api/games/:id/edit', async (req, res) => {
         console.log('[编辑] 开始调用LLM优化游戏...');
         const startTime = Date.now();
         
+        // 创建 AbortController 用于取消请求
+        const editAbortController = new AbortController();
+        
+        // 注册到活跃编辑请求列表
+        activeEdits.set(sessionId, {
+          userToken: userToken,
+          startTime: startTime,
+          cancelled: false,
+          abortController: editAbortController
+        });
+        
         // 根据 provider 调整 API 调用
         let apiUrl = `${baseUrl}/v1/chat/completions`;
         let headers = {
@@ -5262,7 +5365,8 @@ app.post('/api/games/:id/edit', async (req, res) => {
             messages: messages,
             temperature: 0.7,
             max_tokens: modelMaxTokens
-          })
+          }),
+          signal: editAbortController.signal
         });
         
         if (!response.ok) {
@@ -5274,6 +5378,20 @@ app.post('/api/games/:id/edit', async (req, res) => {
         const apiTime = Date.now() - startTime;
         console.log(`[编辑] LLM响应时间: ${apiTime}ms`);
         
+        // 检查请求是否已被取消
+        if (isEditCancelled(sessionId)) {
+          console.log(`[编辑取消] LLM已返回，但请求已被用户取消: ${sessionId}`);
+          activeEdits.delete(sessionId);
+          return res.json({
+            success: false,
+            cancelled: true,
+            error: '请求已被取消'
+          });
+        }
+        
+        // 清理活跃编辑请求
+        activeEdits.delete(sessionId);
+        
         // 根据 provider 提取内容
         let newCode;
         if (provider === 'anthropic') {
@@ -5282,20 +5400,28 @@ app.post('/api/games/:id/edit', async (req, res) => {
           newCode = data.choices?.[0]?.message?.content || '';
         }
         
-        // 提取HTML代码
-        const htmlMatch = newCode.match(/```html\n?([\s\S]*?)```/);
-        if (htmlMatch) {
-          newCode = htmlMatch[1].trim();
-        } else {
-          const altMatch = newCode.match(/```\n?([\s\S]*?)```/);
-          if (altMatch) {
-            newCode = altMatch[1].trim();
-          }
-        }
+        // 使用统一的代码提取函数
+        newCode = extractHtmlFromResponse(newCode);
         
-        // 验证代码结构
+        // 额外清理：移除可能残留的 markdown 代码块标记
+        newCode = newCode.replace(/^```html\s*\n?/gi, '');
+        newCode = newCode.replace(/^```\s*\n?/gi, '');
+        newCode = newCode.replace(/\n?```\s*$/gi, '');
+        
+        // 验证代码结构完整性
         if (!newCode.includes('<html') && !newCode.includes('<!DOCTYPE')) {
           return res.status(400).json({ success: false, error: 'AI返回的代码格式不正确，请重试' });
+        }
+        
+        // 检查HTML结构是否完整
+        const hasHtmlEnd = newCode.includes('</html>');
+        const hasBodyEnd = newCode.includes('</body>');
+        if (!hasHtmlEnd || !hasBodyEnd) {
+          console.error('[编辑] AI返回的代码不完整，缺少结束标签');
+          return res.status(400).json({ 
+            success: false, 
+            error: 'AI返回的代码不完整（缺少结束标签），请重试' 
+          });
         }
         
         // 保存AI回复
@@ -5333,6 +5459,16 @@ app.post('/api/games/:id/edit', async (req, res) => {
           return res.status(404).json({ success: false, error: '会话不存在' });
         }
         
+        // 验证要保存的代码是否完整
+        const codeToSave = session.current_code;
+        if (!codeToSave || !codeToSave.includes('</html>') || !codeToSave.includes('</body>')) {
+          console.error('[保存] 代码不完整，拒绝保存');
+          return res.status(400).json({ 
+            success: false, 
+            error: '代码不完整，无法保存。请重新编辑后再试。' 
+          });
+        }
+        
         if (saveAsNew) {
           // 另存为新游戏
           const newGameId = require('crypto').randomUUID();
@@ -5343,12 +5479,14 @@ app.post('/api/games/:id/edit', async (req, res) => {
             VALUES (?, ?, ?, ?, ?, ?, ?)
           `).run(newGameId, newTitle, game.prompt + ' [编辑优化]', session.current_code, game.author_name, userToken, game.llm_model);
           
-          // 保存静态文件
-          const gameDir = path.join(__dirname, 'public', 'g', newGameId.substring(0, 2));
-          if (!fs.existsSync(gameDir)) {
-            fs.mkdirSync(gameDir, { recursive: true });
-          }
-          fs.writeFileSync(path.join(gameDir, `${newGameId}.html`), session.current_code, 'utf-8');
+          // 保存静态文件（使用 saveGameStaticFile 进行加工处理，添加平台 UI）
+          saveGameStaticFile(newGameId, session.current_code, {
+            title: newTitle,
+            authorName: game.author_name,
+            authorToken: userToken,
+            prompt: game.prompt + ' [编辑优化]',
+            created_at: new Date().toISOString()
+          });
           
           db.prepare(`UPDATE game_edit_sessions SET status = 'completed' WHERE id = ?`).run(sessionId);
           
@@ -5375,12 +5513,14 @@ app.post('/api/games/:id/edit', async (req, res) => {
             UPDATE games SET code = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
           `).run(session.current_code, game.id);
           
-          // 更新静态文件
-          const gameDir = path.join(__dirname, 'public', 'g', game.id.substring(0, 2));
-          const gamePath = path.join(gameDir, `${game.id}.html`);
-          if (fs.existsSync(gamePath)) {
-            fs.writeFileSync(gamePath, session.current_code, 'utf-8');
-          }
+          // 更新静态文件（使用 saveGameStaticFile 进行加工处理，添加平台 UI）
+          saveGameStaticFile(game.id, session.current_code, {
+            title: game.title,
+            authorName: game.author_name,
+            authorToken: game.author_token,
+            prompt: game.prompt,
+            created_at: game.created_at
+          });
           
           db.prepare(`UPDATE game_edit_sessions SET status = 'completed' WHERE id = ?`).run(sessionId);
           
@@ -5397,6 +5537,21 @@ app.post('/api/games/:id/edit', async (req, res) => {
         return res.status(400).json({ success: false, error: '未知的操作类型' });
     }
   } catch (error) {
+    // 检查是否是取消导致的错误
+    if (error.name === 'AbortError') {
+      console.log('[编辑] 请求已被用户取消');
+      // 清理活跃编辑请求
+      const { sessionId } = req.body || {};
+      if (sessionId) {
+        activeEdits.delete(sessionId);
+      }
+      return res.json({ 
+        success: false, 
+        cancelled: true, 
+        error: '请求已被取消' 
+      });
+    }
+    
     console.error('[编辑API错误]', error);
     return res.status(500).json({ success: false, error: error.message });
   }

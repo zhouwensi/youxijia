@@ -3015,7 +3015,7 @@ body.modal-open .modal-content {
   color: var(--text-secondary);
 }
 
-.form-group input,
+.form-group input:not([type="checkbox"]):not([type="radio"]),
 .form-group select {
   width: 100%;
   padding: 0.75rem 1rem;
@@ -3029,7 +3029,7 @@ body.modal-open .modal-content {
   appearance: none;
 }
 
-.form-group input:focus,
+.form-group input:not([type="checkbox"]):not([type="radio"]):focus,
 .form-group select:focus {
   outline: none;
   border-color: var(--primary-color);
@@ -9628,22 +9628,55 @@ a:hover {
   gap: 0.75rem;
 }
 
+/* 编辑器返回按钮 - 玻璃拟态风格 */
 .editor-header .btn-back {
   width: 40px;
   height: 40px;
   border: none;
-  background: transparent;
-  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-primary);
+  color: var(--text-secondary);
   cursor: pointer;
   flex-shrink: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.editor-header .btn-back::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
 
 .editor-header .btn-back:hover {
-  background: var(--bg-tertiary);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+  color: var(--primary-color);
+  transform: translateX(-2px);
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.15);
+}
+
+.editor-header .btn-back:active {
+  transform: translateX(0) scale(0.95);
+}
+
+.editor-header .btn-back svg {
+  transition: transform 0.3s ease;
+}
+
+.editor-header .btn-back:hover svg {
+  transform: translateX(-2px);
 }
 
 .editor-title {
@@ -9676,22 +9709,101 @@ a:hover {
   display: flex;
   gap: 0.5rem;
   flex-shrink: 0;
+  align-items: center;
 }
 
-.btn-editor-save {
-  padding: 0.5rem 1rem;
-  background: var(--primary-color);
-  color: white;
+/* 编辑器设置按钮 - 现代玻璃拟态风格 */
+.btn-editor-settings {
+  width: 40px;
+  height: 40px;
   border: none;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 500;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-editor-settings::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.3));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.btn-editor-settings:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.25));
+  color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+}
+
+.btn-editor-settings:active {
+  transform: translateY(0) scale(0.95);
+}
+
+.btn-editor-settings svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.3s ease;
+}
+
+.btn-editor-settings:hover svg {
+  transform: rotate(45deg);
+}
+
+/* 编辑器保存按钮 - 玻璃拟态风格 */
+.btn-editor-save {
+  padding: 0.5rem 1.25rem;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  border: none;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-editor-save::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.3));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
 
 .btn-editor-save:hover {
-  opacity: 0.9;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.25));
+  color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+}
+
+.btn-editor-save:active {
+  transform: translateY(0) scale(0.95);
 }
 
 /* 编辑器模型选择按钮 */
@@ -9832,23 +9944,43 @@ a:hover {
   display: none;
 }
 
+/* AI建议标签 - 玻璃胶囊风格 */
 .suggestion-tag {
   flex-shrink: 0;
-  padding: 0.375rem 0.75rem;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.08));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 20px;
   font-size: 0.8125rem;
-  color: var(--text-primary);
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.suggestion-tag::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0, 217, 255, 0.15), rgba(0, 180, 216, 0.15));
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 
 .suggestion-tag:hover {
-  background: var(--primary-light);
-  border-color: var(--primary-color);
-  color: var(--primary-color);
+  background: linear-gradient(135deg, rgba(0, 217, 255, 0.15), rgba(0, 180, 216, 0.15));
+  border-color: rgba(0, 217, 255, 0.4);
+  color: #00d9ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 217, 255, 0.2);
+}
+
+.suggestion-tag:active {
+  transform: translateY(0) scale(0.98);
 }
 
 /* 对话区域 */
@@ -9989,32 +10121,92 @@ a:hover {
   color: var(--text-muted);
 }
 
+/* 发送按钮 - 玻璃拟态风格 */
 .btn-send-edit {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border: none;
-  background: var(--primary-color);
-  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--text-secondary);
   cursor: pointer;
   flex-shrink: 0;
-  transition: opacity 0.2s, transform 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-send-edit::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.3));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
 
 .btn-send-edit:hover {
-  opacity: 0.9;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.25));
+  color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
 }
 
 .btn-send-edit:active {
-  transform: scale(0.95);
+  transform: translateY(0) scale(0.95);
 }
 
 .btn-send-edit:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  background: rgba(100, 100, 100, 0.1);
+  color: var(--text-muted);
+}
+
+.btn-send-edit:disabled::before {
+  background: linear-gradient(135deg, rgba(100, 100, 100, 0.2), rgba(100, 100, 100, 0.2));
+}
+
+/* 取消状态的发送按钮 - 玻璃拟态红色风格 */
+.btn-send-edit.canceling {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.15));
+  color: #ef4444;
+  animation: pulse-border-cancel 1.5s ease-in-out infinite;
+}
+
+.btn-send-edit.canceling::before {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.4), rgba(220, 38, 38, 0.4));
+}
+
+.btn-send-edit.canceling:hover {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(220, 38, 38, 0.25));
+  color: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25);
+}
+
+.btn-send-edit.canceling:active {
+  transform: translateY(0) scale(0.95);
+}
+
+@keyframes pulse-border-cancel {
+  0%, 100% { 
+    box-shadow: none;
+  }
+  50% { 
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+  }
 }
 
 /* 保存选项弹窗 */
@@ -10024,23 +10216,49 @@ a:hover {
   gap: 0.75rem;
 }
 
+/* 保存选项按钮 - 玻璃卡片风格 */
 .save-option-btn {
   display: flex;
   align-items: center;
   gap: 1rem;
   width: 100%;
-  padding: 1rem;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: 16px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+
+.save-option-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 217, 255, 0.1), transparent);
+  transition: left 0.5s;
 }
 
 .save-option-btn:hover {
-  background: var(--bg-color);
-  border-color: var(--primary-color);
+  background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(0, 180, 216, 0.1));
+  border-color: rgba(0, 217, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 217, 255, 0.15);
+}
+
+.save-option-btn:hover::before {
+  left: 100%;
+}
+
+.save-option-btn:active {
+  transform: translateY(0) scale(0.98);
 }
 
 .save-option-icon {

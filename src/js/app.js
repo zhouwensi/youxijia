@@ -4497,14 +4497,21 @@ function restoreGenerating() {
 // 显示生成遮罩
 function showGeneratingOverlay() {
   const overlay = document.getElementById('generating-overlay');
-  overlay.classList.add('active');
+  if (overlay) {
+    overlay.style.display = '';  // 清除强制隐藏样式
+    overlay.classList.add('active');
+  }
   document.body.classList.add('overlay-open');
 }
 
 // 隐藏生成遮罩
 function hideGeneratingOverlay() {
   const overlay = document.getElementById('generating-overlay');
-  overlay.classList.remove('active');
+  if (overlay) {
+    overlay.classList.remove('active');
+    // 强制隐藏样式，以防 CSS 类不生效
+    overlay.style.display = 'none';
+  }
   document.body.classList.remove('overlay-open');
 }
 
@@ -9380,14 +9387,51 @@ let editSession = {
   gameId: null,
   sessionId: null,
   currentCode: null,
+  originalCode: null,  // 原始代码，用于检测未保存修改
   messages: [],
   suggestions: [],
-  isEditing: false
+  isEditing: false,
+  isProcessing: false,  // 是否正在等待AI编辑请求返回
+  abortController: null,  // 用于取消正在进行的请求
+  hasUnsavedChanges: false  // 是否有未保存的修改
 };
+
+// 编辑器设置
+let editorSettings = {
+  autoSave: localStorage.getItem('editor-auto-save') !== 'false',  // 默认开启自动保存
+  selectedModel: null  // 编辑器使用的模型，null表示使用全局设置
+};
+
+// 加载编辑器设置
+function loadEditorSettings() {
+  const saved = localStorage.getItem('editor-settings');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      editorSettings = { ...editorSettings, ...parsed };
+    } catch (e) {
+      console.error('加载编辑器设置失败:', e);
+    }
+  }
+}
+
+// 保存编辑器设置
+function saveEditorSettings() {
+  localStorage.setItem('editor-settings', JSON.stringify(editorSettings));
+  localStorage.setItem('editor-auto-save', editorSettings.autoSave ? 'true' : 'false');
+}
 
 // 打开游戏编辑器
 async function openGameEditor(gameId) {
   showToast('正在准备编辑器...', 'info');
+  
+  // 如果有正在进行的生成任务，自动最小化
+  if (state.isGenerating && !backgroundTask.isMinimized) {
+    minimizeGenerating();
+  }
+  
+  // 加载编辑器设置
+  loadEditorSettings();
   
   try {
     // 调用开始编辑 API
@@ -9407,17 +9451,23 @@ async function openGameEditor(gameId) {
       return;
     }
     
+    const originalCode = data.game?.code || '';
+    
     // 初始化编辑会话
     editSession = {
       gameId: gameId,
       sessionId: data.sessionId,
-      currentCode: data.game?.code || '',
+      currentCode: originalCode,
+      originalCode: originalCode,  // 保存原始代码用于检测修改
       messages: [{
         role: 'assistant',
         content: `🎮 游戏「${data.game?.title || ''}」已加载完成！\n\n我分析了这个游戏，发现以下可以优化的方向：`
       }],
       suggestions: data.suggestions || [],
-      isEditing: true
+      isEditing: true,
+      isProcessing: false,
+      abortController: null,
+      hasUnsavedChanges: false
     };
     
     // 显示编辑页面
@@ -9450,11 +9500,6 @@ function showGameEditorPage(game, suggestions) {
     ? `<div class="chat-credit-notice free"><span class="credit-icon">🆓</span><span class="credit-text">${editorCreditInfo.message}</span></div>`
     : `<div class="chat-credit-notice cost"><span class="credit-icon">💎</span><span class="credit-text">${editorCreditInfo.message}</span><span class="credit-balance">余额: ${state.credits}</span></div>`;
   
-  // 获取当前选中的模型名称
-  const selectedModelId = state.settings.llmProvider || serverDefaultModel || 'deepseek-v3';
-  const selectedModelInfo = MODEL_REGISTRY[selectedModelId];
-  const selectedModelName = selectedModelInfo?.name || selectedModelId;
-  
   // 渲染编辑页面内容
   editorPage.innerHTML = `
     <div class="editor-header">
@@ -9468,11 +9513,10 @@ function showGameEditorPage(game, suggestions) {
         <span class="editor-status">编辑中</span>
       </div>
       <div class="editor-actions">
-        <button class="btn-editor-model" onclick="showEditorModelSelector()" title="选择AI模型">
-          <span class="editor-model-icon">🤖</span>
-          <span class="editor-model-name" id="editor-current-model">${escapeHtml(selectedModelName)}</span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M6 9l6 6 6-6"/>
+        <button class="btn-editor-settings" onclick="showEditorSettingsModal()" title="编辑器设置">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
           </svg>
         </button>
         <button class="btn-editor-save" onclick="showEditorSaveOptions()">保存</button>
@@ -9511,9 +9555,12 @@ function showGameEditorPage(game, suggestions) {
     <div class="editor-input-section">
       <div class="editor-input-wrapper">
         <textarea id="editor-input" placeholder="描述你想要的修改，如：添加背景音乐、增加难度选择..." rows="1" oninput="autoResizeEditorInput(this)"></textarea>
-        <button class="btn-send-edit" id="btn-send-edit" onclick="sendEditMessage()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <button class="btn-send-edit" id="btn-send-edit" onclick="handleEditorSendClick()">
+          <svg id="send-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
             <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+          <svg id="cancel-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="display:none">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
           </svg>
         </button>
       </div>
@@ -9865,9 +9912,8 @@ function applySuggestion(suggestion) {
 
 // 获取编辑器使用的 LLM 配置（与生成游戏时保持一致）
 function getEditorLLMConfig() {
-  // 获取用户选择的模型ID（优先使用下拉框的值，否则使用保存的设置）
-  const modelSelect = document.getElementById('llm-model-select');
-  const selectedModelId = modelSelect?.value || state.settings.llmModelId || 'deepseek-v3';
+  // 优先使用编辑器设置中选择的模型，否则使用全局设置
+  const selectedModelId = editorSettings.selectedModel || state.settings.llmProvider || state.settings.llmModelId || serverDefaultModel || 'deepseek-v3';
   
   const llmConfig = {
     provider: selectedModelId,  // 传递 modelId，后端会从 LLM_MODELS 获取完整配置
@@ -9881,6 +9927,69 @@ function getEditorLLMConfig() {
   }
   
   return llmConfig;
+}
+
+// 处理编辑器发送/取消按钮点击
+function handleEditorSendClick() {
+  if (editSession.isProcessing) {
+    // 正在处理中，执行取消操作
+    cancelEditorRequest();
+  } else {
+    // 未处理，执行发送操作
+    sendEditMessage();
+  }
+}
+
+// 取消编辑器请求
+async function cancelEditorRequest() {
+  // 先中断前端请求
+  if (editSession.abortController) {
+    editSession.abortController.abort();
+    editSession.abortController = null;
+  }
+  
+  // 通知后端取消 LLM 请求
+  if (editSession.sessionId) {
+    try {
+      await fetch('/api/cancel-edit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Token': getUserToken()
+        },
+        body: JSON.stringify({ sessionId: editSession.sessionId })
+      });
+      console.log('已通知后端取消编辑请求');
+    } catch (e) {
+      console.warn('通知后端取消编辑请求失败:', e);
+    }
+  }
+  
+  console.log('用户取消了编辑请求');
+  showToast('已取消编辑请求', 'info');
+}
+
+// 更新发送按钮状态（发送/取消切换）
+function updateEditorSendButton(isProcessing) {
+  const sendBtn = document.getElementById('btn-send-edit');
+  const sendIcon = document.getElementById('send-icon');
+  const cancelIcon = document.getElementById('cancel-icon');
+  
+  if (!sendBtn) return;
+  
+  if (isProcessing) {
+    // 切换为取消按钮
+    sendBtn.classList.add('canceling');
+    sendBtn.title = '取消请求';
+    if (sendIcon) sendIcon.style.display = 'none';
+    if (cancelIcon) cancelIcon.style.display = 'block';
+  } else {
+    // 切换为发送按钮
+    sendBtn.classList.remove('canceling');
+    sendBtn.title = '发送';
+    if (sendIcon) sendIcon.style.display = 'block';
+    if (cancelIcon) cancelIcon.style.display = 'none';
+  }
 }
 
 // 发送编辑消息
@@ -9944,11 +10053,15 @@ async function sendEditMessage() {
   const loadingEl = document.getElementById('editor-preview-loading');
   if (loadingEl) loadingEl.style.display = 'flex';
   
-  const sendBtn = document.getElementById('btn-send-edit');
-  if (sendBtn) sendBtn.disabled = true;
-  
   // 添加 AI 思考中提示
   const thinkingMsgId = appendEditorMessage('assistant', '🤔 AI 正在分析并修改游戏代码...');
+  
+  // 标记正在处理中，并创建 AbortController
+  editSession.isProcessing = true;
+  editSession.abortController = new AbortController();
+  
+  // 更新发送按钮为取消按钮
+  updateEditorSendButton(true);
   
   try {
     const response = await fetch(`/api/games/${editSession.gameId}/edit`, {
@@ -9962,7 +10075,8 @@ async function sendEditMessage() {
         sessionId: editSession.sessionId,
         message: message,
         llmConfig: llmConfig
-      })
+      }),
+      signal: editSession.abortController.signal
     });
     
     const data = await response.json();
@@ -9973,6 +10087,7 @@ async function sendEditMessage() {
     if (data.success) {
       // 更新当前代码
       editSession.currentCode = data.code;
+      editSession.hasUnsavedChanges = true;  // 标记有未保存的修改
       
       // 更新预览
       updateEditorPreview(data.code);
@@ -9991,17 +10106,35 @@ async function sendEditMessage() {
         updateEditorCreditNotice();
       }
       
+      // 检查是否启用了自动保存
+      if (editorSettings.autoSave) {
+        autoSaveEditorGame();
+      }
+      
     } else {
       appendEditorMessage('assistant', `❌ ${data.error || '修改失败，请重试'}`);
     }
     
   } catch (error) {
-    console.error('发送编辑消息失败:', error);
-    removeEditorMessage(thinkingMsgId);
-    appendEditorMessage('assistant', '❌ 网络错误，请检查网络后重试');
+    // 检查是否是用户主动取消
+    if (error.name === 'AbortError') {
+      console.log('编辑请求已被用户取消');
+      removeEditorMessage(thinkingMsgId);
+      // 不显示错误消息，因为是用户主动取消的
+    } else {
+      console.error('发送编辑消息失败:', error);
+      removeEditorMessage(thinkingMsgId);
+      appendEditorMessage('assistant', '❌ 网络错误，请检查网络后重试');
+    }
   } finally {
+    // 标记处理完成，清理 AbortController
+    editSession.isProcessing = false;
+    editSession.abortController = null;
+    
+    // 恢复发送按钮状态
+    updateEditorSendButton(false);
+    
     if (loadingEl) loadingEl.style.display = 'none';
-    if (sendBtn) sendBtn.disabled = false;
   }
 }
 
@@ -10166,9 +10299,153 @@ async function saveGameEdit(saveAsNew) {
 
 // 关闭游戏编辑器
 function closeGameEditor() {
+  // 检查是否正在处理AI编辑请求
+  if (editSession.isProcessing) {
+    showEditorProcessingConfirm();
+    return;
+  }
+  
+  // 检查是否有未保存的修改
+  if (editSession.hasUnsavedChanges || 
+      (editSession.currentCode && editSession.originalCode && 
+       editSession.currentCode !== editSession.originalCode)) {
+    showEditorUnsavedConfirm();
+    return;
+  }
+  
+  // 执行实际的关闭操作
+  doCloseGameEditor();
+}
+
+// 显示正在处理中确认对话框
+function showEditorProcessingConfirm() {
+  let confirmModal = document.getElementById('editor-processing-modal');
+  if (confirmModal) confirmModal.remove();
+  
+  confirmModal = document.createElement('div');
+  confirmModal.id = 'editor-processing-modal';
+  confirmModal.className = 'modal active';
+  confirmModal.onclick = (e) => {
+    if (e.target === confirmModal) confirmModal.remove();
+  };
+  
+  confirmModal.innerHTML = `
+    <div class="modal-content modal-small">
+      <div class="modal-header">
+        <h3>⏳ AI 正在处理中</h3>
+        <button class="btn btn-icon btn-close" onclick="document.getElementById('editor-processing-modal').remove()">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 1rem;">
+          AI 正在处理您的编辑请求，现在退出将丢失本次修改结果。确定要退出吗？
+        </p>
+      </div>
+      <div class="modal-footer" style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button class="btn btn-secondary" onclick="document.getElementById('editor-processing-modal').remove()">继续等待</button>
+        <button class="btn btn-danger" onclick="forceCloseGameEditor()">强制退出</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(confirmModal);
+}
+
+// 强制关闭编辑器（即使正在处理中）
+async function forceCloseGameEditor() {
+  const confirmModal = document.getElementById('editor-processing-modal');
+  if (confirmModal) confirmModal.remove();
+  
+  // 取消正在进行的 LLM 请求（前端）
+  if (editSession.abortController) {
+    editSession.abortController.abort();
+    editSession.abortController = null;
+  }
+  
+  // 通知后端取消 LLM 请求
+  if (editSession.sessionId) {
+    try {
+      await fetch('/api/cancel-edit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Token': getUserToken()
+        },
+        body: JSON.stringify({ sessionId: editSession.sessionId })
+      });
+      console.log('已通知后端取消编辑器 LLM 请求');
+    } catch (e) {
+      console.warn('通知后端取消失败:', e);
+    }
+  }
+  
+  // 重置所有状态
+  editSession.isProcessing = false;
+  editSession.hasUnsavedChanges = false;
+  editSession.currentCode = editSession.originalCode;
+  
+  doCloseGameEditor();
+}
+
+// 显示未保存修改确认对话框
+function showEditorUnsavedConfirm() {
+  let confirmModal = document.getElementById('editor-unsaved-modal');
+  if (confirmModal) confirmModal.remove();
+  
+  confirmModal = document.createElement('div');
+  confirmModal.id = 'editor-unsaved-modal';
+  confirmModal.className = 'modal active';
+  confirmModal.onclick = (e) => {
+    if (e.target === confirmModal) confirmModal.remove();
+  };
+  
+  confirmModal.innerHTML = `
+    <div class="modal-content modal-small">
+      <div class="modal-header">
+        <h3>💾 有未保存的修改</h3>
+        <button class="btn btn-icon btn-close" onclick="document.getElementById('editor-unsaved-modal').remove()">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 1rem;">
+          您对游戏的修改尚未保存，是否要保存？
+        </p>
+      </div>
+      <div class="modal-footer" style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button class="btn btn-ghost" onclick="discardEditorChanges()">不保存</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('editor-unsaved-modal').remove()">继续编辑</button>
+        <button class="btn btn-primary" onclick="saveAndCloseEditor()">保存</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(confirmModal);
+}
+
+// 放弃修改并关闭编辑器
+function discardEditorChanges() {
+  const confirmModal = document.getElementById('editor-unsaved-modal');
+  if (confirmModal) confirmModal.remove();
+  
+  // 强制关闭
+  editSession.hasUnsavedChanges = false;
+  editSession.currentCode = editSession.originalCode;
+  doCloseGameEditor();
+}
+
+// 保存并关闭编辑器
+function saveAndCloseEditor() {
+  const confirmModal = document.getElementById('editor-unsaved-modal');
+  if (confirmModal) confirmModal.remove();
+  
+  // 显示保存选项
+  showEditorSaveOptions();
+}
+
+// 执行实际的关闭编辑器操作
+function doCloseGameEditor() {
   const editorPage = document.getElementById('game-editor-page');
   if (editorPage) {
-    editorPage.classList.remove('active');
+    // 完全移除编辑器页面，避免残留内容显示
+    editorPage.remove();
   }
   
   // 重置编辑会话
@@ -10176,10 +10453,25 @@ function closeGameEditor() {
     gameId: null,
     sessionId: null,
     currentCode: null,
+    originalCode: null,
     messages: [],
     suggestions: [],
-    isEditing: false
+    isEditing: false,
+    isProcessing: false,
+    abortController: null,
+    hasUnsavedChanges: false
   };
+  
+  // 处理生成遮罩状态：如果没有正在进行的生成任务，确保遮罩被隐藏
+  if (!state.isGenerating) {
+    hideGeneratingOverlay();
+    // 同时隐藏浮动条
+    const floatEl = document.getElementById('generating-float');
+    if (floatEl) floatEl.classList.remove('active');
+  }
+  
+  // 先隐藏所有页面，避免页面叠加
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   
   // 返回个人页
   document.getElementById('profile-page').classList.add('active');
@@ -10776,4 +11068,149 @@ if (typeof showHome === 'function') {
     hideComments();
     return origShowHomeForComments.apply(this, arguments);
   };
+}
+
+// =============================================
+// 编辑器设置功能
+// =============================================
+
+// 显示编辑器设置弹窗
+function showEditorSettingsModal() {
+  let settingsModal = document.getElementById('editor-settings-modal');
+  if (settingsModal) settingsModal.remove();
+  
+  settingsModal = document.createElement('div');
+  settingsModal.id = 'editor-settings-modal';
+  settingsModal.className = 'modal active';
+  settingsModal.onclick = (e) => {
+    if (e.target === settingsModal) settingsModal.remove();
+  };
+  
+  // 获取当前模型信息
+  const currentModelId = editorSettings.selectedModel || state.settings.llmProvider || serverDefaultModel || 'deepseek-v3';
+  const autoSaveChecked = editorSettings.autoSave ? 'checked' : '';
+  
+  // 构建模型选择列表
+  let modelOptionsHtml = '';
+  const models = Object.keys(MODEL_REGISTRY).filter(id => id !== 'custom');
+  models.forEach(modelId => {
+    const model = MODEL_REGISTRY[modelId];
+    if (!model) return;
+    const isSelected = modelId === currentModelId ? 'selected' : '';
+    let displayName = model.name;
+    if (modelId === serverDefaultModel) {
+      displayName += ' 🌟';
+    }
+    modelOptionsHtml += `<option value="${modelId}" ${isSelected}>${displayName}</option>`;
+  });
+  // 添加自定义选项
+  modelOptionsHtml += `<option value="custom" ${currentModelId === 'custom' ? 'selected' : ''}>🔧 自定义接口</option>`;
+  
+  settingsModal.innerHTML = `
+    <div class="modal-content modal-small">
+      <div class="modal-header">
+        <h3>⚙️ 编辑器设置</h3>
+        <button class="btn btn-icon btn-close" onclick="document.getElementById('editor-settings-modal').remove()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="editor-model-select">🤖 AI 模型</label>
+          <select id="editor-model-select" class="form-control">
+            ${modelOptionsHtml}
+          </select>
+          <p class="form-hint">选择用于编辑游戏的 AI 模型</p>
+        </div>
+        
+        <div class="form-group">
+          <label class="toggle-label">
+            <input type="checkbox" id="editor-auto-save" ${autoSaveChecked}>
+            <span class="toggle-text">🔄 自动保存</span>
+          </label>
+          <p class="form-hint">编辑后自动保存修改到原游戏</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="document.getElementById('editor-settings-modal').remove()">取消</button>
+        <button class="btn btn-primary" onclick="saveEditorSettingsFromModal()">保存设置</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(settingsModal);
+}
+
+// 从弹窗保存编辑器设置
+function saveEditorSettingsFromModal() {
+  const modelSelect = document.getElementById('editor-model-select');
+  const autoSaveCheckbox = document.getElementById('editor-auto-save');
+  
+  if (modelSelect) {
+    const newModelId = modelSelect.value;
+    editorSettings.selectedModel = newModelId;
+    
+    console.log('[EditorSettings] 编辑器模型已切换为:', newModelId);
+  }
+  
+  if (autoSaveCheckbox) {
+    editorSettings.autoSave = autoSaveCheckbox.checked;
+  }
+  
+  // 保存设置到本地存储
+  saveEditorSettings();
+  
+  // 关闭弹窗
+  const modal = document.getElementById('editor-settings-modal');
+  if (modal) modal.remove();
+  
+  showToast('编辑器设置已保存', 'success');
+}
+
+// 自动保存编辑器游戏（更新原游戏）
+let autoSaveTimer = null;
+async function autoSaveEditorGame() {
+  // 防抖：取消之前的定时器
+  if (autoSaveTimer) {
+    clearTimeout(autoSaveTimer);
+  }
+  
+  // 延迟2秒后执行自动保存
+  autoSaveTimer = setTimeout(async () => {
+    if (!editSession.sessionId || !editSession.gameId) {
+      return;
+    }
+    
+    console.log('[AutoSave] 开始自动保存...');
+    
+    try {
+      const response = await fetch(`/api/games/${editSession.gameId}/edit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Token': getUserToken()
+        },
+        body: JSON.stringify({
+          action: 'save',
+          sessionId: editSession.sessionId,
+          saveAsNew: false
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log('[AutoSave] 自动保存成功');
+        // 更新原始代码为当前代码（因为已保存）
+        editSession.originalCode = editSession.currentCode;
+        editSession.hasUnsavedChanges = false;
+        
+        // 显示小提示
+        showToast('✅ 已自动保存', 'success');
+      } else {
+        console.error('[AutoSave] 自动保存失败:', data.error);
+      }
+      
+    } catch (error) {
+      console.error('[AutoSave] 自动保存出错:', error);
+    }
+  }, 2000);
 }
