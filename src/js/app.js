@@ -5042,7 +5042,7 @@ async function generateGame(advancedSettings = null) {
       log(`后台生成完成: ${data.title}`, 'success');
       showToast('游戏生成完成！点击通知查看', 'success');
     } else {
-      // 前台模式：直接显示结果
+      // 前台模式：直接保存并显示成功提示
       state.currentGame = {
         title: data.title,
         prompt: prompt,
@@ -5057,8 +5057,8 @@ async function generateGame(advancedSettings = null) {
       document.body.classList.remove('overlay-open');
       document.getElementById('generating-float').classList.remove('active');
       
-      // 显示保存弹窗并预览
-      openSaveModal();
+      // 自动保存并发布游戏，然后显示成功提示
+      await autoSaveAndPublishGame(data.title, prompt, data.code, draftId);
     }
     
   } catch (error) {
@@ -5081,6 +5081,105 @@ async function generateGame(advancedSettings = null) {
     // 停止草稿轮询（如果有）
     stopDraftPolling();
     // setGenerateButtonLoading(false);
+  }
+}
+
+// 自动保存并发布游戏，显示成功提示
+async function autoSaveAndPublishGame(title, prompt, code, draftId) {
+  try {
+    const authorName = getEffectiveAuthorName();
+    const authorToken = getAuthorToken();
+    
+    // 刷新积分显示
+    loadCredits().then(() => {
+      updateCreditsDisplay();
+    });
+    
+    // 首次成功生成游戏时触发邀请奖励
+    triggerReferralReward();
+    
+    // 停止生成计时器
+    stopGeneratingTimer();
+    
+    // 验证代码是否有语法错误
+    const codeError = validateGameCode(code);
+    if (codeError) {
+      console.warn('[WARN] 游戏代码可能有问题:', codeError);
+      // 即使有错误也继续保存，让用户可以后续编辑
+    }
+    
+    let gameId = draftId || state.currentGameId;
+    
+    if (gameId) {
+      // 更新已有游戏（草稿或已发布的游戏）
+      const response = await fetch(`/api/games/${gameId}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Author-Token': authorToken
+        },
+        body: JSON.stringify({
+          title,
+          prompt,
+          code,
+          authorName,
+          authorToken,
+          status: 'published'
+        })
+      });
+      
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || '保存失败');
+      }
+      
+      state.currentGameId = gameId;
+    } else {
+      // 创建新游戏
+      const response = await fetch('/api/games', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          prompt,
+          code,
+          authorName,
+          authorToken,
+          status: 'published'
+        })
+      });
+      
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || '保存失败');
+      }
+      
+      gameId = data.id;
+      state.currentGameId = gameId;
+      saveGameAuthorToken(gameId, authorToken);
+    }
+    
+    log(`✅ 游戏已自动保存: ${title}`, 'success');
+    
+    // 刷新游戏列表
+    loadGames();
+    
+    // 显示成功提示，点击跳转到游戏页面
+    showSuccessToastWithAction(
+      `游戏「${title}」生成成功！`,
+      '👆 点击立即查看和编辑',
+      () => {
+        // 跳转到游戏页面
+        openGame(gameId);
+      },
+      6000  // 6秒后自动消失
+    );
+    
+  } catch (error) {
+    console.error('自动保存游戏失败:', error);
+    // 保存失败时，回退到手动保存弹窗
+    showToast('自动保存失败，请手动保存', 'error');
+    openSaveModal();
   }
 }
 
@@ -6130,6 +6229,58 @@ function showToast(message, type = '') {
   setTimeout(() => {
     toast.classList.remove('active');
   }, 3000);
+}
+
+// 显示可点击跳转的成功提示
+function showSuccessToastWithAction(message, actionText, onAction, duration = 5000) {
+  // 移除已存在的成功提示
+  const existingToast = document.getElementById('success-action-toast');
+  if (existingToast) {
+    existingToast.remove();
+  }
+  
+  const toast = document.createElement('div');
+  toast.id = 'success-action-toast';
+  toast.className = 'success-action-toast';
+  toast.innerHTML = `
+    <div class="success-toast-content" onclick="event.stopPropagation();">
+      <div class="success-toast-icon">🎉</div>
+      <div class="success-toast-text">
+        <div class="success-toast-message">${escapeHtml(message)}</div>
+        <div class="success-toast-action">${escapeHtml(actionText)}</div>
+      </div>
+      <button class="success-toast-close" onclick="event.stopPropagation(); this.closest('.success-action-toast').remove();">×</button>
+    </div>
+  `;
+  
+  // 点击主体区域触发操作
+  toast.querySelector('.success-toast-content').addEventListener('click', (e) => {
+    if (!e.target.classList.contains('success-toast-close')) {
+      toast.remove();
+      if (typeof onAction === 'function') {
+        onAction();
+      }
+    }
+  });
+  
+  document.body.appendChild(toast);
+  
+  // 触发动画
+  requestAnimationFrame(() => {
+    toast.classList.add('active');
+  });
+  
+  // 自动消失
+  setTimeout(() => {
+    if (toast.parentNode) {
+      toast.classList.remove('active');
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.remove();
+        }
+      }, 300);
+    }
+  }, duration);
 }
 
 // 显示 API Key 错误提示弹窗
@@ -9299,6 +9450,11 @@ function showGameEditorPage(game, suggestions) {
     ? `<div class="chat-credit-notice free"><span class="credit-icon">🆓</span><span class="credit-text">${editorCreditInfo.message}</span></div>`
     : `<div class="chat-credit-notice cost"><span class="credit-icon">💎</span><span class="credit-text">${editorCreditInfo.message}</span><span class="credit-balance">余额: ${state.credits}</span></div>`;
   
+  // 获取当前选中的模型名称
+  const selectedModelId = state.settings.llmProvider || serverDefaultModel || 'deepseek-v3';
+  const selectedModelInfo = MODEL_REGISTRY[selectedModelId];
+  const selectedModelName = selectedModelInfo?.name || selectedModelId;
+  
   // 渲染编辑页面内容
   editorPage.innerHTML = `
     <div class="editor-header">
@@ -9312,13 +9468,20 @@ function showGameEditorPage(game, suggestions) {
         <span class="editor-status">编辑中</span>
       </div>
       <div class="editor-actions">
+        <button class="btn-editor-model" onclick="showEditorModelSelector()" title="选择AI模型">
+          <span class="editor-model-icon">🤖</span>
+          <span class="editor-model-name" id="editor-current-model">${escapeHtml(selectedModelName)}</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </button>
         <button class="btn-editor-save" onclick="showEditorSaveOptions()">保存</button>
       </div>
     </div>
     
     <div class="editor-preview-section">
-      <div class="editor-preview-container">
-        <iframe id="editor-preview-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+      <div class="editor-preview-container" id="editor-preview-container">
+        <!-- 游戏代码将直接内嵌到这里，不使用 iframe -->
         <div class="editor-preview-loading" id="editor-preview-loading" style="display: none;">
           <div class="spinner"></div>
           <span>正在生成预览...</span>
@@ -9420,12 +9583,268 @@ function updateEditorCreditNotice() {
     : `<span class="credit-icon">💎</span><span class="credit-text">${editorCreditInfo.message}</span><span class="credit-balance">余额: ${state.credits}</span>`;
 }
 
-// 更新编辑器预览
-function updateEditorPreview(code) {
-  const frame = document.getElementById('editor-preview-frame');
-  if (frame && code) {
-    frame.srcdoc = code;
+// 显示编辑器模型选择弹窗
+async function showEditorModelSelector() {
+  // 复用现有的 turbo-modal
+  const modal = document.getElementById('turbo-modal');
+  const listContainer = document.getElementById('turbo-models-list');
+  
+  if (!modal || !listContainer) {
+    showToast('模型选择器未加载', 'error');
+    return;
   }
+  
+  // 获取可用的模型
+  const models = await fetchTurboModels();
+  
+  if (models.length === 0) {
+    showToast('暂无可用的模型', 'error');
+    return;
+  }
+  
+  // 判断用户是否有自己的 Key
+  const userHasKey = state.settings.llmApiKey && state.settings.llmApiKey.trim().length > 0;
+  
+  // 获取当前选中的模型
+  const currentModelId = state.settings.llmProvider || serverDefaultModel || 'deepseek-v3';
+  
+  // 渲染模型列表
+  listContainer.innerHTML = models.map(model => {
+    const backendHasKey = model.hasDefaultKey === true;
+    const isSelected = model.id === currentModelId;
+    
+    // 显示积分或免费标识
+    let costDisplay = '';
+    
+    if (userHasKey) {
+      costDisplay = `
+        <div class="turbo-model-cost free">
+          <div class="turbo-model-cost-value" style="color: #10b981;">🆓 免费</div>
+          <div class="turbo-model-cost-label" style="color: #94a3b8;">使用您的Key</div>
+        </div>
+      `;
+    } else if (backendHasKey) {
+      if (model.creditCost > 0) {
+        costDisplay = `
+          <div class="turbo-model-cost">
+            <div class="turbo-model-cost-value">${model.creditCost}</div>
+            <div class="turbo-model-cost-label">积分</div>
+          </div>
+        `;
+      } else {
+        costDisplay = `
+          <div class="turbo-model-cost free">
+            <div class="turbo-model-cost-value" style="color: #10b981;">🆓 免费</div>
+            <div class="turbo-model-cost-label" style="color: #94a3b8;">0积分</div>
+          </div>
+        `;
+      }
+    } else {
+      costDisplay = `
+        <div class="turbo-model-cost free needs-key">
+          <div class="turbo-model-cost-value" style="font-size: 0.8rem; color: #f59e0b;">🔑 需配Key</div>
+          <div class="turbo-model-cost-label" style="color: #94a3b8;">点击配置</div>
+        </div>
+      `;
+    }
+    
+    // 判断点击行为
+    const needsKeySetup = !userHasKey && !backendHasKey;
+    const onClickAction = needsKeySetup 
+      ? `goToSettingsForModel('${model.id}', '${model.name}')`
+      : `selectEditorModel('${model.id}')`;
+    
+    // 根据后台配置的速度等级获取显示信息
+    const speedInfo = getSpeedInfo(model.speedLevel || 'normal');
+    
+    return `
+      <div class="turbo-model-item ${model.turboRecommended ? 'recommended' : ''} ${needsKeySetup ? 'needs-key-setup' : ''} ${isSelected ? 'selected' : ''}" 
+           onclick="${onClickAction}"
+           ${needsKeySetup ? 'title="点击配置API Key"' : ''}>
+        <div class="turbo-model-info">
+          <div class="turbo-model-name">${model.name}${isSelected ? ' ✓' : ''}</div>
+          <div class="turbo-model-meta">
+            <span class="turbo-model-speed ${speedInfo.className}">${speedInfo.icon} ${speedInfo.label}</span>
+            <span class="turbo-model-quality">质量: ${getQualityLabelText(model.quality)}</span>
+          </div>
+        </div>
+        ${costDisplay}
+      </div>
+    `;
+  }).join('');
+  
+  // 更新弹窗标题和描述
+  const modalHeader = modal.querySelector('.modal-header h3');
+  const modalDesc = modal.querySelector('.turbo-modal-desc');
+  const modalWarning = modal.querySelector('.turbo-warning');
+  
+  if (modalHeader) modalHeader.textContent = '🤖 选择AI模型';
+  if (modalDesc) modalDesc.textContent = '选择用于编辑游戏的AI模型';
+  if (modalWarning) modalWarning.style.display = 'none';
+  
+  modal.classList.add('active');
+}
+
+// 选择编辑器使用的模型
+function selectEditorModel(modelId) {
+  const modelInfo = MODEL_REGISTRY[modelId];
+  if (!modelInfo) {
+    showToast('模型信息未找到', 'error');
+    return;
+  }
+  
+  // 更新设置中的模型
+  state.settings.llmProvider = modelId;
+  state.settings.llmModelId = modelId;
+  
+  // 保存设置
+  saveSettings();
+  
+  // 更新编辑器头部的模型显示
+  updateEditorModelDisplay(modelInfo.name || modelId);
+  
+  // 更新积分提示
+  updateEditorCreditNotice();
+  
+  // 关闭弹窗
+  closeTurboModal();
+  
+  showToast(`已切换到 ${modelInfo.name || modelId}`, 'success');
+}
+
+// 更新编辑器模型显示
+function updateEditorModelDisplay(modelName) {
+  const modelNameEl = document.getElementById('editor-current-model');
+  if (modelNameEl) {
+    modelNameEl.textContent = modelName;
+  }
+}
+
+// 更新编辑器预览（使用内嵌方式，不使用 iframe）
+function updateEditorPreview(code) {
+  const container = document.getElementById('editor-preview-container');
+  if (!container || !code) return;
+  
+  // 保存游戏代码
+  editSession.currentCode = code;
+  
+  // 从游戏代码中提取 head 和 body 内容
+  let headContent = '';
+  let bodyContent = code;
+  let bodyAttrs = '';
+  
+  // 提取 <head> 内容
+  const headMatch = code.match(/<head[^>]*>([\s\S]*?)<\/head>/i);
+  if (headMatch) {
+    headContent = headMatch[1];
+  }
+  
+  // 提取 <body> 内容和属性
+  const bodyMatch = code.match(/<body([^>]*)>([\s\S]*?)<\/body>/i);
+  if (bodyMatch) {
+    bodyAttrs = bodyMatch[1] || '';
+    bodyContent = bodyMatch[2];
+  }
+  
+  // 清空容器，但保留 loading 元素
+  const loadingEl = container.querySelector('.editor-preview-loading');
+  container.innerHTML = '';
+  if (loadingEl) {
+    container.appendChild(loadingEl);
+  }
+  
+  // 创建游戏内容容器
+  const gameWrapper = document.createElement('div');
+  gameWrapper.id = 'editor-game-wrapper';
+  gameWrapper.className = 'editor-game-wrapper';
+  
+  // 处理 body 属性中的样式
+  const styleMatch = bodyAttrs.match(/style\s*=\s*["']([^"']*)["']/i);
+  if (styleMatch) {
+    gameWrapper.setAttribute('style', styleMatch[1]);
+  }
+  
+  // 处理 body 的 class
+  const classMatch = bodyAttrs.match(/class\s*=\s*["']([^"']*)["']/i);
+  if (classMatch) {
+    gameWrapper.className += ' ' + classMatch[1];
+  }
+  
+  // 创建样式容器（从 head 中提取样式）
+  const styleContainer = document.createElement('div');
+  styleContainer.id = 'editor-game-styles';
+  
+  // 提取并处理 style 标签，添加作用域前缀
+  const styleRegex = /<style[^>]*>([\s\S]*?)<\/style>/gi;
+  let styleMatch2;
+  while ((styleMatch2 = styleRegex.exec(headContent)) !== null) {
+    const styleEl = document.createElement('style');
+    // 给所有选择器添加作用域前缀，避免影响编辑器 UI
+    let scopedStyles = styleMatch2[1];
+    // 简单处理：在容器内的样式会自然隔离
+    styleEl.textContent = scopedStyles;
+    styleContainer.appendChild(styleEl);
+  }
+  
+  // 也处理 body 内的 style 标签
+  const bodyStyleRegex = /<style[^>]*>([\s\S]*?)<\/style>/gi;
+  let bodyStyleContent = bodyContent;
+  while ((styleMatch2 = bodyStyleRegex.exec(bodyContent)) !== null) {
+    const styleEl = document.createElement('style');
+    styleEl.textContent = styleMatch2[1];
+    styleContainer.appendChild(styleEl);
+  }
+  // 移除 body 中的 style 标签，避免重复
+  bodyStyleContent = bodyContent.replace(bodyStyleRegex, '');
+  
+  // 设置游戏内容
+  gameWrapper.innerHTML = bodyStyleContent;
+  
+  // 添加到容器
+  container.insertBefore(styleContainer, container.firstChild);
+  container.insertBefore(gameWrapper, styleContainer.nextSibling);
+  
+  // 执行脚本
+  // 从 head 和 body 中提取 script 标签并执行
+  const scripts = [];
+  
+  // 提取 head 中的脚本
+  const headScriptRegex = /<script[^>]*>([\s\S]*?)<\/script>/gi;
+  let scriptMatch;
+  while ((scriptMatch = headScriptRegex.exec(headContent)) !== null) {
+    if (scriptMatch[1].trim()) {
+      scripts.push(scriptMatch[1]);
+    }
+  }
+  
+  // 提取 body 中的脚本
+  const bodyScriptRegex = /<script[^>]*>([\s\S]*?)<\/script>/gi;
+  while ((scriptMatch = bodyScriptRegex.exec(bodyContent)) !== null) {
+    if (scriptMatch[1].trim()) {
+      scripts.push(scriptMatch[1]);
+    }
+  }
+  
+  // 延迟执行脚本，确保 DOM 已经渲染
+  setTimeout(() => {
+    scripts.forEach((scriptContent, index) => {
+      try {
+        // 使用 Function 构造函数执行脚本，避免污染全局作用域
+        const scriptFn = new Function(scriptContent);
+        scriptFn();
+      } catch (e) {
+        console.warn(`编辑器预览脚本 ${index + 1} 执行出错:`, e.message);
+      }
+    });
+    
+    // 触发 DOMContentLoaded 和 load 事件
+    try {
+      document.dispatchEvent(new Event('DOMContentLoaded'));
+      window.dispatchEvent(new Event('load'));
+    } catch (e) {
+      console.warn('触发事件出错:', e.message);
+    }
+  }, 100);
 }
 
 // 自动调整输入框高度
@@ -9804,14 +10223,26 @@ function enterFullscreenMode() {
   // 更新全屏按钮图标
   const toggleBtn = document.getElementById('fullscreen-toggle-btn');
   if (toggleBtn) {
-    toggleBtn.textContent = '⛶'; // 退出全屏图标
+    toggleBtn.textContent = '⛶';
     toggleBtn.title = '退出全屏';
+  }
+  
+  // 更新侧边栏全屏图标
+  const tiktokIcon = document.getElementById('tiktok-fullscreen-icon');
+  if (tiktokIcon) {
+    tiktokIcon.textContent = '⛶';
   }
   
   // 隐藏底部导航栏
   const bottomNav = document.getElementById('bottom-nav');
   if (bottomNav) {
     bottomNav.style.display = 'none';
+  }
+  
+  // 隐藏设置按钮
+  const settingsBtn = document.getElementById('profile-settings-btn');
+  if (settingsBtn) {
+    settingsBtn.style.display = 'none';
   }
   
   // 尝试请求浏览器全屏
@@ -9838,10 +10269,22 @@ function exitFullscreenMode() {
     toggleBtn.title = '全屏';
   }
   
+  // 更新侧边栏全屏图标
+  const tiktokIcon = document.getElementById('tiktok-fullscreen-icon');
+  if (tiktokIcon) {
+    tiktokIcon.textContent = '⛶';
+  }
+  
   // 恢复底部导航栏
   const bottomNav = document.getElementById('bottom-nav');
   if (bottomNav) {
     bottomNav.style.display = '';
+  }
+  
+  // 恢复设置按钮
+  const settingsBtn = document.getElementById('profile-settings-btn');
+  if (settingsBtn) {
+    settingsBtn.style.display = '';
   }
   
   // 退出浏览器全屏

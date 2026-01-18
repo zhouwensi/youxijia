@@ -389,6 +389,65 @@ function generateStandaloneGameHtml(gameCode, gameInfo) {
 #stat-edit-btn.visible {
   display: flex !important;
 }
+/* ====== 全屏模式样式 ====== */
+body.fullscreen-mode {
+  padding-bottom: 0 !important;
+  overflow: hidden !important;
+}
+body.fullscreen-mode .tiktok-sidebar {
+  display: none !important;
+}
+body.fullscreen-mode .tiktok-author-info {
+  display: none !important;
+}
+body.fullscreen-mode .yxj-promo-home {
+  display: none !important;
+}
+body.fullscreen-mode .yxj-promo-bar {
+  display: none !important;
+}
+body.fullscreen-mode .game-comments-section {
+  display: none !important;
+}
+body.fullscreen-mode .comments-overlay {
+  display: none !important;
+}
+body.fullscreen-mode #share-panel {
+  display: none !important;
+}
+body.fullscreen-mode #promo-modal {
+  display: none !important;
+}
+body.fullscreen-mode #author-profile-modal {
+  display: none !important;
+}
+/* 全屏退出按钮 */
+.fullscreen-exit-btn {
+  position: fixed !important;
+  top: 10px !important;
+  left: 10px !important;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  border: none !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  color: #fff !important;
+  font-size: 18px !important;
+  cursor: pointer !important;
+  z-index: 999999 !important;
+  display: none !important;
+  align-items: center !important;
+  justify-content: center !important;
+  opacity: 0.4 !important;
+  transition: opacity 0.3s ease, background 0.2s ease !important;
+}
+.fullscreen-exit-btn:hover {
+  opacity: 1 !important;
+  background: rgba(239, 68, 68, 0.9) !important;
+}
+body.fullscreen-mode .fullscreen-exit-btn {
+  display: flex !important;
+}
 /* 为推广栏预留底部空间 */
 body {
   padding-bottom: 36px !important;
@@ -602,6 +661,11 @@ body {
   </div>
 </div>
 
+<!-- 全屏退出按钮 -->
+<button class="fullscreen-exit-btn" id="fullscreen-exit-btn" onclick="toggleFullscreenMode()" title="退出全屏">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
+</button>
+
 <!-- TikTok风格右侧互动栏 -->
 <div class="tiktok-sidebar">
   <div class="tiktok-action" id="stat-like-btn" onclick="likeGame()">
@@ -636,6 +700,11 @@ body {
   <div class="tiktok-action" id="stat-edit-btn" onclick="openGameEditorPage()" title="编辑游戏" style="display:none;">
     <div class="tiktok-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    </div>
+  </div>
+  <div class="tiktok-action" id="fullscreen-btn" onclick="toggleFullscreenMode()" title="全屏游玩">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
     </div>
   </div>
 </div>
@@ -714,6 +783,83 @@ function showPromoModal() {
   console.log('[DEBUG] showPromoModal 被调用');
   document.getElementById('promo-modal').style.display = 'flex';
 }
+
+// 全屏模式状态
+let isFullscreenMode = false;
+
+// 切换全屏模式
+function toggleFullscreenMode() {
+  isFullscreenMode = !isFullscreenMode;
+  
+  if (isFullscreenMode) {
+    // 进入全屏
+    document.body.classList.add('fullscreen-mode');
+    
+    // 尝试请求浏览器全屏
+    try {
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+      } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+      } else if (elem.mozRequestFullScreen) {
+        elem.mozRequestFullScreen();
+      } else if (elem.msRequestFullscreen) {
+        elem.msRequestFullscreen();
+      }
+    } catch (e) {
+      console.log('[全屏] 浏览器全屏请求失败:', e);
+    }
+    
+    console.log('[全屏] 进入全屏模式');
+  } else {
+    // 退出全屏
+    document.body.classList.remove('fullscreen-mode');
+    
+    // 退出浏览器全屏
+    try {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      }
+    } catch (e) {
+      console.log('[全屏] 退出浏览器全屏失败:', e);
+    }
+    
+    console.log('[全屏] 退出全屏模式');
+  }
+}
+
+// 监听浏览器全屏变化（如用户按ESC退出）
+document.addEventListener('fullscreenchange', handleFullscreenChange);
+document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+function handleFullscreenChange() {
+  const isFullscreen = document.fullscreenElement || 
+                       document.webkitFullscreenElement || 
+                       document.mozFullScreenElement || 
+                       document.msFullscreenElement;
+  
+  // 如果浏览器全屏被退出，同步状态
+  if (!isFullscreen && isFullscreenMode) {
+    isFullscreenMode = false;
+    document.body.classList.remove('fullscreen-mode');
+  }
+}
+
+// 监听ESC键退出全屏
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && isFullscreenMode) {
+    toggleFullscreenMode();
+  }
+});
 
 function getUserToken() {
   return localStorage.getItem('aigame-user-token') || '';
@@ -8534,6 +8680,45 @@ app.post('/api/games/:id/shared', (req, res) => {
     
     res.json({ success: true, shareCount, nextRewardAt: 3 - (shareCount % 3) });
   } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 重新生成游戏静态文件（用于批量更新模板后同步）
+app.post('/api/games/:id/regenerate', (req, res) => {
+  try {
+    const gameId = req.params.id;
+    
+    // 获取游戏信息
+    const game = db.prepare('SELECT * FROM games WHERE id = ? AND is_deleted = 0').get(gameId);
+    if (!game) {
+      return res.status(404).json({ success: false, error: '游戏不存在' });
+    }
+    
+    // 重新生成静态文件
+    const gameInfo = {
+      title: game.title || '未命名游戏',
+      author: game.author || '匿名',
+      authorToken: game.author_token || '',
+      createdAt: game.created_at
+    };
+    
+    const finalCode = generatePromoBarHtml(game.code, gameId, gameInfo);
+    
+    // 写入静态文件
+    const prefix = gameId.substring(0, 2);
+    const gameDir = path.join(__dirname, 'public', 'g', prefix);
+    if (!fs.existsSync(gameDir)) {
+      fs.mkdirSync(gameDir, { recursive: true });
+    }
+    
+    const filePath = path.join(gameDir, `${gameId}.html`);
+    fs.writeFileSync(filePath, finalCode, 'utf8');
+    
+    console.log(`[重新生成] 游戏静态文件已更新: ${gameId}`);
+    res.json({ success: true, gameId });
+  } catch (error) {
+    console.error('[重新生成] 失败:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

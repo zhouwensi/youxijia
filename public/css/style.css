@@ -3395,6 +3395,103 @@ body.modal-open .modal-content {
   background: rgba(239, 68, 68, 0.15);
 }
 
+/* 可点击跳转的成功提示 */
+.success-action-toast {
+  position: fixed;
+  top: calc(60px + var(--safe-area-top) + 1rem);
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  z-index: 10200;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  max-width: calc(100% - 2rem);
+  width: auto;
+}
+
+.success-action-toast.active {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.success-toast-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.15) 0%, rgba(0, 240, 255, 0.1) 100%);
+  border: 1px solid var(--success-color);
+  border-radius: var(--border-radius);
+  padding: 12px 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0, 255, 136, 0.2), 0 0 30px rgba(0, 255, 136, 0.1);
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.success-toast-content:hover {
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 240, 255, 0.15) 100%);
+  box-shadow: 0 6px 25px rgba(0, 255, 136, 0.3), 0 0 40px rgba(0, 255, 136, 0.15);
+  transform: scale(1.02);
+}
+
+.success-toast-content:active {
+  transform: scale(0.98);
+}
+
+.success-toast-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  animation: bounce-gentle 1s ease-in-out infinite;
+}
+
+@keyframes bounce-gentle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.success-toast-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.success-toast-message {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+.success-toast-action {
+  font-size: 0.8125rem;
+  color: var(--success-color);
+  margin-top: 2px;
+}
+
+.success-toast-close {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.success-toast-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
+}
+
 /* PC端优化 */
 @media (min-width: 768px) {
   .hero {
@@ -5742,16 +5839,38 @@ body.modal-open .modal-content {
 }
 
 .game-page-fullscreen .fullscreen-floating-btns {
-  opacity: 0.5;
+  display: flex !important; /* 全屏时显示悬浮按钮 */
+  opacity: 0.3;
+}
+
+.game-page-fullscreen .fullscreen-floating-btns:hover {
+  opacity: 1;
+}
+
+/* 全屏模式只保留退出按钮 */
+.game-page-fullscreen .floating-btn-share,
+.game-page-fullscreen .floating-btn-expand {
+  display: none !important;
 }
 
 .game-page-fullscreen .tiktok-sidebar {
-  bottom: 80px; /* 全屏时调整位置 */
+  display: none !important; /* 全屏时隐藏侧边栏 */
+}
+
+.game-page-fullscreen .tiktok-author-info {
+  display: none !important; /* 全屏时隐藏作者信息 */
+}
+
+.game-page-fullscreen .game-promo-float {
+  display: none !important; /* 全屏时隐藏公众号推广 */
+}
+
+.game-page-fullscreen .comments-section {
+  display: none !important; /* 全屏时隐藏留言板 */
 }
 
 .game-page-fullscreen .brand-watermark {
-  top: 10px;
-  right: 10px;
+  display: none !important; /* 全屏时隐藏水印 */
 }
 
 /* 非全屏模式下隐藏悬浮操作按钮（使用顶部栏和侧边栏） */
@@ -9575,6 +9694,56 @@ a:hover {
   opacity: 0.9;
 }
 
+/* 编辑器模型选择按钮 */
+.btn-editor-model {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+  max-width: 140px;
+}
+
+.btn-editor-model:hover {
+  background: var(--bg-hover);
+  border-color: var(--primary-color);
+}
+
+.btn-editor-model .editor-model-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.btn-editor-model .editor-model-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  text-align: left;
+}
+
+.btn-editor-model svg {
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+/* 模型选择项选中状态 */
+.turbo-model-item.selected {
+  border-color: var(--primary-color);
+  background: var(--primary-light);
+}
+
+.turbo-model-item.selected .turbo-model-name {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
 /* 预览区域 */
 .editor-preview-section {
   flex: 0 0 45%;
@@ -9591,11 +9760,26 @@ a:hover {
   bottom: 0;
 }
 
+/* 内嵌游戏容器（替代 iframe） */
+.editor-game-wrapper {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  position: relative;
+  background: #1a1a2e;
+}
+
+/* 兼容性：如果还有 iframe 的情况 */
 #editor-preview-frame {
   width: 100%;
   height: 100%;
   border: none;
   background: #000;
+}
+
+/* 确保游戏样式容器不显示 */
+#editor-game-styles {
+  display: none;
 }
 
 .editor-preview-loading {
