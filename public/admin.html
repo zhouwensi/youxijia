@@ -3911,6 +3911,9 @@
           </td>
           <td style="padding: 0.75rem; font-size: 0.8rem; color: #94a3b8;">${code.created_at ? new Date(code.created_at).toLocaleString() : '-'}</td>
           <td style="padding: 0.75rem;">
+            <button onclick="copyPromoCodeText('${code.code}', ${code.reward})" style="padding: 0.25rem 0.5rem; border-radius: 4px; border: none; cursor: pointer; margin-right: 0.25rem; background: #8b5cf6; color: #fff;" title="复制留言区文案">
+              📋
+            </button>
             <button onclick="togglePromoCode('${code.code}')" style="padding: 0.25rem 0.5rem; border-radius: 4px; border: none; cursor: pointer; margin-right: 0.25rem; ${code.is_active ? 'background: #f59e0b; color: #000;' : 'background: #10b981; color: #fff;'}">
               ${code.is_active ? '禁用' : '启用'}
             </button>
@@ -3920,6 +3923,24 @@
           </td>
         </tr>
       `).join('');
+    }
+    
+    // 复制验证码文案到剪贴板（用于公众号留言区）
+    function copyPromoCodeText(code, reward) {
+      const text = `🎁 输入验证码【${code}】到 yijuhuayouxi.com 领${reward}积分，免费做你的专属游戏！`;
+      
+      navigator.clipboard.writeText(text).then(() => {
+        showMessage('已复制留言区文案', 'success');
+      }).catch(err => {
+        // 降级方案：使用传统方法
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showMessage('已复制留言区文案', 'success');
+      });
     }
     
     // 创建验证码
