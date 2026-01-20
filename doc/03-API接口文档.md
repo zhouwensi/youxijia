@@ -1,6 +1,6 @@
 # AI游戏工坊 - API接口文档
 
-所有API基于RESTful设计，返回JSON格式数据。后端共有126个API端点。
+所有API基于RESTful设计，返回JSON格式数据。后端共有142个API端点。
 
 ## 通用约定
 
@@ -710,6 +710,63 @@ POST /api/referral/reward
 
 ## 九、排行榜API
 
+### 作者榜单（新）
+
+```
+GET /api/author-leaderboard/:type
+```
+
+**参数**：
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| type | string | 榜单类型：`fans`(粉丝榜) / `works`(作品榜) / `credits`(积分榜) / `popularity`(人气榜) / `newstar`(新星榜) |
+| limit | number | 返回数量，默认20，最大100 |
+| offset | number | 分页偏移 |
+| period | string | 时间范围：`all`(总榜) / `week`(周榜) / `month`(月榜)，默认all（新星榜不支持） |
+
+**响应示例**：
+```json
+{
+  "success": true,
+  "type": "fans",
+  "title": "🏆 粉丝榜",
+  "list": [
+    {
+      "rank": 1,
+      "user_token": "xxx",
+      "account_id": "玩家12345",
+      "nickname": "游戏大师",
+      "avatar_emoji": "🎮",
+      "value": 1520,
+      "label": "粉丝"
+    }
+  ],
+  "total": 100,
+  "myRank": 25,
+  "updated_at": "2025-01-19T12:00:00Z"
+}
+```
+
+**榜单类型说明**：
+| 类型 | 排序依据 | 说明 |
+|------|---------|------|
+| `fans` | 粉丝数量 | 按关注者数量排名 |
+| `works` | 作品数量 | 按发布的公开作品数排名 |
+| `credits` | 积分余额 | 按用户积分排名 |
+| `popularity` | 综合人气值 | 作品总点赞×10 + 总播放次数 |
+| `newstar` | 新人综合分 | 近30天注册用户：粉丝×5 + 作品×10 + 点赞×2 |
+
+**周期说明**：
+| 周期 | 说明 |
+|------|------|
+| `all` | 总榜，不限时间范围 |
+| `week` | 周榜，仅统计近7天内注册用户的数据 |
+| `month` | 月榜，仅统计近30天内注册用户的数据 |
+
+> 注：`newstar` 新星榜不支持周期参数，固定为近30天注册的用户
+
+---
+
 ### 游戏排行榜
 
 ```
@@ -985,6 +1042,26 @@ POST /api/admin/create-test-account         # 创建测试账号
 GET /api/admin/test-accounts                # 获取测试账号列表
 DELETE /api/admin/test-account/:accountId   # 删除测试账号
 POST /api/debug/reset-password              # 重置密码（调试）
+```
+
+---
+
+### 榜单管理（新）
+
+```
+GET /api/admin/leaderboard/excludes                  # 获取榜单排除名单
+POST /api/admin/leaderboard/exclude                  # 添加榜单排除
+DELETE /api/admin/leaderboard/exclude/:user_token   # 移除榜单排除
+GET /api/admin/user/search?keyword=xxx              # 搜索用户（用于添加排除）
+```
+
+**添加排除请求体**：
+```json
+{
+  "user_token": "用户Token",
+  "exclude_types": ["all"],  // 或 ["fans", "works", "credits", "popularity"]
+  "reason": "官方账号"
+}
 ```
 
 ---

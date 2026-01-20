@@ -502,6 +502,322 @@
     .search-panel * {
       pointer-events: auto;
     }
+    
+    /* ========== 作者榜单样式 ========== */
+    
+    /* 首页榜单入口卡片 - 显示前3名 */
+    .leaderboard-entry-section {
+      margin-bottom: 20px;
+    }
+    .leaderboard-preview-cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .leaderboard-preview-card {
+      background: linear-gradient(145deg, rgba(99, 102, 241, 0.12), rgba(139, 92, 246, 0.08));
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: 14px;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+    .leaderboard-preview-card:hover,
+    .leaderboard-preview-card:active {
+      background: linear-gradient(145deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.15));
+      transform: translateY(-2px);
+    }
+    .leaderboard-preview-card.newstar {
+      background: linear-gradient(145deg, rgba(251, 191, 36, 0.12), rgba(245, 158, 11, 0.08));
+      border-color: rgba(251, 191, 36, 0.25);
+    }
+    .leaderboard-preview-card.newstar:hover {
+      background: linear-gradient(145deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.15));
+    }
+    .lp-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .lp-icon {
+      font-size: 20px;
+    }
+    .lp-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .lp-top3 {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .lp-top3-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      pointer-events: none; /* 让事件穿透到父卡片 */
+    }
+    .lp-rank {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    .lp-rank.rank-1 { background: linear-gradient(135deg, #ffd700, #ffaa00); color: #000; }
+    .lp-rank.rank-2 { background: linear-gradient(135deg, #c0c0c0, #a0a0a0); color: #000; }
+    .lp-rank.rank-3 { background: linear-gradient(135deg, #cd7f32, #b5651d); color: #fff; }
+    .lp-nickname {
+      flex: 1;
+      color: rgba(255,255,255,0.85);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .lp-value {
+      color: rgba(255,255,255,0.5);
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+    .lp-loading {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      text-align: center;
+      padding: 8px 0;
+    }
+    
+    /* 榜单页面 - 全屏覆盖 */
+    #leaderboard-page {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(180deg, #0a0e14 0%, #0d1520 100%);
+      z-index: 1000;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    #leaderboard-page.active {
+      display: block;
+    }
+    .leaderboard-tabs {
+      display: flex;
+      gap: 6px;
+      padding: 12px 16px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .leaderboard-tabs::-webkit-scrollbar {
+      display: none;
+    }
+    .lb-tab {
+      flex-shrink: 0;
+      padding: 8px 14px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      color: rgba(255,255,255,0.7);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .lb-tab.active {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-color: transparent;
+      color: #fff;
+    }
+    .lb-tab.newstar {
+      background: rgba(251, 191, 36, 0.1);
+      border-color: rgba(251, 191, 36, 0.3);
+    }
+    .lb-tab.newstar.active {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    }
+    
+    /* 周期选择 */
+    .leaderboard-period-tabs {
+      display: flex;
+      gap: 8px;
+      padding: 0 16px 12px;
+    }
+    .period-tab {
+      padding: 6px 12px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px;
+      color: rgba(255,255,255,0.6);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .period-tab.active {
+      background: rgba(0, 212, 255, 0.15);
+      border-color: rgba(0, 212, 255, 0.4);
+      color: #00d4ff;
+    }
+    
+    /* 我的排名 */
+    .my-rank-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: linear-gradient(90deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1));
+      border-top: 1px solid rgba(99, 102, 241, 0.2);
+      border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+    }
+    .my-rank-label {
+      color: rgba(255,255,255,0.7);
+      font-size: 13px;
+    }
+    .my-rank-value {
+      color: #a5b4fc;
+      font-size: 15px;
+      font-weight: 600;
+    }
+    
+    /* 榜单列表 */
+    .leaderboard-list-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px 20px;
+    }
+    .leaderboard-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    /* 修复榜单item上鼠标滚动问题 - 允许滚动穿透 */
+    .lb-item {
+      touch-action: pan-y;
+    }
+    
+    /* 用户主页弹窗账号样式 */
+    .user-profile-account {
+      font-size: 12px;
+      color: #888;
+      margin-top: 2px;
+    }
+    
+    /* 用户主页作品滚动容器 */
+    .user-games-scroll-container {
+      max-height: 300px;
+      overflow-y: auto;
+      padding-right: 5px;
+    }
+    .user-games-scroll-container::-webkit-scrollbar {
+      width: 4px;
+    }
+    .user-games-scroll-container::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.2);
+      border-radius: 2px;
+    }
+    .user-games-load-more {
+      text-align: center;
+      padding: 12px;
+      color: #888;
+      font-size: 12px;
+    }
+    
+    .lb-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .lb-item:hover {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(99, 102, 241, 0.3);
+    }
+    /* 榜单容器允许滚动 */
+    .leaderboard-list-container {
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
+    }
+    .lb-rank {
+      width: 32px;
+      text-align: center;
+      font-weight: 600;
+    }
+    .lb-rank.top1 { color: #ffd700; font-size: 20px; }
+    .lb-rank.top2 { color: #c0c0c0; font-size: 18px; }
+    .lb-rank.top3 { color: #cd7f32; font-size: 16px; }
+    .lb-rank.normal { color: rgba(255,255,255,0.4); font-size: 14px; }
+    .lb-avatar {
+      font-size: 32px;
+      width: 40px;
+      text-align: center;
+    }
+    .lb-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .lb-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .lb-account {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+    }
+    .lb-value {
+      text-align: right;
+    }
+    .lb-value-num {
+      font-size: 16px;
+      font-weight: 600;
+      color: #a5b4fc;
+    }
+    .lb-value-label {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+    }
+    
+    /* 新星榜特殊样式 */
+    .lb-item.newstar-item {
+      background: linear-gradient(145deg, rgba(251, 191, 36, 0.05), transparent);
+      border-color: rgba(251, 191, 36, 0.15);
+    }
+    .lb-item.newstar-item .lb-value-num {
+      color: #fbbf24;
+    }
+    
+    /* 空状态 */
+    .lb-empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: rgba(255,255,255,0.4);
+    }
+    .lb-empty-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+    .lb-empty-text {
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -560,6 +876,52 @@
                 <button class="chip" onclick="setPrompt('打砖块')">🎯 打砖块</button>
                 <button class="chip" onclick="setPrompt('飞机大战')">🚀 飞机大战</button>
                 <button class="chip" onclick="setPrompt('翻牌配对')">🃏 翻牌</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 作者榜单入口 -->
+        <section class="home-section leaderboard-entry-section" id="section-leaderboard-entry">
+          <div class="section-header">
+            <h3 class="section-title">🏆 作者榜单</h3>
+            <button class="btn-more" onclick="openLeaderboardPage()">查看全部 →</button>
+          </div>
+          <div class="leaderboard-preview-cards">
+            <div class="leaderboard-preview-card" onclick="openLeaderboardPage('fans')">
+              <div class="lp-header">
+                <span class="lp-icon">👥</span>
+                <span class="lp-title">粉丝榜</span>
+              </div>
+              <div class="lp-top3" id="lp-fans-top3">
+                <div class="lp-loading">加载中...</div>
+              </div>
+            </div>
+            <div class="leaderboard-preview-card" onclick="openLeaderboardPage('works')">
+              <div class="lp-header">
+                <span class="lp-icon">📚</span>
+                <span class="lp-title">作品榜</span>
+              </div>
+              <div class="lp-top3" id="lp-works-top3">
+                <div class="lp-loading">加载中...</div>
+              </div>
+            </div>
+            <div class="leaderboard-preview-card" onclick="openLeaderboardPage('popularity')">
+              <div class="lp-header">
+                <span class="lp-icon">🔥</span>
+                <span class="lp-title">人气榜</span>
+              </div>
+              <div class="lp-top3" id="lp-popularity-top3">
+                <div class="lp-loading">加载中...</div>
+              </div>
+            </div>
+            <div class="leaderboard-preview-card newstar" onclick="openLeaderboardPage('newstar')">
+              <div class="lp-header">
+                <span class="lp-icon">⭐</span>
+                <span class="lp-title">新星榜</span>
+              </div>
+              <div class="lp-top3" id="lp-newstar-top3">
+                <div class="lp-loading">加载中...</div>
               </div>
             </div>
           </div>
@@ -919,6 +1281,55 @@
       </button>
     </nav>
 
+    <!-- 作者榜单页面 -->
+    <div id="leaderboard-page" class="page">
+      <div class="list-page-header">
+        <button class="btn btn-back" onclick="closeLeaderboardPage()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M19 12H5M12 19l-7-7 7-7"></path>
+          </svg>
+        </button>
+        <h2 id="leaderboard-page-title">🏆 作者榜单</h2>
+        <div class="list-page-actions"></div>
+      </div>
+      
+      <!-- 榜单类型选择 -->
+      <div class="leaderboard-tabs">
+        <button class="lb-tab active" data-type="fans" onclick="switchLeaderboardType('fans')">👥 粉丝</button>
+        <button class="lb-tab" data-type="works" onclick="switchLeaderboardType('works')">📚 作品</button>
+        <button class="lb-tab" data-type="popularity" onclick="switchLeaderboardType('popularity')">🔥 人气</button>
+        <button class="lb-tab" data-type="credits" onclick="switchLeaderboardType('credits')">💎 积分</button>
+        <button class="lb-tab newstar" data-type="newstar" onclick="switchLeaderboardType('newstar')">⭐ 新星</button>
+      </div>
+      
+      <!-- 周期选择 -->
+      <div class="leaderboard-period-tabs" id="leaderboard-period-tabs">
+        <button class="period-tab active" data-period="all" onclick="switchLeaderboardPeriod('all')">总榜</button>
+        <button class="period-tab" data-period="week" onclick="switchLeaderboardPeriod('week')">周榜</button>
+        <button class="period-tab" data-period="month" onclick="switchLeaderboardPeriod('month')">月榜</button>
+      </div>
+      
+      <!-- 我的排名 -->
+      <div class="my-rank-bar" id="my-rank-bar" style="display:none;">
+        <span class="my-rank-label">我的排名</span>
+        <span class="my-rank-value" id="my-rank-value">-</span>
+      </div>
+      
+      <!-- 榜单列表 -->
+      <div class="leaderboard-list-container">
+        <div class="leaderboard-list" id="leaderboard-list">
+          <!-- 动态加载 -->
+        </div>
+        <div class="list-loading-more" id="lb-loading-more" style="display:none;">
+          <div class="loading-spinner-small"></div>
+          <span>加载中...</span>
+        </div>
+        <div class="list-no-more" id="lb-no-more" style="display:none;">
+          <span>没有更多了</span>
+        </div>
+      </div>
+    </div>
+
     <!-- 游戏列表页面（全部游戏/我的作品等） -->
     <div id="game-list-page" class="page">
       <div class="list-page-header">
@@ -1189,113 +1600,35 @@
             </button>
           </div>
           <nav class="settings-nav">
-            <button class="settings-nav-item active" data-section="llm" onclick="switchSettingsSection('llm')">
+            <button class="settings-nav-item active" data-section="profile" onclick="switchSettingsSection('profile')">
+              <span class="settings-nav-icon">👤</span>
+              <span class="settings-nav-text">个人中心</span>
+            </button>
+            <button class="settings-nav-item" data-section="llm" onclick="switchSettingsSection('llm')">
               <span class="settings-nav-icon">🤖</span>
               <span class="settings-nav-text">LLM 设置</span>
-            </button>
-            <button class="settings-nav-item" data-section="profile" onclick="switchSettingsSection('profile')">
-              <span class="settings-nav-icon">👤</span>
-              <span class="settings-nav-text">个人信息</span>
-            </button>
-            <button class="settings-nav-item" data-section="account" onclick="switchSettingsSection('account')">
-              <span class="settings-nav-icon">🔐</span>
-              <span class="settings-nav-text">账号管理</span>
-            </button>
-            <button class="settings-nav-item" data-section="dev" onclick="switchSettingsSection('dev')">
-              <span class="settings-nav-icon">🔧</span>
-              <span class="settings-nav-text">开发选项</span>
             </button>
           </nav>
         </div>
         
         <!-- 右侧内容区 -->
         <div class="settings-content">
-          <!-- LLM 设置 -->
-          <div class="settings-panel active" id="settings-panel-llm">
+          <!-- 个人中心 (合并个人信息和账号管理) -->
+          <div class="settings-panel active" id="settings-panel-profile">
             <div class="settings-panel-header">
-              <h2>LLM 设置</h2>
-              <p class="settings-panel-desc">配置 AI 模型和 API Key</p>
-            </div>
-            <div class="settings-panel-body">
-              <!-- 默认模型选择 -->
-              <div class="settings-group">
-                <h3>默认模型</h3>
-                <div class="form-group">
-                  <label>选择模型</label>
-                  <select id="llm-model-select" onchange="onModelSelectChange()">
-                    <option value="deepseek-v3">DeepSeek V3 ⭐</option>
-                    <option value="deepseek-r1">DeepSeek R1</option>
-                    <option value="glm-4.7">GLM 4.7</option>
-                    <option value="kimi-k2">Kimi K2</option>
-                    <option value="qwen3-coder-plus">Qwen3 Coder</option>
-                    <option value="gpt-4o-mini">GPT-4o Mini</option>
-                    <option value="gpt-4o">GPT-4o</option>
-                    <option value="claude-4-sonnet">Claude 4 Sonnet</option>
-                    <option value="claude-4.5-haiku">Claude 4.5 Haiku</option>
-                    <option value="gemini-3-pro">Gemini 3 Pro ⭐</option>
-                    <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-                    <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                    <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                    <option value="custom">自定义接口...</option>
-                  </select>
-                </div>
-              </div>
-              
-              <!-- API Keys 列表 -->
-              <div class="settings-group">
-                <h3>API Keys 配置</h3>
-                <p class="settings-group-hint">为各模型配置您自己的 API Key，留空则使用平台默认配置</p>
-                <div class="llm-keys-list" id="llm-keys-list">
-                  <!-- 动态生成 -->
-                </div>
-              </div>
-              
-              <!-- 自定义接口设置 -->
-              <div class="settings-group" id="custom-api-group" style="display:none;">
-                <h3>自定义接口</h3>
-                <div class="form-group">
-                  <label>API 地址</label>
-                  <input type="text" id="llm-base-url" placeholder="https://api.example.com/v1">
-                </div>
-                <div class="form-group">
-                  <label>模型名称</label>
-                  <input type="text" id="llm-model" placeholder="gpt-4o">
-                </div>
-                <div class="form-group">
-                  <label>API Key</label>
-                  <div class="input-with-toggle">
-                    <input type="password" id="llm-custom-api-key" placeholder="输入您的 API Key">
-                    <button class="btn-toggle-pwd" onclick="toggleCustomApiKeyVisibility()">👁️</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- 个人信息 -->
-          <div class="settings-panel" id="settings-panel-profile">
-            <div class="settings-panel-header">
-              <h2>个人信息</h2>
-              <p class="settings-panel-desc">设置您的个人资料</p>
+              <h2>个人中心</h2>
+              <p class="settings-panel-desc">管理您的个人资料和账号</p>
             </div>
             <div class="settings-panel-body">
               <div class="settings-group">
+                <h3>个人信息</h3>
                 <div class="form-group">
                   <label>你的昵称</label>
                   <input type="text" id="author-name" placeholder="创作游戏时显示的名字" maxlength="20">
                   <p class="form-hint">此昵称将显示在您创作的游戏上</p>
                 </div>
               </div>
-            </div>
-          </div>
-          
-          <!-- 账号管理 -->
-          <div class="settings-panel" id="settings-panel-account">
-            <div class="settings-panel-header">
-              <h2>账号管理</h2>
-              <p class="settings-panel-desc">管理您的账号信息</p>
-            </div>
-            <div class="settings-panel-body">
+              
               <div class="settings-group">
                 <h3>当前账号</h3>
                 <div class="account-info-card">
@@ -1328,23 +1661,39 @@
             </div>
           </div>
           
-          <!-- 开发选项 -->
-          <div class="settings-panel" id="settings-panel-dev">
+          <!-- LLM 设置 -->
+          <div class="settings-panel" id="settings-panel-llm">
             <div class="settings-panel-header">
-              <h2>开发选项</h2>
-              <p class="settings-panel-desc">开发者调试设置</p>
+              <h2>LLM 设置</h2>
+              <p class="settings-panel-desc">选择默认模型并配置 API Key</p>
             </div>
             <div class="settings-panel-body">
+              <!-- 模型列表 -->
               <div class="settings-group">
-                <div class="settings-toggle-item">
-                  <div class="settings-toggle-info">
-                    <span class="settings-toggle-label">显示调试信息</span>
-                    <span class="settings-toggle-desc">在控制台输出详细日志</span>
+                <h3>模型配置</h3>
+                <p class="settings-group-hint">勾选设为默认模型，可配置您自己的 API Key（留空使用平台配置）</p>
+                <div class="llm-keys-list" id="llm-keys-list">
+                  <!-- 动态生成 -->
+                </div>
+              </div>
+              
+              <!-- 自定义接口设置 -->
+              <div class="settings-group" id="custom-api-group" style="display:none;">
+                <h3>自定义接口</h3>
+                <div class="form-group">
+                  <label>API 地址</label>
+                  <input type="text" id="llm-base-url" placeholder="https://api.example.com/v1">
+                </div>
+                <div class="form-group">
+                  <label>模型名称</label>
+                  <input type="text" id="llm-model" placeholder="gpt-4o">
+                </div>
+                <div class="form-group">
+                  <label>API Key</label>
+                  <div class="input-with-toggle">
+                    <input type="password" id="llm-custom-api-key" placeholder="输入您的 API Key">
+                    <button class="btn-toggle-pwd" onclick="toggleCustomApiKeyVisibility()">👁️</button>
                   </div>
-                  <label class="toggle-switch">
-                    <input type="checkbox" id="debug-mode" onchange="toggleDebugMode()">
-                    <span class="toggle-slider"></span>
-                  </label>
                 </div>
               </div>
             </div>
@@ -1373,65 +1722,97 @@
           </div>
           
           <div class="credits-ways">
-            <h4>获取更多次数</h4>
+            <h4>一次性奖励</h4>
             
-            <div class="credit-way" id="way-wechat" onclick="toggleWechatVerify()">
-              <div class="credit-way-icon">📱</div>
-              <div class="credit-way-info">
-                <div class="credit-way-title">关注公众号</div>
-                <div class="credit-way-desc" id="way-wechat-desc">关注后输入验证码领取</div>
+            <div class="credit-way-wrapper">
+              <div class="credit-way" id="way-wechat" onclick="toggleWechatVerify()">
+                <div class="credit-way-icon">📱</div>
+                <div class="credit-way-info">
+                  <div class="credit-way-title">关注公众号</div>
+                  <div class="credit-way-desc" id="way-wechat-desc">关注后输入验证码领取</div>
+                </div>
+                <div class="credit-way-reward" id="way-wechat-reward">+3次</div>
               </div>
-              <div class="credit-way-reward" id="way-wechat-reward">+3次</div>
-            </div>
-            
-            <!-- 视频广告功能暂时隐藏
-            <div class="credit-way disabled" onclick="watchAd()">
-              <div class="credit-way-icon">🎬</div>
-              <div class="credit-way-info">
-                <div class="credit-way-title">观看视频广告</div>
-                <div class="credit-way-desc">功能开发中，敬请期待</div>
+              <div class="wechat-verify credit-way-expand" id="wechat-verify-section" style="display:none;">
+                <p>关注公众号【<strong>游戏开发技术教程</strong>】</p>
+                <p>回复"<strong>积分</strong>"获取验证码</p>
+                <div class="verify-input">
+                  <input type="text" id="wechat-verify-code" placeholder="输入验证码" maxlength="20">
+                  <button class="btn btn-primary" onclick="verifyWechatFollow()">验证</button>
+                </div>
               </div>
-              <div class="credit-way-reward">暂不可用</div>
             </div>
-            -->
+          </div>
+          
+          <!-- 每日重置奖励 -->
+          <div class="credits-ways" id="daily-action-ways">
+            <h4>每日奖励 <span style="font-size:0.75rem;color:#888;font-weight:normal;">（每日重置）</span></h4>
             
             <div class="credit-way" id="way-share" onclick="shareForCredits()">
               <div class="credit-way-icon">🔗</div>
               <div class="credit-way-info">
                 <div class="credit-way-title">分享游戏</div>
-                <div class="credit-way-desc">分享你创作的游戏给朋友</div>
+                <div class="credit-way-desc" id="way-share-desc">分享你创作的游戏给朋友</div>
               </div>
-              <div class="credit-way-reward">+1次</div>
+              <div class="credit-way-status">
+                <div class="credit-way-reward" id="way-share-reward">+1次</div>
+                <div class="credit-way-progress" id="way-share-progress">0/5</div>
+              </div>
             </div>
             
-            <div class="credit-way" id="way-invite" onclick="toggleInviteSection()">
-              <div class="credit-way-icon">�</div>
-              <div class="credit-way-info">
-                <div class="credit-way-title">邀请好友</div>
-                <div class="credit-way-desc">分享邀请链接，双方各得+3积分</div>
+            <div class="credit-way-wrapper">
+              <div class="credit-way" id="way-invite" onclick="toggleInviteSection()">
+                <div class="credit-way-icon">👥</div>
+                <div class="credit-way-info">
+                  <div class="credit-way-title">邀请好友</div>
+                  <div class="credit-way-desc" id="way-invite-desc">分享邀请链接，双方各得积分</div>
+                </div>
+                <div class="credit-way-status">
+                  <div class="credit-way-reward" id="way-invite-reward">+3次</div>
+                  <div class="credit-way-progress" id="way-invite-progress">0/5</div>
+                </div>
               </div>
-              <div class="credit-way-reward">+3次</div>
+              <div class="invite-section credit-way-expand" id="invite-section" style="display:none;">
+                <h4>🔗 我的专属邀请链接</h4>
+                <div class="invite-link-display">
+                  <input type="text" id="my-invite-link" readonly value="加载中..." class="invite-link-input">
+                  <button class="btn btn-primary" onclick="copyInviteLink()">📋 复制链接</button>
+                </div>
+                <p class="form-hint" style="margin-top:0.5rem;">
+                  ✨ 新用户通过你的链接访问网站，<strong>你+3积分</strong>，<strong>对方+3积分</strong>！
+                </p>
+              </div>
             </div>
-          </div>
-          
-          <!-- 邀请链接区域 -->
-          <div class="invite-section" id="invite-section" style="display:none;">
-            <h4>🔗 我的专属邀请链接</h4>
-            <div class="invite-link-display">
-              <input type="text" id="my-invite-link" readonly value="加载中..." class="invite-link-input">
-              <button class="btn btn-primary" onclick="copyInviteLink()">📋 复制链接</button>
+            
+            <div class="credit-way-wrapper">
+              <div class="credit-way" id="way-article" onclick="toggleArticleCodeSection()">
+                <div class="credit-way-icon">📖</div>
+                <div class="credit-way-info">
+                  <div class="credit-way-title">阅读文章福利</div>
+                  <div class="credit-way-desc" id="way-article-desc">在公众号文章中获取验证码</div>
+                </div>
+                <div class="credit-way-status">
+                  <div class="credit-way-reward" id="way-article-reward">+1次</div>
+                  <div class="credit-way-progress" id="way-article-progress">0/3</div>
+                </div>
+              </div>
+              <div class="article-code-section credit-way-expand" id="article-code-section" style="display:none;">
+                <h4>📖 文章阅读福利</h4>
+                <p style="color:#666; font-size:0.9rem; margin-bottom:0.8rem;">
+                  关注公众号【<strong>游戏开发技术教程</strong>】，阅读文章，在留言区获取验证码
+                </p>
+                <div class="verify-input">
+                  <input type="text" id="article-promo-code" placeholder="输入文章验证码" maxlength="20">
+                  <button class="btn btn-primary" onclick="redeemArticleCode()">兑换</button>
+                </div>
+                <p class="form-hint" style="margin-top:0.5rem;">
+                  💡 每个验证码只能使用一次
+                </p>
+              </div>
             </div>
-            <p class="form-hint" style="margin-top:0.5rem;">
-              ✨ 新用户通过你的链接访问网站，<strong>你+3积分</strong>，<strong>对方+3积分</strong>！
-            </p>
-          </div>
-          
-          <div class="wechat-verify" id="wechat-verify-section" style="display:none;">
-            <p>关注公众号【<strong>游戏开发技术教程</strong>】</p>
-            <p>回复"<strong>积分</strong>"获取验证码</p>
-            <div class="verify-input">
-              <input type="text" id="wechat-verify-code" placeholder="输入验证码" maxlength="20">
-              <button class="btn btn-primary" onclick="verifyWechatFollow()">验证</button>
+            
+            <div id="action-ways-container">
+              <!-- 动态加载点赞、收藏、关注、评论 -->
             </div>
           </div>
         </div>
@@ -2221,8 +2602,280 @@
           }
         });
       }
+      
+      // 加载首页榜单预览
+      loadLeaderboardQuickPreview();
     });
   })();
+  
+  // ==================== 作者榜单功能 ====================
+  
+  let currentLbType = 'fans';
+  let currentLbPeriod = 'all';
+  let lbOffset = 0;
+  let lbLoading = false;
+  let lbHasMore = true;
+  
+  // 加载首页榜单预览 - 显示前3名
+  async function loadLeaderboardQuickPreview() {
+    const types = ['fans', 'works', 'popularity', 'newstar'];
+    for (const type of types) {
+      const container = document.getElementById(`lp-${type}-top3`);
+      if (!container) continue;
+      
+      try {
+        const response = await fetch(`/api/author-leaderboard/${type}?limit=3`);
+        const data = await response.json();
+        
+        if (data.success && data.list.length > 0) {
+          const html = data.list.map((user, idx) => `
+            <div class="lp-top3-item">
+              <span class="lp-rank rank-${idx + 1}">${idx + 1}</span>
+              <span class="lp-nickname">${escapeHtml(user.nickname)}</span>
+              <span class="lp-value">${user.value}</span>
+            </div>
+          `).join('');
+          container.innerHTML = html;
+        } else {
+          container.innerHTML = '<div class="lp-loading">暂无数据</div>';
+        }
+      } catch (e) {
+        console.error(`加载${type}榜单预览失败:`, e);
+        container.innerHTML = '<div class="lp-loading">加载失败</div>';
+      }
+    }
+  }
+  
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = String(text || '');
+    return div.innerHTML;
+  }
+  
+  // 打开榜单页面
+  function openLeaderboardPage(type = 'fans') {
+    currentLbType = type;
+    currentLbPeriod = 'all';
+    lbOffset = 0;
+    lbHasMore = true;
+    
+    // 显示页面
+    document.getElementById('leaderboard-page').classList.add('active');
+    document.getElementById('bottom-nav').style.display = 'none';
+    
+    // 更新选中状态
+    document.querySelectorAll('.lb-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.type === type);
+    });
+    document.querySelectorAll('.period-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.period === 'all');
+    });
+    
+    // 新星榜隐藏周期选择
+    const periodTabs = document.getElementById('leaderboard-period-tabs');
+    periodTabs.style.display = type === 'newstar' ? 'none' : 'flex';
+    
+    // 加载数据
+    loadLeaderboardData(true);
+  }
+  
+  // 关闭榜单页面
+  function closeLeaderboardPage() {
+    document.getElementById('leaderboard-page').classList.remove('active');
+    document.getElementById('bottom-nav').style.display = '';
+  }
+  
+  // 切换榜单类型
+  function switchLeaderboardType(type) {
+    currentLbType = type;
+    currentLbPeriod = 'all';
+    lbOffset = 0;
+    lbHasMore = true;
+    
+    document.querySelectorAll('.lb-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.type === type);
+    });
+    document.querySelectorAll('.period-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.period === 'all');
+    });
+    
+    // 新星榜隐藏周期选择
+    const periodTabs = document.getElementById('leaderboard-period-tabs');
+    periodTabs.style.display = type === 'newstar' ? 'none' : 'flex';
+    
+    loadLeaderboardData(true);
+  }
+  
+  // 切换周期
+  function switchLeaderboardPeriod(period) {
+    currentLbPeriod = period;
+    lbOffset = 0;
+    lbHasMore = true;
+    
+    document.querySelectorAll('.period-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.period === period);
+    });
+    
+    loadLeaderboardData(true);
+  }
+  
+  // 加载榜单数据
+  async function loadLeaderboardData(reset = false) {
+    if (lbLoading) return;
+    if (!reset && !lbHasMore) return;
+    
+    lbLoading = true;
+    const listEl = document.getElementById('leaderboard-list');
+    const loadingEl = document.getElementById('lb-loading-more');
+    const noMoreEl = document.getElementById('lb-no-more');
+    
+    if (reset) {
+      lbOffset = 0;
+      lbHasMore = true;
+      listEl.innerHTML = '<div class="lb-empty"><div class="lb-empty-icon">⏳</div><div class="lb-empty-text">加载中...</div></div>';
+      noMoreEl.style.display = 'none';
+    }
+    loadingEl.style.display = 'flex';
+    
+    try {
+      const userToken = localStorage.getItem('userToken') || '';
+      const url = `/api/author-leaderboard/${currentLbType}?limit=20&offset=${lbOffset}&period=${currentLbPeriod}`;
+      const response = await fetch(url, {
+        headers: { 'x-user-token': userToken }
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        // 更新标题
+        document.getElementById('leaderboard-page-title').textContent = data.title || '🏆 作者榜单';
+        
+        // 更新我的排名
+        const myRankBar = document.getElementById('my-rank-bar');
+        const myRankValue = document.getElementById('my-rank-value');
+        if (data.myRank && userToken) {
+          myRankBar.style.display = 'flex';
+          myRankValue.textContent = `第 ${data.myRank} 名`;
+        } else {
+          myRankBar.style.display = 'none';
+        }
+        
+        // 渲染列表
+        if (reset) {
+          listEl.innerHTML = '';
+        }
+        
+        if (data.list.length === 0 && lbOffset === 0) {
+          listEl.innerHTML = `
+            <div class="lb-empty">
+              <div class="lb-empty-icon">🏆</div>
+              <div class="lb-empty-text">暂无数据</div>
+            </div>
+          `;
+        } else {
+          const rankIcons = ['🥇', '🥈', '🥉'];
+          data.list.forEach(item => {
+            const rankClass = item.rank === 1 ? 'top1' : item.rank === 2 ? 'top2' : item.rank === 3 ? 'top3' : 'normal';
+            const rankDisplay = item.rank <= 3 ? rankIcons[item.rank - 1] : `#${item.rank}`;
+            const itemClass = currentLbType === 'newstar' ? 'lb-item newstar-item' : 'lb-item';
+            
+            listEl.innerHTML += `
+              <div class="${itemClass}" data-user-token="${item.user_token}">
+                <div class="lb-rank ${rankClass}">${rankDisplay}</div>
+                <div class="lb-avatar">${item.avatar_emoji}</div>
+                <div class="lb-info">
+                  <div class="lb-name">${escapeHtml(item.nickname)}</div>
+                  <div class="lb-account">${escapeHtml(item.account_id)}</div>
+                </div>
+                <div class="lb-value">
+                  <div class="lb-value-num">${item.value}</div>
+                  <div class="lb-value-label">${item.label}</div>
+                </div>
+              </div>
+            `;
+          });
+          
+          lbOffset += data.list.length;
+          lbHasMore = data.list.length === 20;
+        }
+        
+        if (!lbHasMore && lbOffset > 0) {
+          noMoreEl.style.display = 'block';
+        }
+      } else {
+        if (reset) {
+          listEl.innerHTML = `<div class="lb-empty"><div class="lb-empty-icon">😕</div><div class="lb-empty-text">加载失败: ${data.error || '未知错误'}</div></div>`;
+        }
+      }
+    } catch (error) {
+      console.error('加载榜单失败:', error);
+      if (reset) {
+        listEl.innerHTML = `<div class="lb-empty"><div class="lb-empty-icon">😕</div><div class="lb-empty-text">网络错误</div></div>`;
+      }
+    } finally {
+      lbLoading = false;
+      loadingEl.style.display = 'none';
+    }
+  }
+  
+  // 查看用户主页 - 调用已有的 openUserProfile 函数
+  function viewUserProfile(userToken) {
+    if (!userToken) return;
+    // 调用 app.js 中的 openUserProfile 函数
+    if (typeof openUserProfile === 'function') {
+      openUserProfile(userToken);
+    }
+  }
+  
+  // 榜单页面滚动加载更多 + 点击事件委托
+  (function() {
+    document.addEventListener('DOMContentLoaded', function() {
+      const container = document.querySelector('.leaderboard-list-container');
+      if (container) {
+        // 滚动加载更多
+        container.addEventListener('scroll', function() {
+          if (this.scrollHeight - this.scrollTop - this.clientHeight < 100) {
+            loadLeaderboardData(false);
+          }
+        });
+        
+        // 事件委托：区分点击和拖动
+        let startX = 0, startY = 0, isDragging = false;
+        
+        container.addEventListener('pointerdown', function(e) {
+          startX = e.clientX;
+          startY = e.clientY;
+          isDragging = false;
+        });
+        
+        container.addEventListener('pointermove', function(e) {
+          if (Math.abs(e.clientX - startX) > 10 || Math.abs(e.clientY - startY) > 10) {
+            isDragging = true;
+          }
+        });
+        
+        container.addEventListener('pointerup', function(e) {
+          // 如果是拖动，不触发点击
+          if (isDragging) return;
+          
+          // 查找被点击的 lb-item
+          const item = e.target.closest('.lb-item');
+          if (item && item.dataset.userToken) {
+            viewUserProfile(item.dataset.userToken);
+          }
+        });
+      }
+    });
+  })();
+  
+  // HTML转义函数（如果不存在）
+  if (typeof escapeHtml !== 'function') {
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  }
   </script>
 </body>
 </html>

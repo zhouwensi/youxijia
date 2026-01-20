@@ -185,6 +185,33 @@ function generateStandaloneGameHtml(gameCode, gameInfo) {
   
   // 底部推广栏的样式和HTML（会注入到游戏页面底部）
   const promoBarStyle = `
+/* ====== 平台组件样式重置 - 防止被游戏源码覆盖 ====== */
+/* 重置所有平台按钮的基础样式，确保不受游戏全局button样式影响 */
+.yxj-promo-home,
+.yxj-promo-close,
+.tiktok-follow-btn,
+.tiktok-icon,
+.tiktok-action,
+.comments-close-btn,
+.comments-input-area button,
+.fullscreen-exit-btn,
+.comment-delete-btn,
+#promo-modal button,
+#share-panel button,
+#author-profile-modal button,
+#comments-load-more-btn,
+#game-comment-submit {
+  min-width: auto !important;
+  max-width: none !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  box-sizing: border-box !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
 /* 游戏家推广栏 - 固定在底部 */
 .yxj-promo-bar {
   position: fixed !important;
@@ -235,16 +262,38 @@ function generateStandaloneGameHtml(gameCode, gameInfo) {
   position: fixed !important;
   top: 10px !important;
   left: 10px !important;
-  background: rgba(0,0,0,0.5) !important;
-  color: #fff !important;
+  width: 44px !important;
+  height: 44px !important;
+  background: rgba(30, 30, 50, 0.8) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  color: var(--text-secondary, #888) !important;
   text-decoration: none !important;
-  padding: 6px 12px !important;
-  border-radius: 20px !important;
+  padding: 0 !important;
+  border-radius: 12px !important;
   font-size: 12px !important;
   z-index: 999998 !important;
   display: flex !important;
   align-items: center !important;
-  gap: 4px !important;
+  justify-content: center !important;
+  border: 1px solid rgba(99, 102, 241, 0.3) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+.yxj-promo-home:hover {
+  background: rgba(99, 102, 241, 0.2) !important;
+  border-color: rgba(99, 102, 241, 0.5) !important;
+  color: #fff !important;
+}
+.yxj-promo-home:active {
+  transform: scale(0.92) !important;
+  background: rgba(99, 102, 241, 0.3) !important;
+}
+.yxj-promo-home svg {
+  width: 22px !important;
+  height: 22px !important;
+  stroke: currentColor !important;
 }
 /* TikTok 风格组件 */
 .tiktok-author-info {
@@ -285,9 +334,16 @@ function generateStandaloneGameHtml(gameCode, gameInfo) {
 }
 .tiktok-author-details {
   display: flex !important;
-  flex-direction: row !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  gap: 1px !important;
+  min-height: 32px !important;
+}
+.tiktok-author-name-row {
+  display: flex !important;
   align-items: center !important;
-  gap: 8px !important;
+  gap: 10px !important;
 }
 .tiktok-author-name {
   color: white !important;
@@ -296,6 +352,7 @@ function generateStandaloneGameHtml(gameCode, gameInfo) {
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8) !important;
   cursor: pointer !important;
   transition: opacity 0.2s !important;
+  line-height: 1.2 !important;
 }
 .tiktok-author-name:hover {
   opacity: 0.8 !important;
@@ -304,7 +361,11 @@ function generateStandaloneGameHtml(gameCode, gameInfo) {
   color: rgba(255, 255, 255, 0.6) !important;
   font-size: 0.6875rem !important;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
-  margin-top: 1px !important;
+  margin-top: 0 !important;
+  text-align: left !important;
+  display: block !important;
+  line-height: 1.2 !important;
+  width: auto !important;
 }
 .tiktok-follow-btn {
   background: #fe2c55 !important;
@@ -472,14 +533,16 @@ body.fullscreen-mode .fullscreen-exit-btn {
 body {
   padding-bottom: 36px !important;
 }
-/* ====== 留言板样式 ====== */
+/* ====== 留言板样式 - 未来科技风 ====== */
 .comments-overlay {
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
-  background: rgba(0, 0, 0, 0.5) !important;
+  background: rgba(0, 0, 0, 0.7) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
   z-index: 999996 !important;
   opacity: 0 !important;
   visibility: hidden !important;
@@ -491,104 +554,130 @@ body {
 }
 .game-comments-section {
   position: fixed !important;
-  bottom: 60px !important;
+  bottom: 36px !important;
   left: 0 !important;
   right: 0 !important;
-  background: #fff !important;
+  background: linear-gradient(180deg, #0e0e18 0%, #12121e 100%) !important;
   z-index: 999997 !important;
   max-height: 0 !important;
   overflow: hidden !important;
   transition: max-height 0.3s ease !important;
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.15) !important;
-  border-radius: 16px 16px 0 0 !important;
+  box-shadow: 0 -4px 30px rgba(0, 240, 255, 0.15), 0 -1px 0 rgba(0, 240, 255, 0.3) !important;
+  border-radius: 20px 20px 0 0 !important;
+  border-top: 1px solid rgba(0, 240, 255, 0.3) !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 .game-comments-section.expanded {
-  max-height: 60vh !important;
+  max-height: 70vh !important;
 }
 .comments-header {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  padding: 12px 16px !important;
-  border-bottom: 1px solid #eee !important;
-  background: #f8f9fa !important;
+  padding: 14px 16px !important;
+  border-bottom: 1px solid rgba(0, 240, 255, 0.15) !important;
+  background: linear-gradient(180deg, rgba(0, 240, 255, 0.08) 0%, transparent 100%) !important;
+  flex-shrink: 0 !important;
 }
 .comments-title {
   font-size: 16px !important;
   font-weight: 600 !important;
-  color: #333 !important;
+  color: #e0e8ff !important;
   display: flex !important;
   align-items: center !important;
-  gap: 6px !important;
+  gap: 8px !important;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5) !important;
 }
 .comments-close-btn {
-  background: none !important;
-  border: none !important;
-  font-size: 20px !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 50% !important;
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 16px !important;
   cursor: pointer !important;
-  color: #999 !important;
-  padding: 4px !important;
+  color: #8090b0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+}
+.comments-close-btn:hover {
+  background: rgba(255, 51, 102, 0.2) !important;
+  border-color: rgba(255, 51, 102, 0.5) !important;
+  color: #ff3366 !important;
 }
 .comments-body {
-  max-height: calc(60vh - 120px) !important;
-  overflow-y: auto !important;
   padding: 12px 16px !important;
 }
 .comment-item {
-  padding: 12px 0 !important;
-  border-bottom: 1px solid #f0f0f0 !important;
+  padding: 12px !important;
+  margin-bottom: 10px !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 12px !important;
+  transition: all 0.2s ease !important;
+}
+.comment-item:hover {
+  background: rgba(0, 240, 255, 0.05) !important;
+  border-color: rgba(0, 240, 255, 0.15) !important;
 }
 .comment-item:last-child {
-  border-bottom: none !important;
+  margin-bottom: 0 !important;
 }
 .comment-header {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  margin-bottom: 6px !important;
+  margin-bottom: 8px !important;
 }
 .comment-author-info {
   display: flex !important;
   align-items: center !important;
-  gap: 8px !important;
+  gap: 10px !important;
 }
 .comment-avatar {
-  width: 28px !important;
-  height: 28px !important;
+  width: 32px !important;
+  height: 32px !important;
   border-radius: 50% !important;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  background: linear-gradient(135deg, #00f0ff 0%, #bf00ff 100%) !important;
   color: #fff !important;
-  font-size: 12px !important;
+  font-size: 13px !important;
   font-weight: 600 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.4) !important;
 }
 .comment-author-name {
   font-weight: 600 !important;
-  color: #333 !important;
+  color: #00f0ff !important;
   font-size: 14px !important;
 }
 .comment-time {
-  color: #999 !important;
+  color: #5a6a8a !important;
   font-size: 12px !important;
 }
 .comment-content {
-  color: #333 !important;
+  color: #e0e8ff !important;
   font-size: 14px !important;
-  line-height: 1.5 !important;
+  line-height: 1.6 !important;
   word-break: break-word !important;
 }
 .comment-delete-btn {
   background: none !important;
   border: none !important;
-  color: #999 !important;
+  color: #5a6a8a !important;
   font-size: 12px !important;
   cursor: pointer !important;
-  padding: 2px 8px !important;
+  padding: 4px 10px !important;
+  border-radius: 4px !important;
+  transition: all 0.2s ease !important;
 }
 .comment-delete-btn:hover {
-  color: #ef4444 !important;
+  color: #ff3366 !important;
+  background: rgba(255, 51, 102, 0.1) !important;
 }
 .comment-avatar.comment-clickable,
 .comment-author-name.comment-clickable {
@@ -597,62 +686,508 @@ body {
 }
 .comment-avatar.comment-clickable:hover {
   transform: scale(1.1) !important;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3) !important;
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.6) !important;
 }
 .comment-author-name.comment-clickable:hover {
-  color: #6366f1 !important;
-  text-decoration: underline !important;
+  color: #00d4e0 !important;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.5) !important;
 }
 .comments-input-area {
   display: flex !important;
-  gap: 8px !important;
+  gap: 10px !important;
   padding: 12px 16px !important;
-  border-top: 1px solid #eee !important;
-  background: #fff !important;
+  border-top: 1px solid rgba(0, 240, 255, 0.15) !important;
+  background: rgba(0, 0, 0, 0.3) !important;
+  flex-shrink: 0 !important;
 }
 .comments-input-area textarea {
   flex: 1 !important;
-  border: 1px solid #ddd !important;
-  border-radius: 8px !important;
-  padding: 10px 12px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(0, 240, 255, 0.2) !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
   font-size: 14px !important;
+  color: #e0e8ff !important;
   resize: none !important;
-  height: 40px !important;
-  min-height: 40px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  transition: all 0.2s ease !important;
+}
+.comments-input-area textarea::placeholder {
+  color: #5a6a8a !important;
+}
+.comments-input-area textarea:focus {
+  outline: none !important;
+  border-color: rgba(0, 240, 255, 0.5) !important;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.2) !important;
 }
 .comments-input-area button {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
-  color: #fff !important;
+  background: linear-gradient(135deg, #00f0ff 0%, #00d4e0 100%) !important;
+  color: #080810 !important;
   border: none !important;
   padding: 10px 20px !important;
-  border-radius: 8px !important;
+  border-radius: 10px !important;
   font-size: 14px !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
   cursor: pointer !important;
   white-space: nowrap !important;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.4) !important;
+  transition: all 0.2s ease !important;
+}
+.comments-input-area button:hover {
+  background: linear-gradient(135deg, #00d4e0 0%, #00b8c4 100%) !important;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.6) !important;
+  transform: translateY(-1px) !important;
 }
 .comments-input-area button:disabled {
-  opacity: 0.6 !important;
+  opacity: 0.5 !important;
   cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 .comments-login-hint {
   text-align: center !important;
-  padding: 12px 16px !important;
-  color: #999 !important;
+  padding: 14px 16px !important;
+  color: #8090b0 !important;
   font-size: 14px !important;
-  border-top: 1px solid #eee !important;
+  border-top: 1px solid rgba(0, 240, 255, 0.15) !important;
+  background: rgba(0, 0, 0, 0.3) !important;
+  flex-shrink: 0 !important;
 }
-#comments-load-more-btn {
-  display: block !important;
-  width: 100% !important;
-  padding: 10px !important;
-  background: #f5f5f5 !important;
-  border: none !important;
-  color: #666 !important;
+/* 评论加载状态提示 */
+.comments-scroll-loading {
+  text-align: center !important;
+  padding: 12px !important;
+  color: #5a6a8a !important;
+  font-size: 13px !important;
+}
+/* 评论区滚动容器 */
+.comments-body-wrapper {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(0, 240, 255, 0.3) transparent !important;
+}
+.comments-body-wrapper::-webkit-scrollbar {
+  width: 4px !important;
+}
+.comments-body-wrapper::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+.comments-body-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(0, 240, 255, 0.3) !important;
+  border-radius: 2px !important;
+}
+/* 评论区空状态 */
+.comments-empty {
+  text-align: center !important;
+  padding: 40px 20px !important;
+  color: #5a6a8a !important;
+}
+.comments-empty-icon {
+  font-size: 48px !important;
+  margin-bottom: 12px !important;
+  opacity: 0.6 !important;
+}
+.comments-empty-text {
   font-size: 14px !important;
+  color: #8090b0 !important;
+}
+
+/* 用户主页弹窗样式覆盖 - 防止被游戏内置样式覆盖 */
+#user-profile-modal .modal-content,
+#follow-modal-game .modal-content {
+  background: var(--bg-secondary, #1a1a2e) !important;
+  border-radius: 12px !important;
+  max-width: 500px !important;
+  width: 90% !important;
+  max-height: 85vh !important;
+  overflow: hidden !important;
+}
+#user-profile-modal .modal-header,
+#follow-modal-game .modal-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 1rem 1.25rem !important;
+  border-bottom: 1px solid var(--border-color, #2d2d4a) !important;
+  background: var(--bg-secondary, #1a1a2e) !important;
+}
+#user-profile-modal .modal-header h3,
+#follow-modal-game .modal-header h3 {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  color: var(--text-primary, #e0e8ff) !important;
+  margin: 0 !important;
+}
+/* 平台弹窗关闭按钮 - 使用 yxj- 前缀完全隔离游戏样式 */
+.yxj-modal-close {
+  all: unset !important;
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  color: var(--text-secondary, #888) !important;
+  font-size: 1.5rem !important;
   cursor: pointer !important;
-  margin-top: 8px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: auto !important;
+  max-width: 32px !important;
+  box-shadow: none !important;
+  transition: background 0.2s !important;
+  box-sizing: border-box !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  line-height: 1 !important;
+}
+.yxj-modal-close:hover {
+  background: var(--bg-hover, #2d2d4a) !important;
+  color: var(--text-primary, #e0e8ff) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+.yxj-modal-close:active {
+  transform: scale(0.95) !important;
+}
+/* 平台弹窗按钮 - 使用 yxj- 前缀完全隔离游戏样式 */
+.yxj-btn {
+  all: unset !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0.5rem 1rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
   border-radius: 8px !important;
+  cursor: pointer !important;
+  border: none !important;
+  min-width: auto !important;
+  box-shadow: none !important;
+  transition: all 0.2s !important;
+  box-sizing: border-box !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  white-space: nowrap !important;
+}
+.yxj-btn-primary {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  color: #fff !important;
+}
+.yxj-btn-primary:hover {
+  opacity: 0.9 !important;
+  transform: none !important;
+}
+.yxj-btn-secondary {
+  background: var(--bg-hover, #2d2d4a) !important;
+  color: var(--text-secondary, #888) !important;
+}
+.yxj-btn-secondary:hover {
+  background: var(--border-color, #3d3d5a) !important;
+}
+/* 兼容旧class（逐步迁移） */
+#user-profile-modal .btn-close,
+#follow-modal-game .btn-close {
+  all: unset !important;
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  color: var(--text-secondary, #888) !important;
+  font-size: 1.5rem !important;
+  cursor: pointer !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: auto !important;
+  max-width: 32px !important;
+  box-shadow: none !important;
+  transition: background 0.2s !important;
+  box-sizing: border-box !important;
+}
+#user-profile-modal .btn-close:hover,
+#follow-modal-game .btn-close:hover {
+  background: var(--bg-hover, #2d2d4a) !important;
+  color: var(--text-primary, #e0e8ff) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+#user-profile-modal .modal-body,
+#follow-modal-game .modal-body {
+  padding: 1.25rem !important;
+  overflow-y: auto !important;
+  max-height: calc(85vh - 60px) !important;
+}
+#user-profile-modal .user-profile-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1rem !important;
+  padding-bottom: 1.25rem !important;
+  border-bottom: 1px solid var(--border-color, #2d2d4a) !important;
+  margin-bottom: 1.25rem !important;
+}
+#user-profile-modal .user-profile-avatar {
+  width: 60px !important;
+  height: 60px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.75rem !important;
+  flex-shrink: 0 !important;
+}
+#user-profile-modal .user-profile-info {
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+#user-profile-modal .user-profile-name {
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+  color: var(--text-primary, #e0e8ff) !important;
+  margin-bottom: 0.125rem !important;
+}
+#user-profile-modal .user-profile-account {
+  font-size: 0.75rem !important;
+  color: var(--text-muted, #666) !important;
+  margin-bottom: 0.375rem !important;
+}
+#user-profile-modal .user-profile-stats {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  font-size: 0.875rem !important;
+  color: var(--text-secondary, #888) !important;
+  flex-wrap: wrap !important;
+}
+#user-profile-modal .user-stat-item {
+  cursor: pointer !important;
+  transition: color 0.2s !important;
+}
+#user-profile-modal .user-stat-item:hover {
+  color: #6366f1 !important;
+}
+#user-profile-modal .user-stat-item strong {
+  color: var(--text-primary, #e0e8ff) !important;
+  font-weight: 600 !important;
+}
+#user-profile-modal .user-stat-divider {
+  color: var(--border-color, #2d2d4a) !important;
+}
+#user-profile-modal .user-profile-follow-btn {
+  flex-shrink: 0 !important;
+  padding: 0.5rem 1rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  border: none !important;
+  min-width: auto !important;
+  box-shadow: none !important;
+  transition: all 0.2s !important;
+}
+#user-profile-modal .user-profile-follow-btn.btn-primary {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  color: #fff !important;
+}
+#user-profile-modal .user-profile-follow-btn.btn-secondary {
+  background: var(--bg-hover, #2d2d4a) !important;
+  color: var(--text-secondary, #888) !important;
+}
+#user-profile-modal .user-profile-follow-btn:hover {
+  transform: none !important;
+  opacity: 0.9 !important;
+}
+#user-profile-modal .user-profile-games h4 {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  margin-bottom: 1rem !important;
+  color: var(--text-primary, #e0e8ff) !important;
+}
+#user-profile-modal .user-games-scroll-container {
+  max-height: 250px !important;
+  overflow-y: auto !important;
+}
+#user-profile-modal .user-games-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 0.75rem !important;
+}
+#user-profile-modal .user-game-card {
+  background: var(--bg-color, #080810) !important;
+  border-radius: 8px !important;
+  padding: 0.75rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+  text-align: center !important;
+}
+#user-profile-modal .user-game-card:hover {
+  background: var(--bg-hover, #2d2d4a) !important;
+  transform: translateY(-2px) !important;
+}
+#user-profile-modal .user-game-emoji {
+  font-size: 2rem !important;
+  margin-bottom: 0.5rem !important;
+}
+#user-profile-modal .user-game-title {
+  font-size: 0.75rem !important;
+  color: var(--text-primary, #e0e8ff) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  margin-bottom: 0.25rem !important;
+}
+#user-profile-modal .user-game-stats {
+  display: flex !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  font-size: 0.625rem !important;
+  color: var(--text-muted, #666) !important;
+}
+#user-profile-modal .user-games-empty,
+#user-profile-modal .user-games-load-more {
+  text-align: center !important;
+  color: var(--text-muted, #666) !important;
+  font-size: 0.875rem !important;
+  padding: 1rem !important;
+}
+/* 关注列表弹窗样式 - 使用类选择器匹配动态创建的弹窗 */
+.follow-modal-instance .follow-tabs {
+  display: flex !important;
+  border-bottom: 1px solid var(--border-color, #252540) !important;
+  margin-bottom: 1rem !important;
+}
+.follow-modal-instance .follow-tab-btn,
+.yxj-tab-btn {
+  all: unset !important;
+  flex: 1 !important;
+  padding: 0.75rem !important;
+  background: transparent !important;
+  border: none !important;
+  color: var(--text-secondary, #888) !important;
+  font-size: 0.9375rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+  border-bottom: 2px solid transparent !important;
+  min-width: auto !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  text-align: center !important;
+}
+.follow-modal-instance .follow-tab-btn:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  color: var(--text-primary, #e0e8ff) !important;
+}
+.follow-modal-instance .follow-tab-btn.active {
+  color: var(--primary-color, #6366f1) !important;
+  border-bottom-color: var(--primary-color, #6366f1) !important;
+}
+.follow-modal-instance .follow-tab-btn span {
+  font-weight: 700 !important;
+  margin-left: 0.25rem !important;
+}
+.follow-modal-instance .follow-list {
+  max-height: 400px !important;
+  overflow-y: auto !important;
+}
+.follow-modal-instance .follow-user-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  padding: 0.75rem 0 !important;
+  border-bottom: 1px solid var(--border-color, #252540) !important;
+  transition: background 0.2s !important;
+}
+.follow-modal-instance .follow-user-item:last-child {
+  border-bottom: none !important;
+}
+.follow-modal-instance .follow-user-avatar {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  background: var(--bg-secondary, #0e0e18) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.5rem !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+}
+.follow-modal-instance .follow-user-info {
+  flex: 1 !important;
+  min-width: 0 !important;
+  cursor: pointer !important;
+}
+.follow-modal-instance .follow-user-name {
+  font-size: 0.9375rem !important;
+  font-weight: 600 !important;
+  color: var(--text-primary, #e0e8ff) !important;
+}
+.follow-modal-instance .follow-user-stats {
+  font-size: 0.75rem !important;
+  color: var(--text-muted, #666) !important;
+  margin-top: 0.125rem !important;
+  display: flex !important;
+  gap: 0.75rem !important;
+}
+.follow-modal-instance .follow-action-btn,
+.yxj-follow-action-btn {
+  all: unset !important;
+  padding: 0.375rem 1rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  border-radius: 16px !important;
+  cursor: pointer !important;
+  border: 1px solid var(--primary-color, #6366f1) !important;
+  background: var(--primary-color, #6366f1) !important;
+  color: #fff !important;
+  min-width: auto !important;
+  box-shadow: none !important;
+  transition: all 0.2s !important;
+  box-sizing: border-box !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.follow-modal-instance .follow-action-btn:hover {
+  transform: none !important;
+  background: var(--primary-hover, #4f46e5) !important;
+}
+.follow-modal-instance .follow-action-btn.following {
+  background: transparent !important;
+  color: var(--text-secondary, #888) !important;
+  border-color: var(--border-color, #252540) !important;
+}
+.follow-modal-instance .follow-action-btn.following:hover {
+  border-color: #ef4444 !important;
+  color: #ef4444 !important;
+}
+.follow-modal-instance .follow-empty {
+  text-align: center !important;
+  padding: 2rem !important;
+  color: var(--text-muted, #666) !important;
+}
+.follow-modal-instance .follow-empty-icon {
+  font-size: 2.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+.follow-modal-instance .follow-loading {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  padding: 2rem !important;
+  color: var(--text-muted, #666) !important;
 }
 `;
 
@@ -660,23 +1195,23 @@ body {
   const authorToken = gameInfo.authorToken || '';
   
   const promoBarHtml = `
-<!-- 游戏家顶部导航 -->
-<a class="yxj-promo-home" href="/" title="更多游戏">🏠 更多游戏</a>
+<!-- 游戏家顶部导航 - 返回按钮 -->
+<button class="yxj-promo-home" onclick="window.history.length > 1 ? window.history.back() : window.location.href='/'" title="返回">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+</button>
 
 <!-- 抖音风格左下角作者信息 -->
 <div class="tiktok-author-info" id="tiktok-author-info">
   <div class="tiktok-author-row">
     <div class="tiktok-author-avatar" id="author-avatar" onclick="openAuthorProfile()">👤</div>
-    <div class="tiktok-author-details">
-      <div style="display:flex;flex-direction:column;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">${safeAuthor}</span>
-          <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="${authorToken}" onclick="toggleFollow()">
-            <span class="follow-icon">+</span> 关注
-          </button>
-        </div>
-        ${publishTime ? `<span class="tiktok-publish-time">发布于 ${publishTime}</span>` : ''}
+    <div class="tiktok-author-details" style="display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;min-height:32px!important;gap:2px!important;">
+      <div class="tiktok-author-name-row" style="display:flex!important;flex-direction:row!important;align-items:center!important;gap:10px!important;">
+        <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">${safeAuthor}</span>
+        <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="${authorToken}" onclick="toggleFollow()">
+          <span class="follow-icon">+</span> 关注
+        </button>
       </div>
+      ${publishTime ? `<span class="tiktok-publish-time" style="display:block!important;margin:0!important;padding:0!important;">发布于 ${publishTime}</span>` : ''}
     </div>
   </div>
 </div>
@@ -746,11 +1281,20 @@ body {
     <span class="comments-title">💬 评论</span>
     <button class="comments-close-btn" onclick="toggleCommentsPanel()">×</button>
   </div>
-  <div class="comments-body" id="game-comments-list">
-    <div style="text-align:center;padding:30px;color:#999;">加载中...</div>
+  <div class="comments-body-wrapper">
+    <div class="comments-body" id="game-comments-list">
+      <div class="comments-loading" style="text-align:center;padding:30px;color:#8090b0;">
+        <div class="loading-spinner-small" style="width:24px;height:24px;border:2px solid rgba(0,240,255,0.2);border-top-color:#00f0ff;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 10px;"></div>
+        加载中...
+      </div>
+    </div>
   </div>
-  <button id="comments-load-more-btn" style="display:none;" onclick="loadMoreGameComments()">加载更多</button>
-  <div class="comments-login-hint" id="comment-login-hint" style="display:none;">请登录后发表留言</div>
+  <div class="comments-login-hint" id="comment-login-hint" style="display:none;">
+    <span style="display:flex;align-items:center;justify-content:center;gap:8px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      请登录后发表留言
+    </span>
+  </div>
   <div class="comments-input-area" id="comment-input-area" style="display:none;">
     <textarea id="game-comment-input" placeholder="说点什么..." maxlength="500"></textarea>
     <button id="game-comment-submit" onclick="submitGameComment()">发布</button>
@@ -764,22 +1308,26 @@ body {
 </div>
 
 <!-- 分享面板 -->
-<div id="share-panel" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999999;align-items:flex-end;justify-content:center;" onclick="closeSharePanel()">
-  <div style="background:#fff;border-radius:16px 16px 0 0;padding:20px;width:100%;max-width:500px;text-align:center;position:relative;max-height:80vh;overflow-y:auto;" onclick="event.stopPropagation()">
-    <div style="width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 15px;"></div>
-    <h3 style="margin:0 0 15px;font-size:18px;">📤 分享游戏</h3>
-    <div style="background:#f5f5f5;border-radius:8px;padding:12px;margin-bottom:15px;">
-      <textarea id="share-text" readonly style="width:100%;border:none;background:transparent;font-size:14px;resize:none;min-height:80px;outline:none;"></textarea>
+<div id="share-panel" class="modal" style="display:none;z-index:999999;" onclick="closeSharePanel()">
+  <div class="modal-content modal-small" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3>📤 分享游戏</h3>
+      <button class="yxj-modal-close" onclick="closeSharePanel()">×</button>
     </div>
-    <button onclick="copyShareText()" style="width:100%;padding:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;margin-bottom:10px;">📋 复制分享内容</button>
-    <button onclick="closeSharePanel()" style="width:100%;padding:12px;background:#f0f0f0;color:#666;border:none;border-radius:8px;font-size:14px;cursor:pointer;">取消</button>
+    <div class="modal-body" style="padding:1rem 1.25rem;">
+      <div style="background:var(--bg-tertiary, #14142a);border-radius:8px;padding:12px;margin-bottom:15px;border:1px solid var(--border-color, #252540);">
+        <textarea id="share-text" readonly style="width:100%;border:none;background:transparent;font-size:14px;resize:none;min-height:80px;outline:none;color:var(--text-primary, #e0e8ff);"></textarea>
+      </div>
+      <button onclick="copyShareText()" style="width:100%;padding:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;margin-bottom:10px;">📋 复制分享内容</button>
+      <button onclick="closeSharePanel()" style="width:100%;padding:12px;background:var(--bg-tertiary, #14142a);color:var(--text-secondary, #888);border:1px solid var(--border-color, #252540);border-radius:8px;font-size:14px;cursor:pointer;">取消</button>
+    </div>
   </div>
 </div>
 
 <!-- 作者主页弹窗 -->
-<div id="author-profile-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999999;align-items:center;justify-content:center;" onclick="closeAuthorProfile()">
-  <div style="background:#fff;border-radius:12px;padding:20px;width:90%;max-width:360px;text-align:center;position:relative;" onclick="event.stopPropagation()">
-    <button onclick="closeAuthorProfile()" style="position:absolute;right:10px;top:10px;border:none;background:none;font-size:24px;cursor:pointer;color:#999;">×</button>
+<div id="author-profile-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:999999;align-items:center;justify-content:center;" onclick="closeAuthorProfile()">
+  <div style="background:#1a1a2e;border-radius:16px;padding:24px;width:90%;max-width:400px;text-align:center;position:relative;max-height:85vh;overflow-y:auto;" onclick="event.stopPropagation()">
+    <button onclick="closeAuthorProfile()" style="position:absolute;right:12px;top:12px;border:none;background:none;font-size:24px;cursor:pointer;color:#888;line-height:1;">×</button>
     <div id="author-profile-content" style="min-height:150px;"></div>
   </div>
 </div>
@@ -883,6 +1431,28 @@ document.addEventListener('keydown', function(e) {
 
 function getUserToken() {
   return localStorage.getItem('aigame-user-token') || '';
+}
+
+// 显示 Toast 提示
+function showToast(message, type) {
+  // 移除已存在的 toast
+  var existingToast = document.getElementById('game-detail-toast');
+  if (existingToast) existingToast.remove();
+  
+  var toast = document.createElement('div');
+  toast.id = 'game-detail-toast';
+  toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.85);color:#fff;padding:12px 24px;border-radius:8px;z-index:10000;font-size:14px;max-width:80%;text-align:center;animation:fadeIn 0.3s ease;';
+  if (type === 'success') {
+    toast.style.background = 'rgba(16,185,129,0.95)';
+  }
+  toast.innerText = message;
+  document.body.appendChild(toast);
+  
+  setTimeout(function() {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.3s ease';
+    setTimeout(function() { if (toast.parentNode) toast.remove(); }, 300);
+  }, 2500);
 }
 
 function getAuthHeaders() {
@@ -1019,16 +1589,26 @@ function likeGame() {
         if (data.liked !== undefined) {
           btn.classList.toggle('liked', data.liked);
         }
+        // 显示提示
+        if (data.creditAwarded && data.creditMessage) {
+          showToast('感谢点赞！❤️ ' + data.creditMessage, 'success');
+        } else if (data.liked) {
+          showToast('感谢点赞！❤️', 'success');
+        } else {
+          showToast('已取消点赞');
+        }
       } else {
         // 失败回滚
         btn.classList.toggle('liked', isLiked);
         countEl.innerText = count;
+        showToast('操作失败，请重试');
       }
     })
     .catch(err => {
       console.error(err);
       btn.classList.toggle('liked', isLiked);
       countEl.innerText = count;
+      showToast('网络错误，请重试');
     });
 }
 
@@ -1061,30 +1641,55 @@ function toggleFavorite() {
         if (data.favorite_count !== undefined) {
           countEl.innerText = data.favorite_count;
         }
+        // 显示提示
+        if (data.creditAwarded && data.creditMessage) {
+          showToast('已添加到收藏 ⭐ ' + data.creditMessage, 'success');
+        } else if (data.favorited) {
+          showToast('已添加到收藏 ⭐', 'success');
+        } else {
+          showToast('已取消收藏');
+        }
       } else {
         // 失败回滚
         btn.classList.toggle('favorited', isFav);
         countEl.innerText = count;
+        showToast('操作失败，请重试');
       }
     })
     .catch(() => {
       // 失败回滚
       btn.classList.toggle('favorited', isFav);
       countEl.innerText = count;
+      showToast('网络错误，请重试');
     });
 }
 
 // 打开分享面板
 function openSharePanel() {
-  const url = window.location.href;
+  // 生成带分享者信息的链接
+  const userToken = getUserToken();
+  const sharerCode = userToken ? userToken.substring(0, 8) : '';
+  let url = window.location.origin + '/game/' + gameId;
+  if (sharerCode) {
+    url += '?sharer=' + sharerCode + '&from=' + gameId;
+  }
   const shareText = '🎮 我发现了一个有趣的AI游戏：「' + gameTitle + '」\\n\\n👆 点击链接立即游玩：\\n' + url + '\\n\\n💡 关注公众号「游戏开发技术教程」，一句话免费生成你的专属游戏！';
   document.getElementById('share-text').value = shareText;
-  document.getElementById('share-panel').style.display = 'flex';
+  const panel = document.getElementById('share-panel');
+  panel.style.display = '';
+  panel.classList.add('active');
+  document.body.classList.add('modal-open');
 }
 
 // 关闭分享面板
 function closeSharePanel() {
-  document.getElementById('share-panel').style.display = 'none';
+  const panel = document.getElementById('share-panel');
+  panel.classList.remove('active');
+  panel.style.display = 'none';
+  // 只有在没有其他弹窗时才移除 modal-open 类
+  if (!document.querySelector('.modal.active')) {
+    document.body.classList.remove('modal-open');
+  }
 }
 
 // 复制分享内容
@@ -1115,149 +1720,318 @@ function fallbackCopy(text) {
   closeSharePanel();
 }
 
-// 打开作者主页
+// 用户主页作品分页状态
+let userProfileGamesState = { games: [], displayedCount: 6, pageSize: 6 };
+
+// ====== 弹窗层级管理器 ======
+// 基础层级（高于所有固定 UI 元素如 tiktok-sidebar 的 999998）
+const modalZIndexManager = {
+  baseZIndex: 1000000,
+  currentZIndex: 1000000,
+  modalStack: [], // 弹窗栈，用于追踪打开的弹窗
+  
+  // 获取下一个层级（打开新弹窗时调用）
+  getNextZIndex: function(modalId) {
+    this.currentZIndex += 10;
+    this.modalStack.push({ id: modalId, zIndex: this.currentZIndex });
+    return this.currentZIndex;
+  },
+  
+  // 移除弹窗（关闭弹窗时调用）
+  removeModal: function(modalId) {
+    const index = this.modalStack.findIndex(m => m.id === modalId);
+    if (index > -1) {
+      this.modalStack.splice(index, 1);
+    }
+    // 如果没有弹窗了，重置层级
+    if (this.modalStack.length === 0) {
+      this.currentZIndex = this.baseZIndex;
+    }
+  },
+  
+  // 重置（关闭所有弹窗时调用）
+  reset: function() {
+    this.currentZIndex = this.baseZIndex;
+    this.modalStack = [];
+  }
+};
+
+// 获取头像emoji
+function getAvatarEmoji(token) {
+  const emojis = ['🎮', '🎯', '🎲', '🎪', '🎨', '🎭', '🎪', '🎰', '🎳', '🎸', '🎹', '🎺', '🎻', '🥁', '🎤'];
+  if (!token) return '👤';
+  const hash = token.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  return emojis[hash % emojis.length];
+}
+
+// 获取游戏emoji
+function getGameEmoji(title) {
+  const keywords = {
+    '贪吃蛇': '🐍', '蛇': '🐍', 'snake': '🐍',
+    '2048': '🔢', '数字': '🔢',
+    '飞机': '✈️', '打飞机': '✈️', '射击': '🔫',
+    '砖块': '🧱', '打砖块': '🧱', '弹球': '🏓',
+    '俄罗斯方块': '🟦', '方块': '🟦', 'tetris': '🟦',
+    '跳跃': '🦘', '跑酷': '🏃', '跳': '🦘',
+    '消除': '💎', '消消乐': '💎', '三消': '💎',
+    '迷宫': '🔲', '棋': '♟️', '象棋': '♟️',
+    '扑克': '🃏', '纸牌': '🃏', '斗地主': '🃏'
+  };
+  const t = (title || '').toLowerCase();
+  for (const [k, v] of Object.entries(keywords)) {
+    if (t.includes(k.toLowerCase())) return v;
+  }
+  return '🎮';
+}
+
+// 格式化数字
+function formatNumber(num) {
+  if (num >= 10000) return (num / 10000).toFixed(1) + 'w';
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+  return String(num);
+}
+
+// HTML转义
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = String(text || '');
+  return div.innerHTML;
+}
+
+// 打开作者主页 - 使用与主站相同的弹窗样式
 function openAuthorProfile() {
-  console.log('[DEBUG] openAuthorProfile 被调用, authorToken:', authorToken);
-  if (!authorToken) {
-    console.log('[DEBUG] authorToken为空，显示推广弹窗');
+  openUserProfile(authorToken);
+}
+
+// 打开用户主页弹窗（复用主站样式）
+// 用户主页弹窗计数器，用于生成唯一ID
+let userProfileModalCounter = 0;
+
+async function openUserProfile(userToken) {
+  if (!userToken) {
     showPromoModal();
     return;
   }
-  
-  console.log('[DEBUG] 显示作者主页弹窗');
-  const modal = document.getElementById('author-profile-modal');
-  const content = document.getElementById('author-profile-content');
-  content.innerHTML = '<div style="padding:20px;color:#999;">加载中...</div>';
-  modal.style.display = 'flex';
-  
-  // 加载作者信息
-  Promise.all([
-    fetch('/api/users/' + authorToken + '/profile', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({})),
-    fetch('/api/users/' + authorToken + '/follow-stats', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({})),
-    fetch('/api/users/' + authorToken + '/games?limit=4', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({ games: [] }))
-  ]).then(([profileData, statsData, gamesData]) => {
-    const nickname = (profileData.profile && profileData.profile.nickname) || authorName || '游戏创作者';
-    const accountId = (profileData.profile && profileData.profile.accountId) || '';
-    const followers = statsData.followerCount || statsData.followers || 0;
+
+  // 生成唯一的弹窗ID（支持多层嵌套）
+  userProfileModalCounter++;
+  const modalId = 'user-profile-modal-' + userProfileModalCounter;
+
+  // 创建弹窗（使用主站CSS class）
+  const modal = document.createElement('div');
+  modal.className = 'modal active user-profile-modal-instance';
+  modal.id = modalId;
+  modal.style.zIndex = modalZIndexManager.getNextZIndex(modalId);
+  modal.onclick = (e) => { if (e.target === modal) closeUserProfileModalById(modalId); };
+
+  modal.innerHTML = 
+    '<div class="modal-content modal-medium">' +
+      '<div class="modal-header">' +
+        '<h3>👤 用户主页</h3>' +
+        '<button class="yxj-modal-close" onclick="closeUserProfileModalById(\\x27' + modalId + '\\x27)">×</button>' +
+      '</div>' +
+      '<div class="modal-body user-profile-body">' +
+        '<div class="user-profile-loading">' +
+          '<div class="loading-spinner"></div>' +
+          '<span>加载中...</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  document.body.appendChild(modal);
+  document.body.classList.add('modal-open');
+
+  // 加载用户信息
+  try {
+    const [profileRes, statsRes, gamesRes, followStatusRes] = await Promise.all([
+      fetch('/api/users/' + userToken + '/profile', { headers: getAuthHeaders() }),
+      fetch('/api/users/' + userToken + '/follow-stats', { headers: getAuthHeaders() }),
+      fetch('/api/users/' + userToken + '/games', { headers: getAuthHeaders() }),
+      fetch('/api/users/' + userToken + '/follow-status', { headers: getAuthHeaders() })
+    ]);
+
+    const profileData = await profileRes.json();
+    const statsData = await statsRes.json();
+    const gamesData = await gamesRes.json();
+    const followStatusData = await followStatusRes.json();
+
+    const isFollowing = followStatusData.success && followStatusData.following;
     const following = statsData.followingCount || statsData.following || 0;
-    const games = gamesData.games || [];
-    const userToken = getUserToken();
-    const isSelf = authorToken === userToken;
+    const followers = statsData.followerCount || statsData.followers || 0;
+    const games = gamesData.success ? gamesData.games || [] : [];
+
+    // 保存作品数据用于滚动加载
+    userProfileGamesState.games = games;
+    userProfileGamesState.displayedCount = 6;
+
+    const nickname = (profileData.success && profileData.profile?.nickname) || authorName || '游戏家用户';
+    const accountId = (profileData.success && profileData.profile?.accountId) || ('player_' + userToken.substring(0, 6));
+    const gamesCount = profileData.success ? (profileData.profile?.gamesCount || games.length) : games.length;
+    const likesCount = profileData.success ? (profileData.profile?.likesCount || 0) : 0;
+    const currentUserToken = getUserToken();
+    const isSelf = userToken === currentUserToken;
+
+    const modalBody = modal.querySelector('.user-profile-body');
     
-    let gamesHtml = '';
-    if (games.length > 0) {
-      gamesHtml = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:15px;">' +
-        games.slice(0, 4).map(g => '<a href="/g/' + g.id.substring(0,2) + '/' + g.id + '.html" style="background:#f5f5f5;border-radius:8px;padding:10px;text-decoration:none;color:#333;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎮 ' + (g.title || '未命名').substring(0, 10) + '</a>').join('') +
-        '</div>';
-    }
-    
-    // 账号ID显示（小字、浅色、带@前缀）
-    const accountIdHtml = accountId ? '<div style="font-size:12px;color:#999;margin-top:2px;">@' + accountId + '</div>' : '';
-    
-    // 如果是自己，不显示关注按钮
-    const followBtnHtml = isSelf ? '' : '<button id="profile-follow-btn" onclick="toggleFollowFromProfile()" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>';
-    
-    content.innerHTML = 
-      '<div style="margin-bottom:15px;">' +
-        '<div style="width:60px;height:60px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:28px;">👤</div>' +
-        '<div style="font-size:18px;font-weight:600;color:#333;">' + nickname + '</div>' +
-        accountIdHtml +
-      '</div>' +
-      '<div style="display:flex;justify-content:center;gap:30px;margin-bottom:15px;">' +
-        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + following + '</strong><span style="color:#999;font-size:12px;">关注</span></div>' +
-        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + followers + '</strong><span style="color:#999;font-size:12px;">粉丝</span></div>' +
-        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + games.length + '</strong><span style="color:#999;font-size:12px;">作品</span></div>' +
-      '</div>' +
-      followBtnHtml +
-      gamesHtml;
-    
-    // 检查关注状态（只有不是自己时才检查）
+    // 构建关注按钮
+    let followBtnHtml = '';
     if (!isSelf) {
-      checkFollowStatusForProfile();
+      followBtnHtml = '<button class="yxj-btn ' + (isFollowing ? 'yxj-btn-secondary' : 'yxj-btn-primary') + ' yxj-follow-btn" id="user-profile-follow-btn" onclick="toggleFollowFromProfile(\\x27' + userToken + '\\x27)">' + (isFollowing ? '已关注' : '+ 关注') + '</button>';
     }
-  }).catch(() => {
-    content.innerHTML = '<div style="padding:20px;color:#999;">加载失败</div>';
-  });
-}
-
-// 关闭作者主页
-function closeAuthorProfile() {
-  document.getElementById('author-profile-modal').style.display = 'none';
-}
-
-// 打开评论者主页（用于点击评论头像）
-function openCommentAuthorProfile(commentAuthorToken) {
-  if (!commentAuthorToken) return;
-  
-  const currentUserToken = getUserToken();
-  // 如果是自己的评论，不跳转
-  if (commentAuthorToken === currentUserToken) {
-    alert('这是您自己的评论');
-    return;
-  }
-  
-  // 使用已有的作者主页弹窗展示评论者信息
-  const modal = document.getElementById('author-profile-modal');
-  const content = document.getElementById('author-profile-content');
-  content.innerHTML = '<div style="padding:20px;color:#999;">加载中...</div>';
-  modal.style.display = 'flex';
-  
-  // 加载评论者信息
-  Promise.all([
-    fetch('/api/users/' + commentAuthorToken + '/profile', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({})),
-    fetch('/api/users/' + commentAuthorToken + '/follow-stats', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({})),
-    fetch('/api/users/' + commentAuthorToken + '/games?limit=4', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({ games: [] }))
-  ]).then(([profileData, statsData, gamesData]) => {
-    const nickname = (profileData.profile && profileData.profile.nickname) || '游戏玩家';
-    const accountId = (profileData.profile && profileData.profile.accountId) || '';
-    const followers = statsData.followerCount || statsData.followers || 0;
-    const following = statsData.followingCount || statsData.following || 0;
-    const games = gamesData.games || [];
     
+    // 构建作品列表
     let gamesHtml = '';
     if (games.length > 0) {
-      gamesHtml = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:15px;">' +
-        games.slice(0, 4).map(g => '<a href="/g/' + g.id.substring(0,2) + '/' + g.id + '.html" style="background:#f5f5f5;border-radius:8px;padding:10px;text-decoration:none;color:#333;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎮 ' + (g.title || '未命名').substring(0, 10) + '</a>').join('') +
+      const gameCards = games.slice(0, 6).map(function(game) {
+        const gameUrl = '/g/' + game.id.substring(0,2) + '/' + game.id + '.html';
+        return '<div class="user-game-card" onclick="window.location.href=\\x27' + gameUrl + '\\x27">' +
+          '<div class="user-game-emoji">' + getGameEmoji(game.title) + '</div>' +
+          '<div class="user-game-title">' + escapeHtml(game.title) + '</div>' +
+          '<div class="user-game-stats">' +
+            '<span>🎮 ' + formatNumber(game.play_count || 0) + '</span>' +
+            '<span>❤️ ' + formatNumber(game.like_count || 0) + '</span>' +
+            '<span>💬 ' + formatNumber(game.comment_count || 0) + '</span>' +
+          '</div>' +
         '</div>';
+      }).join('');
+      gamesHtml = '<div class="user-games-grid" id="user-games-grid">' + gameCards + '</div>';
+      if (games.length > 6) {
+        gamesHtml += '<div class="user-games-load-more" id="user-games-load-more">下拉加载更多作品...</div>';
+      }
+    } else {
+      gamesHtml = '<div class="user-games-empty">暂无作品</div>';
     }
     
-    // 账号ID显示（小字、浅色、带@前缀）
-    const accountIdHtml = accountId ? '<div style="font-size:12px;color:#999;margin-top:2px;">@' + accountId + '</div>' : '';
-    
-    content.innerHTML = 
-      '<div style="margin-bottom:15px;">' +
-        '<div style="width:60px;height:60px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:28px;">👤</div>' +
-        '<div style="font-size:18px;font-weight:600;color:#333;">' + nickname + '</div>' +
-        accountIdHtml +
+    modalBody.innerHTML = 
+      '<div class="user-profile-header">' +
+        '<div class="user-profile-avatar">' + getAvatarEmoji(userToken) + '</div>' +
+        '<div class="user-profile-info">' +
+          '<div class="user-profile-name">' + escapeHtml(nickname) + '</div>' +
+          '<div class="user-profile-account">@' + escapeHtml(accountId) + '</div>' +
+          '<div class="user-profile-stats">' +
+            '<span class="user-stat-item" onclick="openFollowListFromGame(\\x27' + userToken + '\\x27, \\x27following\\x27)">' +
+              '<strong>' + following + '</strong> 关注' +
+            '</span>' +
+            '<span class="user-stat-divider">|</span>' +
+            '<span class="user-stat-item" onclick="openFollowListFromGame(\\x27' + userToken + '\\x27, \\x27followers\\x27)">' +
+              '<strong>' + followers + '</strong> 粉丝' +
+            '</span>' +
+            '<span class="user-stat-divider">|</span>' +
+            '<span class="user-stat-item">' +
+              '<strong>' + gamesCount + '</strong> 作品' +
+            '</span>' +
+            '<span class="user-stat-divider">|</span>' +
+            '<span class="user-stat-item">' +
+              '<strong>' + likesCount + '</strong> 获赞' +
+            '</span>' +
+          '</div>' +
+        '</div>' +
+        followBtnHtml +
       '</div>' +
-      '<div style="display:flex;justify-content:center;gap:30px;margin-bottom:15px;">' +
-        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + following + '</strong><span style="color:#999;font-size:12px;">关注</span></div>' +
-        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + followers + '</strong><span style="color:#999;font-size:12px;">粉丝</span></div>' +
-        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + games.length + '</strong><span style="color:#999;font-size:12px;">作品</span></div>' +
-      '</div>' +
-      '<button onclick="toggleFollowCommentAuthor(\\'' + commentAuthorToken + '\\')" id="comment-author-follow-btn" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>' +
-      gamesHtml;
-    
-    // 检查是否已关注
-    fetch('/api/users/' + commentAuthorToken + '/follow-status', { headers: getAuthHeaders() })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.following) {
-          const btn = document.getElementById('comment-author-follow-btn');
-          if (btn) {
-            btn.textContent = '已关注';
-            btn.style.background = '#f5f5f5';
-            btn.style.color = '#999';
-          }
-        }
-      }).catch(() => {});
-  }).catch(() => {
-    content.innerHTML = '<div style="padding:20px;color:#999;">加载失败</div>';
-  });
+      '<div class="user-profile-games">' +
+        '<h4>🎮 作品 (' + games.length + ')</h4>' +
+        '<div class="user-games-scroll-container" id="user-games-scroll-container">' +
+          gamesHtml +
+        '</div>' +
+      '</div>';
+
+    // 添加滚动加载更多功能
+    if (games.length > 6) {
+      const scrollContainer = document.getElementById('user-games-scroll-container');
+      if (scrollContainer) {
+        scrollContainer.addEventListener('scroll', handleUserGamesScroll);
+      }
+    }
+  } catch (error) {
+    console.error('加载用户信息失败:', error);
+    const modalBody = modal.querySelector('.user-profile-body');
+    modalBody.innerHTML = '<div class="user-profile-error"><div class="error-icon">😕</div><div class="error-text">加载失败，请重试</div></div>';
+  }
 }
 
-// 关注/取关评论者
+// 处理作品列表滚动加载
+function handleUserGamesScroll(e) {
+  const container = e.target;
+  const { scrollTop, scrollHeight, clientHeight } = container;
+  if (scrollHeight - scrollTop - clientHeight < 50) {
+    loadMoreUserGames();
+  }
+}
+
+// 加载更多作品
+function loadMoreUserGames() {
+  const { games, displayedCount, pageSize } = userProfileGamesState;
+  if (displayedCount >= games.length) return;
+
+  const grid = document.getElementById('user-games-grid');
+  const loadMoreEl = document.getElementById('user-games-load-more');
+  if (!grid) return;
+
+  const newCount = Math.min(displayedCount + pageSize, games.length);
+  const newGames = games.slice(displayedCount, newCount);
+
+  newGames.forEach(function(game) {
+    const card = document.createElement('div');
+    card.className = 'user-game-card';
+    card.onclick = function() { window.location.href = '/g/' + game.id.substring(0,2) + '/' + game.id + '.html'; };
+    card.innerHTML = '<div class="user-game-emoji">' + getGameEmoji(game.title) + '</div>' +
+      '<div class="user-game-title">' + escapeHtml(game.title) + '</div>' +
+      '<div class="user-game-stats">' +
+        '<span>🎮 ' + formatNumber(game.play_count || 0) + '</span>' +
+        '<span>❤️ ' + formatNumber(game.like_count || 0) + '</span>' +
+        '<span>💬 ' + formatNumber(game.comment_count || 0) + '</span>' +
+      '</div>';
+    grid.appendChild(card);
+  });
+
+  userProfileGamesState.displayedCount = newCount;
+  if (newCount >= games.length && loadMoreEl) {
+    loadMoreEl.style.display = 'none';
+  }
+}
+
+// 根据ID关闭指定的用户主页弹窗
+function closeUserProfileModalById(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.remove();
+    modalZIndexManager.removeModal(modalId);
+    // 只有在没有其他弹窗时才移除 modal-open 类
+    if (modalZIndexManager.modalStack.length === 0) {
+      document.body.classList.remove('modal-open');
+    }
+  }
+}
+
+// 关闭最顶层的用户主页弹窗（向后兼容）
+function closeUserProfileModal() {
+  // 找到最后一个（最顶层的）用户主页弹窗
+  const modals = document.querySelectorAll('.user-profile-modal-instance');
+  if (modals.length > 0) {
+    const lastModal = modals[modals.length - 1];
+    closeUserProfileModalById(lastModal.id);
+  }
+}
+
+// 关闭作者主页（兼容旧版）
+function closeAuthorProfile() {
+  closeUserProfileModal();
+  const oldModal = document.getElementById('author-profile-modal');
+  if (oldModal) oldModal.style.display = 'none';
+}
+
+// 打开评论者主页（用于点击评论头像）- 复用主站用户主页样式
+function openCommentAuthorProfile(commentAuthorToken) {
+  openUserProfile(commentAuthorToken);
+}
+
+// 关注/取关评论者 - 复用主页弹窗关注功能
 function toggleFollowCommentAuthor(targetToken) {
+  toggleFollowFromProfile(targetToken);
+}
+
+// 兼容旧版API
+function toggleFollowCommentAuthorLegacy(targetToken) {
   const userToken = getUserToken();
   if (!userToken) {
     alert('请先登录后再关注');
@@ -1265,7 +2039,7 @@ function toggleFollowCommentAuthor(targetToken) {
   }
   
   const btn = document.getElementById('comment-author-follow-btn');
-  const isFollowing = btn && btn.textContent === '已关注';
+  const isFollowing = btn && btn.textContent.includes('已关注');
   
   fetch('/api/users/' + targetToken + '/follow', {
     method: isFollowing ? 'DELETE' : 'POST',
@@ -1276,12 +2050,12 @@ function toggleFollowCommentAuthor(targetToken) {
       if (data.success && btn) {
         if (isFollowing) {
           btn.textContent = '+ 关注';
-          btn.style.background = '#fe2c55';
+          btn.style.background = 'linear-gradient(135deg,#6366f1,#8b5cf6)';
           btn.style.color = '#fff';
         } else {
-          btn.textContent = '已关注';
-          btn.style.background = '#f5f5f5';
-          btn.style.color = '#999';
+          btn.textContent = '✓ 已关注';
+          btn.style.background = '#333';
+          btn.style.color = '#888';
         }
       }
     }).catch(() => {
@@ -1314,12 +2088,222 @@ function checkFollowStatusForProfile() {
     .then(data => {
       const btn = document.getElementById('profile-follow-btn');
       if (btn && data.success && data.following) {
-        btn.style.background = '#eee';
-        btn.style.color = '#666';
+        btn.style.background = '#333';
+        btn.style.color = '#888';
         btn.innerHTML = '✓ 已关注';
       }
     })
     .catch(() => {});
+}
+
+// 当前查看的用户token和标签
+let currentViewingUserToken = null;
+let currentFollowTab = 'following';
+// 关注列表弹窗计数器和当前弹窗ID
+let followModalCounter = 0;
+let currentFollowModalId = null;
+
+// 打开关注/粉丝列表弹窗
+async function openFollowListFromGame(targetToken, tab) {
+  currentViewingUserToken = targetToken || authorToken;
+  currentFollowTab = tab || 'following';
+  
+  // 生成唯一的弹窗ID（支持多层嵌套）
+  followModalCounter++;
+  const modalId = 'follow-modal-game-' + followModalCounter;
+  currentFollowModalId = modalId;
+  
+  // 创建弹窗
+  const modal = document.createElement('div');
+  modal.className = 'modal active follow-modal-instance';
+  modal.id = modalId;
+  modal.style.zIndex = modalZIndexManager.getNextZIndex(modalId);
+  modal.onclick = (e) => { if (e.target === modal) closeFollowModalGameById(modalId); };
+  
+  modal.innerHTML = 
+    '<div class="modal-content modal-medium">' +
+      '<div class="modal-header">' +
+        '<h3 class="follow-modal-title">' + (tab === 'followers' ? '🌟 粉丝列表' : '👥 关注列表') + '</h3>' +
+        '<button class="yxj-modal-close" onclick="closeFollowModalGameById(\\x27' + modalId + '\\x27)">×</button>' +
+      '</div>' +
+      '<div class="modal-body">' +
+        '<div class="follow-tabs">' +
+          '<button class="follow-tab-btn ' + (tab === 'following' ? 'active' : '') + '" data-tab="following" onclick="switchFollowTabGameById(\\x27' + modalId + '\\x27, \\x27following\\x27)">' +
+            '关注 <span class="follow-tab-count" data-type="following">0</span>' +
+          '</button>' +
+          '<button class="follow-tab-btn ' + (tab === 'followers' ? 'active' : '') + '" data-tab="followers" onclick="switchFollowTabGameById(\\x27' + modalId + '\\x27, \\x27followers\\x27)">' +
+            '粉丝 <span class="follow-tab-count" data-type="followers">0</span>' +
+          '</button>' +
+        '</div>' +
+        '<div class="follow-list">' +
+          '<div class="follow-loading"><div class="loading-spinner"></div><span>加载中...</span></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  
+  document.body.appendChild(modal);
+  document.body.classList.add('modal-open');
+  
+  // 加载统计数据
+  try {
+    const statsRes = await fetch('/api/users/' + currentViewingUserToken + '/follow-stats', { headers: getAuthHeaders() });
+    const statsData = await statsRes.json();
+    if (statsData.success) {
+      const following = statsData.followingCount || statsData.following || 0;
+      const followers = statsData.followerCount || statsData.followers || 0;
+      // 使用 modal 内的选择器
+      const followingCountEl = modal.querySelector('.follow-tab-count[data-type="following"]');
+      const followersCountEl = modal.querySelector('.follow-tab-count[data-type="followers"]');
+      if (followingCountEl) followingCountEl.textContent = following;
+      if (followersCountEl) followersCountEl.textContent = followers;
+    }
+  } catch (e) {
+    console.error('加载关注统计失败:', e);
+  }
+  
+  // 加载列表
+  await loadFollowListGameById(modalId, currentFollowTab);
+}
+
+// 根据ID关闭指定的关注列表弹窗
+function closeFollowModalGameById(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.remove();
+    modalZIndexManager.removeModal(modalId);
+    // 只有在没有其他弹窗时才移除 modal-open 类
+    if (modalZIndexManager.modalStack.length === 0) {
+      document.body.classList.remove('modal-open');
+    }
+  }
+}
+
+// 关闭最顶层的关注列表弹窗（向后兼容）
+function closeFollowModalGame() {
+  const modals = document.querySelectorAll('.follow-modal-instance');
+  if (modals.length > 0) {
+    const lastModal = modals[modals.length - 1];
+    closeFollowModalGameById(lastModal.id);
+  }
+}
+
+// 切换关注/粉丝标签（通过弹窗ID）
+async function switchFollowTabGameById(modalId, tab) {
+  currentFollowTab = tab;
+  
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
+  
+  const followingBtn = modal.querySelector('.follow-tab-btn[data-tab="following"]');
+  const followersBtn = modal.querySelector('.follow-tab-btn[data-tab="followers"]');
+  if (followingBtn) followingBtn.classList.toggle('active', tab === 'following');
+  if (followersBtn) followersBtn.classList.toggle('active', tab === 'followers');
+  
+  const modalTitle = modal.querySelector('.follow-modal-title');
+  if (modalTitle) {
+    modalTitle.textContent = tab === 'following' ? '👥 关注列表' : '🌟 粉丝列表';
+  }
+  
+  await loadFollowListGameById(modalId, tab);
+}
+
+// 向后兼容的切换函数
+async function switchFollowTabGame(tab) {
+  if (currentFollowModalId) {
+    await switchFollowTabGameById(currentFollowModalId, tab);
+  }
+}
+
+// 加载关注/粉丝列表（通过弹窗ID）
+async function loadFollowListGameById(modalId, type) {
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
+  
+  const listContainer = modal.querySelector('.follow-list');
+  if (!listContainer) return;
+  
+  listContainer.innerHTML = '<div class="follow-loading"><div class="loading-spinner"></div><span>加载中...</span></div>';
+  
+  try {
+    const endpoint = type === 'following' 
+      ? '/api/users/' + currentViewingUserToken + '/following'
+      : '/api/users/' + currentViewingUserToken + '/followers';
+    
+    const response = await fetch(endpoint, { headers: getAuthHeaders() });
+    const data = await response.json();
+    
+    if (data.success && data.users && data.users.length > 0) {
+      listContainer.innerHTML = data.users.map(function(user) {
+        return '<div class="follow-user-item" data-token="' + user.token + '">' +
+          '<div class="follow-user-avatar" onclick="openUserProfile(\\x27' + user.token + '\\x27)">' +
+            (user.avatar || getAvatarEmoji(user.token)) +
+          '</div>' +
+          '<div class="follow-user-info" onclick="openUserProfile(\\x27' + user.token + '\\x27)">' +
+            '<div class="follow-user-name">' + escapeHtml(user.nickname || '游戏家用户') + '</div>' +
+            '<div class="follow-user-stats">' +
+              '<span>🎮 ' + (user.games_count || 0) + ' 作品</span>' +
+              '<span>👥 ' + (user.followers_count || 0) + ' 粉丝</span>' +
+            '</div>' +
+          '</div>' +
+          '<button class="follow-action-btn ' + (user.is_following ? 'following' : '') + '" onclick="event.stopPropagation(); toggleFollowUserGame(\\x27' + user.token + '\\x27, this)">' +
+            (user.is_following ? '已关注' : '关注') +
+          '</button>' +
+        '</div>';
+      }).join('');
+    } else {
+      listContainer.innerHTML = 
+        '<div class="follow-empty">' +
+          '<div class="follow-empty-icon">' + (type === 'following' ? '👤' : '🌟') + '</div>' +
+          '<div class="follow-empty-text">' + (type === 'following' ? '还没有关注任何人' : '还没有粉丝') + '</div>' +
+        '</div>';
+    }
+  } catch (error) {
+    console.error('加载关注列表失败:', error);
+    listContainer.innerHTML = '<div class="follow-empty"><div class="follow-empty-icon">😕</div><div class="follow-empty-text">加载失败，请重试</div></div>';
+  }
+}
+
+// 向后兼容的加载函数
+async function loadFollowListGame(type) {
+  if (currentFollowModalId) {
+    await loadFollowListGameById(currentFollowModalId, type);
+  }
+}
+
+// 在列表中切换关注状态
+async function toggleFollowUserGame(targetToken, btn) {
+  const userToken = getUserToken();
+  if (!userToken) {
+    alert('请先登录');
+    return;
+  }
+  
+  const isFollowing = btn.classList.contains('following');
+  
+  // 乐观更新
+  btn.classList.toggle('following', !isFollowing);
+  btn.textContent = isFollowing ? '关注' : '已关注';
+  
+  try {
+    const response = await fetch('/api/users/' + targetToken + '/follow', {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
+    const data = await response.json();
+    
+    if (data.success) {
+      btn.classList.toggle('following', data.following);
+      btn.textContent = data.following ? '已关注' : '关注';
+    } else {
+      // 回滚
+      btn.classList.toggle('following', isFollowing);
+      btn.textContent = isFollowing ? '已关注' : '关注';
+    }
+  } catch (e) {
+    // 回滚
+    btn.classList.toggle('following', isFollowing);
+    btn.textContent = isFollowing ? '已关注' : '关注';
+  }
 }
 
 // 切换关注状态
@@ -1363,48 +2347,60 @@ function toggleFollow() {
       if (data.success) {
         btn.classList.toggle('following', data.following);
         btn.innerHTML = data.following ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+        // 显示提示
+        if (data.creditAwarded && data.creditMessage) {
+          showToast('关注成功 ✨ ' + data.creditMessage, 'success');
+        } else if (data.following) {
+          showToast('关注成功 ✨', 'success');
+        } else {
+          showToast('已取消关注');
+        }
       } else {
         // 回滚
         btn.classList.toggle('following', isFollowing);
         btn.innerHTML = isFollowing ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+        showToast('操作失败，请重试');
       }
     })
     .catch(() => {
       btn.classList.toggle('following', isFollowing);
       btn.innerHTML = isFollowing ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+      showToast('网络错误，请重试');
     });
 }
 
 // 从主页弹窗切换关注
-function toggleFollowFromProfile() {
-  if (!authorToken) return;
+function toggleFollowFromProfile(targetToken) {
+  const targetUser = targetToken || authorToken;
+  if (!targetUser) return;
   
-  const userToken = getUserToken();
-  if (!userToken) {
+  const currentUserToken = getUserToken();
+  if (!currentUserToken) {
     alert('请先登录');
     return;
   }
   
-  if (authorToken === userToken) {
+  if (targetUser === currentUserToken) {
     alert('不能关注自己哦');
     return;
   }
   
-  const btn = document.getElementById('profile-follow-btn');
-  const isFollowing = btn.innerHTML.includes('已关注');
+  // 新弹窗的按钮
+  const btn = document.getElementById('user-profile-follow-btn') || document.getElementById('profile-follow-btn');
+  if (!btn) return;
+  
+  const isFollowing = btn.classList.contains('yxj-btn-secondary') || btn.classList.contains('btn-secondary') || btn.innerHTML.includes('已关注');
   
   // 乐观更新
   if (isFollowing) {
-    btn.style.background = '#fe2c55';
-    btn.style.color = '#fff';
+    btn.className = 'yxj-btn yxj-btn-primary yxj-follow-btn';
     btn.innerHTML = '+ 关注';
   } else {
-    btn.style.background = '#eee';
-    btn.style.color = '#666';
-    btn.innerHTML = '✓ 已关注';
+    btn.className = 'yxj-btn yxj-btn-secondary yxj-follow-btn';
+    btn.innerHTML = '已关注';
   }
   
-  fetch('/api/users/' + authorToken + '/follow', {
+  fetch('/api/users/' + targetUser + '/follow', {
     method: 'POST',
     headers: getAuthHeaders()
   })
@@ -1412,12 +2408,10 @@ function toggleFollowFromProfile() {
     .then(data => {
       if (data.success) {
         if (data.following) {
-          btn.style.background = '#eee';
-          btn.style.color = '#666';
-          btn.innerHTML = '✓ 已关注';
+          btn.className = 'yxj-btn yxj-btn-secondary yxj-follow-btn';
+          btn.innerHTML = '已关注';
         } else {
-          btn.style.background = '#fe2c55';
-          btn.style.color = '#fff';
+          btn.className = 'yxj-btn yxj-btn-primary yxj-follow-btn';
           btn.innerHTML = '+ 关注';
         }
         // 同步更新底部的关注按钮
@@ -1428,7 +2422,16 @@ function toggleFollowFromProfile() {
         }
       }
     })
-    .catch(() => {});
+    .catch(() => {
+      // 回滚
+      if (isFollowing) {
+        btn.className = 'yxj-btn yxj-btn-secondary yxj-follow-btn';
+        btn.innerHTML = '已关注';
+      } else {
+        btn.className = 'yxj-btn yxj-btn-primary yxj-follow-btn';
+        btn.innerHTML = '+ 关注';
+      }
+    });
 }
 
 // ==================== 留言板功能 ====================
@@ -1499,13 +2502,11 @@ function loadGameComments(isRefresh = true) {
 // 渲染留言列表
 function renderComments() {
   const listEl = document.getElementById('game-comments-list');
-  const loadMoreBtn = document.getElementById('comments-load-more-btn');
   
   if (!listEl) return;
   
   if (commentsData.comments.length === 0) {
     listEl.innerHTML = '<div style="text-align:center;padding:30px;color:#999;">💬 还没有留言，快来抢沙发！</div>';
-    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
     return;
   }
   
@@ -1532,11 +2533,12 @@ function renderComments() {
     '</div>';
   });
   
-  listEl.innerHTML = html;
-  
-  if (loadMoreBtn) {
-    loadMoreBtn.style.display = commentsData.hasMore ? 'block' : 'none';
+  // 添加滚动加载状态提示
+  if (commentsData.hasMore) {
+    html += '<div class="comments-scroll-loading" id="comments-scroll-hint">下拉加载更多...</div>';
   }
+  
+  listEl.innerHTML = html;
 }
 
 // 更新评论数量
@@ -1607,13 +2609,19 @@ function submitGameComment() {
         commentsData.total++;
         renderComments();
         updateCommentsCount();
+        // 显示提示
+        if (data.creditAwarded && data.creditMessage) {
+          showToast('留言发布成功！' + data.creditMessage, 'success');
+        } else {
+          showToast('留言发布成功', 'success');
+        }
       } else {
-        alert(data.error || '发布失败');
+        showToast(data.error || '发布失败');
       }
     })
     .catch(err => {
       console.error('发布留言失败:', err);
-      alert('网络错误，请重试');
+      showToast('网络错误，请重试');
     })
     .finally(() => {
       submitBtn.disabled = false;
@@ -1646,12 +2654,6 @@ function deleteGameComment(commentId) {
     });
 }
 
-// 加载更多留言
-function loadMoreGameComments() {
-  if (!commentsData.hasMore || commentsData.isLoading) return;
-  loadGameComments(false);
-}
-
 // 更新留言输入区域显示
 function updateCommentInputUI() {
   const loginHint = document.getElementById('comment-login-hint');
@@ -1669,11 +2671,28 @@ function updateCommentInputUI() {
   }
 }
 
+// 初始化滚动加载
+function initCommentsScroll() {
+  const wrapper = document.querySelector('.comments-body-wrapper');
+  if (!wrapper) return;
+  
+  wrapper.addEventListener('scroll', function() {
+    if (commentsData.isLoading || !commentsData.hasMore) return;
+    
+    // 距离底部50px时触发加载
+    const scrollBottom = wrapper.scrollHeight - wrapper.scrollTop - wrapper.clientHeight;
+    if (scrollBottom < 50) {
+      loadGameComments(false);
+    }
+  });
+}
+
 // 初始化
 window.addEventListener('load', function() {
   loadStats();
   updateCommentInputUI();
   loadGameComments(true);
+  initCommentsScroll();
 });
 </script>
 `;
@@ -1694,6 +2713,8 @@ window.addEventListener('load', function() {
   <meta property="og:type" content="website">
   <title>${safeTitle} - AI游戏</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+  <!-- 引用主站CSS样式 -->
+  <link rel="stylesheet" href="/css/style.css">
   <!-- YXJ-PLATFORM-STYLE-START -->
   <style>${promoBarStyle}</style>
   <!-- YXJ-PLATFORM-STYLE-END -->
@@ -2594,6 +3615,21 @@ const defaultConfigs = [
   { key: 'credits_watch_ad', value: '1', description: '看广告奖励' },
   { key: 'credits_daily_ad_limit', value: '3', description: '每日广告上限' },
   { key: 'credits_share_game', value: '1', description: '分享游戏奖励' },
+  { key: 'credits_share_game_daily_limit', value: '5', description: '每日分享游戏获取积分上限次数' },
+  { key: 'credits_invite_friend', value: '3', description: '邀请好友奖励' },
+  { key: 'credits_invite_friend_daily_limit', value: '5', description: '每日邀请好友获取积分上限次数' },
+  { key: 'credits_article', value: '1', description: '阅读文章奖励' },
+  { key: 'credits_article_daily_limit', value: '3', description: '每日阅读文章获取积分上限次数' },
+  // 行为积分配置
+  { key: 'credits_action_like', value: '0.1', description: '点赞作品奖励积分' },
+  { key: 'credits_action_like_daily_limit', value: '10', description: '每日点赞获取积分上限次数' },
+  { key: 'credits_action_favorite', value: '0.2', description: '收藏作品奖励积分' },
+  { key: 'credits_action_favorite_daily_limit', value: '5', description: '每日收藏获取积分上限次数' },
+  { key: 'credits_action_follow', value: '0.2', description: '关注别人奖励积分' },
+  { key: 'credits_action_follow_daily_limit', value: '5', description: '每日关注获取积分上限次数' },
+  { key: 'credits_action_comment', value: '0.5', description: '评论作品奖励积分' },
+  { key: 'credits_action_comment_daily_limit', value: '2', description: '每日评论获取积分上限次数' },
+  { key: 'credits_comment_min_length', value: '10', description: '评论获得积分的最低字数' },
   { key: 'site_name', value: 'AI游戏工坊', description: '网站名称' },
   { key: 'site_announcement', value: '', description: '网站公告' },
   // LLM 默认配置
@@ -2675,6 +3711,124 @@ db.exec(`
   )
 `);
 
+// 创建文章推广验证码表
+db.exec(`
+  CREATE TABLE IF NOT EXISTS article_promo_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT UNIQUE NOT NULL,
+    article_id TEXT,
+    description TEXT,
+    reward INTEGER DEFAULT 1,
+    max_uses INTEGER,
+    used_count INTEGER DEFAULT 0,
+    is_active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+// 创建验证码使用记录表
+db.exec(`
+  CREATE TABLE IF NOT EXISTS promo_code_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_token TEXT NOT NULL,
+    code TEXT NOT NULL,
+    article_id TEXT,
+    source TEXT DEFAULT 'code',
+    ip_address TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_token, code)
+  )
+`);
+
+// 创建每日行为积分记录表
+db.exec(`
+  CREATE TABLE IF NOT EXISTS daily_action_credits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_token TEXT NOT NULL,
+    action_type TEXT NOT NULL,
+    action_date TEXT NOT NULL,
+    count INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_token, action_type, action_date)
+  )
+`);
+
+// 创建评论积分记录表（用于同游戏仅首次获得积分）
+db.exec(`
+  CREATE TABLE IF NOT EXISTS comment_credit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_token TEXT NOT NULL,
+    game_id TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_token, game_id)
+  )
+`);
+
+// 创建点赞积分记录表（用于同游戏仅首次获得积分，防止取消再点赞重复获取）
+db.exec(`
+  CREATE TABLE IF NOT EXISTS like_credit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_token TEXT NOT NULL,
+    game_id TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_token, game_id)
+  )
+`);
+
+// 创建收藏积分记录表（用于同游戏仅首次获得积分，防止取消再收藏重复获取）
+db.exec(`
+  CREATE TABLE IF NOT EXISTS favorite_credit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_token TEXT NOT NULL,
+    game_id TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_token, game_id)
+  )
+`);
+
+// 创建关注积分记录表（用于同用户仅首次获得积分，防止取消再关注重复获取）
+db.exec(`
+  CREATE TABLE IF NOT EXISTS follow_credit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    follower_token TEXT NOT NULL,
+    following_token TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(follower_token, following_token)
+  )
+`);
+
+// 将积分字段改为支持小数（REAL类型）
+try {
+  // 检查当前字段类型，如果是INTEGER则需要迁移
+  const tableInfo = db.prepare("PRAGMA table_info(user_credits)").all();
+  const creditsColumn = tableInfo.find(col => col.name === 'credits');
+  if (creditsColumn && creditsColumn.type === 'INTEGER') {
+    console.log('[DB] 迁移积分字段为REAL类型...');
+    db.exec(`
+      ALTER TABLE user_credits RENAME TO user_credits_old;
+      CREATE TABLE user_credits (
+        user_token TEXT PRIMARY KEY,
+        credits REAL DEFAULT 5,
+        total_earned REAL DEFAULT 5,
+        total_used REAL DEFAULT 0,
+        first_gen_used INTEGER DEFAULT 0,
+        followed_wechat INTEGER DEFAULT 0,
+        last_ad_date TEXT,
+        ad_count_today INTEGER DEFAULT 0,
+        last_login_date TEXT,
+        daily_login_claimed INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+      INSERT INTO user_credits SELECT * FROM user_credits_old;
+      DROP TABLE user_credits_old;
+    `);
+    console.log('[DB] 积分字段迁移完成');
+  }
+} catch (e) {
+  // 忽略错误
+}
+
 // 确保用户积分记录存在的辅助函数
 function ensureUserCredits(userToken) {
   let credits = db.prepare('SELECT * FROM user_credits WHERE user_token = ?').get(userToken);
@@ -2690,6 +3844,190 @@ function ensureUserCredits(userToken) {
   }
   
   return credits;
+}
+
+// ==================== 行为积分系统 ====================
+
+/**
+ * 尝试发放行为积分
+ * @param {string} userToken - 用户Token
+ * @param {string} actionType - 行为类型: like/favorite/follow/comment
+ * @param {object} options - 额外选项
+ * @param {string} options.gameId - 游戏ID（用于评论去重）
+ * @param {string} options.commentContent - 评论内容（用于字数检查和重复检测）
+ * @returns {object} { awarded: boolean, credits: number, message: string }
+ */
+function tryAwardActionCredits(userToken, actionType, options = {}) {
+  console.log(`[积分] tryAwardActionCredits 调用: actionType=${actionType}, userToken=${userToken?.substring(0,8)}...`);
+  
+  if (!userToken) {
+    console.log('[积分] 用户未登录');
+    return { awarded: false, credits: 0, message: '未登录' };
+  }
+
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  
+  // 获取配置
+  const rewardCredits = parseFloat(getConfig(`credits_action_${actionType}`, '0'));
+  const dailyLimit = parseInt(getConfig(`credits_action_${actionType}_daily_limit`, '0'));
+  
+  console.log(`[积分] 配置: rewardCredits=${rewardCredits}, dailyLimit=${dailyLimit}`);
+  
+  if (rewardCredits <= 0 || dailyLimit <= 0) {
+    console.log('[积分] 配置为0，不发放积分');
+    return { awarded: false, credits: 0, message: '该行为暂不奖励积分' };
+  }
+
+  // 点赞特殊处理：同游戏仅首次获得积分（防止取消再点赞重复获取）
+  if (actionType === 'like' && options.gameId) {
+    const existingLikeCredit = db.prepare(
+      'SELECT id FROM like_credit_logs WHERE user_token = ? AND game_id = ?'
+    ).get(userToken, options.gameId);
+    
+    if (existingLikeCredit) {
+      return { awarded: false, credits: 0, message: '该游戏已获得过点赞积分' };
+    }
+  }
+  
+  // 收藏特殊处理：同游戏仅首次获得积分（防止取消再收藏重复获取）
+  if (actionType === 'favorite' && options.gameId) {
+    const existingFavoriteCredit = db.prepare(
+      'SELECT id FROM favorite_credit_logs WHERE user_token = ? AND game_id = ?'
+    ).get(userToken, options.gameId);
+    
+    if (existingFavoriteCredit) {
+      return { awarded: false, credits: 0, message: '该游戏已获得过收藏积分' };
+    }
+  }
+  
+  // 关注特殊处理：同用户仅首次获得积分（防止取消再关注重复获取）
+  if (actionType === 'follow' && options.followingToken) {
+    const existingFollowCredit = db.prepare(
+      'SELECT id FROM follow_credit_logs WHERE follower_token = ? AND following_token = ?'
+    ).get(userToken, options.followingToken);
+    
+    if (existingFollowCredit) {
+      return { awarded: false, credits: 0, message: '该用户已获得过关注积分' };
+    }
+  }
+
+  // 评论特殊处理：字数检查
+  if (actionType === 'comment') {
+    const minLength = parseInt(getConfig('credits_comment_min_length', '10'));
+    const content = options.commentContent || '';
+    if (content.length < minLength) {
+      return { awarded: false, credits: 0, message: `评论至少${minLength}字才能获得积分` };
+    }
+    
+    // 同游戏仅首次获得积分
+    if (options.gameId) {
+      const existingCommentCredit = db.prepare(
+        'SELECT id FROM comment_credit_logs WHERE user_token = ? AND game_id = ?'
+      ).get(userToken, options.gameId);
+      
+      if (existingCommentCredit) {
+        return { awarded: false, credits: 0, message: '该游戏已获得过评论积分' };
+      }
+    }
+    
+    // 重复内容检测（检查今日评论是否有相似内容）
+    const todayComments = db.prepare(`
+      SELECT content FROM game_comments 
+      WHERE user_token = ? AND date(created_at) = ? AND content != ?
+    `).all(userToken, today, options.commentContent);
+    
+    for (const comment of todayComments) {
+      if (calculateSimilarity(comment.content, options.commentContent) > 0.8) {
+        return { awarded: false, credits: 0, message: '评论内容与之前过于相似' };
+      }
+    }
+  }
+
+  // 检查今日已获得次数
+  let dailyRecord = db.prepare(
+    'SELECT count FROM daily_action_credits WHERE user_token = ? AND action_type = ? AND action_date = ?'
+  ).get(userToken, actionType, today);
+  
+  const currentCount = dailyRecord?.count || 0;
+  
+  if (currentCount >= dailyLimit) {
+    return { awarded: false, credits: 0, message: '今日该类型积分已达上限' };
+  }
+
+  // 发放积分
+  ensureUserCredits(userToken);
+  
+  db.prepare(`
+    UPDATE user_credits 
+    SET credits = credits + ?, total_earned = total_earned + ?, updated_at = CURRENT_TIMESTAMP 
+    WHERE user_token = ?
+  `).run(rewardCredits, rewardCredits, userToken);
+  
+  // 记录积分日志
+  const actionNames = { like: '点赞', favorite: '收藏', follow: '关注', comment: '评论' };
+  db.prepare(`
+    INSERT INTO credit_logs (user_token, amount, type, description)
+    VALUES (?, ?, ?, ?)
+  `).run(userToken, rewardCredits, `action_${actionType}`, `${actionNames[actionType]}作品奖励`);
+  
+  // 更新每日计数
+  db.prepare(`
+    INSERT INTO daily_action_credits (user_token, action_type, action_date, count)
+    VALUES (?, ?, ?, 1)
+    ON CONFLICT(user_token, action_type, action_date) 
+    DO UPDATE SET count = count + 1
+  `).run(userToken, actionType, today);
+  
+  // 点赞：记录游戏积分获取（防止取消再点赞重复获取）
+  if (actionType === 'like' && options.gameId) {
+    db.prepare(`
+      INSERT OR IGNORE INTO like_credit_logs (user_token, game_id) VALUES (?, ?)
+    `).run(userToken, options.gameId);
+  }
+  
+  // 收藏：记录游戏积分获取（防止取消再收藏重复获取）
+  if (actionType === 'favorite' && options.gameId) {
+    db.prepare(`
+      INSERT OR IGNORE INTO favorite_credit_logs (user_token, game_id) VALUES (?, ?)
+    `).run(userToken, options.gameId);
+  }
+  
+  // 关注：记录用户积分获取（防止取消再关注重复获取）
+  if (actionType === 'follow' && options.followingToken) {
+    db.prepare(`
+      INSERT OR IGNORE INTO follow_credit_logs (follower_token, following_token) VALUES (?, ?)
+    `).run(userToken, options.followingToken);
+  }
+  
+  // 评论：记录游戏积分获取
+  if (actionType === 'comment' && options.gameId) {
+    db.prepare(`
+      INSERT OR IGNORE INTO comment_credit_logs (user_token, game_id) VALUES (?, ?)
+    `).run(userToken, options.gameId);
+  }
+  
+  const remaining = dailyLimit - currentCount - 1;
+  return { 
+    awarded: true, 
+    credits: rewardCredits, 
+    message: `+${rewardCredits}积分`,
+    remaining: remaining
+  };
+}
+
+/**
+ * 计算两个字符串的相似度（简单的Jaccard相似度）
+ */
+function calculateSimilarity(str1, str2) {
+  if (!str1 || !str2) return 0;
+  
+  const set1 = new Set(str1.split(''));
+  const set2 = new Set(str2.split(''));
+  
+  const intersection = new Set([...set1].filter(x => set2.has(x)));
+  const union = new Set([...set1, ...set2]);
+  
+  return intersection.size / union.size;
 }
 
 // ==================== 账号系统 API ====================
@@ -3465,6 +4803,36 @@ app.get('/api/credits', (req, res) => {
       user.ad_count_today = 0;
     }
     
+    // 获取每日分享/邀请/阅读文章的使用次数
+    const getDailyCount = (type) => {
+      const record = db.prepare(
+        'SELECT count FROM daily_action_credits WHERE user_token = ? AND action_type = ? AND action_date = ?'
+      ).get(userToken, type, today);
+      return record?.count || 0;
+    };
+    
+    const dailyCounts = {
+      share: getDailyCount('share_game'),
+      invite: getDailyCount('invite_friend'),
+      article: getDailyCount('article_read')
+    };
+    
+    // 获取配置（确保返回有效数值）
+    const extraConfig = {
+      shareGame: {
+        credits: parseFloat(getConfig('credits_share_game', '1')) || 1,
+        dailyLimit: parseInt(getConfig('credits_share_game_daily_limit', '5')) || 5
+      },
+      inviteFriend: {
+        credits: parseFloat(getConfig('credits_invite_friend', '3')) || 3,
+        dailyLimit: parseInt(getConfig('credits_invite_friend_daily_limit', '5')) || 5
+      },
+      article: {
+        credits: parseFloat(getConfig('credits_article', '1')) || 1,
+        dailyLimit: parseInt(getConfig('credits_article_daily_limit', '3')) || 3
+      }
+    };
+    
     res.json({
       success: true,
       credits: user.credits,
@@ -3472,6 +4840,8 @@ app.get('/api/credits', (req, res) => {
       totalUsed: user.total_used,
       followedWechat: user.followed_wechat === 1,
       adCountToday: user.ad_count_today,
+      dailyCounts,
+      extraConfig,
       config: CREDITS_CONFIG
     });
   } catch (error) {
@@ -3701,6 +5071,473 @@ app.post('/api/credits/daily-login', (req, res) => {
   }
 });
 
+// ==================== 文章推广验证码系统 ====================
+
+// 文章链接访问领取积分
+app.post('/api/credits/article-visit', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    const { articleId } = req.body;
+    const clientIP = getClientIP(req);
+    
+    if (!userToken) {
+      return res.status(400).json({ success: false, error: '缺少用户标识' });
+    }
+    
+    if (!articleId) {
+      return res.status(400).json({ success: false, error: '缺少文章标识' });
+    }
+    
+    // 查找对应的验证码（同时匹配 article_id 和 code 字段）
+    const normalizedId = articleId.trim().toUpperCase();
+    const promoCode = db.prepare(`
+      SELECT * FROM article_promo_codes 
+      WHERE (UPPER(article_id) = ? OR UPPER(code) = ?) AND is_active = 1
+    `).get(normalizedId, normalizedId);
+    
+    if (!promoCode) {
+      return res.status(400).json({ success: false, error: '无效的文章链接' });
+    }
+    
+    // 检查是否已领取
+    const existingLog = db.prepare(`
+      SELECT * FROM promo_code_logs 
+      WHERE user_token = ? AND code = ?
+    `).get(userToken, promoCode.code);
+    
+    if (existingLog) {
+      return res.json({ 
+        success: false, 
+        error: '已领取过该福利',
+        alreadyClaimed: true
+      });
+    }
+    
+    // 检查使用次数限制
+    if (promoCode.max_uses && promoCode.used_count >= promoCode.max_uses) {
+      return res.status(400).json({ success: false, error: '该福利已被领完' });
+    }
+    
+    // 检查今日阅读文章是否达上限
+    const today = new Date().toISOString().split('T')[0];
+    const articleDailyLimit = parseInt(getConfig('credits_article_daily_limit', '3'));
+    const articleDailyRecord = db.prepare(
+      'SELECT count FROM daily_action_credits WHERE user_token = ? AND action_type = ? AND action_date = ?'
+    ).get(userToken, 'article_read', today);
+    const articleDailyCount = articleDailyRecord?.count || 0;
+    
+    if (articleDailyCount >= articleDailyLimit) {
+      return res.json({ 
+        success: false, 
+        error: '今日阅读文章奖励已达上限',
+        limitReached: true,
+        todayCount: articleDailyCount,
+        dailyLimit: articleDailyLimit
+      });
+    }
+    
+    // 确保用户积分记录存在
+    ensureUserCredits(userToken);
+    
+    // 发放积分
+    const reward = promoCode.reward || parseFloat(getConfig('credits_article', '1'));
+    db.prepare(`
+      UPDATE user_credits 
+      SET credits = credits + ?, total_earned = total_earned + ?, updated_at = CURRENT_TIMESTAMP 
+      WHERE user_token = ?
+    `).run(reward, reward, userToken);
+    
+    // 记录使用日志
+    db.prepare(`
+      INSERT INTO promo_code_logs (user_token, code, article_id, source, ip_address)
+      VALUES (?, ?, ?, 'link', ?)
+    `).run(userToken, promoCode.code, articleId, clientIP);
+    
+    // 更新验证码使用次数
+    db.prepare(`
+      UPDATE article_promo_codes SET used_count = used_count + 1 WHERE code = ?
+    `).run(promoCode.code);
+    
+    // 记录积分日志
+    db.prepare(`
+      INSERT INTO credit_logs (user_token, amount, type, description)
+      VALUES (?, ?, 'article_visit', ?)
+    `).run(userToken, reward, `文章福利: ${promoCode.description || articleId}`);
+    
+    // 更新每日计数
+    db.prepare(`
+      INSERT INTO daily_action_credits (user_token, action_type, action_date, count)
+      VALUES (?, 'article_read', ?, 1)
+      ON CONFLICT(user_token, action_type, action_date) DO UPDATE SET count = count + 1
+    `).run(userToken, today);
+    
+    const updated = db.prepare('SELECT credits FROM user_credits WHERE user_token = ?').get(userToken);
+    const newCount = articleDailyCount + 1;
+    
+    res.json({ 
+      success: true, 
+      credits: updated.credits, 
+      earned: reward,
+      message: `🎉 阅读福利已到账！+${reward}积分`,
+      todayCount: newCount,
+      dailyLimit: articleDailyLimit,
+      remaining: articleDailyLimit - newCount
+    });
+  } catch (error) {
+    console.error('文章访问领取积分错误:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 验证码兑换积分
+app.post('/api/credits/redeem-code', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    const { code } = req.body;
+    const clientIP = getClientIP(req);
+    
+    if (!userToken) {
+      return res.status(400).json({ success: false, error: '缺少用户标识' });
+    }
+    
+    if (!code) {
+      return res.status(400).json({ success: false, error: '请输入验证码' });
+    }
+    
+    // 验证码统一转大写
+    const normalizedCode = code.trim().toUpperCase();
+    
+    // 查找验证码
+    const promoCode = db.prepare(`
+      SELECT * FROM article_promo_codes 
+      WHERE UPPER(code) = ? AND is_active = 1
+    `).get(normalizedCode);
+    
+    if (!promoCode) {
+      return res.status(400).json({ success: false, error: '验证码无效' });
+    }
+    
+    // 检查是否已使用
+    const existingLog = db.prepare(`
+      SELECT * FROM promo_code_logs 
+      WHERE user_token = ? AND UPPER(code) = ?
+    `).get(userToken, normalizedCode);
+    
+    if (existingLog) {
+      return res.status(400).json({ 
+        success: false, 
+        error: '您已使用过该验证码',
+        alreadyUsed: true
+      });
+    }
+    
+    // 检查使用次数限制
+    if (promoCode.max_uses && promoCode.used_count >= promoCode.max_uses) {
+      return res.status(400).json({ success: false, error: '该验证码已达使用上限' });
+    }
+    
+    // 检查今日阅读文章是否达上限
+    const today = new Date().toISOString().split('T')[0];
+    const articleDailyLimit = parseInt(getConfig('credits_article_daily_limit', '3'));
+    const articleDailyRecord = db.prepare(
+      'SELECT count FROM daily_action_credits WHERE user_token = ? AND action_type = ? AND action_date = ?'
+    ).get(userToken, 'article_read', today);
+    const articleDailyCount = articleDailyRecord?.count || 0;
+    
+    if (articleDailyCount >= articleDailyLimit) {
+      return res.status(400).json({ 
+        success: false, 
+        error: '今日阅读文章奖励已达上限',
+        limitReached: true,
+        todayCount: articleDailyCount,
+        dailyLimit: articleDailyLimit
+      });
+    }
+    
+    // 确保用户积分记录存在
+    ensureUserCredits(userToken);
+    
+    // 发放积分
+    const reward = promoCode.reward || parseFloat(getConfig('credits_article', '1'));
+    db.prepare(`
+      UPDATE user_credits 
+      SET credits = credits + ?, total_earned = total_earned + ?, updated_at = CURRENT_TIMESTAMP 
+      WHERE user_token = ?
+    `).run(reward, reward, userToken);
+    
+    // 记录使用日志
+    db.prepare(`
+      INSERT INTO promo_code_logs (user_token, code, article_id, source, ip_address)
+      VALUES (?, ?, ?, 'code', ?)
+    `).run(userToken, promoCode.code, promoCode.article_id, clientIP);
+    
+    // 更新验证码使用次数
+    db.prepare(`
+      UPDATE article_promo_codes SET used_count = used_count + 1 WHERE code = ?
+    `).run(promoCode.code);
+    
+    // 记录积分日志
+    db.prepare(`
+      INSERT INTO credit_logs (user_token, amount, type, description)
+      VALUES (?, ?, 'redeem_code', ?)
+    `).run(userToken, reward, `兑换验证码: ${promoCode.code}`);
+    
+    // 更新每日计数
+    db.prepare(`
+      INSERT INTO daily_action_credits (user_token, action_type, action_date, count)
+      VALUES (?, 'article_read', ?, 1)
+      ON CONFLICT(user_token, action_type, action_date) DO UPDATE SET count = count + 1
+    `).run(userToken, today);
+    
+    const updated = db.prepare('SELECT credits FROM user_credits WHERE user_token = ?').get(userToken);
+    const newCount = articleDailyCount + 1;
+    
+    res.json({ 
+      success: true, 
+      credits: updated.credits, 
+      earned: reward,
+      message: `🎉 兑换成功！+${reward}积分`,
+      todayCount: newCount,
+      dailyLimit: articleDailyLimit,
+      remaining: articleDailyLimit - newCount
+    });
+  } catch (error) {
+    console.error('验证码兑换错误:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 管理后台 - 获取验证码列表
+app.get('/api/admin/promo-codes', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const codes = db.prepare(`
+      SELECT * FROM article_promo_codes ORDER BY created_at DESC
+    `).all();
+    
+    res.json({ success: true, codes });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 管理后台 - 创建验证码
+app.post('/api/admin/promo-codes', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { code, articleId, description, reward, maxUses } = req.body;
+    
+    if (!code) {
+      return res.status(400).json({ success: false, error: '验证码不能为空' });
+    }
+    
+    // 验证码统一转大写
+    const normalizedCode = code.trim().toUpperCase();
+    
+    // 检查是否已存在
+    const existing = db.prepare('SELECT * FROM article_promo_codes WHERE UPPER(code) = ?').get(normalizedCode);
+    if (existing) {
+      return res.status(400).json({ success: false, error: '验证码已存在' });
+    }
+    
+    db.prepare(`
+      INSERT INTO article_promo_codes (code, article_id, description, reward, max_uses)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(normalizedCode, articleId || null, description || null, reward || 1, maxUses || null);
+    
+    res.json({ success: true, message: '验证码创建成功', code: normalizedCode });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 管理后台 - 删除验证码
+app.delete('/api/admin/promo-codes/:code', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { code } = req.params;
+    const normalizedCode = code.trim().toUpperCase();
+    
+    const result = db.prepare('DELETE FROM article_promo_codes WHERE UPPER(code) = ?').run(normalizedCode);
+    
+    if (result.changes === 0) {
+      return res.status(404).json({ success: false, error: '验证码不存在' });
+    }
+    
+    res.json({ success: true, message: '验证码已删除' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 管理后台 - 切换验证码状态
+app.put('/api/admin/promo-codes/:code/toggle', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { code } = req.params;
+    const normalizedCode = code.trim().toUpperCase();
+    
+    const promoCode = db.prepare('SELECT * FROM article_promo_codes WHERE UPPER(code) = ?').get(normalizedCode);
+    
+    if (!promoCode) {
+      return res.status(404).json({ success: false, error: '验证码不存在' });
+    }
+    
+    const newStatus = promoCode.is_active === 1 ? 0 : 1;
+    db.prepare('UPDATE article_promo_codes SET is_active = ? WHERE UPPER(code) = ?').run(newStatus, normalizedCode);
+    
+    res.json({ success: true, isActive: newStatus === 1, message: newStatus === 1 ? '验证码已启用' : '验证码已禁用' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==================== 行为积分配置管理 API ====================
+
+// 获取行为积分配置
+app.get('/api/admin/action-credits-config', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const config = {
+      like: {
+        credits: parseFloat(getConfig('credits_action_like', '0.1')),
+        dailyLimit: parseInt(getConfig('credits_action_like_daily_limit', '10'))
+      },
+      favorite: {
+        credits: parseFloat(getConfig('credits_action_favorite', '0.2')),
+        dailyLimit: parseInt(getConfig('credits_action_favorite_daily_limit', '5'))
+      },
+      follow: {
+        credits: parseFloat(getConfig('credits_action_follow', '0.2')),
+        dailyLimit: parseInt(getConfig('credits_action_follow_daily_limit', '5'))
+      },
+      comment: {
+        credits: parseFloat(getConfig('credits_action_comment', '0.5')),
+        dailyLimit: parseInt(getConfig('credits_action_comment_daily_limit', '2')),
+        minLength: parseInt(getConfig('credits_comment_min_length', '10'))
+      }
+    };
+    
+    res.json({ success: true, config });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 保存行为积分配置
+app.put('/api/admin/action-credits-config', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { like, favorite, follow, comment } = req.body;
+    
+    // 验证并保存配置
+    if (like) {
+      if (like.credits !== undefined) setConfig('credits_action_like', String(like.credits));
+      if (like.dailyLimit !== undefined) setConfig('credits_action_like_daily_limit', String(like.dailyLimit));
+    }
+    if (favorite) {
+      if (favorite.credits !== undefined) setConfig('credits_action_favorite', String(favorite.credits));
+      if (favorite.dailyLimit !== undefined) setConfig('credits_action_favorite_daily_limit', String(favorite.dailyLimit));
+    }
+    if (follow) {
+      if (follow.credits !== undefined) setConfig('credits_action_follow', String(follow.credits));
+      if (follow.dailyLimit !== undefined) setConfig('credits_action_follow_daily_limit', String(follow.dailyLimit));
+    }
+    if (comment) {
+      if (comment.credits !== undefined) setConfig('credits_action_comment', String(comment.credits));
+      if (comment.dailyLimit !== undefined) setConfig('credits_action_comment_daily_limit', String(comment.dailyLimit));
+      if (comment.minLength !== undefined) setConfig('credits_comment_min_length', String(comment.minLength));
+    }
+    
+    res.json({ success: true, message: '行为积分配置已保存' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 获取特殊积分配置（分享/邀请/文章）
+app.get('/api/admin/extra-credits-config', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const config = {
+      shareGame: {
+        credits: parseFloat(getConfig('credits_share_game', '1')),
+        dailyLimit: parseInt(getConfig('credits_share_game_daily_limit', '5'))
+      },
+      inviteFriend: {
+        credits: parseFloat(getConfig('credits_invite_friend', '3')),
+        dailyLimit: parseInt(getConfig('credits_invite_friend_daily_limit', '5'))
+      },
+      article: {
+        credits: parseFloat(getConfig('credits_article', '1')),
+        dailyLimit: parseInt(getConfig('credits_article_daily_limit', '3'))
+      }
+    };
+    
+    res.json({ success: true, config });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 保存特殊积分配置
+app.put('/api/admin/extra-credits-config', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { shareGame, inviteFriend, article } = req.body;
+    
+    // 验证并保存配置
+    if (shareGame) {
+      if (shareGame.credits !== undefined) setConfig('credits_share_game', String(shareGame.credits));
+      if (shareGame.dailyLimit !== undefined) setConfig('credits_share_game_daily_limit', String(shareGame.dailyLimit));
+    }
+    if (inviteFriend) {
+      if (inviteFriend.credits !== undefined) setConfig('credits_invite_friend', String(inviteFriend.credits));
+      if (inviteFriend.dailyLimit !== undefined) setConfig('credits_invite_friend_daily_limit', String(inviteFriend.dailyLimit));
+    }
+    if (article) {
+      if (article.credits !== undefined) setConfig('credits_article', String(article.credits));
+      if (article.dailyLimit !== undefined) setConfig('credits_article_daily_limit', String(article.dailyLimit));
+    }
+    
+    res.json({ success: true, message: '特殊积分配置已保存' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // 获取系统配置（包括模型列表）
 app.get('/api/config', (req, res) => {
   res.json({
@@ -3708,6 +5545,64 @@ app.get('/api/config', (req, res) => {
     models: LLM_MODELS,
     credits: CREDITS_CONFIG
   });
+});
+
+// 获取用户行为积分配置和今日进度（用户端可访问）
+app.get('/api/credits/action-ways', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    const today = new Date().toISOString().split('T')[0];
+    
+    // 获取各行为的配置
+    const ways = {
+      like: {
+        name: '点赞作品',
+        icon: '❤️',
+        desc: '给喜欢的游戏点赞',
+        credits: parseFloat(getConfig('credits_action_like', '0.1')),
+        dailyLimit: parseInt(getConfig('credits_action_like_daily_limit', '10')),
+        todayCount: 0
+      },
+      favorite: {
+        name: '收藏作品',
+        icon: '⭐',
+        desc: '收藏喜欢的游戏',
+        credits: parseFloat(getConfig('credits_action_favorite', '0.2')),
+        dailyLimit: parseInt(getConfig('credits_action_favorite_daily_limit', '5')),
+        todayCount: 0
+      },
+      comment: {
+        name: '评论作品',
+        icon: '💬',
+        desc: `发表${getConfig('credits_comment_min_length', '10')}字以上的评论`,
+        credits: parseFloat(getConfig('credits_action_comment', '0.5')),
+        dailyLimit: parseInt(getConfig('credits_action_comment_daily_limit', '2')),
+        todayCount: 0
+      },
+      follow: {
+        name: '关注创作者',
+        icon: '👤',
+        desc: '关注喜欢的创作者',
+        credits: parseFloat(getConfig('credits_action_follow', '0.2')),
+        dailyLimit: parseInt(getConfig('credits_action_follow_daily_limit', '5')),
+        todayCount: 0
+      }
+    };
+    
+    // 如果用户已登录，获取今日各行为已获取次数
+    if (userToken) {
+      for (const actionType of ['like', 'favorite', 'comment', 'follow']) {
+        const record = db.prepare(
+          'SELECT count FROM daily_action_credits WHERE user_token = ? AND action_type = ? AND action_date = ?'
+        ).get(userToken, actionType, today);
+        ways[actionType].todayCount = record?.count || 0;
+      }
+    }
+    
+    res.json({ success: true, ways });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // 获取Tips配置
@@ -3998,8 +5893,8 @@ app.post('/api/games/:id/comments', (req, res) => {
       }
     }
     
-    // 验证游戏存在
-    const game = db.prepare('SELECT id FROM games WHERE id = ?').get(gameId);
+    // 验证游戏存在（同时获取author_token用于判断是否自己的作品）
+    const game = db.prepare('SELECT id, author_token FROM games WHERE id = ?').get(gameId);
     if (!game) {
       return res.status(404).json({ success: false, error: '游戏不存在' });
     }
@@ -4017,6 +5912,15 @@ app.post('/api/games/:id/comments', (req, res) => {
     
     console.log(`[INFO] 新留言: 游戏=${gameId}, 用户=${authorName}, 内容长度=${trimmedContent.length}`);
     
+    // 尝试发放积分（不能是自己的作品）
+    let creditResult = null;
+    if (game.author_token !== userToken) {
+      creditResult = tryAwardActionCredits(userToken, 'comment', {
+        gameId: gameId,
+        commentContent: trimmedContent
+      });
+    }
+    
     res.json({
       success: true,
       comment: {
@@ -4025,7 +5929,9 @@ app.post('/api/games/:id/comments', (req, res) => {
         content: trimmedContent,
         created_at: new Date().toISOString(),
         is_mine: true
-      }
+      },
+      creditAwarded: creditResult?.awarded || false,
+      creditMessage: creditResult?.message || null
     });
   } catch (error) {
     console.error('[ERROR] 发布留言失败:', error);
@@ -4888,21 +6794,22 @@ app.post('/api/games/:id/like', (req, res) => {
     const gameId = req.params.id;
     const userToken = req.headers['x-user-token'];
     
-    // 检查游戏是否存在
-    const game = db.prepare('SELECT id, like_count FROM games WHERE id = ?').get(gameId);
+    // 检查游戏是否存在（同时获取author_token用于判断是否自己的作品）
+    const game = db.prepare('SELECT id, like_count, author_token FROM games WHERE id = ?').get(gameId);
     if (!game) {
       return res.status(404).json({ success: false, error: '游戏不存在' });
     }
     
     let liked = true;
     let newLikeCount = game.like_count;
+    let creditResult = null;
     
     if (userToken) {
       // 检查是否已点赞
       const existingLike = db.prepare('SELECT id FROM user_likes WHERE user_token = ? AND game_id = ?').get(userToken, gameId);
       
       if (existingLike) {
-        // 取消点赞
+        // 取消点赞（不扣积分）
         db.prepare('DELETE FROM user_likes WHERE user_token = ? AND game_id = ?').run(userToken, gameId);
         db.prepare('UPDATE games SET like_count = MAX(0, like_count - 1) WHERE id = ?').run(gameId);
         liked = false;
@@ -4912,6 +6819,14 @@ app.post('/api/games/:id/like', (req, res) => {
         db.prepare('INSERT INTO user_likes (user_token, game_id) VALUES (?, ?)').run(userToken, gameId);
         db.prepare('UPDATE games SET like_count = like_count + 1 WHERE id = ?').run(gameId);
         newLikeCount = newLikeCount + 1;
+        
+        // 尝试发放积分（不能是自己的作品）
+        if (game.author_token !== userToken) {
+          creditResult = tryAwardActionCredits(userToken, 'like', { gameId });
+          console.log('[积分] 点赞积分结果:', creditResult);
+        } else {
+          console.log('[积分] 点赞自己的作品，不发放积分');
+        }
       }
     } else {
       // 匿名点赞（只增加计数，不记录）
@@ -4919,7 +6834,13 @@ app.post('/api/games/:id/like', (req, res) => {
       newLikeCount = newLikeCount + 1;
     }
     
-    res.json({ success: true, liked, likeCount: newLikeCount });
+    res.json({ 
+      success: true, 
+      liked, 
+      likeCount: newLikeCount,
+      creditAwarded: creditResult?.awarded || false,
+      creditMessage: creditResult?.message || null
+    });
   } catch (error) {
     console.error('[ERROR] 点赞失败:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -5787,8 +7708,8 @@ app.post('/api/games/:id/favorite', (req, res) => {
       return res.status(401).json({ success: false, error: '请先登录' });
     }
     
-    // 检查游戏是否存在
-    const game = db.prepare('SELECT id FROM games WHERE id = ?').get(gameId);
+    // 检查游戏是否存在（同时获取author_token用于判断是否自己的作品）
+    const game = db.prepare('SELECT id, author_token FROM games WHERE id = ?').get(gameId);
     if (!game) {
       return res.status(404).json({ success: false, error: '游戏不存在' });
     }
@@ -5797,7 +7718,7 @@ app.post('/api/games/:id/favorite', (req, res) => {
     const existing = db.prepare('SELECT id FROM user_favorites WHERE user_token = ? AND game_id = ?').get(userToken, gameId);
     
     if (existing) {
-      // 已收藏，则取消收藏
+      // 已收藏，则取消收藏（不扣积分）
       db.prepare('DELETE FROM user_favorites WHERE user_token = ? AND game_id = ?').run(userToken, gameId);
       // 更新游戏的收藏计数
       db.prepare('UPDATE games SET favorite_count = MAX(0, favorite_count - 1) WHERE id = ?').run(gameId);
@@ -5811,7 +7732,20 @@ app.post('/api/games/:id/favorite', (req, res) => {
       db.prepare('UPDATE games SET favorite_count = favorite_count + 1 WHERE id = ?').run(gameId);
       // 获取最新收藏数
       const updated = db.prepare('SELECT favorite_count FROM games WHERE id = ?').get(gameId);
-      res.json({ success: true, favorited: true, favorite_count: updated?.favorite_count || 0 });
+      
+      // 尝试发放积分（不能是自己的作品）
+      let creditResult = null;
+      if (game.author_token !== userToken) {
+        creditResult = tryAwardActionCredits(userToken, 'favorite', { gameId });
+      }
+      
+      res.json({ 
+        success: true, 
+        favorited: true, 
+        favorite_count: updated?.favorite_count || 0,
+        creditAwarded: creditResult?.awarded || false,
+        creditMessage: creditResult?.message || null
+      });
     }
   } catch (error) {
     console.error('[ERROR] 收藏操作失败:', error);
@@ -5857,7 +7791,7 @@ app.post('/api/users/:token/follow', (req, res) => {
       .get(followerToken, followingToken);
     
     if (existing) {
-      // 已关注，取消关注
+      // 已关注，取消关注（不扣积分）
       db.prepare('DELETE FROM user_follows WHERE follower_token = ? AND following_token = ?')
         .run(followerToken, followingToken);
       res.json({ success: true, following: false });
@@ -5865,7 +7799,16 @@ app.post('/api/users/:token/follow', (req, res) => {
       // 未关注，添加关注
       db.prepare('INSERT INTO user_follows (follower_token, following_token) VALUES (?, ?)')
         .run(followerToken, followingToken);
-      res.json({ success: true, following: true });
+      
+      // 尝试发放积分
+      const creditResult = tryAwardActionCredits(followerToken, 'follow', { followingToken });
+      
+      res.json({ 
+        success: true, 
+        following: true,
+        creditAwarded: creditResult?.awarded || false,
+        creditMessage: creditResult?.message || null
+      });
     }
   } catch (error) {
     console.error('[ERROR] 关注操作失败:', error);
@@ -6875,10 +8818,13 @@ app.post('/api/invite/use', (req, res) => {
 
 // ==================== 邀请关系系统（延迟奖励） ====================
 
-// 每日邀请奖励上限
-const DAILY_REFERRAL_LIMIT = 100;
-// 每次邀请奖励积分
-const REFERRAL_REWARD_POINTS = 1;
+// 获取邀请好友配置（每日上限和奖励积分）
+function getInviteConfig() {
+  return {
+    dailyLimit: parseInt(getConfig('credits_invite_friend_daily_limit', '5')),
+    rewardPoints: parseFloat(getConfig('credits_invite_friend', '3'))
+  };
+}
 
 // 记录邀请关系（不立即发放奖励，等首次成功生成游戏时再发放）
 app.post('/api/referral/record', (req, res) => {
@@ -6954,16 +8900,17 @@ app.post('/api/referral/reward', (req, res) => {
     
     // 检查邀请者今日奖励次数是否已达上限
     const today = new Date().toISOString().slice(0, 10);
+    const inviteConfig = getInviteConfig();
     const dailyCount = db.prepare('SELECT count FROM daily_referral_counts WHERE inviter_code = ? AND date = ?').get(referral.inviter_code, today);
     
-    if (dailyCount && dailyCount.count >= DAILY_REFERRAL_LIMIT) {
+    if (dailyCount && dailyCount.count >= inviteConfig.dailyLimit) {
       // 邀请者今日已达上限，仍标记为已处理但不发放奖励
       db.prepare('UPDATE referrals SET rewarded = 1, rewarded_at = CURRENT_TIMESTAMP WHERE invitee_account_id = ?').run(accountId);
       return res.json({ 
         success: true, 
         rewarded: false, 
         reason: '邀请者今日奖励已达上限',
-        dailyLimit: DAILY_REFERRAL_LIMIT
+        dailyLimit: inviteConfig.dailyLimit
       });
     }
     
@@ -6978,15 +8925,23 @@ app.post('/api/referral/reward', (req, res) => {
       ON CONFLICT(inviter_code, date) DO UPDATE SET count = count + 1
     `).run(referral.inviter_code, today);
     
-    // 3. 通过邀请码查找邀请者的账户
+    // 同时记录到 daily_action_credits 表（用于前端显示）
     const inviter = db.prepare('SELECT creator_token FROM invite_codes WHERE code = ?').get(referral.inviter_code);
+    if (inviter) {
+      db.prepare(`
+        INSERT INTO daily_action_credits (user_token, action_type, action_date, count)
+        VALUES (?, 'invite_friend', ?, 1)
+        ON CONFLICT(user_token, action_type, action_date) DO UPDATE SET count = count + 1
+      `).run(inviter.creator_token, today);
+    }
     
+    // 3. 通过邀请码查找邀请者的账户
     if (inviter) {
       // 给邀请者增加积分
       db.prepare('UPDATE user_credits SET credits = credits + ?, total_earned = total_earned + ? WHERE user_token = ?')
-        .run(REFERRAL_REWARD_POINTS, REFERRAL_REWARD_POINTS, inviter.creator_token);
+        .run(inviteConfig.rewardPoints, inviteConfig.rewardPoints, inviter.creator_token);
       db.prepare('INSERT INTO credit_logs (user_token, amount, type, description) VALUES (?, ?, ?, ?)')
-        .run(inviter.creator_token, REFERRAL_REWARD_POINTS, 'referral_inviter', '邀请好友成功生成游戏奖励');
+        .run(inviter.creator_token, inviteConfig.rewardPoints, 'referral_inviter', '邀请好友成功生成游戏奖励');
     }
     
     // 4. 给被邀请者增加积分（当前用户）
@@ -6994,29 +8949,29 @@ app.post('/api/referral/reward', (req, res) => {
     const currentUser = db.prepare('SELECT user_token FROM user_credits WHERE user_token LIKE ?').get(accountId + '%');
     if (currentUser) {
       db.prepare('UPDATE user_credits SET credits = credits + ?, total_earned = total_earned + ? WHERE user_token = ?')
-        .run(REFERRAL_REWARD_POINTS, REFERRAL_REWARD_POINTS, currentUser.user_token);
+        .run(inviteConfig.rewardPoints, inviteConfig.rewardPoints, currentUser.user_token);
       db.prepare('INSERT INTO credit_logs (user_token, amount, type, description) VALUES (?, ?, ?, ?)')
-        .run(currentUser.user_token, REFERRAL_REWARD_POINTS, 'referral_invitee', '通过邀请链接成功生成游戏奖励');
+        .run(currentUser.user_token, inviteConfig.rewardPoints, 'referral_invitee', '通过邀请链接成功生成游戏奖励');
     } else {
       // 如果找不到，尝试用 accountId 直接操作
       const exists = db.prepare('SELECT 1 FROM user_credits WHERE user_token = ?').get(accountId);
       if (exists) {
         db.prepare('UPDATE user_credits SET credits = credits + ?, total_earned = total_earned + ? WHERE user_token = ?')
-          .run(REFERRAL_REWARD_POINTS, REFERRAL_REWARD_POINTS, accountId);
+          .run(inviteConfig.rewardPoints, inviteConfig.rewardPoints, accountId);
         db.prepare('INSERT INTO credit_logs (user_token, amount, type, description) VALUES (?, ?, ?, ?)')
-          .run(accountId, REFERRAL_REWARD_POINTS, 'referral_invitee', '通过邀请链接成功生成游戏奖励');
+          .run(accountId, inviteConfig.rewardPoints, 'referral_invitee', '通过邀请链接成功生成游戏奖励');
       }
     }
     
-    console.log(`[REFERRAL] 邀请奖励触发: 邀请者=${referral.inviter_code}, 被邀请者=${accountId}, 双方各得${REFERRAL_REWARD_POINTS}积分`);
+    console.log(`[REFERRAL] 邀请奖励触发: 邀请者=${referral.inviter_code}, 被邀请者=${accountId}, 双方各得${inviteConfig.rewardPoints}积分`);
     
     return res.json({
       success: true,
       rewarded: true,
       inviter: referral.inviter_code,
       invitee: accountId,
-      rewardPoints: REFERRAL_REWARD_POINTS,
-      message: `🎉 邀请奖励已发放！你和邀请者各获得 ${REFERRAL_REWARD_POINTS} 积分`
+      rewardPoints: inviteConfig.rewardPoints,
+      message: `🎉 邀请奖励已发放！你和邀请者各获得 ${inviteConfig.rewardPoints} 积分`
     });
     
   } catch (error) {
@@ -8815,25 +10770,50 @@ app.post('/api/games/:id/shared', (req, res) => {
       return res.json({ success: true }); // 只有作者分享才能获得积分
     }
     
-    // 更新分享计数
-    const userExtra = db.prepare('SELECT share_count FROM user_extras WHERE user_token = ?').get(userToken);
-    const shareCount = (userExtra?.share_count || 0) + 1;
+    const today = new Date().toISOString().split('T')[0];
+    const dailyLimit = parseInt(getConfig('credits_share_game_daily_limit', '5'));
+    const reward = parseFloat(getConfig('credits_share_game', '1'));
     
-    db.prepare('INSERT OR REPLACE INTO user_extras (user_token, share_count) VALUES (?, ?)')
-      .run(userToken, shareCount);
+    // 检查今日是否已达上限
+    const dailyRecord = db.prepare(
+      'SELECT count FROM daily_action_credits WHERE user_token = ? AND action_type = ? AND action_date = ?'
+    ).get(userToken, 'share_game', today);
+    const currentCount = dailyRecord?.count || 0;
     
-    // 每分享3次获得1次积分（防止滥用）
-    if (shareCount % 3 === 0) {
-      const reward = CREDITS_CONFIG.shareGame;
-      db.prepare('UPDATE user_credits SET credits = credits + ?, total_earned = total_earned + ? WHERE user_token = ?')
-        .run(reward, reward, userToken);
-      db.prepare('INSERT INTO credit_logs (user_token, amount, type, description) VALUES (?, ?, ?, ?)')
-        .run(userToken, reward, 'share', '分享游戏奖励');
-      
-      return res.json({ success: true, earned: reward, message: `分享成功，获得 ${reward} 次生成机会！` });
+    if (currentCount >= dailyLimit) {
+      return res.json({ 
+        success: true, 
+        limitReached: true, 
+        message: '今日分享奖励已达上限',
+        todayCount: currentCount,
+        dailyLimit
+      });
     }
     
-    res.json({ success: true, shareCount, nextRewardAt: 3 - (shareCount % 3) });
+    // 更新每日计数
+    db.prepare(`
+      INSERT INTO daily_action_credits (user_token, action_type, action_date, count)
+      VALUES (?, 'share_game', ?, 1)
+      ON CONFLICT(user_token, action_type, action_date) DO UPDATE SET count = count + 1
+    `).run(userToken, today);
+    
+    // 发放积分
+    db.prepare('UPDATE user_credits SET credits = credits + ?, total_earned = total_earned + ? WHERE user_token = ?')
+      .run(reward, reward, userToken);
+    db.prepare('INSERT INTO credit_logs (user_token, amount, type, description) VALUES (?, ?, ?, ?)')
+      .run(userToken, reward, 'share', '分享游戏奖励');
+    
+    const newCount = currentCount + 1;
+    const remaining = dailyLimit - newCount;
+    
+    return res.json({ 
+      success: true, 
+      earned: reward, 
+      message: `分享成功，获得 ${reward} 次生成机会！`,
+      todayCount: newCount,
+      dailyLimit,
+      remaining
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -9354,6 +11334,229 @@ app.delete('/api/admin/cors', (req, res) => {
     });
   } catch (error) {
     console.error('[ERROR] 移除CORS白名单失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==================== 作者榜单系统 ====================
+
+// 创建榜单排除表
+db.exec(`
+  CREATE TABLE IF NOT EXISTS leaderboard_excludes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_token TEXT UNIQUE NOT NULL,
+    exclude_types TEXT DEFAULT 'all',
+    reason TEXT,
+    operator TEXT DEFAULT 'admin',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+// 获取作者榜单数据
+app.get('/api/author-leaderboard/:type', (req, res) => {
+  try {
+    const { type } = req.params;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const offset = parseInt(req.query.offset) || 0;
+    const period = req.query.period || 'all';
+    const userToken = req.headers['x-user-token'];
+    
+    const validTypes = ['fans', 'works', 'credits', 'popularity', 'newstar'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ success: false, error: '无效的榜单类型' });
+    }
+    
+    let periodCondition = '';
+    let periodLabel = '总榜';
+    if (period === 'week') {
+      periodCondition = "AND ua.created_at >= datetime('now', '-7 days')";
+      periodLabel = '周榜';
+    } else if (period === 'month') {
+      periodCondition = "AND ua.created_at >= datetime('now', '-30 days')";
+      periodLabel = '月榜';
+    }
+    
+    // 获取排除名单
+    let excludeTokens = [];
+    try {
+      excludeTokens = db.prepare(`
+        SELECT user_token FROM leaderboard_excludes 
+        WHERE exclude_types LIKE '%all%' OR exclude_types LIKE ?
+      `).all(`%${type}%`).map(r => r.user_token);
+    } catch (e) {
+      // 表可能不存在，忽略
+    }
+    
+    const excludeCondition = excludeTokens.length > 0 
+      ? `AND ua.user_token NOT IN (${excludeTokens.map(() => '?').join(',')})` 
+      : '';
+    
+    let query, countQuery, params, countParams;
+    let title, valueLabel;
+    
+    switch (type) {
+      case 'fans':
+        title = '🏆 粉丝榜';
+        valueLabel = '粉丝';
+        query = `
+          SELECT ua.user_token, ua.account_id, ua.nickname,
+            (SELECT COUNT(*) FROM user_follows WHERE following_token = ua.user_token) as value
+          FROM user_accounts ua
+          WHERE 1=1 ${excludeCondition}
+          ORDER BY value DESC
+          LIMIT ? OFFSET ?
+        `;
+        countQuery = `SELECT COUNT(*) as total FROM user_accounts ua WHERE 1=1 ${excludeCondition}`;
+        params = [...excludeTokens, limit, offset];
+        countParams = [...excludeTokens];
+        break;
+        
+      case 'works':
+        title = '📚 作品榜';
+        valueLabel = '作品';
+        query = `
+          SELECT ua.user_token, ua.account_id, ua.nickname,
+            (SELECT COUNT(*) FROM games WHERE author_token = ua.user_token AND is_hidden = 0) as value
+          FROM user_accounts ua
+          WHERE 1=1 ${excludeCondition}
+          ORDER BY value DESC
+          LIMIT ? OFFSET ?
+        `;
+        countQuery = `SELECT COUNT(*) as total FROM user_accounts ua WHERE 1=1 ${excludeCondition}`;
+        params = [...excludeTokens, limit, offset];
+        countParams = [...excludeTokens];
+        break;
+        
+      case 'credits':
+        title = '💎 积分榜';
+        valueLabel = '积分';
+        query = `
+          SELECT ua.user_token, ua.account_id, ua.nickname,
+            COALESCE(uc.credits, 0) as value
+          FROM user_accounts ua
+          LEFT JOIN user_credits uc ON ua.user_token = uc.user_token
+          WHERE 1=1 ${excludeCondition}
+          ORDER BY value DESC
+          LIMIT ? OFFSET ?
+        `;
+        countQuery = `SELECT COUNT(*) as total FROM user_accounts ua WHERE 1=1 ${excludeCondition}`;
+        params = [...excludeTokens, limit, offset];
+        countParams = [...excludeTokens];
+        break;
+        
+      case 'popularity':
+        title = '🔥 人气榜';
+        valueLabel = '人气值';
+        query = `
+          SELECT ua.user_token, ua.account_id, ua.nickname,
+            COALESCE(SUM(g.like_count), 0) * 10 + COALESCE(SUM(g.play_count), 0) as value
+          FROM user_accounts ua
+          LEFT JOIN games g ON g.author_token = ua.user_token AND g.is_hidden = 0
+          WHERE 1=1 ${excludeCondition} ${periodCondition}
+          GROUP BY ua.user_token
+          ORDER BY value DESC
+          LIMIT ? OFFSET ?
+        `;
+        countQuery = `SELECT COUNT(*) as total FROM user_accounts ua WHERE 1=1 ${excludeCondition} ${periodCondition}`;
+        params = [...excludeTokens, limit, offset];
+        countParams = [...excludeTokens];
+        break;
+        
+      case 'newstar':
+        title = '⭐ 新星榜';
+        valueLabel = '综合分';
+        query = `
+          SELECT ua.user_token, ua.account_id, ua.nickname, ua.created_at,
+            (
+              (SELECT COUNT(*) FROM user_follows WHERE following_token = ua.user_token) * 5 +
+              (SELECT COUNT(*) FROM games WHERE author_token = ua.user_token AND is_hidden = 0) * 10 +
+              COALESCE((SELECT SUM(like_count) FROM games WHERE author_token = ua.user_token AND is_hidden = 0), 0) * 2
+            ) as value
+          FROM user_accounts ua
+          WHERE ua.created_at >= datetime('now', '-30 days') ${excludeCondition}
+          ORDER BY value DESC
+          LIMIT ? OFFSET ?
+        `;
+        countQuery = `SELECT COUNT(*) as total FROM user_accounts ua WHERE ua.created_at >= datetime('now', '-30 days') ${excludeCondition}`;
+        params = [...excludeTokens, limit, offset];
+        countParams = [...excludeTokens];
+        break;
+    }
+    
+    const list = db.prepare(query).all(...params);
+    const totalResult = db.prepare(countQuery).get(...countParams);
+    
+    const avatarEmojis = ['🎮', '🎯', '🎲', '🎪', '🎨', '🎭', '🎸', '🎺', '🎻', '🎹'];
+    const rankedList = list.map((item, index) => ({
+      rank: offset + index + 1,
+      user_token: item.user_token,
+      account_id: item.account_id,
+      nickname: item.nickname || item.account_id,
+      avatar_emoji: avatarEmojis[Math.abs(item.user_token?.charCodeAt(0) || 0) % avatarEmojis.length],
+      value: item.value || 0,
+      label: valueLabel
+    }));
+    
+    res.json({
+      success: true,
+      type,
+      title: period !== 'all' ? `${title}·${periodLabel}` : title,
+      period,
+      periodLabel,
+      list: rankedList,
+      total: totalResult?.total || 0,
+      updated_at: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('[ERROR] 获取榜单失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 榜单排除管理 - 获取排除名单
+app.get('/api/admin/leaderboard/excludes', (req, res) => {
+  try {
+    const excludes = db.prepare(`
+      SELECT le.*, ua.account_id, ua.nickname
+      FROM leaderboard_excludes le
+      LEFT JOIN user_accounts ua ON le.user_token = ua.user_token
+      ORDER BY le.created_at DESC
+    `).all();
+    res.json({ success: true, excludes });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 榜单排除管理 - 添加排除
+app.post('/api/admin/leaderboard/exclude', (req, res) => {
+  try {
+    const { user_token, exclude_types, reason } = req.body;
+    if (!user_token) {
+      return res.status(400).json({ success: false, error: '缺少用户Token' });
+    }
+    const typesStr = Array.isArray(exclude_types) ? exclude_types.join(',') : (exclude_types || 'all');
+    db.prepare(`
+      INSERT INTO leaderboard_excludes (user_token, exclude_types, reason)
+      VALUES (?, ?, ?)
+      ON CONFLICT(user_token) DO UPDATE SET exclude_types = ?, reason = ?
+    `).run(user_token, typesStr, reason || '', typesStr, reason || '');
+    res.json({ success: true, message: '已添加到排除名单' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 榜单排除管理 - 移除排除
+app.delete('/api/admin/leaderboard/exclude/:user_token', (req, res) => {
+  try {
+    const { user_token } = req.params;
+    const result = db.prepare('DELETE FROM leaderboard_excludes WHERE user_token = ?').run(user_token);
+    if (result.changes === 0) {
+      return res.status(404).json({ success: false, error: '该用户不在排除名单中' });
+    }
+    res.json({ success: true, message: '已从排除名单中移除' });
+  } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });

@@ -174,16 +174,38 @@ function buildGameHtml(game) {
   position: fixed !important;
   top: 10px !important;
   left: 10px !important;
-  background: rgba(0,0,0,0.5) !important;
-  color: #fff !important;
+  width: 44px !important;
+  height: 44px !important;
+  background: rgba(30, 30, 50, 0.8) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  color: var(--text-secondary, #888) !important;
   text-decoration: none !important;
-  padding: 6px 12px !important;
-  border-radius: 20px !important;
+  padding: 0 !important;
+  border-radius: 12px !important;
   font-size: 12px !important;
   z-index: 999998 !important;
   display: flex !important;
   align-items: center !important;
-  gap: 4px !important;
+  justify-content: center !important;
+  border: 1px solid rgba(99, 102, 241, 0.3) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+.yxj-promo-home:hover {
+  background: rgba(99, 102, 241, 0.2) !important;
+  border-color: rgba(99, 102, 241, 0.5) !important;
+  color: #fff !important;
+}
+.yxj-promo-home:active {
+  transform: scale(0.92) !important;
+  background: rgba(99, 102, 241, 0.3) !important;
+}
+.yxj-promo-home svg {
+  width: 22px !important;
+  height: 22px !important;
+  stroke: currentColor !important;
 }
 /* TikTok 风格组件 */
 .tiktok-author-info {
@@ -215,7 +237,8 @@ function buildGameHtml(game) {
 .tiktok-author-details {
   display: flex !important;
   flex-direction: column !important;
-  gap: 4px !important;
+  align-items: flex-start !important;
+  gap: 2px !important;
 }
 .tiktok-author-name {
   color: #fff !important;
@@ -225,9 +248,12 @@ function buildGameHtml(game) {
   text-shadow: 0 1px 3px rgba(0,0,0,0.5) !important;
 }
 .tiktok-publish-time {
-  color: rgba(255,255,255,0.7) !important;
-  font-size: 12px !important;
+  color: rgba(255,255,255,0.6) !important;
+  font-size: 0.6875rem !important;
   text-shadow: 0 1px 2px rgba(0,0,0,0.5) !important;
+  text-align: left !important;
+  display: block !important;
+  margin-top: 2px !important;
 }
 .tiktok-follow-btn {
   background: #fe2c55 !important;
@@ -291,8 +317,10 @@ canvas { max-height: calc(100vh - 70px) !important; }
 <body>
 ${bodyContent}
 
-<!-- 游戏家顶部导航 -->
-<a class="yxj-promo-home" href="/" title="更多游戏">🏠 更多游戏</a>
+<!-- 游戏家顶部导航 - 返回按钮 -->
+<button class="yxj-promo-home" onclick="window.history.length > 1 ? window.history.back() : window.location.href='/'" title="返回">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+</button>
 
 <!-- 抖音风格左下角作者信息 -->
 <div class="tiktok-author-info" id="tiktok-author-info">

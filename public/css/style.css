@@ -2945,6 +2945,7 @@ body.modal-open .modal-content {
   background: var(--bg-secondary);
 }
 
+.modal-header h2,
 .modal-header h3 {
   font-size: 1.0625rem;
   font-weight: 600;
@@ -3719,6 +3720,23 @@ body.modal-open .modal-content {
   flex-shrink: 0;
 }
 
+.credit-way-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.credit-way-progress {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+.credit-way.completed .credit-way-progress {
+  color: var(--text-muted);
+}
+
 /* 微信验证 */
 .wechat-verify {
   background: var(--bg-color);
@@ -3726,8 +3744,36 @@ body.modal-open .modal-content {
   padding: 1.25rem;
   text-align: center;
   border: 2px solid var(--primary-color);
-  margin-top: 1rem;
+  margin-top: 0;
   animation: expandIn 0.3s ease;
+}
+
+.wechat-verify.credit-way-expand {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-top: none;
+}
+
+/* 文章验证码区域 */
+.article-code-section {
+  background: var(--bg-color);
+  border-radius: var(--border-radius-sm);
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  margin-top: 0;
+}
+
+.article-code-section.credit-way-expand {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border: 1px solid var(--primary-color);
+  border-top: none;
+}
+
+.article-code-section h4 {
+  margin-bottom: 0.5rem;
+  color: var(--primary-color);
+  font-size: 0.9375rem;
 }
 
 @keyframes expandIn {
@@ -3942,13 +3988,44 @@ body.modal-open .modal-content {
   color: var(--text-secondary);
 }
 
+/* 积分获取方式包装器 */
+.credit-way-wrapper {
+  position: relative;
+}
+
+/* 展开区域通用样式 */
+.credit-way-expand {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  animation: expandIn 0.3s ease;
+  border-top: none;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.credit-way-wrapper .credit-way {
+  transition: border-radius 0.2s ease;
+}
+
+.credit-way-wrapper .credit-way.expanded {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
 /* 邀请链接区域 */
 .invite-section {
-  margin-top: 1rem;
+  margin-top: 0;
   padding: 1rem;
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
   border-radius: var(--border-radius);
   border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.invite-section.credit-way-expand {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
 }
 
 .invite-section h4 {
@@ -7644,6 +7721,12 @@ body.modal-open .modal-content {
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--text-primary);
+  margin-bottom: 0.125rem;
+}
+
+.user-profile-account {
+  font-size: 0.75rem;
+  color: var(--text-muted);
   margin-bottom: 0.375rem;
 }
 
@@ -7732,6 +7815,36 @@ body.modal-open .modal-content {
   text-align: center;
   padding: 2rem;
   color: var(--text-muted);
+}
+
+.user-games-scroll-container {
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.user-games-scroll-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.user-games-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.user-games-scroll-container::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 2px;
+}
+
+.user-games-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+.user-games-load-more {
+  text-align: center;
+  padding: 1rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
 }
 
 .user-games-more {
@@ -8018,11 +8131,6 @@ body.modal-open .modal-content {
 
 .comments-header:hover {
   background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
-  margin: -0.5rem;
-  padding: 0.5rem;
-  padding-bottom: 0.75rem;
-  margin-bottom: 1rem;
 }
 
 /* 评论区切换按钮 */
@@ -8617,6 +8725,66 @@ button.btn-primary:hover,
   transform: translateY(-2px);
 }
 
+/* 次要按钮 - 科技边框风格 */
+.btn-secondary,
+button.btn-secondary {
+  background: transparent;
+  border: 1px solid rgba(0, 240, 255, 0.4);
+  color: #00f0ff;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover,
+button.btn-secondary:hover {
+  background: rgba(0, 240, 255, 0.1);
+  border-color: rgba(0, 240, 255, 0.6);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+}
+
+/* Ghost 按钮 - 低调风格 */
+.btn-ghost,
+button.btn-ghost {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #64748b;
+  font-weight: 400;
+  transition: all 0.3s ease;
+}
+
+.btn-ghost:hover,
+button.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #94a3b8;
+}
+
+/* 关闭按钮 - 圆角风格 */
+.btn-close,
+button.btn-close,
+.modal-close {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-secondary) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.btn-close:hover,
+button.btn-close:hover,
+.modal-close:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #ef4444 !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
 /* 输入框 - 科技边框 */
 input, textarea, select {
   background: rgba(10, 10, 18, 0.8) !important;
@@ -8638,12 +8806,14 @@ input:focus, textarea:focus, select:focus {
   box-shadow: 0 0 50px rgba(0, 240, 255, 0.2), 0 0 100px rgba(191, 0, 255, 0.1);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  border-radius: var(--border-radius);
 }
 
 .modal-header {
   border-bottom: 1px solid rgba(0, 240, 255, 0.2);
 }
 
+.modal-header h2,
 .modal-header h3 {
   background: var(--accent-gradient);
   -webkit-background-clip: text;
@@ -9261,8 +9431,8 @@ a:hover {
 
 .llm-key-item {
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.75rem;
   padding: 1rem;
   background: var(--bg-tertiary);
   border-radius: 10px;
@@ -9272,6 +9442,58 @@ a:hover {
 
 .llm-key-item:hover {
   border-color: var(--primary-color);
+}
+
+.llm-key-item.is-default {
+  border-color: var(--primary-color);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.08));
+}
+
+.llm-key-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.llm-default-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.llm-default-check input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary-color);
+  cursor: pointer;
+}
+
+.llm-default-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.llm-key-item.is-default .llm-default-label {
+  color: var(--primary-color);
+}
+
+/* 高亮脉冲动画 */
+.llm-key-item.highlight-pulse {
+  animation: highlightPulse 0.5s ease-in-out 3;
+}
+
+@keyframes highlightPulse {
+  0%, 100% {
+    border-color: var(--border-color);
+    box-shadow: none;
+  }
+  50% {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+  }
 }
 
 .llm-key-info {
@@ -9316,8 +9538,7 @@ a:hover {
 }
 
 .llm-key-input {
-  width: 260px;
-  flex-shrink: 0;
+  width: 100%;
 }
 
 .llm-key-input input {

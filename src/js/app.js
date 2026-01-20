@@ -86,9 +86,8 @@ async function loadModelRegistry() {
         console.log('[INFO] 后端默认模型:', serverDefaultModel);
         
         // 如果用户没有选择过模型，使用后端默认模型
-        if (!state.settings.llmProvider || state.settings.llmProvider === 'deepseek-v3') {
-          state.settings.llmProvider = serverDefaultModel;
-          state.settings.llmModelId = serverDefaultModel;
+        if (!state.llmModel && (!state.settings.llmProvider || state.settings.llmProvider === 'deepseek-v3')) {
+          setUserDefaultModel(serverDefaultModel);
         }
       }
       
@@ -112,6 +111,25 @@ function getServerDefaultModel() {
   return serverDefaultModel;
 }
 
+// 获取用户设置的默认模型（统一入口）
+function getUserDefaultModel() {
+  return state.llmModel || state.settings.llmProvider || state.settings.llmModelId || serverDefaultModel || 'deepseek-v3';
+}
+
+// 设置用户默认模型（统一入口，确保所有属性同步）
+function setUserDefaultModel(modelId) {
+  state.llmModel = modelId;
+  state.settings.llmProvider = modelId;
+  state.settings.llmModelId = modelId;
+  state.settings.llmModel = modelId;
+  
+  // 同步更新首页高级设置的模型下拉框（如果存在）
+  const advModelSelect = document.getElementById('adv-llm-model');
+  if (advModelSelect && advModelSelect.querySelector(`option[value="${modelId}"]`)) {
+    advModelSelect.value = modelId;
+  }
+}
+
 // 获取模型信息
 function getModelInfo(modelId) {
   return MODEL_REGISTRY[modelId] || null;
@@ -125,8 +143,8 @@ function populateAdvancedModelSelect() {
   // 清空现有选项
   select.innerHTML = '';
   
-  // 获取已保存的模型选择，优先使用用户设置，否则使用后端默认
-  const savedModel = state.settings.llmProvider || serverDefaultModel || 'deepseek-v3';
+  // 获取已保存的模型选择
+  const savedModel = getUserDefaultModel();
   
   // 判断用户是否有自己的 Key
   const userHasKey = state.settings.llmApiKey && state.settings.llmApiKey.trim().length > 0;
@@ -218,9 +236,8 @@ function populateAdvancedModelSelect() {
     }
   }
   
-  // 更新 state
-  state.settings.llmProvider = select.value;
-  state.settings.llmModelId = select.value;
+  // 注意：这里不更新默认模型，只是填充下拉框的初始值
+  // 用户在高级设置中选择的模型只用于本次生成，不会改变默认设置
   
   console.log('[INFO] 高级设置模型下拉框已填充，当前选择:', select.value);
 }
@@ -236,6 +253,7 @@ const state = {
   abortController: null,
   currentRequestId: null, // 当前生成请求的唯一ID，用于取消功能
   debugMode: false,
+  llmModel: 'deepseek-v3', // 默认使用的 LLM 模型
   credits: DEFAULT_CREDITS,
   creditsConfig: null,
   modelsConfig: null,
@@ -271,6 +289,24 @@ const state = {
     authorName: ''
   }
 };
+
+/**
+ * 格式化积分显示，保留最多1位小数，避免浮点数精度问题
+ * @param {number} credits - 积分数值
+ * @returns {string} 格式化后的积分字符串
+ */
+function formatCredits(credits) {
+  if (typeof credits !== 'number' || isNaN(credits)) {
+    return '0';
+  }
+  // 使用 Math.round 解决浮点数精度问题，保留1位小数
+  const rounded = Math.round(credits * 10) / 10;
+  // 如果是整数，不显示小数点
+  if (Number.isInteger(rounded)) {
+    return rounded.toString();
+  }
+  return rounded.toFixed(1);
+}
 
 /**
  * 获取有效的作者名
@@ -924,6 +960,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 处理邀请链接和分享链接参数
   await handleReferralParams();
   
+  // 检测URL中的文章推广参数
+  checkArticlePromoFromURL();
+  
   // 每日登录积分检查
   await checkDailyLoginCredit();
   
@@ -1460,7 +1499,7 @@ function checkCreditsForGeneration() {
   }
 
   if (state.credits > 0) {
-    return { canGenerate: true, isFree: false, message: `将消耗 1 积分，当前剩余 ${state.credits} 积分` };
+    return { canGenerate: true, isFree: false, message: `将消耗 1 积分，当前剩余 ${formatCredits(state.credits)} 积分` };
   }
 
   return { canGenerate: false, isFree: false, message: '积分不足' };
@@ -1537,7 +1576,7 @@ function directSwitchToTab(tabName) {
     document.getElementById('create-page').classList.add('active');
     // 更新积分显示
     const creditsEl = document.getElementById('create-credits-count');
-    if (creditsEl) creditsEl.textContent = state.credits || 0;
+    if (creditsEl) creditsEl.textContent = formatCredits(state.credits || 0);
     // 更新当前模型显示
     updateCreateModelDisplay();
     // 初始化Tips滚动
@@ -1914,7 +1953,7 @@ function switchBottomNav(navName) {
     document.getElementById('create-page').classList.add('active');
     // 更新积分显示
     const creditsEl = document.getElementById('create-credits-count');
-    if (creditsEl) creditsEl.textContent = state.credits || 0;
+    if (creditsEl) creditsEl.textContent = formatCredits(state.credits || 0);
     // 更新当前模型显示
     updateCreateModelDisplay();
     // 初始化Tips滚动
@@ -2028,7 +2067,7 @@ function updateCreateModelDisplay() {
   const modelDisplay = document.getElementById('create-model-display');
   if (!modelDisplay) return;
   
-  const modelId = state.settings.llmModelId || 'deepseek-v3';
+  const modelId = getUserDefaultModel();
   modelDisplay.textContent = getModelDisplayName(modelId);
 }
 
@@ -2241,7 +2280,7 @@ async function loadProfilePageData() {
 
   // 加载积分
   const creditsEl = document.getElementById('profile-page-credits');
-  if (creditsEl) creditsEl.textContent = state.credits || 0;
+  if (creditsEl) creditsEl.textContent = formatCredits(state.credits || 0);
 
   // 加载游戏统计
   try {
@@ -3036,7 +3075,7 @@ function loadProfilePageSettings() {
   
   // 模型设置
   const modelEl = document.getElementById('settings-model');
-  if (modelEl) modelEl.value = state.settings.llmModelId || 'deepseek-v3';
+  if (modelEl) modelEl.value = getUserDefaultModel();
   
   const apiKeyEl = document.getElementById('llm-api-key');
   if (apiKeyEl) apiKeyEl.value = state.settings.llmApiKey || '';
@@ -3070,8 +3109,7 @@ async function savePageSettings() {
   
   // 更新状态
   state.settings.authorName = nickname;
-  state.settings.llmModelId = model;
-  state.settings.llmProvider = model;
+  setUserDefaultModel(model);
   state.settings.llmApiKey = apiKey;
   
   localStorage.setItem('aigame-settings', JSON.stringify(state.settings));
@@ -3196,7 +3234,12 @@ function loadSettings() {
   if (saved) {
     try {
       state.settings = { ...state.settings, ...JSON.parse(saved) };
-      log('设置已从本地加载');
+      // 使用统一函数同步所有模型相关属性
+      const savedModel = state.settings.llmModel || state.settings.llmProvider || state.settings.llmModelId;
+      if (savedModel) {
+        setUserDefaultModel(savedModel);
+      }
+      log('设置已从本地加载，默认模型: ' + getUserDefaultModel());
     } catch (e) {
       log('加载设置失败: ' + e.message, 'error');
     }
@@ -3209,9 +3252,9 @@ function loadSettings() {
 // 保存设置
 async function saveSettings() {
   try {
-    // 获取模型选择
-    const modelSelect = document.getElementById('llm-model-select');
-    const selectedModel = modelSelect ? modelSelect.value : 'deepseek-v3';
+    // 获取默认模型 (从 radio 按钮获取)
+    const selectedRadio = document.querySelector('input[name="default-llm-model"]:checked');
+    const selectedModel = selectedRadio ? selectedRadio.value : (state.llmModel || 'deepseek-v3');
     
     // 获取模型配置信息
     const modelConfig = MODEL_REGISTRY[selectedModel] || {};
@@ -3222,7 +3265,7 @@ async function saveSettings() {
     const llmKeys = {};
     document.querySelectorAll('.llm-key-item').forEach(item => {
       const modelId = item.dataset.modelId;
-      const input = item.querySelector('input');
+      const input = item.querySelector('input[type="password"]');
       if (modelId && input) {
         const keyValue = input.value.trim();
         if (keyValue) {
@@ -3236,15 +3279,20 @@ async function saveSettings() {
     const currentModelKey = llmKeys[selectedModel] || '';
     
     const settings = {
-      llmProvider: selectedModel,  // 使用模型ID作为provider
-      llmApiKey: currentModelKey,  // 使用当前选中模型的 Key
+      llmProvider: selectedModel,
+      llmModelId: selectedModel,
+      llmApiKey: currentModelKey,
       llmBaseUrl: document.getElementById('llm-base-url')?.value || modelConfig.baseUrl || '',
-      llmModel: document.getElementById('llm-model')?.value || modelConfig.model || selectedModel,
+      llmModel: selectedModel,
       authorName: newNickname
     };
     
     state.settings = settings;
+    // 使用统一函数同步所有模型相关属性（会自动同步高级设置下拉框）
+    setUserDefaultModel(selectedModel);
     localStorage.setItem('aigame-settings', JSON.stringify(settings));
+    
+    console.log('[INFO] 设置已保存，默认模型:', selectedModel);
     
     // 保存调试模式
     state.debugMode = document.getElementById('debug-mode')?.checked || false;
@@ -3311,7 +3359,7 @@ async function loadSettingsModelList() {
     }
     
     // 保存当前选中的值，优先用户设置，否则用后端默认
-    const currentValue = state.settings.llmProvider || serverDefaultModel || 'deepseek-v3';
+    const currentValue = getUserDefaultModel();
     
     // 判断用户是否有自己的 Key
     const userHasKey = state.settings.llmApiKey && state.settings.llmApiKey.trim().length > 0;
@@ -3396,7 +3444,7 @@ async function openSettings(preSelectModelId = null) {
   const modelSelect = document.getElementById('llm-model-select');
   if (modelSelect) {
     // 优先使用传入的预选模型，其次是已保存的模型
-    const targetModel = preSelectModelId || state.settings.llmProvider || 'deepseek-v3';
+    const targetModel = preSelectModelId || getUserDefaultModel();
     if (modelSelect.querySelector(`option[value="${targetModel}"]`)) {
       modelSelect.value = targetModel;
     }
@@ -3416,12 +3464,17 @@ async function openSettings(preSelectModelId = null) {
     debugCheckbox.checked = state.debugMode;
   }
   
-  // 触发模型选择变更以更新UI
-  onModelSelectChange();
-  
-  // 如果有预选模型，切换到 LLM 设置面板
+  // 如果有预选模型，切换到 LLM 设置面板并高亮对应项
   if (preSelectModelId) {
     switchSettingsSection('llm');
+    setTimeout(() => {
+      const modelItem = document.querySelector(`.llm-key-item[data-model-id="${preSelectModelId}"]`);
+      if (modelItem) {
+        modelItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        modelItem.classList.add('highlight-pulse');
+        setTimeout(() => modelItem.classList.remove('highlight-pulse'), 2000);
+      }
+    }, 100);
   }
 }
 
@@ -3456,8 +3509,9 @@ async function renderLLMKeysList() {
     return;
   }
   
-  // 获取已保存的 API Keys
+  // 获取已保存的 API Keys 和默认模型
   const savedKeys = JSON.parse(localStorage.getItem('llm-api-keys') || '{}');
+  const defaultModel = getUserDefaultModel();
   
   // 渲染列表
   listContainer.innerHTML = models
@@ -3466,16 +3520,27 @@ async function renderLLMKeysList() {
       const savedKey = savedKeys[model.id] || '';
       const hasKey = savedKey.length > 0;
       const isFree = model.free || model.hasBackendKey;
+      const isDefault = model.id === defaultModel;
       
       return `
-        <div class="llm-key-item" data-model-id="${model.id}">
-          <div class="llm-key-info">
-            <div class="llm-key-name">
-              ${escapeHtml(model.name)}
-              ${isFree ? '<span class="badge free">免费</span>' : '<span class="badge need-key">需配Key</span>'}
-            </div>
-            <div class="llm-key-status ${hasKey ? 'configured' : ''}">
-              ${hasKey ? '✓ 已配置' : (isFree ? '使用平台默认配置' : '未配置')}
+        <div class="llm-key-item ${isDefault ? 'is-default' : ''}" data-model-id="${model.id}">
+          <div class="llm-key-header">
+            <label class="llm-default-check">
+              <input type="radio" 
+                     name="default-llm-model" 
+                     value="${model.id}" 
+                     ${isDefault ? 'checked' : ''}
+                     onchange="onDefaultModelChange('${model.id}')">
+              <span class="llm-default-label">默认</span>
+            </label>
+            <div class="llm-key-info">
+              <div class="llm-key-name">
+                ${escapeHtml(model.name)}
+                ${isFree ? '<span class="badge free">免费</span>' : '<span class="badge need-key">需配Key</span>'}
+              </div>
+              <div class="llm-key-status ${hasKey ? 'configured' : ''}">
+                ${hasKey ? '✓ 已配置' : (isFree ? '使用平台默认' : '未配置')}
+              </div>
             </div>
           </div>
           <div class="llm-key-input">
@@ -3488,6 +3553,19 @@ async function renderLLMKeysList() {
         </div>
       `;
     }).join('');
+}
+
+// 默认模型变更处理
+function onDefaultModelChange(modelId) {
+  // 使用统一函数更新所有模型相关属性（会自动同步高级设置下拉框）
+  setUserDefaultModel(modelId);
+  
+  // 更新 UI 样式
+  document.querySelectorAll('.llm-key-item').forEach(item => {
+    item.classList.toggle('is-default', item.dataset.modelId === modelId);
+  });
+  
+  console.log('[INFO] 默认模型已切换为:', modelId);
 }
 
 // LLM Key 变更处理
@@ -4159,12 +4237,13 @@ async function selectTurboModel(modelId, creditCost, needsUserKey = false) {
       closeTurboModal();
       // 直接打开设置弹窗
       openSettings();
-      // 在设置弹窗中选择对应的模型
+      // 滚动到对应的模型项
       setTimeout(() => {
-        const modelSelect = document.getElementById('llm-model-select');
-        if (modelSelect) {
-          modelSelect.value = modelId;
-          onModelSelectChange();
+        const modelItem = document.querySelector(`.llm-key-item[data-model-id="${modelId}"]`);
+        if (modelItem) {
+          modelItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          modelItem.classList.add('highlight-pulse');
+          setTimeout(() => modelItem.classList.remove('highlight-pulse'), 2000);
         }
         showToast('请先配置此模型的 API Key', 'info');
       }, 100);
@@ -4268,7 +4347,7 @@ async function generateGameWithTurbo(prompt, turboModelId) {
   // 更新显示
   const turboCreditsDisplay = document.getElementById('turbo-credits-display');
   if (turboCreditsDisplay) {
-    turboCreditsDisplay.textContent = state.credits;
+    turboCreditsDisplay.textContent = formatCredits(state.credits);
   }
   
   try {
@@ -4757,17 +4836,23 @@ async function generateGame(advancedSettings = null) {
   }
   
   // 获取当前选择的模型
-  // 优先使用高级设置中选择的模型，其次是全局设置
+  // 优先使用高级设置中选择的模型，其次是用户设置的默认模型
   const advModelSelect = document.getElementById('adv-llm-model');
   const advSelectedModel = advModelSelect?.value?.trim();
-  const selectedModel = advSelectedModel || state.settings.llmProvider || serverDefaultModel || 'deepseek-v3';
+  const selectedModel = advSelectedModel || getUserDefaultModel();
   const modelInfo = MODEL_REGISTRY[selectedModel];
   
+  // 获取用户为各模型保存的 API Keys
+  const savedLLMKeys = JSON.parse(localStorage.getItem('llm-api-keys') || '{}');
+  const modelSpecificKey = savedLLMKeys[selectedModel] || '';
+  
   // 判断用户是否有自己的 Key
-  // 检查高级设置中的Key，或者全局设置中的Key
+  // 检查高级设置中的Key，或者模型专属Key，或者全局设置中的Key
   const advKeyInput = document.getElementById('adv-llm-key');
   const advKey = advKeyInput?.value?.trim();
-  const userHasKey = (advKey && advKey.length > 0) || (state.settings.llmApiKey && state.settings.llmApiKey.trim().length > 0);
+  const userHasKey = (advKey && advKey.length > 0) || 
+                     (modelSpecificKey && modelSpecificKey.length > 0) ||
+                     (state.settings.llmApiKey && state.settings.llmApiKey.trim().length > 0);
   const backendHasKey = modelInfo?.hasDefaultKey === true;
   const modelCreditCost = modelInfo?.creditCost || 1;
   
@@ -4859,9 +4944,10 @@ async function generateGame(advancedSettings = null) {
   try {
     // 构建LLM配置 - 只传递 modelId 和用户的 apiKey（如果有）
     // 后端会根据 modelId 从 LLM_MODELS 获取完整配置
+    // modelSpecificKey 已在前面定义
     const llmConfig = {
       provider: selectedModel,  // 这里传 modelId，后端会解析
-      apiKey: state.settings.llmApiKey || ''  // 用户自己的Key（如果有）
+      apiKey: modelSpecificKey || state.settings.llmApiKey || ''  // 优先使用模型专属Key
     };
     
     // 如果是自定义接口，需要传递完整配置
@@ -5199,7 +5285,7 @@ function openSaveModal() {
   document.getElementById('save-author').value = getEffectiveAuthorName();
   
   // 生成成功后刷新积分显示（后端已扣除，前端同步）
-  loadCredits().then(() => {
+  loadCredits({ showChange: true, reason: '生成游戏' }).then(() => {
     updateCreditsDisplay();
   });
   
@@ -6088,6 +6174,7 @@ async function likeGame() {
     });
     
     const data = await response.json();
+    console.log('[点赞响应]', data);
     
     if (data.success) {
       // 更新点赞数显示
@@ -6108,12 +6195,30 @@ async function likeGame() {
       if (statLikeIcon) statLikeIcon.textContent = data.liked ? '❤️' : '🤍';
       if (statLikeBtn) statLikeBtn.classList.toggle('liked', data.liked);
       
-      showToast(data.liked ? '感谢点赞！❤️' : '已取消点赞', data.liked ? 'success' : 'info');
+      // 显示提示，如果有积分奖励则显示积分信息
+      if (data.creditAwarded && data.creditMessage) {
+        showToast(`感谢点赞！❤️ ${data.creditMessage}`, 'success');
+        loadCredits(); // 刷新积分显示
+      } else {
+        showToast(data.liked ? '感谢点赞！❤️' : '已取消点赞', data.liked ? 'success' : 'info');
+      }
     }
   } catch (error) {
     console.error('点赞失败:', error);
     showToast('操作失败，请重试', 'error');
   }
+}
+
+// 生成带有分享者信息的游戏链接
+function generateShareUrl(gameId) {
+  const userToken = getUserToken();
+  // 使用用户token的前8位作为分享者标识
+  const sharerCode = userToken ? userToken.substring(0, 8) : '';
+  let url = `${window.location.origin}/game/${gameId}`;
+  if (sharerCode) {
+    url += `?sharer=${sharerCode}&from=${gameId}`;
+  }
+  return url;
 }
 
 // 分享游戏
@@ -6123,7 +6228,8 @@ function shareGame() {
     return;
   }
   
-  const url = `${window.location.origin}/game/${state.currentGameId}`;
+  // 使用带分享者信息的链接
+  const url = generateShareUrl(state.currentGameId);
   document.getElementById('share-url').value = url;
   document.getElementById('share-modal').classList.add('active');
 }
@@ -6226,7 +6332,12 @@ function toggleFullscreen() {
 
 // 显示Toast提示
 function showToast(message, type = '') {
+  console.log('[Toast]', message, type);
   const toast = document.getElementById('toast');
+  if (!toast) {
+    console.error('[Toast] 找不到 toast 元素');
+    return;
+  }
   toast.textContent = message;
   toast.className = 'toast active';
   if (type) {
@@ -6311,13 +6422,13 @@ function showApiKeyErrorModal(errorMsg) {
           您配置的 API Key 似乎无效或已过期，请检查后重试。
         </p>
         <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-          <button class="btn-primary" onclick="useTrialModeInstead()" style="width: 100%; padding: 0.75rem;">
+          <button class="btn btn-primary" onclick="useTrialModeInstead()" style="width: 100%; padding: 0.75rem;">
             🎁 清除 Key，使用游客模式
           </button>
-          <button class="btn-secondary" onclick="openSettingsFromError()" style="width: 100%; padding: 0.75rem;">
+          <button class="btn btn-secondary" onclick="openSettingsFromError()" style="width: 100%; padding: 0.75rem;">
             ⚙️ 去设置中修改 API Key
           </button>
-          <button class="btn-ghost" onclick="closeApiKeyErrorModal()" style="width: 100%; padding: 0.5rem; color: #64748b;">
+          <button class="btn btn-ghost" onclick="closeApiKeyErrorModal()" style="width: 100%; padding: 0.5rem;">
             取消
           </button>
         </div>
@@ -6331,7 +6442,7 @@ function showApiKeyErrorModal(errorMsg) {
 // modelName: 模型显示名称, modelId: 模型ID（可选，用于跳转设置时预选）
 function showNeedApiKeyForModelModal(modelName, modelId = null) {
   // 保存当前需要配置的模型ID，供跳转设置时使用
-  window._pendingModelIdForSettings = modelId || state.settings.llmProvider;
+  window._pendingModelIdForSettings = modelId || getUserDefaultModel();
   
   // 创建弹窗
   const modal = document.createElement('div');
@@ -6353,13 +6464,13 @@ function showNeedApiKeyForModelModal(modelName, modelId = null) {
           您需要在设置中配置自己的 API Key 才能使用。
         </p>
         <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-          <button class="btn-primary" onclick="goToSettingsWithPendingModel();" style="width: 100%; padding: 0.75rem;">
-            ⚙️ 去设置中配置我的 API Key
+          <button class="btn btn-primary" onclick="goToSettingsWithPendingModel();" style="width: 100%; padding: 0.75rem;">
+            ⚙️ 去设置中配置我的 API KEY
           </button>
-          <button class="btn-secondary" onclick="switchToAvailableModel()" style="width: 100%; padding: 0.75rem;">
+          <button class="btn btn-secondary" onclick="switchToAvailableModel()" style="width: 100%; padding: 0.75rem;">
             🔄 切换到其他可用模型
           </button>
-          <button class="btn-ghost" onclick="closeNeedModelKeyModal()" style="width: 100%; padding: 0.5rem; color: #64748b;">
+          <button class="btn btn-ghost" onclick="closeNeedModelKeyModal()" style="width: 100%; padding: 0.5rem;">
             取消
           </button>
         </div>
@@ -6387,8 +6498,7 @@ function switchToAvailableModel() {
   });
   
   if (availableModel) {
-    state.settings.llmProvider = availableModel[0];
-    state.settings.llmModelId = availableModel[0];
+    setUserDefaultModel(availableModel[0]);
     localStorage.setItem('aigame-settings', JSON.stringify(state.settings));
     showToast(`已切换到 ${availableModel[1].name}`, 'success');
     
@@ -6431,13 +6541,13 @@ function showNeedApiKeyModal(errorMsg, hint, provider) {
           ${escapeHtml(hint || '请在设置中配置您的 API Key')}
         </p>
         <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-          <button class="btn-primary" onclick="goToSettingsForApiKey()" style="width: 100%; padding: 0.75rem;">
+          <button class="btn btn-primary" onclick="goToSettingsForApiKey()" style="width: 100%; padding: 0.75rem;">
             ⚙️ 去设置中配置 API Key
           </button>
-          <button class="btn-secondary" onclick="switchToFreeModel()" style="width: 100%; padding: 0.75rem;">
+          <button class="btn btn-secondary" onclick="switchToFreeModel()" style="width: 100%; padding: 0.75rem;">
             🆓 切换到免费模型 (DeepSeek)
           </button>
-          <button class="btn-ghost" onclick="closeNeedApiKeyModal()" style="width: 100%; padding: 0.5rem; color: #64748b;">
+          <button class="btn btn-ghost" onclick="closeNeedApiKeyModal()" style="width: 100%; padding: 0.5rem;">
             取消
           </button>
         </div>
@@ -6486,8 +6596,8 @@ function goToSettingsForModel(modelId, modelName) {
 function switchToFreeModel() {
   closeNeedApiKeyModal();
   // 设置为 DeepSeek V3（免费模型）
-  state.settings.llmProvider = 'deepseek-v3';
-  saveSettings();
+  setUserDefaultModel('deepseek-v3');
+  localStorage.setItem('aigame-settings', JSON.stringify(state.settings));
   
   // 更新高级设置中的模型选择
   const advModelSelect = document.getElementById('adv-llm-model');
@@ -6569,8 +6679,13 @@ function generateUUID() {
 // ==================== 积分系统 ====================
 
 // 加载用户积分
-async function loadCredits() {
+// @param {object} options - 可选配置
+// @param {boolean} options.showChange - 是否显示积分变化提示
+// @param {string} options.reason - 变化原因描述
+async function loadCredits(options = {}) {
   try {
+    const oldCredits = state.credits;
+    
     const response = await fetch('/api/credits', {
       headers: { 'X-User-Token': getUserToken() }
     });
@@ -6583,6 +6698,14 @@ async function loadCredits() {
       
       // 更新积分获取方式的已完成状态
       updateCreditWaysStatus(data);
+      
+      // 如果启用了变化提示且积分有变化
+      if (options.showChange && oldCredits !== undefined && oldCredits !== null) {
+        const delta = data.credits - oldCredits;
+        if (delta !== 0) {
+          showCreditsChangeToast(delta, options.reason);
+        }
+      }
     }
   } catch (error) {
     console.error('加载积分失败:', error);
@@ -6600,44 +6723,113 @@ function updateCreditWaysStatus(creditsData) {
       const desc = document.getElementById('way-wechat-desc');
       if (desc) desc.textContent = '已领取奖励';
       const reward = document.getElementById('way-wechat-reward');
-      if (reward) reward.textContent = '+3次';
+      if (reward) reward.textContent = '已完成';
     } else {
       wayWechat.classList.remove('completed');
     }
   }
   
-  // 分享和邀请可以多次使用，不设置完成状态
+  // 更新分享游戏、邀请好友、阅读文章的状态
+  const { dailyCounts, extraConfig } = creditsData;
+  
+  if (dailyCounts && extraConfig) {
+    // 分享游戏
+    updateExtraWayStatus('share', dailyCounts.share, extraConfig.shareGame);
+    // 邀请好友
+    updateExtraWayStatus('invite', dailyCounts.invite, extraConfig.inviteFriend);
+    // 阅读文章
+    updateExtraWayStatus('article', dailyCounts.article, extraConfig.article);
+  }
+}
+
+// 更新额外积分途径的状态
+function updateExtraWayStatus(type, todayCount, config) {
+  const wayEl = document.getElementById(`way-${type}`);
+  const rewardEl = document.getElementById(`way-${type}-reward`);
+  const progressEl = document.getElementById(`way-${type}-progress`);
+  
+  if (!wayEl) return;
+  
+  // 默认值
+  const credits = config?.credits ?? 1;
+  const dailyLimit = config?.dailyLimit ?? 5;
+  const count = todayCount ?? 0;
+  const isCompleted = count >= dailyLimit;
+  
+  // 更新样式
+  if (isCompleted) {
+    wayEl.classList.add('completed');
+  } else {
+    wayEl.classList.remove('completed');
+  }
+  
+  // 更新奖励显示
+  if (rewardEl) {
+    rewardEl.textContent = isCompleted ? '已完成' : `+${credits}次`;
+  }
+  
+  // 更新进度显示
+  if (progressEl) {
+    progressEl.textContent = `${count}/${dailyLimit}`;
+    progressEl.style.display = dailyLimit > 0 ? 'block' : 'none';
+  }
+}
+
+/**
+ * 显示积分变动悬浮提示
+ * @param {number} delta - 积分变动量（正数表示获得，负数表示消耗）
+ * @param {string} reason - 变动原因描述（可选）
+ */
+function showCreditsChangeToast(delta, reason = '') {
+  if (delta === 0) return;
+  
+  const formattedDelta = formatCredits(Math.abs(delta));
+  let message = '';
+  let type = '';
+  
+  if (delta > 0) {
+    message = `💎 +${formattedDelta} 积分`;
+    if (reason) message += `（${reason}）`;
+    type = 'success';
+  } else {
+    message = `💎 -${formattedDelta} 积分`;
+    if (reason) message += `（${reason}）`;
+    type = 'info';
+  }
+  
+  showToast(message, type);
 }
 
 // 更新积分显示（全局所有位置）
 function updateCreditsDisplay() {
   const credits = state.credits;
+  const formattedCredits = formatCredits(credits);
   
   // 底部导航积分
   const navCount = document.getElementById('nav-credits-count');
-  if (navCount) navCount.textContent = credits;
+  if (navCount) navCount.textContent = formattedCredits;
   
   // 积分弹窗
   const modalCount = document.getElementById('credits-count');
-  if (modalCount) modalCount.textContent = credits;
+  if (modalCount) modalCount.textContent = formattedCredits;
   
   // 创作页面积分
   const createCount = document.getElementById('create-credits-count');
-  if (createCount) createCount.textContent = credits;
+  if (createCount) createCount.textContent = formattedCredits;
   
   // 个人中心积分
   const profileCredits = document.getElementById('profile-page-credits');
-  if (profileCredits) profileCredits.textContent = credits;
+  if (profileCredits) profileCredits.textContent = formattedCredits;
   
   // 个人弹窗积分
   const profileModalCredits = document.getElementById('profile-credits');
-  if (profileModalCredits) profileModalCredits.textContent = credits;
+  if (profileModalCredits) profileModalCredits.textContent = formattedCredits;
   
   // 设置页积分
   const profileCreditsValue = document.getElementById('profile-credits-value');
-  if (profileCreditsValue) profileCreditsValue.textContent = credits;
+  if (profileCreditsValue) profileCreditsValue.textContent = formattedCredits;
   
-  log(`积分显示已更新: ${credits}`, 'info');
+  log(`积分显示已更新: ${formattedCredits}`, 'info');
 }
 
 // 打开积分弹窗
@@ -6650,12 +6842,145 @@ function openCreditsModal() {
       const adLimit = document.getElementById('ad-daily-limit');
       if (adLimit) adLimit.textContent = state.creditsConfig.dailyLimit;
     }
+    
+    // 加载每日行为积分途径
+    loadActionWays();
   });
+}
+
+// 加载每日行为积分途径
+async function loadActionWays() {
+  try {
+    const userToken = getUserToken();
+    const headers = {};
+    if (userToken) {
+      headers['x-user-token'] = userToken;
+    }
+    
+    // 添加 cache: 'no-store' 确保每次都获取最新数据
+    const response = await fetch('/api/credits/action-ways', { 
+      headers,
+      cache: 'no-store'
+    });
+    const data = await response.json();
+    
+    if (data.success && data.ways) {
+      renderActionWays(data.ways);
+    }
+  } catch (error) {
+    console.error('加载行为积分途径失败:', error);
+  }
+}
+
+// 渲染每日行为积分途径
+function renderActionWays(ways) {
+  const container = document.getElementById('action-ways-container');
+  if (!container) return;
+  
+  const order = ['like', 'favorite', 'comment', 'follow'];
+  let html = '';
+  
+  for (const key of order) {
+    const way = ways[key];
+    if (!way || way.credits <= 0 || way.dailyLimit <= 0) continue;
+    
+    const remaining = Math.max(0, way.dailyLimit - way.todayCount);
+    const isCompleted = remaining === 0;
+    const statusClass = isCompleted ? 'completed' : '';
+    const progressText = `${way.todayCount}/${way.dailyLimit}`;
+    
+    html += `
+      <div class="credit-way ${statusClass}" onclick="goToGamesPage()">
+        <div class="credit-way-icon">${way.icon}</div>
+        <div class="credit-way-info">
+          <div class="credit-way-title">${way.name}</div>
+          <div class="credit-way-desc">${way.desc}</div>
+        </div>
+        <div class="credit-way-status">
+          <div class="credit-way-reward">${isCompleted ? '已完成' : `+${way.credits}次`}</div>
+          <div class="credit-way-progress">${progressText}</div>
+        </div>
+      </div>
+    `;
+  }
+  
+  if (html) {
+    container.innerHTML = html;
+  } else {
+    container.innerHTML = '<div style="color:#888;text-align:center;padding:1rem;">暂无可用的互动奖励</div>';
+  }
+}
+
+// 跳转到游戏广场
+function goToGamesPage() {
+  closeCreditsModal();
+  window.location.href = '/games.html';
 }
 
 // 关闭积分弹窗
 function closeCreditsModal() {
   closeModal('credits-modal');
+}
+
+// 通用的展开/收起区域函数
+function toggleCreditWaySection(wayElement, sectionElement, otherSections = []) {
+  const isHidden = sectionElement.style.display === 'none';
+  
+  // 先关闭其他展开区域
+  otherSections.forEach(({ way, section }) => {
+    if (section && section.style.display !== 'none') {
+      section.style.display = 'none';
+      if (way) way.classList.remove('expanded');
+    }
+  });
+  
+  // 切换当前区域
+  if (isHidden) {
+    sectionElement.style.display = 'block';
+    if (wayElement) wayElement.classList.add('expanded');
+    
+    // 展开后自动滚动到可见位置
+    setTimeout(() => {
+      scrollToShowSection(sectionElement);
+      // 添加高亮动画
+      sectionElement.classList.add('highlight-animation');
+      setTimeout(() => sectionElement.classList.remove('highlight-animation'), 1500);
+    }, 50);
+  } else {
+    sectionElement.style.display = 'none';
+    if (wayElement) wayElement.classList.remove('expanded');
+  }
+  
+  return isHidden; // 返回是否展开了
+}
+
+// 滚动使展开区域完全可见
+function scrollToShowSection(section) {
+  const modalBody = section.closest('.modal-body');
+  if (!modalBody) return;
+  
+  const sectionRect = section.getBoundingClientRect();
+  const modalRect = modalBody.getBoundingClientRect();
+  
+  // 计算展开区域底部相对于modal可视区域的位置
+  const sectionBottom = sectionRect.bottom;
+  const modalBottom = modalRect.bottom;
+  
+  // 如果展开区域底部超出modal可视区域，需要滚动
+  if (sectionBottom > modalBottom) {
+    const scrollAmount = sectionBottom - modalBottom + 20; // 多滚动20px留出边距
+    modalBody.scrollBy({
+      top: scrollAmount,
+      behavior: 'smooth'
+    });
+  } else if (sectionRect.top < modalRect.top) {
+    // 如果展开区域顶部在可视区域之上，滚动到顶部可见
+    const scrollAmount = sectionRect.top - modalRect.top - 20;
+    modalBody.scrollBy({
+      top: scrollAmount,
+      behavior: 'smooth'
+    });
+  }
 }
 
 // 显示/切换公众号验证
@@ -6668,18 +6993,12 @@ function showWechatVerify() {
   }
   
   const section = document.getElementById('wechat-verify-section');
-  const isHidden = section.style.display === 'none';
-  section.style.display = isHidden ? 'block' : 'none';
+  const otherSections = [
+    { way: document.getElementById('way-invite'), section: document.getElementById('invite-section') },
+    { way: document.getElementById('way-article'), section: document.getElementById('article-code-section') }
+  ];
   
-  // 展开时滚动到可见位置并高亮
-  if (isHidden) {
-    setTimeout(() => {
-      section.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      // 添加高亮动画
-      section.classList.add('highlight-animation');
-      setTimeout(() => section.classList.remove('highlight-animation'), 1500);
-    }, 100);
-  }
+  toggleCreditWaySection(wayWechat, section, otherSections);
 }
 
 // 兼容别名
@@ -6813,6 +7132,13 @@ async function watchAd() {
 
 // 分享获取积分
 function shareForCredits() {
+  // 检查是否已达上限
+  const wayShare = document.getElementById('way-share');
+  if (wayShare && wayShare.classList.contains('completed')) {
+    showToast('今日分享奖励已达上限', 'info');
+    return;
+  }
+  
   if (!state.currentGameId) {
     showToast('请先创作并保存一个游戏', 'error');
     closeCreditsModal();
@@ -6821,6 +7147,102 @@ function shareForCredits() {
   
   closeCreditsModal();
   shareGame();
+}
+
+// ==================== 文章验证码兑换 ====================
+
+// 切换文章验证码输入区域
+function toggleArticleCodeSection() {
+  // 检查是否已达上限
+  const wayArticle = document.getElementById('way-article');
+  if (wayArticle && wayArticle.classList.contains('completed')) {
+    showToast('今日阅读文章奖励已达上限', 'info');
+    return;
+  }
+  
+  const section = document.getElementById('article-code-section');
+  const otherSections = [
+    { way: document.getElementById('way-wechat'), section: document.getElementById('wechat-verify-section') },
+    { way: document.getElementById('way-invite'), section: document.getElementById('invite-section') }
+  ];
+  
+  toggleCreditWaySection(wayArticle, section, otherSections);
+}
+
+// 兑换文章验证码
+async function redeemArticleCode() {
+  const codeInput = document.getElementById('article-promo-code');
+  const code = codeInput.value.trim();
+  
+  if (!code) {
+    showToast('请输入验证码', 'error');
+    return;
+  }
+  
+  try {
+    const response = await fetch('/api/credits/redeem-code', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Token': getUserToken()
+      },
+      body: JSON.stringify({ code })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      showToast(data.message, 'success');
+      state.credits = data.credits;
+      updateCreditsDisplay();
+      codeInput.value = ''; // 清空输入
+    } else {
+      showToast(data.error || '兑换失败', 'error');
+    }
+  } catch (error) {
+    console.error('兑换验证码失败:', error);
+    showToast('兑换失败，请重试', 'error');
+  }
+}
+
+// 检测URL中的文章推广参数并自动领取积分
+async function checkArticlePromoFromURL() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const articleId = urlParams.get('a') || urlParams.get('article');
+  
+  if (!articleId) return;
+  
+  // 延迟执行，确保用户token已初始化
+  setTimeout(async () => {
+    try {
+      const response = await fetch('/api/credits/article-visit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Token': getUserToken()
+        },
+        body: JSON.stringify({ articleId })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        showToast(data.message, 'success');
+        state.credits = data.credits;
+        updateCreditsDisplay();
+      } else if (data.alreadyClaimed) {
+        // 已领取过，不显示错误提示
+        log('文章福利已领取过', 'info');
+      }
+      
+      // 清除URL中的参数，避免重复触发
+      const newUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState({}, document.title, newUrl);
+      
+    } catch (error) {
+      console.error('文章福利领取失败:', error);
+    }
+  }, 1500);
 }
 
 // ==================== 个人中心 ====================
@@ -6975,8 +7397,8 @@ async function loadProfileData() {
   
   // 加载积分
   await loadCredits();
-  document.getElementById('profile-credits').textContent = state.credits || 0;
-  document.getElementById('profile-credits-value').textContent = state.credits || 0;
+  document.getElementById('profile-credits').textContent = formatCredits(state.credits || 0);
+  document.getElementById('profile-credits-value').textContent = formatCredits(state.credits || 0);
   
   // 加载游戏统计
   try {
@@ -7003,7 +7425,7 @@ function loadProfileSettings() {
   const customModelInput = document.getElementById('profile-custom-model');
   const emailInput = document.getElementById('profile-email');
   
-  if (modelSelect) modelSelect.value = state.settings.llmModelId || 'deepseek-v3';
+  if (modelSelect) modelSelect.value = getUserDefaultModel();
   if (apiKeyInput) apiKeyInput.value = state.settings.llmApiKey || '';
   if (authorNameInput) authorNameInput.value = state.settings.authorName || '';
   if (debugMode) debugMode.checked = state.settings.debugMode || false;
@@ -7068,13 +7490,12 @@ async function saveProfileSettings() {
   const passwordInput = document.getElementById('profile-password');
   
   // 更新 state
-  state.settings.llmModelId = modelSelect?.value || 'deepseek-v3';
-  state.settings.llmProvider = modelSelect?.value || 'deepseek-v3';
+  const selectedModel = modelSelect?.value || 'deepseek-v3';
+  setUserDefaultModel(selectedModel);
   state.settings.llmApiKey = apiKeyInput?.value || '';
   state.settings.authorName = authorNameInput?.value || '';
   state.settings.debugMode = debugMode?.checked || false;
   state.settings.llmBaseUrl = baseUrlInput?.value || '';
-  state.settings.llmModel = customModelInput?.value || '';
   
   // 保存到 localStorage
   localStorage.setItem('aigame-settings', JSON.stringify(state.settings));
@@ -7423,7 +7844,13 @@ async function toggleFavorite() {
         statFavsCount.textContent = data.favorite_count;
       }
       
-      showToast(data.favorited ? '已添加到收藏 ⭐' : '已取消收藏', data.favorited ? 'success' : 'info');
+      // 显示提示，如果有积分奖励则显示积分信息
+      if (data.creditAwarded && data.creditMessage) {
+        showToast(`已添加到收藏 ⭐ ${data.creditMessage}`, 'success');
+        loadCredits(); // 刷新积分显示
+      } else {
+        showToast(data.favorited ? '已添加到收藏 ⭐' : '已取消收藏', data.favorited ? 'success' : 'info');
+      }
     } else {
       showToast(data.error || '操作失败', 'error');
     }
@@ -7916,9 +8343,8 @@ function onModelSelectChange() {
     }
   }
   
-  // 保存选择到 settings
-  state.settings.llmProvider = modelId;
-  state.settings.llmModelId = modelId;
+  // 保存选择到 settings（使用统一函数）
+  setUserDefaultModel(modelId);
 }
 
 // ==================== 游客模式系统 ====================
@@ -8236,13 +8662,23 @@ function shareInviteLinkTo(channel) {
 
 // 切换邀请链接区域显示
 async function toggleInviteSection() {
-  const section = document.getElementById('invite-section');
-  const isHidden = section.style.display === 'none';
+  // 检查是否已达上限
+  const wayInvite = document.getElementById('way-invite');
+  if (wayInvite && wayInvite.classList.contains('completed')) {
+    showToast('今日邀请好友奖励已达上限，但你仍可分享链接', 'info');
+    // 继续执行，允许用户查看链接，只是不会获得积分
+  }
   
-  if (isHidden) {
-    section.style.display = 'block';
-    
-    // 加载我的邀请链接
+  const section = document.getElementById('invite-section');
+  const otherSections = [
+    { way: document.getElementById('way-wechat'), section: document.getElementById('wechat-verify-section') },
+    { way: document.getElementById('way-article'), section: document.getElementById('article-code-section') }
+  ];
+  
+  const expanded = toggleCreditWaySection(wayInvite, section, otherSections);
+  
+  // 如果展开了，加载邀请链接
+  if (expanded) {
     const linkInput = document.getElementById('my-invite-link');
     if (!state.myInviteLink) {
       linkInput.value = '加载中...';
@@ -8255,8 +8691,6 @@ async function toggleInviteSection() {
     } else {
       linkInput.value = state.myInviteLink;
     }
-  } else {
-    section.style.display = 'none';
   }
 }
 
@@ -8516,18 +8950,6 @@ function showLikeAnimation() {
     `;
     document.head.appendChild(style);
   }
-}
-
-// 生成带有分享者信息的游戏链接
-function generateShareUrl(gameId) {
-  const userToken = getUserToken();
-  // 使用用户token的前8位作为分享者标识
-  const sharerCode = userToken ? userToken.substring(0, 8) : '';
-  let url = `${window.location.origin}/game/${gameId}`;
-  if (sharerCode) {
-    url += `?sharer=${sharerCode}&from=${gameId}`;
-  }
-  return url;
 }
 
 // 打开分享面板
@@ -9046,7 +9468,13 @@ async function toggleFollowUser(targetToken, buttonElement) {
         buttonElement.textContent = data.following ? '已关注' : '关注';
       }
       
-      showToast(data.following ? '关注成功 ✨' : '已取消关注', data.following ? 'success' : 'info');
+      // 显示提示，如果有积分奖励则显示积分信息
+      if (data.creditAwarded && data.creditMessage) {
+        showToast(`关注成功 ✨ ${data.creditMessage}`, 'success');
+        loadCredits(); // 刷新积分显示
+      } else {
+        showToast(data.following ? '关注成功 ✨' : '已取消关注', data.following ? 'success' : 'info');
+      }
       
       // 如果在游戏详情页，更新作者关注按钮
       updateAuthorFollowButton(targetToken, data.following);
@@ -9203,6 +9631,49 @@ async function followAuthor(authorToken, buttonElement) {
   await toggleFollowUser(authorToken, buttonElement);
 }
 
+// 用户主页作品分页状态
+let userProfileGamesState = {
+  games: [],
+  displayedCount: 6,
+  pageSize: 6
+};
+
+// ====== 弹窗层级管理器 ======
+// 基础层级（高于所有固定 UI 元素）
+const modalZIndexManager = {
+  baseZIndex: 1000000,
+  currentZIndex: 1000000,
+  modalStack: [], // 弹窗栈，用于追踪打开的弹窗
+  
+  // 获取下一个层级（打开新弹窗时调用）
+  getNextZIndex: function(modalId) {
+    this.currentZIndex += 10;
+    this.modalStack.push({ id: modalId, zIndex: this.currentZIndex });
+    return this.currentZIndex;
+  },
+  
+  // 移除弹窗（关闭弹窗时调用）
+  removeModal: function(modalId) {
+    const index = this.modalStack.findIndex(m => m.id === modalId);
+    if (index > -1) {
+      this.modalStack.splice(index, 1);
+    }
+    // 如果没有弹窗了，重置层级
+    if (this.modalStack.length === 0) {
+      this.currentZIndex = this.baseZIndex;
+    }
+  },
+  
+  // 重置（关闭所有弹窗时调用）
+  reset: function() {
+    this.currentZIndex = this.baseZIndex;
+    this.modalStack = [];
+  }
+};
+
+// 用户主页弹窗计数器
+let userProfileModalCounter = 0;
+
 // 打开用户主页弹窗
 async function openUserProfile(userToken) {
   if (!userToken) return;
@@ -9214,20 +9685,21 @@ async function openUserProfile(userToken) {
     return;
   }
 
-  // 创建用户主页弹窗
-  const existingModal = document.getElementById('user-profile-modal');
-  if (existingModal) existingModal.remove();
+  // 生成唯一的弹窗ID（支持多层嵌套）
+  userProfileModalCounter++;
+  const modalId = 'user-profile-modal-' + userProfileModalCounter;
 
   const modal = document.createElement('div');
-  modal.className = 'modal active';
-  modal.id = 'user-profile-modal';
-  modal.onclick = (e) => { if (e.target === modal) closeUserProfileModal(); };
+  modal.className = 'modal active user-profile-modal-instance';
+  modal.id = modalId;
+  modal.style.zIndex = modalZIndexManager.getNextZIndex(modalId);
+  modal.onclick = (e) => { if (e.target === modal) closeUserProfileModalById(modalId); };
 
   modal.innerHTML = `
     <div class="modal-content modal-medium">
       <div class="modal-header">
         <h3>👤 用户主页</h3>
-        <button class="btn btn-icon btn-close" onclick="closeUserProfileModal()">×</button>
+        <button class="btn btn-icon btn-close" onclick="closeUserProfileModalById('${modalId}')">×</button>
       </div>
       <div class="modal-body user-profile-body">
         <div class="user-profile-loading">
@@ -9269,10 +9741,18 @@ async function openUserProfile(userToken) {
     const followers = statsData.followerCount ?? statsData.followers ?? 0;
     const games = gamesData.success ? gamesData.games || [] : [];
 
+    // 保存作品数据用于滚动加载
+    userProfileGamesState.games = games;
+    userProfileGamesState.displayedCount = 6;
+
     // 优先使用profile API返回的昵称
     const nickname = profileData.success && profileData.profile?.nickname
       ? profileData.profile.nickname
       : (games.length > 0 ? (games[0].author_name || '游戏家用户') : '游戏家用户');
+    // 获取账号ID
+    const accountId = profileData.success && profileData.profile?.accountId
+      ? profileData.profile.accountId
+      : `player_${userToken.substring(0, 6)}`;
     const gamesCount = profileData.success ? profileData.profile?.gamesCount : games.length;
     const likesCount = profileData.success ? profileData.profile?.likesCount : 0;
 
@@ -9282,12 +9762,13 @@ async function openUserProfile(userToken) {
         <div class="user-profile-avatar">${getAvatarEmoji(userToken)}</div>
         <div class="user-profile-info">
           <div class="user-profile-name">${escapeHtml(nickname)}</div>
+          <div class="user-profile-account">@${escapeHtml(accountId)}</div>
           <div class="user-profile-stats">
-            <span class="user-stat-item" onclick="openFollowModal('${userToken}', 'following')">
+            <span class="user-stat-item" onclick="openFollowModalFromProfile('${userToken}', 'following')">
               <strong>${following}</strong> 关注
             </span>
             <span class="user-stat-divider">|</span>
-            <span class="user-stat-item" onclick="openFollowModal('${userToken}', 'followers')">
+            <span class="user-stat-item" onclick="openFollowModalFromProfile('${userToken}', 'followers')">
               <strong>${followers}</strong> 粉丝
             </span>
             <span class="user-stat-divider">|</span>
@@ -9308,24 +9789,34 @@ async function openUserProfile(userToken) {
       </div>
       <div class="user-profile-games">
         <h4>🎮 作品 (${games.length})</h4>
-        ${games.length > 0 ? `
-          <div class="user-games-grid">
-            ${games.slice(0, 6).map(game => `
-              <div class="user-game-card" onclick="closeUserProfileModal(); openGame('${game.id}')">
-                <div class="user-game-emoji">${getGameEmoji(game.title)}</div>
-                <div class="user-game-title">${escapeHtml(game.title)}</div>
-                <div class="user-game-stats">
-                  <span>🎮 ${formatNumber(game.play_count || 0)}</span>
-                  <span>❤️ ${formatNumber(game.like_count || 0)}</span>
-                  <span>💬 ${formatNumber(game.comment_count || 0)}</span>
+        <div class="user-games-scroll-container" id="user-games-scroll-container">
+          ${games.length > 0 ? `
+            <div class="user-games-grid" id="user-games-grid">
+              ${games.slice(0, 6).map(game => `
+                <div class="user-game-card" onclick="closeUserProfileModal(); openGame('${game.id}')">
+                  <div class="user-game-emoji">${getGameEmoji(game.title)}</div>
+                  <div class="user-game-title">${escapeHtml(game.title)}</div>
+                  <div class="user-game-stats">
+                    <span>🎮 ${formatNumber(game.play_count || 0)}</span>
+                    <span>❤️ ${formatNumber(game.like_count || 0)}</span>
+                    <span>💬 ${formatNumber(game.comment_count || 0)}</span>
+                  </div>
                 </div>
-              </div>
-            `).join('')}
-          </div>
-          ${games.length > 6 ? `<p class="user-games-more">还有 ${games.length - 6} 个作品</p>` : ''}
-        ` : '<div class="user-games-empty">暂无作品</div>'}
+              `).join('')}
+            </div>
+            ${games.length > 6 ? `<div class="user-games-load-more" id="user-games-load-more">下拉加载更多作品...</div>` : ''}
+          ` : '<div class="user-games-empty">暂无作品</div>'}
+        </div>
       </div>
     `;
+
+    // 添加滚动加载更多功能
+    if (games.length > 6) {
+      const scrollContainer = document.getElementById('user-games-scroll-container');
+      if (scrollContainer) {
+        scrollContainer.addEventListener('scroll', handleUserGamesScroll);
+      }
+    }
   } catch (error) {
     console.error('加载用户信息失败:', error);
     const modalBody = modal.querySelector('.user-profile-body');
@@ -9338,16 +9829,82 @@ async function openUserProfile(userToken) {
   }
 }
 
-// 关闭用户主页弹窗
-function closeUserProfileModal() {
-  const modal = document.getElementById('user-profile-modal');
+// 处理作品列表滚动加载
+function handleUserGamesScroll(e) {
+  const container = e.target;
+  const { scrollTop, scrollHeight, clientHeight } = container;
+  
+  // 接近底部时加载更多
+  if (scrollHeight - scrollTop - clientHeight < 50) {
+    loadMoreUserGames();
+  }
+}
+
+// 加载更多作品
+function loadMoreUserGames() {
+  const { games, displayedCount, pageSize } = userProfileGamesState;
+  if (displayedCount >= games.length) return;
+
+  const grid = document.getElementById('user-games-grid');
+  const loadMoreEl = document.getElementById('user-games-load-more');
+  if (!grid) return;
+
+  const newCount = Math.min(displayedCount + pageSize, games.length);
+  const newGames = games.slice(displayedCount, newCount);
+
+  newGames.forEach(game => {
+    const card = document.createElement('div');
+    card.className = 'user-game-card';
+    card.onclick = () => { closeUserProfileModal(); openGame(game.id); };
+    card.innerHTML = `
+      <div class="user-game-emoji">${getGameEmoji(game.title)}</div>
+      <div class="user-game-title">${escapeHtml(game.title)}</div>
+      <div class="user-game-stats">
+        <span>🎮 ${formatNumber(game.play_count || 0)}</span>
+        <span>❤️ ${formatNumber(game.like_count || 0)}</span>
+        <span>💬 ${formatNumber(game.comment_count || 0)}</span>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  userProfileGamesState.displayedCount = newCount;
+
+  // 隐藏加载更多提示
+  if (newCount >= games.length && loadMoreEl) {
+    loadMoreEl.style.display = 'none';
+  }
+}
+
+// 从用户主页打开关注弹窗（确保层级正确）
+async function openFollowModalFromProfile(userToken, tab) {
+  // 先关闭用户主页弹窗
+  closeUserProfileModal();
+  // 延迟打开关注弹窗，确保关闭动画完成
+  setTimeout(() => {
+    openFollowModal(userToken, tab);
+  }, 100);
+}
+
+// 根据ID关闭指定的用户主页弹窗
+function closeUserProfileModalById(modalId) {
+  const modal = document.getElementById(modalId);
   if (modal) {
     modal.remove();
-    // 检查是否还有其他弹窗
-    const hasOpenModals = document.querySelector('.modal.active');
-    if (!hasOpenModals) {
+    modalZIndexManager.removeModal(modalId);
+    // 只有在没有其他弹窗时才移除 modal-open 类
+    if (modalZIndexManager.modalStack.length === 0) {
       document.body.classList.remove('modal-open');
     }
+  }
+}
+
+// 关闭最顶层的用户主页弹窗（向后兼容）
+function closeUserProfileModal() {
+  const modals = document.querySelectorAll('.user-profile-modal-instance');
+  if (modals.length > 0) {
+    const lastModal = modals[modals.length - 1];
+    closeUserProfileModalById(lastModal.id);
   }
 }
 
@@ -9498,7 +10055,7 @@ function showGameEditorPage(game, suggestions) {
   const editorCreditInfo = getEditorCreditInfo();
   const creditNoticeHtml = editorCreditInfo.isFree 
     ? `<div class="chat-credit-notice free"><span class="credit-icon">🆓</span><span class="credit-text">${editorCreditInfo.message}</span></div>`
-    : `<div class="chat-credit-notice cost"><span class="credit-icon">💎</span><span class="credit-text">${editorCreditInfo.message}</span><span class="credit-balance">余额: ${state.credits}</span></div>`;
+    : `<div class="chat-credit-notice cost"><span class="credit-icon">💎</span><span class="credit-text">${editorCreditInfo.message}</span><span class="credit-balance">余额: ${formatCredits(state.credits)}</span></div>`;
   
   // 渲染编辑页面内容
   editorPage.innerHTML = `
@@ -9575,7 +10132,7 @@ function showGameEditorPage(game, suggestions) {
 
 // 获取编辑器积分消耗信息
 function getEditorCreditInfo() {
-  const selectedModel = state.settings.llmProvider || serverDefaultModel || 'deepseek-v3';
+  const selectedModel = getUserDefaultModel();
   const modelInfo = MODEL_REGISTRY[selectedModel];
   const userHasKey = (state.settings.llmApiKey && state.settings.llmApiKey.trim().length > 0);
   const backendHasKey = modelInfo?.hasDefaultKey === true;
@@ -9627,7 +10184,7 @@ function updateEditorCreditNotice() {
   existingNotice.className = `chat-credit-notice ${editorCreditInfo.isFree ? 'free' : 'cost'}`;
   existingNotice.innerHTML = editorCreditInfo.isFree 
     ? `<span class="credit-icon">🆓</span><span class="credit-text">${editorCreditInfo.message}</span>`
-    : `<span class="credit-icon">💎</span><span class="credit-text">${editorCreditInfo.message}</span><span class="credit-balance">余额: ${state.credits}</span>`;
+    : `<span class="credit-icon">💎</span><span class="credit-text">${editorCreditInfo.message}</span><span class="credit-balance">余额: ${formatCredits(state.credits)}</span>`;
 }
 
 // 显示编辑器模型选择弹窗
@@ -9653,7 +10210,7 @@ async function showEditorModelSelector() {
   const userHasKey = state.settings.llmApiKey && state.settings.llmApiKey.trim().length > 0;
   
   // 获取当前选中的模型
-  const currentModelId = state.settings.llmProvider || serverDefaultModel || 'deepseek-v3';
+  const currentModelId = getUserDefaultModel();
   
   // 渲染模型列表
   listContainer.innerHTML = models.map(model => {
@@ -9740,12 +10297,11 @@ function selectEditorModel(modelId) {
     return;
   }
   
-  // 更新设置中的模型
-  state.settings.llmProvider = modelId;
-  state.settings.llmModelId = modelId;
+  // 更新设置中的模型（使用统一函数）
+  setUserDefaultModel(modelId);
   
   // 保存设置
-  saveSettings();
+  localStorage.setItem('aigame-settings', JSON.stringify(state.settings));
   
   // 更新编辑器头部的模型显示
   updateEditorModelDisplay(modelInfo.name || modelId);
@@ -9913,7 +10469,7 @@ function applySuggestion(suggestion) {
 // 获取编辑器使用的 LLM 配置（与生成游戏时保持一致）
 function getEditorLLMConfig() {
   // 优先使用编辑器设置中选择的模型，否则使用全局设置
-  const selectedModelId = editorSettings.selectedModel || state.settings.llmProvider || state.settings.llmModelId || serverDefaultModel || 'deepseek-v3';
+  const selectedModelId = editorSettings.selectedModel || getUserDefaultModel();
   
   const llmConfig = {
     provider: selectedModelId,  // 传递 modelId，后端会从 LLM_MODELS 获取完整配置
@@ -10011,7 +10567,7 @@ async function sendEditMessage() {
   const llmConfig = getEditorLLMConfig();
   
   // 检查积分（编辑也需要消耗积分，规则与生成游戏一致）
-  const selectedModel = llmConfig.provider || state.settings.llmProvider || serverDefaultModel || 'deepseek-v3';
+  const selectedModel = llmConfig.provider || getUserDefaultModel();
   const modelInfo = MODEL_REGISTRY[selectedModel];
   const userHasKey = (state.settings.llmApiKey && state.settings.llmApiKey.trim().length > 0);
   const backendHasKey = modelInfo?.hasDefaultKey === true;
@@ -10104,6 +10660,7 @@ async function sendEditMessage() {
         state.credits = Math.max(0, state.credits - creditCostThisTime);
         updateCreditsDisplay();
         updateEditorCreditNotice();
+        showCreditsChangeToast(-creditCostThisTime, '编辑游戏');
       }
       
       // 检查是否启用了自动保存
@@ -10895,7 +11452,13 @@ async function submitComment() {
       renderComments();
       updateCommentsCount();
       
-      showToast('留言发布成功', 'success');
+      // 显示提示，如果有积分奖励则显示积分信息
+      if (data.creditAwarded && data.creditMessage) {
+        showToast(`留言发布成功！${data.creditMessage}`, 'success');
+        loadCredits(); // 刷新积分显示
+      } else {
+        showToast('留言发布成功', 'success');
+      }
     } else {
       showToast(data.error || '发布失败', 'error');
     }
@@ -11087,7 +11650,7 @@ function showEditorSettingsModal() {
   };
   
   // 获取当前模型信息
-  const currentModelId = editorSettings.selectedModel || state.settings.llmProvider || serverDefaultModel || 'deepseek-v3';
+  const currentModelId = editorSettings.selectedModel || getUserDefaultModel();
   const autoSaveChecked = editorSettings.autoSave ? 'checked' : '';
   
   // 构建模型选择列表

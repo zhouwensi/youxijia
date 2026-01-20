@@ -10,7 +10,7 @@ const path = require('path');
 const Database = require('better-sqlite3');
 
 // 数据库路径
-const DB_PATH = path.join(__dirname, '..', 'data', 'games.db');
+const DB_PATH = path.join(__dirname, '..', 'games.db');
 const GAMES_DIR = path.join(__dirname, '..', 'public', 'g');
 
 // 检查数据库是否存在

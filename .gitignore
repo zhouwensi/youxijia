@@ -38,3 +38,10 @@ temp/
 
 # Cloudflare
 .wrangler/
+
+# SSL 证书（绝对不要提交私钥！）
+ssl/
+*.pem
+*.key
+*.crt
+server-ssl.js

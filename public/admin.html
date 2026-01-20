@@ -567,11 +567,13 @@
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('dashboard')">📊 仪表盘</button>
       <button class="tab-btn" onclick="switchTab('config')">⚙️ 系统配置</button>
+      <button class="tab-btn" onclick="switchTab('promo')">🎁 积分管理</button>
       <button class="tab-btn" onclick="switchTab('models')">🤖 大模型</button>
       <button class="tab-btn" onclick="switchTab('games')">🎮 游戏管理</button>
       <button class="tab-btn" onclick="switchTab('users')">👥 用户管理</button>
       <button class="tab-btn" onclick="switchTab('comments')">💬 留言管理</button>
       <button class="tab-btn" onclick="switchTab('security')">🔒 安全管理</button>
+      <button class="tab-btn" onclick="switchTab('leaderboard')">🏆 榜单管理</button>
       <button class="tab-btn" onclick="switchTab('tools')">🛠️ 数据工具</button>
     </div>
 
@@ -703,6 +705,240 @@
       </div>
 
       <button class="btn-save" onclick="saveConfig()">💾 保存配置</button>
+    </div>
+
+    <!-- 积分管理 -->
+    <div class="tab-content" id="tab-promo">
+      <!-- 行为积分配置 -->
+      <div class="config-section" style="margin-bottom: 1.5rem;">
+        <h2>⚡ 行为积分配置</h2>
+        <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1rem;">
+          配置用户点赞、收藏、关注、评论等行为可获得的积分奖励。每日每种类型有上限。
+        </p>
+        
+        <table style="width: 100%; font-size: 0.875rem; border-collapse: collapse; margin-bottom: 1rem;">
+          <thead>
+            <tr style="text-align: left; color: #94a3b8; background: rgba(0,0,0,0.2);">
+              <th style="padding: 0.75rem;">行为类型</th>
+              <th style="padding: 0.75rem;">单次奖励积分</th>
+              <th style="padding: 0.75rem;">每日上限次数</th>
+              <th style="padding: 0.75rem;">每日最多获得</th>
+              <th style="padding: 0.75rem;">备注</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <td style="padding: 0.75rem;">👍 点赞作品</td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="action-like-credits" step="0.1" min="0" value="0.1"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
+              </td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="action-like-limit" min="0" value="10"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
+              </td>
+              <td style="padding: 0.75rem;"><span id="action-like-max">1</span> 积分</td>
+              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">不能点赞自己的作品</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <td style="padding: 0.75rem;">⭐ 收藏作品</td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="action-favorite-credits" step="0.1" min="0" value="0.2"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
+              </td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="action-favorite-limit" min="0" value="5"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
+              </td>
+              <td style="padding: 0.75rem;"><span id="action-favorite-max">1</span> 积分</td>
+              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">不能收藏自己的作品</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <td style="padding: 0.75rem;">➕ 关注用户</td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="action-follow-credits" step="0.1" min="0" value="0.2"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
+              </td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="action-follow-limit" min="0" value="5"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
+              </td>
+              <td style="padding: 0.75rem;"><span id="action-follow-max">1</span> 积分</td>
+              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">不能关注自己</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <td style="padding: 0.75rem;">💬 评论作品</td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="action-comment-credits" step="0.1" min="0" value="0.5"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
+              </td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="action-comment-limit" min="0" value="2"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
+              </td>
+              <td style="padding: 0.75rem;"><span id="action-comment-max">1</span> 积分</td>
+              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">
+                最低字数：<input type="number" id="action-comment-minlen" min="1" value="10"
+                  style="padding: 0.2rem 0.4rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 50px;"> 字
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <button class="btn-save" onclick="saveActionCreditsConfig()" style="background: linear-gradient(135deg, #10b981, #059669);">
+            💾 保存行为积分配置
+          </button>
+          <button class="btn-save" onclick="loadActionCreditsConfig()" style="background: linear-gradient(135deg, #6366f1, #4f46e5);">
+            🔄 刷新
+          </button>
+        </div>
+        
+        <p style="color: #64748b; font-size: 0.8rem; margin-top: 1rem;">
+          💡 <strong>规则说明：</strong><br>
+          • 取消操作（取消点赞/收藏/关注）<strong>不会扣除</strong>已获得的积分<br>
+          • 对<strong>自己的作品</strong>点赞、收藏、评论<strong>不会获得</strong>积分<br>
+          • 评论需满足最低字数要求，且同一游戏仅首次评论可获得积分<br>
+          • 设置积分为 0 或上限为 0 可禁用该类型的积分奖励
+        </p>
+      </div>
+      
+      <!-- 特殊积分配置 -->
+      <div class="config-section" style="margin-bottom: 1.5rem;">
+        <h2>🎯 特殊积分配置</h2>
+        <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1rem;">
+          配置分享游戏、邀请好友、阅读文章的积分奖励。每种类型有每日上限，每日凌晨自动重置。
+        </p>
+        
+        <table style="width: 100%; font-size: 0.875rem; border-collapse: collapse; margin-bottom: 1rem;">
+          <thead>
+            <tr style="text-align: left; color: #94a3b8; background: rgba(0,0,0,0.2);">
+              <th style="padding: 0.75rem;">类型</th>
+              <th style="padding: 0.75rem;">单次奖励积分</th>
+              <th style="padding: 0.75rem;">每日上限次数</th>
+              <th style="padding: 0.75rem;">每日最多获得</th>
+              <th style="padding: 0.75rem;">备注</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <td style="padding: 0.75rem;">🔗 分享游戏</td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="extra-share-credits" step="0.1" min="0" value="1"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
+              </td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="extra-share-limit" min="0" value="5"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
+              </td>
+              <td style="padding: 0.75rem;"><span id="extra-share-max">5</span> 积分</td>
+              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">只有作者分享自己的游戏才算</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <td style="padding: 0.75rem;">👥 邀请好友</td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="extra-invite-credits" step="0.1" min="0" value="3"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
+              </td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="extra-invite-limit" min="0" value="5"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
+              </td>
+              <td style="padding: 0.75rem;"><span id="extra-invite-max">15</span> 积分</td>
+              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">被邀请者首次生成游戏时双方各得积分</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <td style="padding: 0.75rem;">📖 阅读文章</td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="extra-article-credits" step="0.1" min="0" value="1"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
+              </td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="extra-article-limit" min="0" value="3"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
+              </td>
+              <td style="padding: 0.75rem;"><span id="extra-article-max">3</span> 积分</td>
+              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">每个验证码只能使用一次</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <button class="btn-save" onclick="saveExtraCreditsConfig()" style="background: linear-gradient(135deg, #10b981, #059669);">
+            💾 保存特殊积分配置
+          </button>
+          <button class="btn-save" onclick="loadExtraCreditsConfig()" style="background: linear-gradient(135deg, #6366f1, #4f46e5);">
+            🔄 刷新
+          </button>
+        </div>
+      </div>
+      
+      <!-- 验证码管理 -->
+      <div class="config-section">
+        <h2>🎫 文章推广验证码管理</h2>
+        <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1rem;">
+          管理公众号文章留言区的推广验证码。用户输入验证码可获得积分奖励。
+        </p>
+        
+        <!-- 添加验证码表单 -->
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end; margin-bottom: 1rem;">
+          <div>
+            <label style="font-size: 0.75rem; color: #94a3b8; display: block; margin-bottom: 0.25rem;">验证码 *</label>
+            <div style="display: flex; gap: 0.25rem;">
+              <input type="text" id="new-promo-code" placeholder="自动生成" 
+                style="padding: 0.5rem 0.75rem; border-radius: 6px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 100px;">
+              <button onclick="generatePromoCode()" style="padding: 0.5rem; border-radius: 6px; border: none; cursor: pointer; background: #6366f1; color: #fff; font-size: 0.8rem;" title="重新生成">🎲</button>
+            </div>
+          </div>
+          <div>
+            <label style="font-size: 0.75rem; color: #94a3b8; display: block; margin-bottom: 0.25rem;">文章ID（可选）</label>
+            <input type="text" id="new-promo-article-id" placeholder="留空用验证码" 
+              style="padding: 0.5rem 0.75rem; border-radius: 6px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 100px;">
+          </div>
+          <div>
+            <label style="font-size: 0.75rem; color: #94a3b8; display: block; margin-bottom: 0.25rem;">描述</label>
+            <input type="text" id="new-promo-desc" placeholder="如 1月19日文章" 
+              style="padding: 0.5rem 0.75rem; border-radius: 6px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 150px;">
+          </div>
+          <div>
+            <label style="font-size: 0.75rem; color: #94a3b8; display: block; margin-bottom: 0.25rem;">奖励积分</label>
+            <input type="number" id="new-promo-reward" placeholder="1" value="1" min="1"
+              style="padding: 0.5rem 0.75rem; border-radius: 6px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 70px;">
+          </div>
+          <button class="btn-save" onclick="createPromoCode()" style="background: linear-gradient(135deg, #10b981, #059669);">
+            ➕ 添加验证码
+          </button>
+          <button class="btn-save" onclick="loadPromoCodes()" style="background: linear-gradient(135deg, #6366f1, #4f46e5);">
+            🔄 刷新
+          </button>
+        </div>
+        
+        <!-- 验证码列表 -->
+        <table style="width: 100%; font-size: 0.85rem; border-collapse: collapse;">
+          <thead>
+            <tr style="text-align: left; color: #94a3b8; background: rgba(0,0,0,0.2);">
+              <th style="padding: 0.75rem;">验证码</th>
+              <th style="padding: 0.75rem;">文章ID</th>
+              <th style="padding: 0.75rem;">描述</th>
+              <th style="padding: 0.75rem;">奖励</th>
+              <th style="padding: 0.75rem;">已用/上限</th>
+              <th style="padding: 0.75rem;">状态</th>
+              <th style="padding: 0.75rem;">创建时间</th>
+              <th style="padding: 0.75rem;">操作</th>
+            </tr>
+          </thead>
+          <tbody id="promo-codes-tbody">
+            <tr><td colspan="8" style="padding: 1rem; color: #64748b; text-align: center;">加载中...</td></tr>
+          </tbody>
+        </table>
+        
+        <p style="color: #64748b; font-size: 0.8rem; margin-top: 1rem;">
+          💡 <strong>使用说明：</strong><br>
+          • <strong>验证码</strong>：用户在网站输入的验证码，不区分大小写<br>
+          • <strong>文章ID</strong>：可选。留空则链接直接用验证码，如 youxijia.com/?a=GAME0119<br>
+          • <strong>链接访问</strong>和<strong>验证码兑换</strong>共享同一条记录，用户只能领取一次
+        </p>
+      </div>
     </div>
 
     <!-- 大模型配置 -->
@@ -1143,6 +1379,130 @@
       </div>
     </div>
 
+    <!-- 榜单管理 -->
+    <div class="tab-content" id="tab-leaderboard">
+      <div class="config-section">
+        <h2>🏆 作者榜单预览</h2>
+        <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1rem;">
+          实时查看各类榜单排名情况
+        </p>
+        
+        <!-- 榜单类型选择 -->
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+          <button class="btn-sm" id="lb-btn-fans" onclick="loadLeaderboard('fans')" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">🏆 粉丝榜</button>
+          <button class="btn-sm" id="lb-btn-works" onclick="loadLeaderboard('works')" style="background: rgba(255,255,255,0.1);">📚 作品榜</button>
+          <button class="btn-sm" id="lb-btn-credits" onclick="loadLeaderboard('credits')" style="background: rgba(255,255,255,0.1);">💎 积分榜</button>
+          <button class="btn-sm" id="lb-btn-popularity" onclick="loadLeaderboard('popularity')" style="background: rgba(255,255,255,0.1);">🔥 人气榜</button>
+          <button class="btn-sm" id="lb-btn-newstar" onclick="loadLeaderboard('newstar')" style="background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.4);">⭐ 新星榜</button>
+        </div>
+        
+        <!-- 周期选择 -->
+        <div id="admin-period-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+          <button class="btn-sm period-btn" data-period="all" onclick="switchAdminPeriod('all')" style="background: rgba(0, 212, 255, 0.2); border: 1px solid rgba(0, 212, 255, 0.4);">总榜</button>
+          <button class="btn-sm period-btn" data-period="week" onclick="switchAdminPeriod('week')" style="background: rgba(255,255,255,0.1);">周榜</button>
+          <button class="btn-sm period-btn" data-period="month" onclick="switchAdminPeriod('month')" style="background: rgba(255,255,255,0.1);">月榜</button>
+        </div>
+        
+        <!-- 榜单表格 -->
+        <div style="max-height: 400px; overflow-y: auto;">
+          <table style="width: 100%; font-size: 0.875rem; border-collapse: collapse;">
+            <thead>
+              <tr style="text-align: left; color: #94a3b8; background: rgba(0,0,0,0.2); position: sticky; top: 0;">
+                <th style="padding: 0.75rem; width: 60px;">排名</th>
+                <th style="padding: 0.75rem;">用户</th>
+                <th style="padding: 0.75rem; width: 100px;">数值</th>
+                <th style="padding: 0.75rem; width: 100px;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-tbody">
+              <tr><td colspan="4" style="padding: 1rem; color: #64748b; text-align: center;">点击上方按钮加载榜单</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h2>🚫 榜单排除名单</h2>
+        <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1rem;">
+          被排除的用户将不会出现在相应榜单中（如官方账号、测试账号等）
+        </p>
+        
+        <!-- 添加排除 -->
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end; margin-bottom: 1rem;">
+          <div style="flex: 1; min-width: 200px;">
+            <label style="display: block; margin-bottom: 0.5rem; color: #94a3b8; font-size: 0.8rem;">搜索用户</label>
+            <input type="text" id="exclude-search-keyword" placeholder="输入账号ID或昵称搜索" 
+              style="width: 100%; padding: 0.5rem 0.75rem; border-radius: 6px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+          </div>
+          <button class="btn-save" onclick="searchUserForExclude()" style="background: linear-gradient(135deg, #3b82f6, #2563eb); height: 38px;">
+            🔍 搜索
+          </button>
+        </div>
+        
+        <!-- 搜索结果 -->
+        <div id="exclude-search-results" style="display: none; margin-bottom: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 0.75rem;">
+          <div style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 0.5rem;">搜索结果（点击选择）：</div>
+          <div id="exclude-search-list" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+        </div>
+        
+        <!-- 选中的用户 -->
+        <div id="exclude-selected-user" style="display: none; margin-bottom: 1rem; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <div>
+              <span style="color: #94a3b8; font-size: 0.8rem;">已选择用户：</span>
+              <span id="exclude-selected-name" style="color: #a5b4fc; font-weight: 600;"></span>
+            </div>
+            <button onclick="clearSelectedUser()" style="background: none; border: none; color: #f87171; cursor: pointer; font-size: 0.8rem;">✕ 取消选择</button>
+          </div>
+          <input type="hidden" id="exclude-selected-token">
+          
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
+            <label style="display: flex; align-items: center; gap: 0.5rem; color: #e2e8f0; font-size: 0.875rem; cursor: pointer;">
+              <input type="checkbox" id="exclude-type-all" checked onchange="toggleExcludeTypes(this)"> 所有榜单
+            </label>
+            <label style="display: flex; align-items: center; gap: 0.5rem; color: #e2e8f0; font-size: 0.875rem; cursor: pointer;">
+              <input type="checkbox" id="exclude-type-fans" class="exclude-type-single" disabled> 粉丝榜
+            </label>
+            <label style="display: flex; align-items: center; gap: 0.5rem; color: #e2e8f0; font-size: 0.875rem; cursor: pointer;">
+              <input type="checkbox" id="exclude-type-works" class="exclude-type-single" disabled> 作品榜
+            </label>
+            <label style="display: flex; align-items: center; gap: 0.5rem; color: #e2e8f0; font-size: 0.875rem; cursor: pointer;">
+              <input type="checkbox" id="exclude-type-credits" class="exclude-type-single" disabled> 积分榜
+            </label>
+            <label style="display: flex; align-items: center; gap: 0.5rem; color: #e2e8f0; font-size: 0.875rem; cursor: pointer;">
+              <input type="checkbox" id="exclude-type-popularity" class="exclude-type-single" disabled> 人气榜
+            </label>
+          </div>
+          
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <input type="text" id="exclude-reason" placeholder="排除原因（可选，如：官方账号）" 
+              style="flex: 1; padding: 0.5rem 0.75rem; border-radius: 6px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+            <button class="btn-save" onclick="addToExcludeList()" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+              🚫 添加到排除名单
+            </button>
+          </div>
+        </div>
+        
+        <!-- 排除名单列表 -->
+        <div style="max-height: 300px; overflow-y: auto;">
+          <table style="width: 100%; font-size: 0.875rem; border-collapse: collapse;">
+            <thead>
+              <tr style="text-align: left; color: #94a3b8; background: rgba(0,0,0,0.2); position: sticky; top: 0;">
+                <th style="padding: 0.75rem;">用户</th>
+                <th style="padding: 0.75rem;">排除榜单</th>
+                <th style="padding: 0.75rem;">原因</th>
+                <th style="padding: 0.75rem;">添加时间</th>
+                <th style="padding: 0.75rem; width: 80px;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="exclude-list-tbody">
+              <tr><td colspan="5" style="padding: 1rem; color: #64748b; text-align: center;">加载中...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- 数据工具 -->
     <div class="tab-content" id="tab-tools">
       <div class="config-section">
@@ -1329,6 +1689,11 @@
         case 'config':
           loadConfig();
           break;
+        case 'promo':
+          loadActionCreditsConfig();
+          loadExtraCreditsConfig();
+          loadPromoCodes();
+          break;
         case 'models':
           loadModelsConfig();
           break;
@@ -1343,6 +1708,10 @@
           break;
         case 'security':
           loadSecurityData();
+          break;
+        case 'leaderboard':
+          loadLeaderboard('fans');
+          loadExcludeList();
           break;
         case 'tools':
           refreshStaticFilesStats();
@@ -3285,6 +3654,362 @@
       return `${year}-${month}-${day} ${hours}:${minutes}`;
     }
 
+    // ========== 验证码管理功能 ==========
+    
+    // 生成6位随机数字验证码
+    function generatePromoCode() {
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      document.getElementById('new-promo-code').value = code;
+      return code;
+    }
+    
+    // ========== 行为积分配置功能 ==========
+    
+    // 计算每日最多获得积分
+    function updateActionMaxCredits() {
+      const types = ['like', 'favorite', 'follow', 'comment'];
+      types.forEach(type => {
+        const credits = parseFloat(document.getElementById(`action-${type}-credits`)?.value || 0);
+        const limit = parseInt(document.getElementById(`action-${type}-limit`)?.value || 0);
+        const max = (credits * limit).toFixed(1);
+        const maxEl = document.getElementById(`action-${type}-max`);
+        if (maxEl) {
+          maxEl.textContent = max;
+        }
+      });
+    }
+    
+    // 绑定输入框change事件
+    document.addEventListener('DOMContentLoaded', () => {
+      const types = ['like', 'favorite', 'follow', 'comment'];
+      types.forEach(type => {
+        const creditsInput = document.getElementById(`action-${type}-credits`);
+        const limitInput = document.getElementById(`action-${type}-limit`);
+        if (creditsInput) creditsInput.addEventListener('input', updateActionMaxCredits);
+        if (limitInput) limitInput.addEventListener('input', updateActionMaxCredits);
+      });
+    });
+    
+    // 加载行为积分配置
+    async function loadActionCreditsConfig() {
+      try {
+        const response = await fetch('/api/admin/action-credits-config', {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+        
+        if (data.success && data.config) {
+          const config = data.config;
+          
+          // 点赞
+          document.getElementById('action-like-credits').value = config.like?.credits || 0.1;
+          document.getElementById('action-like-limit').value = config.like?.dailyLimit || 10;
+          
+          // 收藏
+          document.getElementById('action-favorite-credits').value = config.favorite?.credits || 0.2;
+          document.getElementById('action-favorite-limit').value = config.favorite?.dailyLimit || 5;
+          
+          // 关注
+          document.getElementById('action-follow-credits').value = config.follow?.credits || 0.2;
+          document.getElementById('action-follow-limit').value = config.follow?.dailyLimit || 5;
+          
+          // 评论
+          document.getElementById('action-comment-credits').value = config.comment?.credits || 0.5;
+          document.getElementById('action-comment-limit').value = config.comment?.dailyLimit || 2;
+          document.getElementById('action-comment-minlen').value = config.comment?.minLength || 10;
+          
+          // 更新最大值显示
+          updateActionMaxCredits();
+        }
+      } catch (error) {
+        console.error('加载行为积分配置失败:', error);
+      }
+    }
+    
+    // 保存行为积分配置
+    async function saveActionCreditsConfig() {
+      try {
+        const config = {
+          like: {
+            credits: parseFloat(document.getElementById('action-like-credits').value) || 0,
+            dailyLimit: parseInt(document.getElementById('action-like-limit').value) || 0
+          },
+          favorite: {
+            credits: parseFloat(document.getElementById('action-favorite-credits').value) || 0,
+            dailyLimit: parseInt(document.getElementById('action-favorite-limit').value) || 0
+          },
+          follow: {
+            credits: parseFloat(document.getElementById('action-follow-credits').value) || 0,
+            dailyLimit: parseInt(document.getElementById('action-follow-limit').value) || 0
+          },
+          comment: {
+            credits: parseFloat(document.getElementById('action-comment-credits').value) || 0,
+            dailyLimit: parseInt(document.getElementById('action-comment-limit').value) || 0,
+            minLength: parseInt(document.getElementById('action-comment-minlen').value) || 10
+          }
+        };
+        
+        const response = await fetch('/api/admin/action-credits-config', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify(config)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showMessage('行为积分配置已保存', 'success');
+        } else {
+          showMessage(data.error || '保存失败', 'error');
+        }
+      } catch (error) {
+        console.error('保存行为积分配置失败:', error);
+        showMessage('保存失败', 'error');
+      }
+    }
+    
+    // ========== 特殊积分配置（分享/邀请/文章） ==========
+    
+    // 加载特殊积分配置
+    async function loadExtraCreditsConfig() {
+      try {
+        const response = await fetch('/api/admin/extra-credits-config', {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+        
+        if (data.success && data.config) {
+          const config = data.config;
+          
+          // 分享游戏
+          document.getElementById('extra-share-credits').value = config.shareGame?.credits || 1;
+          document.getElementById('extra-share-limit').value = config.shareGame?.dailyLimit || 5;
+          
+          // 邀请好友
+          document.getElementById('extra-invite-credits').value = config.inviteFriend?.credits || 3;
+          document.getElementById('extra-invite-limit').value = config.inviteFriend?.dailyLimit || 5;
+          
+          // 阅读文章
+          document.getElementById('extra-article-credits').value = config.article?.credits || 1;
+          document.getElementById('extra-article-limit').value = config.article?.dailyLimit || 3;
+          
+          // 更新最大值显示
+          updateExtraMaxCredits();
+        }
+      } catch (error) {
+        console.error('加载特殊积分配置失败:', error);
+      }
+    }
+    
+    // 保存特殊积分配置
+    async function saveExtraCreditsConfig() {
+      try {
+        const config = {
+          shareGame: {
+            credits: parseFloat(document.getElementById('extra-share-credits').value) || 0,
+            dailyLimit: parseInt(document.getElementById('extra-share-limit').value) || 0
+          },
+          inviteFriend: {
+            credits: parseFloat(document.getElementById('extra-invite-credits').value) || 0,
+            dailyLimit: parseInt(document.getElementById('extra-invite-limit').value) || 0
+          },
+          article: {
+            credits: parseFloat(document.getElementById('extra-article-credits').value) || 0,
+            dailyLimit: parseInt(document.getElementById('extra-article-limit').value) || 0
+          }
+        };
+        
+        const response = await fetch('/api/admin/extra-credits-config', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify(config)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showMessage('特殊积分配置已保存', 'success');
+        } else {
+          showMessage(data.error || '保存失败', 'error');
+        }
+      } catch (error) {
+        console.error('保存特殊积分配置失败:', error);
+        showMessage('保存失败', 'error');
+      }
+    }
+    
+    // 更新特殊积分最大值显示
+    function updateExtraMaxCredits() {
+      const shareCredits = parseFloat(document.getElementById('extra-share-credits').value) || 0;
+      const shareLimit = parseInt(document.getElementById('extra-share-limit').value) || 0;
+      document.getElementById('extra-share-max').textContent = (shareCredits * shareLimit).toFixed(1);
+      
+      const inviteCredits = parseFloat(document.getElementById('extra-invite-credits').value) || 0;
+      const inviteLimit = parseInt(document.getElementById('extra-invite-limit').value) || 0;
+      document.getElementById('extra-invite-max').textContent = (inviteCredits * inviteLimit).toFixed(1);
+      
+      const articleCredits = parseFloat(document.getElementById('extra-article-credits').value) || 0;
+      const articleLimit = parseInt(document.getElementById('extra-article-limit').value) || 0;
+      document.getElementById('extra-article-max').textContent = (articleCredits * articleLimit).toFixed(1);
+    }
+    
+    // 监听特殊积分输入变化
+    ['extra-share-credits', 'extra-share-limit', 'extra-invite-credits', 'extra-invite-limit', 'extra-article-credits', 'extra-article-limit'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', updateExtraMaxCredits);
+    });
+    
+    // ========== 验证码管理功能 ==========
+    
+    // 加载验证码列表
+    async function loadPromoCodes() {
+      try {
+        const response = await fetch('/api/admin/promo-codes', {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          renderPromoCodes(data.codes);
+          // 自动生成新验证码
+          generatePromoCode();
+        } else {
+          showMessage(data.error || '加载失败', 'error');
+        }
+      } catch (error) {
+        console.error('加载验证码失败:', error);
+        showMessage('加载失败', 'error');
+      }
+    }
+    
+    // 渲染验证码列表
+    function renderPromoCodes(codes) {
+      const tbody = document.getElementById('promo-codes-tbody');
+      
+      if (!codes || codes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="padding: 1rem; color: #64748b; text-align: center;">暂无验证码，请添加</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = codes.map(code => `
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+          <td style="padding: 0.75rem; font-weight: bold; color: #fbbf24;">${code.code}</td>
+          <td style="padding: 0.75rem;">${code.article_id || '-'}</td>
+          <td style="padding: 0.75rem;">${code.description || '-'}</td>
+          <td style="padding: 0.75rem; color: #10b981;">+${code.reward}</td>
+          <td style="padding: 0.75rem;">${code.used_count}/${code.max_uses || '∞'}</td>
+          <td style="padding: 0.75rem;">
+            <span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; ${code.is_active ? 'background: rgba(16,185,129,0.2); color: #10b981;' : 'background: rgba(239,68,68,0.2); color: #ef4444;'}">
+              ${code.is_active ? '启用' : '禁用'}
+            </span>
+          </td>
+          <td style="padding: 0.75rem; font-size: 0.8rem; color: #94a3b8;">${code.created_at ? new Date(code.created_at).toLocaleString() : '-'}</td>
+          <td style="padding: 0.75rem;">
+            <button onclick="togglePromoCode('${code.code}')" style="padding: 0.25rem 0.5rem; border-radius: 4px; border: none; cursor: pointer; margin-right: 0.25rem; ${code.is_active ? 'background: #f59e0b; color: #000;' : 'background: #10b981; color: #fff;'}">
+              ${code.is_active ? '禁用' : '启用'}
+            </button>
+            <button onclick="deletePromoCode('${code.code}')" style="padding: 0.25rem 0.5rem; border-radius: 4px; border: none; cursor: pointer; background: #ef4444; color: #fff;">
+              删除
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+    
+    // 创建验证码
+    async function createPromoCode() {
+      const code = document.getElementById('new-promo-code').value.trim();
+      const articleId = document.getElementById('new-promo-article-id').value.trim();
+      const description = document.getElementById('new-promo-desc').value.trim();
+      const reward = parseInt(document.getElementById('new-promo-reward').value) || 1;
+      
+      if (!code) {
+        showMessage('请输入验证码', 'error');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/admin/promo-codes', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ code, articleId, description, reward })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showMessage('验证码创建成功', 'success');
+          // 清空输入
+          document.getElementById('new-promo-code').value = '';
+          document.getElementById('new-promo-article-id').value = '';
+          document.getElementById('new-promo-desc').value = '';
+          document.getElementById('new-promo-reward').value = '1';
+          // 刷新列表
+          loadPromoCodes();
+        } else {
+          showMessage(data.error || '创建失败', 'error');
+        }
+      } catch (error) {
+        console.error('创建验证码失败:', error);
+        showMessage('创建失败', 'error');
+      }
+    }
+    
+    // 切换验证码状态
+    async function togglePromoCode(code) {
+      try {
+        const response = await fetch(`/api/admin/promo-codes/${encodeURIComponent(code)}/toggle`, {
+          method: 'PUT',
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showMessage(data.message, 'success');
+          loadPromoCodes();
+        } else {
+          showMessage(data.error || '操作失败', 'error');
+        }
+      } catch (error) {
+        console.error('切换验证码状态失败:', error);
+        showMessage('操作失败', 'error');
+      }
+    }
+    
+    // 删除验证码
+    async function deletePromoCode(code) {
+      if (!confirm(`确定要删除验证码 "${code}" 吗？`)) return;
+      
+      try {
+        const response = await fetch(`/api/admin/promo-codes/${encodeURIComponent(code)}`, {
+          method: 'DELETE',
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showMessage('验证码已删除', 'success');
+          loadPromoCodes();
+        } else {
+          showMessage(data.error || '删除失败', 'error');
+        }
+      } catch (error) {
+        console.error('删除验证码失败:', error);
+        showMessage('删除失败', 'error');
+      }
+    }
+    
     // ========== 大模型配置功能 ==========
     
     // 大模型列表（从后端动态获取）
@@ -3652,6 +4377,308 @@
       } catch (error) {
         showMessage('保存失败: ' + error.message, 'error');
       }
+    }
+
+    // ==================== 榜单管理 ====================
+    
+    let currentLeaderboardType = 'fans';
+    let currentAdminPeriod = 'all';
+    
+    // 切换周期
+    function switchAdminPeriod(period) {
+      currentAdminPeriod = period;
+      
+      document.querySelectorAll('.period-btn').forEach(btn => {
+        const isActive = btn.dataset.period === period;
+        btn.style.background = isActive ? 'rgba(0, 212, 255, 0.2)' : 'rgba(255,255,255,0.1)';
+        btn.style.borderColor = isActive ? 'rgba(0, 212, 255, 0.4)' : 'transparent';
+      });
+      
+      loadLeaderboard(currentLeaderboardType);
+    }
+    
+    // 加载榜单
+    async function loadLeaderboard(type) {
+      currentLeaderboardType = type;
+      
+      // 更新按钮样式
+      ['fans', 'works', 'credits', 'popularity', 'newstar'].forEach(t => {
+        const btn = document.getElementById(`lb-btn-${t}`);
+        if (btn) {
+          if (t === 'newstar') {
+            btn.style.background = t === type ? 'linear-gradient(135deg, #fbbf24, #f59e0b)' : 'rgba(251, 191, 36, 0.2)';
+          } else {
+            btn.style.background = t === type ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'rgba(255,255,255,0.1)';
+          }
+        }
+      });
+      
+      // 新星榜隐藏周期选择
+      const periodTabs = document.getElementById('admin-period-tabs');
+      if (periodTabs) {
+        periodTabs.style.display = type === 'newstar' ? 'none' : 'flex';
+      }
+      
+      const tbody = document.getElementById('leaderboard-tbody');
+      tbody.innerHTML = '<tr><td colspan="4" style="padding: 1rem; color: #64748b; text-align: center;">加载中...</td></tr>';
+      
+      try {
+        const periodParam = type === 'newstar' ? '' : `&period=${currentAdminPeriod}`;
+        const response = await fetch(`/api/author-leaderboard/${type}?limit=50${periodParam}`, {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+        
+        if (data.success && data.list.length > 0) {
+          const rankIcons = ['🥇', '🥈', '🥉'];
+          tbody.innerHTML = data.list.map(item => `
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <td style="padding: 0.75rem;">
+                ${item.rank <= 3 ? `<span style="font-size: 1.25rem;">${rankIcons[item.rank - 1]}</span>` : `<span style="color: #64748b;">#${item.rank}</span>`}
+              </td>
+              <td style="padding: 0.75rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="font-size: 1.25rem;">${item.avatar_emoji}</span>
+                  <div>
+                    <div style="font-weight: 500;">${escapeHtml(item.nickname)}</div>
+                    <div style="font-size: 0.75rem; color: #64748b;">${escapeHtml(item.account_id)}</div>
+                  </div>
+                </div>
+              </td>
+              <td style="padding: 0.75rem;">
+                <span style="color: #a5b4fc; font-weight: 600;">${item.value}</span>
+                <span style="color: #64748b; font-size: 0.75rem;"> ${item.label}</span>
+              </td>
+              <td style="padding: 0.75rem;">
+                <button onclick="quickExcludeUser('${item.user_token}', '${escapeHtml(item.nickname)}')" 
+                  style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">
+                  🚫 排除
+                </button>
+              </td>
+            </tr>
+          `).join('');
+        } else {
+          tbody.innerHTML = '<tr><td colspan="4" style="padding: 1rem; color: #64748b; text-align: center;">暂无数据</td></tr>';
+        }
+      } catch (error) {
+        tbody.innerHTML = `<tr><td colspan="4" style="padding: 1rem; color: #f87171; text-align: center;">加载失败: ${error.message}</td></tr>`;
+      }
+    }
+    
+    // 快速排除用户（从榜单点击）
+    function quickExcludeUser(userToken, nickname) {
+      document.getElementById('exclude-selected-token').value = userToken;
+      document.getElementById('exclude-selected-name').textContent = nickname;
+      document.getElementById('exclude-selected-user').style.display = 'block';
+      document.getElementById('exclude-search-results').style.display = 'none';
+      document.getElementById('exclude-type-all').checked = true;
+      toggleExcludeTypes(document.getElementById('exclude-type-all'));
+    }
+    
+    // 搜索用户以添加到排除名单
+    async function searchUserForExclude() {
+      const keyword = document.getElementById('exclude-search-keyword').value.trim();
+      if (!keyword) {
+        showMessage('请输入搜索关键词', 'error');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/admin/user/search?keyword=${encodeURIComponent(keyword)}`, {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+        
+        const resultsDiv = document.getElementById('exclude-search-results');
+        const listDiv = document.getElementById('exclude-search-list');
+        
+        if (data.success && data.users.length > 0) {
+          listDiv.innerHTML = data.users.map(user => `
+            <button onclick="selectUserForExclude('${user.user_token}', '${escapeHtml(user.nickname || user.account_id)}')"
+              style="background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.3); color: #a5b4fc; padding: 0.5rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">
+              ${escapeHtml(user.nickname || user.account_id)}
+              <span style="color: #64748b; font-size: 0.7rem;">(${user.account_id})</span>
+            </button>
+          `).join('');
+          resultsDiv.style.display = 'block';
+        } else {
+          listDiv.innerHTML = '<span style="color: #64748b;">未找到匹配的用户</span>';
+          resultsDiv.style.display = 'block';
+        }
+      } catch (error) {
+        showMessage('搜索失败: ' + error.message, 'error');
+      }
+    }
+    
+    // 选择用户
+    function selectUserForExclude(userToken, nickname) {
+      document.getElementById('exclude-selected-token').value = userToken;
+      document.getElementById('exclude-selected-name').textContent = nickname;
+      document.getElementById('exclude-selected-user').style.display = 'block';
+      document.getElementById('exclude-search-results').style.display = 'none';
+    }
+    
+    // 清除选中的用户
+    function clearSelectedUser() {
+      document.getElementById('exclude-selected-token').value = '';
+      document.getElementById('exclude-selected-name').textContent = '';
+      document.getElementById('exclude-selected-user').style.display = 'none';
+      document.getElementById('exclude-reason').value = '';
+    }
+    
+    // 切换排除类型
+    function toggleExcludeTypes(checkbox) {
+      const singleCheckboxes = document.querySelectorAll('.exclude-type-single');
+      if (checkbox.checked) {
+        singleCheckboxes.forEach(cb => {
+          cb.checked = false;
+          cb.disabled = true;
+        });
+      } else {
+        singleCheckboxes.forEach(cb => {
+          cb.disabled = false;
+        });
+      }
+    }
+    
+    // 添加到排除名单
+    async function addToExcludeList() {
+      const userToken = document.getElementById('exclude-selected-token').value;
+      const reason = document.getElementById('exclude-reason').value.trim();
+      
+      if (!userToken) {
+        showMessage('请先选择要排除的用户', 'error');
+        return;
+      }
+      
+      // 获取排除类型
+      let excludeTypes;
+      if (document.getElementById('exclude-type-all').checked) {
+        excludeTypes = ['all'];
+      } else {
+        excludeTypes = [];
+        if (document.getElementById('exclude-type-fans').checked) excludeTypes.push('fans');
+        if (document.getElementById('exclude-type-works').checked) excludeTypes.push('works');
+        if (document.getElementById('exclude-type-credits').checked) excludeTypes.push('credits');
+        if (document.getElementById('exclude-type-popularity').checked) excludeTypes.push('popularity');
+        
+        if (excludeTypes.length === 0) {
+          showMessage('请至少选择一个要排除的榜单', 'error');
+          return;
+        }
+      }
+      
+      try {
+        const response = await fetch('/api/admin/leaderboard/exclude', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({
+            user_token: userToken,
+            exclude_types: excludeTypes,
+            reason: reason
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showMessage(data.message, 'success');
+          clearSelectedUser();
+          loadExcludeList();
+          loadLeaderboard(currentLeaderboardType);
+        } else {
+          showMessage('添加失败: ' + (data.error || '未知错误'), 'error');
+        }
+      } catch (error) {
+        showMessage('添加失败: ' + error.message, 'error');
+      }
+    }
+    
+    // 加载排除名单
+    async function loadExcludeList() {
+      const tbody = document.getElementById('exclude-list-tbody');
+      
+      try {
+        const response = await fetch('/api/admin/leaderboard/excludes', {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+        
+        if (data.success && data.excludes.length > 0) {
+          tbody.innerHTML = data.excludes.map(item => {
+            // 格式化排除类型显示
+            let typesDisplay = item.exclude_types;
+            if (item.exclude_types === 'all' || item.exclude_types.includes('all')) {
+              typesDisplay = '<span style="color: #f87171;">所有榜单</span>';
+            } else {
+              const typeLabels = {
+                'fans': '粉丝榜',
+                'works': '作品榜',
+                'credits': '积分榜',
+                'popularity': '人气榜'
+              };
+              typesDisplay = item.exclude_types.split(',').map(t => typeLabels[t.trim()] || t).join(', ');
+            }
+            
+            return `
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding: 0.75rem;">
+                  <div style="font-weight: 500;">${escapeHtml(item.nickname || item.account_id || '未知用户')}</div>
+                  <div style="font-size: 0.75rem; color: #64748b;">${escapeHtml(item.account_id || '')}</div>
+                </td>
+                <td style="padding: 0.75rem;">${typesDisplay}</td>
+                <td style="padding: 0.75rem; color: #94a3b8;">${escapeHtml(item.reason || '-')}</td>
+                <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">${new Date(item.created_at).toLocaleString('zh-CN')}</td>
+                <td style="padding: 0.75rem;">
+                  <button onclick="removeFromExcludeList('${item.user_token}')" 
+                    style="background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">
+                    ✓ 恢复
+                  </button>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        } else {
+          tbody.innerHTML = '<tr><td colspan="5" style="padding: 1rem; color: #64748b; text-align: center;">暂无排除用户</td></tr>';
+        }
+      } catch (error) {
+        tbody.innerHTML = `<tr><td colspan="5" style="padding: 1rem; color: #f87171; text-align: center;">加载失败: ${error.message}</td></tr>`;
+      }
+    }
+    
+    // 从排除名单移除
+    async function removeFromExcludeList(userToken) {
+      if (!confirm('确定要将该用户从排除名单中移除吗？')) return;
+      
+      try {
+        const response = await fetch(`/api/admin/leaderboard/exclude/${encodeURIComponent(userToken)}`, {
+          method: 'DELETE',
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showMessage('已从排除名单中移除', 'success');
+          loadExcludeList();
+          loadLeaderboard(currentLeaderboardType);
+        } else {
+          showMessage('移除失败: ' + (data.error || '未知错误'), 'error');
+        }
+      } catch (error) {
+        showMessage('移除失败: ' + error.message, 'error');
+      }
+    }
+    
+    // HTML 转义
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
 
     // 检查已保存的登录状态
