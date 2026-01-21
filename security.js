@@ -87,12 +87,8 @@ function getHelmetConfig() {
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
     // 点击劫持保护 - 允许同源iframe
     frameguard: { action: 'sameorigin' },
-    // HSTS（仅在生产环境启用）
-    hsts: process.env.NODE_ENV === 'production' ? {
-      maxAge: 31536000,
-      includeSubDomains: true,
-      preload: true
-    } : false,
+    // HSTS（已禁用 - 切换回HTTP时需要关闭）
+    hsts: false,
   });
 }
 

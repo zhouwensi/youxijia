@@ -472,7 +472,7 @@ PUT /api/account/nickname
 
 ---
 
-### 设置密码
+### 设置密码（首次）
 
 ```
 POST /api/account/password
@@ -481,9 +481,36 @@ POST /api/account/password
 **请求体**：
 ```json
 {
-  "password": "新密码"
+  "password": "密码"
 }
 ```
+
+**说明**：
+- 用于首次设置密码
+- 密码至少6位
+- 设置密码后，换设备登录时需要验证密码
+
+---
+
+### 修改密码（已有密码）
+
+```
+POST /api/account/change-password
+```
+
+**请求体**：
+```json
+{
+  "oldPassword": "原密码",
+  "newPassword": "新密码"
+}
+```
+
+**说明**：
+- 需要先设置过密码才能修改
+- 需要验证原密码正确后才能设置新密码
+- 新密码至少6位
+- 新密码不能与原密码相同
 
 ---
 
@@ -951,10 +978,32 @@ GET /api/admin/games/:id/source   # 获取源码
 ### 用户管理
 
 ```
-GET /api/admin/users          # 获取用户列表
-POST /api/admin/add-credits   # 添加积分
-PUT /api/admin/credits-config # 更新积分配置
+GET /api/admin/users                           # 获取用户列表（包含is_admin字段）
+POST /api/admin/add-credits                    # 添加积分
+PUT /api/admin/credits-config                  # 更新积分配置
+POST /api/admin/users/:userToken/set-admin     # 设置/取消管理员权限
+POST /api/admin/users/:userToken/reset-password # 重置用户密码
+GET /api/admin/admins                          # 获取管理员列表
 ```
+
+**重置用户密码请求体**：
+```json
+{
+  "newPassword": "新密码（至少6位）"
+}
+```
+
+**设置管理员请求体**：
+```json
+{
+  "isAdmin": true  // true=设为管理员, false=取消管理员
+}
+```
+
+**管理员权限说明**：
+- 管理员用户可以编辑任何**公开可见**的游戏
+- 游戏详情页的编辑按钮对作者和管理员都可见
+- 在用户列表中，管理员会显示特殊标识
 
 ---
 

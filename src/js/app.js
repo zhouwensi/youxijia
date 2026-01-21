@@ -1297,6 +1297,178 @@ async function setAccountPassword(password) {
   }
 }
 
+// 修改密码
+async function changeAccountPassword(oldPassword, newPassword) {
+  try {
+    const userToken = getUserToken();
+    const response = await fetch('/api/account/change-password', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-User-Token': userToken
+      },
+      body: JSON.stringify({ oldPassword, newPassword })
+    });
+    const data = await response.json();
+    if (response.ok && data.success) {
+      showToast('密码修改成功');
+      return true;
+    } else {
+      showToast(data.error || '密码修改失败', 'error');
+      return false;
+    }
+  } catch (error) {
+    showToast('网络错误', 'error');
+    return false;
+  }
+}
+
+// 显示设置/修改密码对话框
+function showChangePasswordDialog() {
+  // 移除旧的对话框（如果有）
+  const oldDialog = document.getElementById('change-password-dialog');
+  if (oldDialog) oldDialog.remove();
+  
+  const hasPassword = state.account.hasPassword;
+  const title = hasPassword ? '🔐 修改密码' : '🔐 设置密码';
+  const submitText = hasPassword ? '确认修改' : '设置密码';
+  const submitFunc = hasPassword ? 'submitChangePassword()' : 'submitSetPassword()';
+  
+  // 根据是否已有密码显示不同的表单
+  const oldPasswordField = hasPassword ? `
+        <div class="form-group">
+          <label>原密码</label>
+          <div class="input-with-toggle">
+            <input type="password" id="change-pwd-old" placeholder="请输入原密码">
+            <button class="btn-toggle-pwd" onclick="togglePasswordVisibility('change-pwd-old', this)">👁️</button>
+          </div>
+        </div>` : '';
+  
+  const dialog = document.createElement('div');
+  dialog.className = 'modal active';
+  dialog.id = 'change-password-dialog';
+  dialog.innerHTML = `
+    <div class="modal-content" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3>${title}</h3>
+        <button class="btn btn-icon btn-close" onclick="closeChangePasswordDialog()">×</button>
+      </div>
+      <div class="modal-body">
+        ${oldPasswordField}
+        <div class="form-group">
+          <label>${hasPassword ? '新密码' : '密码'}</label>
+          <div class="input-with-toggle">
+            <input type="password" id="change-pwd-new" placeholder="请输入${hasPassword ? '新' : ''}密码（至少6位）">
+            <button class="btn-toggle-pwd" onclick="togglePasswordVisibility('change-pwd-new', this)">👁️</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>确认密码</label>
+          <div class="input-with-toggle">
+            <input type="password" id="change-pwd-confirm" placeholder="请再次输入密码">
+            <button class="btn-toggle-pwd" onclick="togglePasswordVisibility('change-pwd-confirm', this)">👁️</button>
+          </div>
+        </div>
+        ${!hasPassword ? '<p class="form-hint" style="margin-bottom: 1rem;">💡 设置密码后，换设备登录时需要输入密码验证身份</p>' : ''}
+        <button class="btn btn-primary btn-block" onclick="${submitFunc}">${submitText}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+  
+  // 聚焦到第一个输入框
+  setTimeout(() => {
+    const firstInput = hasPassword ? 'change-pwd-old' : 'change-pwd-new';
+    document.getElementById(firstInput)?.focus();
+  }, 100);
+}
+
+// 切换密码可见性
+function togglePasswordVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (input) {
+    if (input.type === 'password') {
+      input.type = 'text';
+      btn.textContent = '🔒';
+    } else {
+      input.type = 'password';
+      btn.textContent = '👁️';
+    }
+  }
+}
+
+// 关闭修改密码对话框
+function closeChangePasswordDialog() {
+  const dialog = document.getElementById('change-password-dialog');
+  if (dialog) {
+    dialog.classList.remove('active');
+    setTimeout(() => dialog.remove(), 300);
+  }
+}
+
+// 提交修改密码
+async function submitChangePassword() {
+  const oldPassword = document.getElementById('change-pwd-old')?.value?.trim();
+  const newPassword = document.getElementById('change-pwd-new')?.value?.trim();
+  const confirmPassword = document.getElementById('change-pwd-confirm')?.value?.trim();
+  
+  if (!oldPassword) {
+    showToast('请输入原密码', 'error');
+    return;
+  }
+  
+  if (!newPassword) {
+    showToast('请输入新密码', 'error');
+    return;
+  }
+  
+  if (newPassword.length < 6) {
+    showToast('新密码至少6位', 'error');
+    return;
+  }
+  
+  if (newPassword !== confirmPassword) {
+    showToast('两次输入的新密码不一致', 'error');
+    return;
+  }
+  
+  if (oldPassword === newPassword) {
+    showToast('新密码不能与原密码相同', 'error');
+    return;
+  }
+  
+  const success = await changeAccountPassword(oldPassword, newPassword);
+  if (success) {
+    closeChangePasswordDialog();
+  }
+}
+
+// 提交设置密码（首次设置）
+async function submitSetPassword() {
+  const newPassword = document.getElementById('change-pwd-new')?.value?.trim();
+  const confirmPassword = document.getElementById('change-pwd-confirm')?.value?.trim();
+  
+  if (!newPassword) {
+    showToast('请输入密码', 'error');
+    return;
+  }
+  
+  if (newPassword.length < 6) {
+    showToast('密码至少6位', 'error');
+    return;
+  }
+  
+  if (newPassword !== confirmPassword) {
+    showToast('两次输入的密码不一致', 'error');
+    return;
+  }
+  
+  const success = await setAccountPassword(newPassword);
+  if (success) {
+    closeChangePasswordDialog();
+  }
+}
+
 // 账号登录
 async function loginWithAccount(accountId, password) {
   try {
@@ -3421,6 +3593,14 @@ async function loadSettingsModelList() {
   }
 }
 
+// 更新密码按钮文字（根据是否已设置密码）
+function updatePasswordButtonText() {
+  const textEl = document.getElementById('password-action-text');
+  if (textEl) {
+    textEl.textContent = state.account.hasPassword ? '修改密码' : '设置密码';
+  }
+}
+
 // 打开设置页面
 // preSelectModelId: 可选，预先选择指定的模型
 async function openSettings(preSelectModelId = null) {
@@ -3433,6 +3613,9 @@ async function openSettings(preSelectModelId = null) {
   if (accountIdEl) {
     accountIdEl.textContent = state.account.visibleId || state.account.visibleToken || getUserToken() || '未登录';
   }
+  
+  // 更新密码按钮文字
+  updatePasswordButtonText();
   
   // 动态加载模型列表
   await loadSettingsModelList();
@@ -6128,7 +6311,7 @@ function applySourceCodeChanges() {
   }
 }
 
-// 检查是否为作者，显示编辑按钮
+// 检查是否可以编辑游戏（作者或管理员），显示编辑按钮
 async function checkIsAuthor(gameId) {
   const editBtn = document.getElementById('stat-edit-btn');
   const userToken = getUserToken();
@@ -6138,15 +6321,37 @@ async function checkIsAuthor(gameId) {
     return false;
   }
   
-  // 检查当前用户是否为游戏作者
-  const isAuthor = state.currentGame.author_token === userToken;
-  
-  if (isAuthor) {
-    editBtn.classList.add('visible');
-    return true;
-  } else {
-    editBtn.classList.remove('visible');
-    return false;
+  try {
+    // 调用后端API检查编辑权限（包括作者和管理员）
+    const response = await fetch(`/api/games/${gameId}/can-edit`, {
+      headers: { 'X-User-Token': userToken }
+    });
+    const data = await response.json();
+    
+    if (data.success && data.canEdit) {
+      editBtn.classList.add('visible');
+      // 如果是管理员编辑别人的游戏，可以在按钮上添加提示
+      if (data.isAdmin && !data.isAuthor) {
+        editBtn.title = '管理员编辑模式';
+      } else {
+        editBtn.title = '编辑游戏';
+      }
+      return true;
+    } else {
+      editBtn.classList.remove('visible');
+      return false;
+    }
+  } catch (error) {
+    console.error('[检查编辑权限] 错误:', error);
+    // 降级处理：仅检查是否为作者
+    const isAuthor = state.currentGame.author_token === userToken;
+    if (isAuthor) {
+      editBtn.classList.add('visible');
+      return true;
+    } else {
+      editBtn.classList.remove('visible');
+      return false;
+    }
   }
 }
 

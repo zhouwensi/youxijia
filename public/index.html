@@ -1646,12 +1646,17 @@
               <div class="settings-group">
                 <h3>账号操作</h3>
                 <div class="settings-actions-list">
+                  <button class="settings-action-btn" id="password-action-btn" onclick="closeSettings(); showChangePasswordDialog();">
+                    <span class="settings-action-icon">🔐</span>
+                    <span class="settings-action-text" id="password-action-text">设置密码</span>
+                    <span class="settings-action-arrow">›</span>
+                  </button>
                   <button class="settings-action-btn" onclick="closeSettings(); showLoginDialog();">
                     <span class="settings-action-icon">🔄</span>
                     <span class="settings-action-text">切换/恢复账号</span>
                     <span class="settings-action-arrow">›</span>
                   </button>
-                  <button class="settings-action-btn danger" onclick="logoutAccount()">
+                  <button class="settings-action-btn danger" onclick="closeSettings(); logoutAccount();">
                     <span class="settings-action-icon">🚪</span>
                     <span class="settings-action-text">退出登录</span>
                     <span class="settings-action-arrow">›</span>

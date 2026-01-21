@@ -1541,18 +1541,38 @@ function loadStats() {
   }
 }
 
-// 检查是否为作者并显示编辑按钮
+// 检查是否可以编辑游戏（作者或管理员）并显示编辑按钮
 function checkIsAuthorAndShowEditBtn() {
   const userToken = getUserToken();
-  if (!userToken || !authorToken) return;
+  if (!userToken) return;
   
-  // 如果当前用户是作者，显示编辑按钮
-  if (userToken === authorToken) {
-    const editBtn = document.getElementById('stat-edit-btn');
-    if (editBtn) {
-      editBtn.classList.add('visible');
-    }
-  }
+  // 调用后端API检查编辑权限（包括作者和管理员）
+  fetch(API_BASE + '/' + gameId + '/can-edit', {
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.canEdit) {
+        const editBtn = document.getElementById('stat-edit-btn');
+        if (editBtn) {
+          editBtn.classList.add('visible');
+          // 如果是管理员编辑别人的游戏，添加提示
+          if (data.isAdmin && !data.isAuthor) {
+            editBtn.title = '管理员编辑模式';
+          }
+        }
+      }
+    })
+    .catch(err => {
+      console.error('[编辑权限检查] 失败:', err);
+      // 降级处理：只检查是否为作者
+      if (userToken === authorToken) {
+        const editBtn = document.getElementById('stat-edit-btn');
+        if (editBtn) {
+          editBtn.classList.add('visible');
+        }
+      }
+    });
 }
 
 // 打开游戏编辑页面
@@ -3487,6 +3507,14 @@ try {
   // 字段已存在，忽略
 }
 
+// 添加 is_admin 字段（如果不存在）- 标识管理员用户
+try {
+  db.exec(`ALTER TABLE user_accounts ADD COLUMN is_admin INTEGER DEFAULT 0`);
+  console.log('[DB] 添加 is_admin 字段成功');
+} catch (e) {
+  // 字段已存在，忽略
+}
+
 // 创建账号索引
 db.exec(`
   CREATE INDEX IF NOT EXISTS idx_user_accounts_account_id ON user_accounts(account_id);
@@ -3565,6 +3593,13 @@ async function hashPasswordAsync(password) {
 // 异步密码验证（支持bcrypt和旧版SHA256格式）
 async function verifyPasswordAsync(password, hash) {
   return await security.verifyPassword(password, hash);
+}
+
+// 检查用户是否为管理员
+function isUserAdmin(userToken) {
+  if (!userToken) return false;
+  const user = db.prepare('SELECT is_admin FROM user_accounts WHERE user_token = ?').get(userToken);
+  return user && user.is_admin === 1;
 }
 
 // 创建系统配置表
@@ -4341,6 +4376,58 @@ app.post('/api/account/password', (req, res) => {
     res.json({ success: true, message: '密码设置成功' });
   } catch (error) {
     console.error('[ERROR] 设置密码失败:', error);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
+// 修改密码（需要验证旧密码）
+app.post('/api/account/change-password', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    const { oldPassword, newPassword } = req.body;
+    
+    console.log('[DEBUG] 修改密码请求:', { userToken: userToken ? userToken.substring(0, 10) + '...' : 'null' });
+    
+    if (!userToken) {
+      return res.status(400).json({ success: false, error: '缺少用户标识' });
+    }
+    
+    if (!oldPassword) {
+      return res.status(400).json({ success: false, error: '请输入原密码' });
+    }
+    
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ success: false, error: '新密码至少6位' });
+    }
+    
+    if (oldPassword === newPassword) {
+      return res.status(400).json({ success: false, error: '新密码不能与原密码相同' });
+    }
+    
+    const account = db.prepare('SELECT * FROM user_accounts WHERE user_token = ?').get(userToken);
+    if (!account) {
+      return res.status(404).json({ success: false, error: '账号不存在' });
+    }
+    
+    // 必须已经设置了密码才能修改
+    if (!account.has_password || !account.password_hash) {
+      return res.status(400).json({ success: false, error: '账号未设置密码，请先设置密码' });
+    }
+    
+    // 验证旧密码
+    if (hashPassword(oldPassword) !== account.password_hash) {
+      return res.status(400).json({ success: false, error: '原密码错误' });
+    }
+    
+    // 设置新密码
+    const newPasswordHash = hashPassword(newPassword);
+    db.prepare('UPDATE user_accounts SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE user_token = ?')
+      .run(newPasswordHash, userToken);
+    
+    console.log('[DEBUG] 密码修改成功:', { account_id: account.account_id });
+    res.json({ success: true, message: '密码修改成功' });
+  } catch (error) {
+    console.error('[ERROR] 修改密码失败:', error);
     res.status(500).json({ success: false, error: '服务器错误' });
   }
 });
@@ -5796,6 +5883,54 @@ app.post('/api/games/:id/verify', (req, res) => {
   }
 });
 
+// 检查用户是否可以编辑游戏（作者或管理员）
+app.get('/api/games/:id/can-edit', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    if (!userToken) {
+      return res.json({ success: true, canEdit: false, reason: '未登录' });
+    }
+    
+    const game = db.prepare('SELECT author_token, is_public, visibility FROM games WHERE id = ?').get(req.params.id);
+    
+    if (!game) {
+      return res.status(404).json({ success: false, error: '游戏不存在' });
+    }
+    
+    const isAuthor = game.author_token === userToken;
+    const isAdmin = isUserAdmin(userToken);
+    const isPublicGame = game.is_public === 1 && game.visibility === 'public';
+    
+    // 作者可以编辑自己的游戏，管理员可以编辑公开游戏
+    const canEdit = isAuthor || (isAdmin && isPublicGame);
+    
+    res.json({ 
+      success: true, 
+      canEdit,
+      isAuthor,
+      isAdmin,
+      reason: canEdit ? (isAuthor ? '作者' : '管理员') : '无权限'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 检查当前用户是否为管理员
+app.get('/api/user/is-admin', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    if (!userToken) {
+      return res.json({ success: true, isAdmin: false });
+    }
+    
+    const isAdmin = isUserAdmin(userToken);
+    res.json({ success: true, isAdmin });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ==================== 游戏留言板 API ====================
 
 // 获取游戏留言列表
@@ -7046,13 +7181,21 @@ app.post('/api/games/:id/edit', async (req, res) => {
   }
   
   try {
-    // 验证游戏是否存在且属于当前用户
+    // 验证游戏是否存在
     const game = db.prepare('SELECT * FROM games WHERE id = ?').get(gameId);
     if (!game) {
       return res.status(404).json({ success: false, error: '游戏不存在' });
     }
     
-    if (game.author_token !== userToken) {
+    // 检查编辑权限：作者本人或管理员（仅限公开游戏）
+    const isAuthor = game.author_token === userToken;
+    const isAdmin = isUserAdmin(userToken);
+    const isPublicGame = game.is_public === 1 && game.visibility === 'public';
+    
+    if (!isAuthor && !(isAdmin && isPublicGame)) {
+      if (isAdmin && !isPublicGame) {
+        return res.status(403).json({ success: false, error: '管理员只能编辑公开可见的游戏' });
+      }
       return res.status(403).json({ success: false, error: '只能编辑自己的游戏' });
     }
     
@@ -9563,7 +9706,7 @@ app.get('/api/admin/users', (req, res) => {
       users = db.prepare(`
         SELECT uc.user_token, uc.credits, uc.total_earned, uc.total_used, uc.followed_wechat, 
                uc.ad_count_today, uc.created_at, uc.updated_at,
-               ua.account_id, ua.nickname
+               ua.account_id, ua.nickname, ua.is_admin
         FROM user_credits uc
         LEFT JOIN user_accounts ua ON uc.user_token = ua.user_token
         WHERE uc.user_token LIKE ? 
@@ -9579,7 +9722,7 @@ app.get('/api/admin/users', (req, res) => {
       users = db.prepare(`
         SELECT uc.user_token, uc.credits, uc.total_earned, uc.total_used, uc.followed_wechat, 
                uc.ad_count_today, uc.created_at, uc.updated_at,
-               ua.account_id, ua.nickname
+               ua.account_id, ua.nickname, ua.is_admin
         FROM user_credits uc
         LEFT JOIN user_accounts ua ON uc.user_token = ua.user_token
         ORDER BY uc.created_at DESC 
@@ -9597,6 +9740,111 @@ app.get('/api/admin/users', (req, res) => {
         totalPages: Math.ceil(total / limit)
       }
     });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 设置/取消用户管理员权限（管理员）
+app.post('/api/admin/users/:userToken/set-admin', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { userToken } = req.params;
+    const { isAdmin } = req.body;
+    
+    if (!userToken) {
+      return res.status(400).json({ success: false, error: '缺少用户Token' });
+    }
+    
+    // 检查用户是否存在
+    const user = db.prepare('SELECT * FROM user_accounts WHERE user_token = ?').get(userToken);
+    if (!user) {
+      return res.status(404).json({ success: false, error: '用户不存在' });
+    }
+    
+    // 更新管理员状态
+    const adminValue = isAdmin ? 1 : 0;
+    db.prepare('UPDATE user_accounts SET is_admin = ?, updated_at = CURRENT_TIMESTAMP WHERE user_token = ?')
+      .run(adminValue, userToken);
+    
+    console.log(`[管理员设置] 用户 ${user.account_id || userToken} 管理员权限已${isAdmin ? '开启' : '关闭'}`);
+    
+    res.json({ 
+      success: true, 
+      message: isAdmin ? '已设置为管理员' : '已取消管理员权限',
+      user_token: userToken,
+      is_admin: adminValue
+    });
+  } catch (error) {
+    console.error('[管理员设置] 错误:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 管理员重置用户密码（不需要原密码）
+app.post('/api/admin/users/:userToken/reset-password', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { userToken } = req.params;
+    const { newPassword } = req.body;
+    
+    if (!userToken) {
+      return res.status(400).json({ success: false, error: '缺少用户Token' });
+    }
+    
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ success: false, error: '新密码至少需要6位' });
+    }
+    
+    // 检查用户是否存在
+    const user = db.prepare('SELECT * FROM user_accounts WHERE user_token = ?').get(userToken);
+    if (!user) {
+      return res.status(404).json({ success: false, error: '用户不存在' });
+    }
+    
+    // 设置新密码
+    const passwordHash = hashPassword(newPassword);
+    db.prepare('UPDATE user_accounts SET password_hash = ?, has_password = 1, updated_at = CURRENT_TIMESTAMP WHERE user_token = ?')
+      .run(passwordHash, userToken);
+    
+    console.log(`[管理员操作] 已重置用户 ${user.account_id || userToken} 的密码`);
+    
+    res.json({ 
+      success: true, 
+      message: '密码重置成功',
+      user_token: userToken,
+      account_id: user.account_id
+    });
+  } catch (error) {
+    console.error('[管理员重置密码] 错误:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 获取管理员列表（管理员）
+app.get('/api/admin/admins', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const admins = db.prepare(`
+      SELECT ua.user_token, ua.account_id, ua.nickname, ua.created_at, ua.updated_at
+      FROM user_accounts ua
+      WHERE ua.is_admin = 1
+      ORDER BY ua.updated_at DESC
+    `).all();
+    
+    res.json({ success: true, admins });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

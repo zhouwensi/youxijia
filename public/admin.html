@@ -2240,7 +2240,7 @@
     function renderUsersTable(users) {
       if (users.length === 0) {
         document.getElementById('users-table-body').innerHTML = 
-          '<tr><td colspan="9" style="text-align: center; color: #64748b; padding: 2rem;">暂无用户</td></tr>';
+          '<tr><td colspan="10" style="text-align: center; color: #64748b; padding: 2rem;">暂无用户</td></tr>';
         return;
       }
       
@@ -2248,13 +2248,17 @@
         const accountId = user.account_id || '-';
         const nickname = user.nickname || '-';
         const displayName = nickname !== '-' && nickname !== '游戏玩家' ? nickname : accountId;
+        const isAdmin = user.is_admin === 1;
         
         return `
         <tr>
           <td class="token-short" title="${user.user_token}">${user.user_token.substring(0, 16)}...</td>
           <td>
             <div style="line-height: 1.3;">
-              <div style="font-weight: 600; color: #e2e8f0;">${displayName}</div>
+              <div style="font-weight: 600; color: #e2e8f0;">
+                ${displayName}
+                ${isAdmin ? '<span style="background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 6px;">管理员</span>' : ''}
+              </div>
               <div style="font-size: 11px; color: #94a3b8;">@${accountId}</div>
             </div>
           </td>
@@ -2265,12 +2269,145 @@
           <td>${user.ad_count_today || 0}</td>
           <td style="white-space: nowrap;">${formatDate(user.created_at)}</td>
           <td>
-            <button class="btn-action btn-view" onclick="copyToClipboard('${user.user_token}')">复制Token</button>
+            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+              <button class="btn-action btn-view" onclick="copyToClipboard('${user.user_token}')" title="复制Token">📋</button>
+              <button class="btn-action ${isAdmin ? 'btn-delete' : 'btn-edit'}" onclick="toggleAdminStatus('${user.user_token}', ${!isAdmin})" title="${isAdmin ? '取消管理员' : '设为管理员'}">
+                ${isAdmin ? '👤' : '👑'}
+              </button>
+              <button class="btn-action btn-edit" onclick="showResetPasswordDialog('${user.user_token}', '${displayName.replace(/'/g, "\\'")}')" title="重置密码">🔐</button>
+            </div>
           </td>
         </tr>
       `}).join('');
       
       document.getElementById('users-table-body').innerHTML = html;
+    }
+    
+    // 切换用户管理员状态
+    async function toggleAdminStatus(userToken, setAsAdmin) {
+      const action = setAsAdmin ? '设置为管理员' : '取消管理员权限';
+      if (!confirm(`确定要将此用户${action}吗？\n\n管理员可以编辑任何公开的游戏。`)) {
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/admin/users/${encodeURIComponent(userToken)}/set-admin`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ isAdmin: setAsAdmin })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          loadUsers(currentUsersPage);
+        } else {
+          showToast(data.error || '操作失败', 'error');
+        }
+      } catch (error) {
+        console.error('设置管理员失败:', error);
+        showToast('操作失败', 'error');
+      }
+    }
+
+    // 显示重置密码对话框
+    function showResetPasswordDialog(userToken, displayName) {
+      // 移除已存在的对话框
+      const oldDialog = document.getElementById('reset-password-dialog');
+      if (oldDialog) oldDialog.remove();
+      
+      const dialog = document.createElement('div');
+      dialog.id = 'reset-password-dialog';
+      dialog.style.cssText = `
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center;
+        z-index: 10000;
+      `;
+      dialog.innerHTML = `
+        <div style="background: #1e293b; border-radius: 12px; padding: 1.5rem; width: 90%; max-width: 400px; border: 1px solid #334155;">
+          <h3 style="margin: 0 0 1rem 0; color: #e2e8f0; font-size: 1.1rem;">🔐 重置用户密码</h3>
+          <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1rem;">
+            用户：<strong style="color: #60a5fa;">${displayName}</strong>
+          </p>
+          <div style="margin-bottom: 1rem;">
+            <label style="color: #94a3b8; font-size: 0.85rem; display: block; margin-bottom: 0.5rem;">新密码（至少6位）</label>
+            <input type="password" id="admin-new-password" placeholder="请输入新密码" 
+              style="width: 100%; padding: 0.6rem 1rem; border-radius: 6px; background: rgba(255,255,255,0.1); border: 1px solid #334155; color: #fff; font-size: 0.9rem; box-sizing: border-box;">
+          </div>
+          <div style="margin-bottom: 1rem;">
+            <label style="color: #94a3b8; font-size: 0.85rem; display: block; margin-bottom: 0.5rem;">确认新密码</label>
+            <input type="password" id="admin-confirm-password" placeholder="请再次输入新密码" 
+              style="width: 100%; padding: 0.6rem 1rem; border-radius: 6px; background: rgba(255,255,255,0.1); border: 1px solid #334155; color: #fff; font-size: 0.9rem; box-sizing: border-box;">
+          </div>
+          <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+            <button onclick="closeResetPasswordDialog()" style="padding: 0.5rem 1rem; border-radius: 6px; background: #475569; color: white; border: none; cursor: pointer;">取消</button>
+            <button onclick="confirmResetPassword('${userToken}')" style="padding: 0.5rem 1rem; border-radius: 6px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; border: none; cursor: pointer;">确认重置</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(dialog);
+      
+      // 点击背景关闭
+      dialog.addEventListener('click', (e) => {
+        if (e.target === dialog) closeResetPasswordDialog();
+      });
+      
+      // 聚焦到输入框
+      setTimeout(() => {
+        document.getElementById('admin-new-password')?.focus();
+      }, 100);
+    }
+    
+    // 关闭重置密码对话框
+    function closeResetPasswordDialog() {
+      const dialog = document.getElementById('reset-password-dialog');
+      if (dialog) dialog.remove();
+    }
+    
+    // 确认重置密码
+    async function confirmResetPassword(userToken) {
+      const newPassword = document.getElementById('admin-new-password')?.value?.trim();
+      const confirmPassword = document.getElementById('admin-confirm-password')?.value?.trim();
+      
+      if (!newPassword) {
+        showToast('请输入新密码', 'error');
+        return;
+      }
+      
+      if (newPassword.length < 6) {
+        showToast('密码至少需要6位', 'error');
+        return;
+      }
+      
+      if (newPassword !== confirmPassword) {
+        showToast('两次输入的密码不一致', 'error');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/admin/users/${encodeURIComponent(userToken)}/reset-password`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ newPassword })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast('密码重置成功', 'success');
+          closeResetPasswordDialog();
+        } else {
+          showToast(data.error || '密码重置失败', 'error');
+        }
+      } catch (error) {
+        console.error('重置密码失败:', error);
+        showToast('操作失败', 'error');
+      }
     }
 
     // 添加积分
