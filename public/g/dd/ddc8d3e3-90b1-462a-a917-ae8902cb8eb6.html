@@ -2508,18 +2508,38 @@ function loadStats() {
   }
 }
 
-// 检查是否为作者并显示编辑按钮
+// 检查是否可以编辑游戏（作者或管理员）并显示编辑按钮
 function checkIsAuthorAndShowEditBtn() {
   const userToken = getUserToken();
-  if (!userToken || !authorToken) return;
+  if (!userToken) return;
   
-  // 如果当前用户是作者，显示编辑按钮
-  if (userToken === authorToken) {
-    const editBtn = document.getElementById('stat-edit-btn');
-    if (editBtn) {
-      editBtn.classList.add('visible');
-    }
-  }
+  // 调用后端API检查编辑权限（包括作者和管理员）
+  fetch(API_BASE + '/' + gameId + '/can-edit', {
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.canEdit) {
+        const editBtn = document.getElementById('stat-edit-btn');
+        if (editBtn) {
+          editBtn.classList.add('visible');
+          // 如果是管理员编辑别人的游戏，添加提示
+          if (data.isAdmin && !data.isAuthor) {
+            editBtn.title = '管理员编辑模式';
+          }
+        }
+      }
+    })
+    .catch(err => {
+      console.error('[编辑权限检查] 失败:', err);
+      // 降级处理：只检查是否为作者
+      if (userToken === authorToken) {
+        const editBtn = document.getElementById('stat-edit-btn');
+        if (editBtn) {
+          editBtn.classList.add('visible');
+        }
+      }
+    });
 }
 
 // 打开游戏编辑页面

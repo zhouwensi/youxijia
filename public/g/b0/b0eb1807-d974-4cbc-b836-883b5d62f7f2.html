@@ -1243,7 +1243,7 @@ body {
 
         let gameState = 'start';
         let score = 0;
-        let playerHeight = 0;
+        let playerHeight = 100; // 修改：初始高度设为100，避免立即结束游戏
         let maxHeight = 0;
         let gameSpeed = 3;
         let keys = {};
@@ -1279,7 +1279,7 @@ body {
 
         function initGame() {
             score = 0;
-            playerHeight = 0;
+            playerHeight = 100; // 修改：初始高度设为100
             maxHeight = 0;
             gameSpeed = 3;
             clouds.length = 0;
@@ -1366,7 +1366,15 @@ body {
             
             player.wingAngle += player.wingSpeed * deltaTime;
             
-            playerHeight += (moveY < 0 ? 1 : -0.2) * deltaTime;
+            // 修改：调整高度变化逻辑，避免立即降到0
+            if (moveY < 0) {
+                playerHeight += 1.5 * deltaTime; // 向上飞时增加高度
+            } else if (moveY > 0) {
+                playerHeight -= 0.5 * deltaTime; // 向下飞时缓慢降低高度
+            } else {
+                playerHeight -= 0.1 * deltaTime; // 不操作时缓慢降低高度
+            }
+            
             if (playerHeight < 0) playerHeight = 0;
             if (playerHeight > maxHeight) maxHeight = playerHeight;
         }
@@ -1579,6 +1587,7 @@ body {
                 updateObjects(deltaTime);
                 updateHUD();
                 
+                // 修改：只有当高度为0时才结束游戏
                 if (playerHeight <= 0) {
                     endGame();
                     return;
@@ -1764,7 +1773,7 @@ body {
     <div class="tiktok-author-avatar" id="author-avatar" onclick="openAuthorProfile()">👤</div>
     <div class="tiktok-author-details" style="display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;min-height:32px!important;gap:2px!important;">
       <div class="tiktok-author-name-row" style="display:flex!important;flex-direction:row!important;align-items:center!important;gap:10px!important;">
-        <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">匿名</span>
+        <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">player_o25gac</span>
         <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="7d585391-f3c1-4677-8367-d9d98abc6767" onclick="toggleFollow()">
           <span class="follow-icon">+</span> 关注
         </button>
@@ -1895,7 +1904,7 @@ body {
 const gameId = 'b0eb1807-d974-4cbc-b836-883b5d62f7f2';
 const gameTitle = '大鹏展翅';
 const authorToken = '7d585391-f3c1-4677-8367-d9d98abc6767';
-const authorName = '匿名';
+const authorName = 'player_o25gac';
 const API_BASE = '/api/games';
 
 // 调试日志
@@ -2099,18 +2108,38 @@ function loadStats() {
   }
 }
 
-// 检查是否为作者并显示编辑按钮
+// 检查是否可以编辑游戏（作者或管理员）并显示编辑按钮
 function checkIsAuthorAndShowEditBtn() {
   const userToken = getUserToken();
-  if (!userToken || !authorToken) return;
+  if (!userToken) return;
   
-  // 如果当前用户是作者，显示编辑按钮
-  if (userToken === authorToken) {
-    const editBtn = document.getElementById('stat-edit-btn');
-    if (editBtn) {
-      editBtn.classList.add('visible');
-    }
-  }
+  // 调用后端API检查编辑权限（包括作者和管理员）
+  fetch(API_BASE + '/' + gameId + '/can-edit', {
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.canEdit) {
+        const editBtn = document.getElementById('stat-edit-btn');
+        if (editBtn) {
+          editBtn.classList.add('visible');
+          // 如果是管理员编辑别人的游戏，添加提示
+          if (data.isAdmin && !data.isAuthor) {
+            editBtn.title = '管理员编辑模式';
+          }
+        }
+      }
+    })
+    .catch(err => {
+      console.error('[编辑权限检查] 失败:', err);
+      // 降级处理：只检查是否为作者
+      if (userToken === authorToken) {
+        const editBtn = document.getElementById('stat-edit-btn');
+        if (editBtn) {
+          editBtn.classList.add('visible');
+        }
+      }
+    });
 }
 
 // 打开游戏编辑页面

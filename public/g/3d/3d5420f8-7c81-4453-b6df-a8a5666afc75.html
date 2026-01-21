@@ -1574,7 +1574,7 @@ body {
     <div class="tiktok-author-avatar" id="author-avatar" onclick="openAuthorProfile()">👤</div>
     <div class="tiktok-author-details" style="display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;min-height:32px!important;gap:2px!important;">
       <div class="tiktok-author-name-row" style="display:flex!important;flex-direction:row!important;align-items:center!important;gap:10px!important;">
-        <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">匿名</span>
+        <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">player_d9px13</span>
         <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="3d29f34b-9a1a-428e-9154-fc03ffa79602" onclick="toggleFollow()">
           <span class="follow-icon">+</span> 关注
         </button>
@@ -1705,7 +1705,7 @@ body {
 const gameId = '3d5420f8-7c81-4453-b6df-a8a5666afc75';
 const gameTitle = '飞机大战';
 const authorToken = '3d29f34b-9a1a-428e-9154-fc03ffa79602';
-const authorName = '匿名';
+const authorName = 'player_d9px13';
 const API_BASE = '/api/games';
 
 // 调试日志
@@ -1909,18 +1909,38 @@ function loadStats() {
   }
 }
 
-// 检查是否为作者并显示编辑按钮
+// 检查是否可以编辑游戏（作者或管理员）并显示编辑按钮
 function checkIsAuthorAndShowEditBtn() {
   const userToken = getUserToken();
-  if (!userToken || !authorToken) return;
+  if (!userToken) return;
   
-  // 如果当前用户是作者，显示编辑按钮
-  if (userToken === authorToken) {
-    const editBtn = document.getElementById('stat-edit-btn');
-    if (editBtn) {
-      editBtn.classList.add('visible');
-    }
-  }
+  // 调用后端API检查编辑权限（包括作者和管理员）
+  fetch(API_BASE + '/' + gameId + '/can-edit', {
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.canEdit) {
+        const editBtn = document.getElementById('stat-edit-btn');
+        if (editBtn) {
+          editBtn.classList.add('visible');
+          // 如果是管理员编辑别人的游戏，添加提示
+          if (data.isAdmin && !data.isAuthor) {
+            editBtn.title = '管理员编辑模式';
+          }
+        }
+      }
+    })
+    .catch(err => {
+      console.error('[编辑权限检查] 失败:', err);
+      // 降级处理：只检查是否为作者
+      if (userToken === authorToken) {
+        const editBtn = document.getElementById('stat-edit-btn');
+        if (editBtn) {
+          editBtn.classList.add('visible');
+        }
+      }
+    });
 }
 
 // 打开游戏编辑页面
