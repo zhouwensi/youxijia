@@ -1316,8 +1316,11 @@
       <!-- DevTools白名单 -->
       <div class="config-section">
         <h2>🔧 开发者工具白名单</h2>
-        <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1rem;">
+        <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 0.5rem;">
           白名单中的账号和IP可以打开浏览器开发者工具，其他用户将被禁止。
+        </p>
+        <p style="color: #f59e0b; font-size: 0.875rem; margin-bottom: 1rem;">
+          💡 提示：添加 <code style="background: rgba(251, 191, 36, 0.2); padding: 2px 6px; border-radius: 4px;">*</code> 可允许所有人打开开发者工具（仅建议开发环境使用）
         </p>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
@@ -1879,8 +1882,27 @@
       }
     }
 
+    // 存储游戏描述用于复制
+    let gamePrompts = {};
+    
+    // 复制游戏描述
+    function copyGamePrompt(gameId) {
+      const prompt = gamePrompts[gameId];
+      if (prompt) {
+        copyToClipboard(prompt);
+      } else {
+        showToast('无法获取描述内容', 'error');
+      }
+    }
+    
     // 渲染游戏表格
     function renderGamesTable(games) {
+      // 存储游戏描述
+      gamePrompts = {};
+      games.forEach(game => {
+        gamePrompts[game.id] = game.prompt || '';
+      });
+      
       if (games.length === 0) {
         document.getElementById('games-table-body').innerHTML = 
           '<tr><td colspan="9" style="text-align: center; color: #64748b; padding: 2rem;">暂无游戏</td></tr>';
@@ -1921,7 +1943,7 @@
         } else {
           // 正常游戏：标准操作
           actionButtons = `
-            <button class="btn-action btn-view" onclick="window.open('/?game=${game.id}', '_blank')">查看</button>
+            <button class="btn-action btn-view" onclick="window.open('/game/${game.id}', '_blank')">查看</button>
             <button class="btn-action btn-feature" onclick="toggleFeature('${game.id}', ${!game.is_featured})">
               ${game.is_featured ? '取消推荐' : '推荐'}
             </button>
@@ -1929,8 +1951,8 @@
               ${game.is_hidden ? '显示' : '隐藏'}
             </button>
             <button class="btn-action btn-delete" onclick="deleteGame('${game.id}')">软删除</button>
-            <button class="btn-action" style="background: rgba(59, 130, 246, 0.2); color: #60a5fa;" onclick="repairGame('${game.id}')" title="修复游戏文件">🔧</button>
-            <button class="btn-action" style="background: rgba(16, 185, 129, 0.2); color: #34d399;" onclick="downloadSource('${game.id}')" title="下载原始源码">📥</button>
+            <button class="btn-action" style="background: rgba(59, 130, 246, 0.2); color: #60a5fa;" onclick="regenerateStaticFile('${game.id}')" title="重新生成静态文件">🔧</button>
+            <button class="btn-action" style="background: rgba(16, 185, 129, 0.2); color: #34d399;" onclick="aiRepairGame('${game.id}', '${escapeHtml(game.title)}')" title="AI修复游戏代码">🤖</button>
           `;
         }
         
@@ -1940,7 +1962,12 @@
               <input type="checkbox" value="${game.id}" onchange="toggleGameSelect('${game.id}')">
             </td>
             <td class="title">${isDeleted ? '🗑️ ' : ''}${escapeHtml(game.title)}</td>
-            <td class="prompt">${escapeHtml(game.prompt)}</td>
+            <td class="prompt">
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(game.prompt)}">${escapeHtml(game.prompt)}</span>
+                <button class="btn-action" style="background: rgba(99, 102, 241, 0.2); color: #a5b4fc; flex-shrink: 0; padding: 2px 6px;" onclick="copyGamePrompt('${game.id}'); event.stopPropagation();" title="复制描述">📋</button>
+              </div>
+            </td>
             <td>${escapeHtml(game.author_name || '匿名')}</td>
             <td>${game.play_count || 0}</td>
             <td>${game.like_count || 0}</td>
@@ -3303,25 +3330,37 @@
       const ipsList = document.getElementById('devtools-ips-list');
       
       if (whitelist.accounts && whitelist.accounts.length > 0) {
-        accountsList.innerHTML = whitelist.accounts.map(acc => `
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
-            <span style="font-family: monospace; font-size: 0.85rem; color: #10b981;">${escapeHtml(acc)}</span>
-            <button onclick="removeDevToolsWhitelist('account', '${escapeHtml(acc)}')" 
-              style="background: #ef4444; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">移除</button>
-          </div>
-        `).join('');
+        accountsList.innerHTML = whitelist.accounts.map(acc => {
+          const isWildcard = acc === '*';
+          const displayText = isWildcard ? '* （允许所有用户）' : acc;
+          const color = isWildcard ? '#f59e0b' : '#10b981';
+          const bgColor = isWildcard ? 'rgba(251, 191, 36, 0.1)' : 'transparent';
+          return `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.5rem; margin-bottom: 0.25rem; border-radius: 4px; background: ${bgColor}; border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <span style="font-family: monospace; font-size: 0.85rem; color: ${color};">${escapeHtml(displayText)}</span>
+              <button onclick="removeDevToolsWhitelist('account', '${escapeHtml(acc)}')" 
+                style="background: #ef4444; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">移除</button>
+            </div>
+          `;
+        }).join('');
       } else {
         accountsList.innerHTML = '<p style="color: #64748b; font-size: 0.85rem;">暂无白名单账号</p>';
       }
       
       if (whitelist.ips && whitelist.ips.length > 0) {
-        ipsList.innerHTML = whitelist.ips.map(ip => `
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
-            <span style="font-family: monospace; font-size: 0.85rem; color: #3b82f6;">${escapeHtml(ip)}</span>
-            <button onclick="removeDevToolsWhitelist('ip', '${escapeHtml(ip)}')" 
-              style="background: #ef4444; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">移除</button>
-          </div>
-        `).join('');
+        ipsList.innerHTML = whitelist.ips.map(ip => {
+          const isWildcard = ip === '*';
+          const displayText = isWildcard ? '* （允许所有IP）' : ip;
+          const color = isWildcard ? '#f59e0b' : '#3b82f6';
+          const bgColor = isWildcard ? 'rgba(251, 191, 36, 0.1)' : 'transparent';
+          return `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.5rem; margin-bottom: 0.25rem; border-radius: 4px; background: ${bgColor}; border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <span style="font-family: monospace; font-size: 0.85rem; color: ${color};">${escapeHtml(displayText)}</span>
+              <button onclick="removeDevToolsWhitelist('ip', '${escapeHtml(ip)}')" 
+                style="background: #ef4444; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">移除</button>
+            </div>
+          `;
+        }).join('');
       } else {
         ipsList.innerHTML = '<p style="color: #64748b; font-size: 0.85rem;">暂无白名单IP</p>';
       }
@@ -4847,6 +4886,57 @@
         }
       } catch (error) {
         showMessage('移除失败: ' + error.message, 'error');
+      }
+    }
+    
+    // 重新生成单个游戏的静态文件
+    async function regenerateStaticFile(gameId) {
+      if (!confirm('确定要重新生成该游戏的静态文件吗？')) return;
+      
+      try {
+        showToast('正在重新生成静态文件...', 'info');
+        
+        const response = await fetch(`/api/admin/games/${gameId}/regenerate`, {
+          method: 'POST',
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast('静态文件已重新生成', 'success');
+        } else {
+          showToast(data.error || '生成失败', 'error');
+        }
+      } catch (error) {
+        showToast('操作失败: ' + error.message, 'error');
+      }
+    }
+    
+    // AI修复游戏代码（管理员版本，异步后台执行）
+    async function aiRepairGame(gameId, gameTitle) {
+      if (!confirm(`确定要使用AI修复游戏「${gameTitle}」的代码吗？\n\nAI将在后台自动分析并修复游戏中的错误。\n修复完成后会自动更新游戏，无需等待。`)) return;
+      
+      try {
+        const response = await fetch(`/api/admin/games/${gameId}/ai-repair`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          }
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          if (data.status === 'already_running') {
+            showToast('该游戏已有修复任务正在进行中', 'info');
+          } else {
+            showToast('🤖 AI修复任务已启动，将在后台自动完成', 'success');
+          }
+        } else {
+          showToast(data.error || 'AI修复启动失败', 'error');
+        }
+      } catch (error) {
+        showToast('操作失败: ' + error.message, 'error');
       }
     }
     

@@ -470,6 +470,28 @@ function generateStandaloneGameHtml(gameCode, gameInfo) {
 #stat-edit-btn.visible {
   display: flex !important;
 }
+#stat-repair-btn {
+  display: none !important;
+}
+#stat-repair-btn.visible {
+  display: flex !important;
+}
+#stat-repair-btn .tiktok-icon {
+  background: rgba(16, 185, 129, 0.3) !important;
+  border-color: rgba(16, 185, 129, 0.5) !important;
+}
+#stat-repair-btn:hover .tiktok-icon {
+  background: rgba(16, 185, 129, 0.5) !important;
+  border-color: rgba(16, 185, 129, 0.8) !important;
+}
+#stat-repair-btn.repairing .tiktok-icon {
+  animation: repairSpin 1s linear infinite !important;
+  background: rgba(16, 185, 129, 0.5) !important;
+}
+@keyframes repairSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 /* ====== 全屏模式样式 ====== */
 body.fullscreen-mode {
   padding-bottom: 0 !important;
@@ -1257,6 +1279,9 @@ body {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
     </div>
   </div>
+  <div class="tiktok-action" id="stat-repair-btn" onclick="repairGame()" title="AI修复" style="display:none;">
+    <div class="tiktok-icon">🔧</div>
+  </div>
   <div class="tiktok-action" id="fullscreen-btn" onclick="toggleFullscreenMode()" title="全屏游玩">
     <div class="tiktok-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
@@ -1554,12 +1579,16 @@ function checkIsAuthorAndShowEditBtn() {
     .then(data => {
       if (data.success && data.canEdit) {
         const editBtn = document.getElementById('stat-edit-btn');
+        const repairBtn = document.getElementById('stat-repair-btn');
         if (editBtn) {
           editBtn.classList.add('visible');
           // 如果是管理员编辑别人的游戏，添加提示
           if (data.isAdmin && !data.isAuthor) {
             editBtn.title = '管理员编辑模式';
           }
+        }
+        if (repairBtn) {
+          repairBtn.classList.add('visible');
         }
       }
     })
@@ -1568,9 +1597,63 @@ function checkIsAuthorAndShowEditBtn() {
       // 降级处理：只检查是否为作者
       if (userToken === authorToken) {
         const editBtn = document.getElementById('stat-edit-btn');
+        const repairBtn = document.getElementById('stat-repair-btn');
         if (editBtn) {
           editBtn.classList.add('visible');
         }
+        if (repairBtn) {
+          repairBtn.classList.add('visible');
+        }
+      }
+    });
+}
+
+// AI修复游戏（异步后台任务）
+function repairGame() {
+  const REPAIR_CREDIT_COST = 0.5;
+  const userToken = getUserToken();
+  
+  if (!userToken) {
+    showToast('请先登录');
+    return;
+  }
+  
+  if (!confirm('AI修复需要消耗 ' + REPAIR_CREDIT_COST + ' 积分\\n\\nAI将在后台自动分析并修复游戏代码中的错误\\n修复完成后请刷新页面查看\\n\\n确定要修复吗？')) {
+    return;
+  }
+  
+  const repairBtn = document.getElementById('stat-repair-btn');
+  if (repairBtn) {
+    repairBtn.classList.add('repairing');
+  }
+  
+  fetch(API_BASE + '/' + gameId + '/repair', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Token': userToken
+    },
+    body: JSON.stringify({ creditCost: REPAIR_CREDIT_COST })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (data.status === 'already_running') {
+          showToast('该游戏已有修复任务正在进行中，请稍后刷新页面', 'info');
+        } else {
+          showToast('🔧 修复任务已启动！AI正在后台处理，完成后请刷新页面查看', 'success');
+        }
+      } else {
+        showToast(data.error || '修复失败，请重试', 'error');
+      }
+    })
+    .catch(err => {
+      console.error('AI修复失败:', err);
+      showToast('网络错误，请稍后重试', 'error');
+    })
+    .finally(() => {
+      if (repairBtn) {
+        repairBtn.classList.remove('repairing');
       }
     });
 }
@@ -2713,6 +2796,7 @@ window.addEventListener('load', function() {
   updateCommentInputUI();
   loadGameComments(true);
   initCommentsScroll();
+  checkIsAuthorAndShowEditBtn();
 });
 </script>
 `;
@@ -7621,6 +7705,251 @@ app.post('/api/games/:id/edit', async (req, res) => {
   }
 });
 
+// AI修复游戏代码API
+app.post('/api/games/:id/repair', async (req, res) => {
+  console.log('[修复API] 收到修复请求:', { gameId: req.params.id });
+  
+  const userToken = req.headers['x-user-token'];
+  const gameId = req.params.id;
+  const { creditCost = 0.5 } = req.body;
+  
+  if (!userToken) {
+    return res.status(401).json({ success: false, error: '请先登录' });
+  }
+  
+  try {
+    // 验证游戏是否存在
+    const game = db.prepare('SELECT * FROM games WHERE id = ?').get(gameId);
+    if (!game) {
+      return res.status(404).json({ success: false, error: '游戏不存在' });
+    }
+    
+    // 检查编辑权限：作者本人或管理员
+    const isAuthor = game.author_token === userToken;
+    const isAdmin = isUserAdmin(userToken);
+    const isPublicGame = game.is_public === 1 && game.visibility === 'public';
+    
+    if (!isAuthor && !(isAdmin && isPublicGame)) {
+      return res.status(403).json({ success: false, error: '只能修复自己的游戏' });
+    }
+    
+    // 检查并扣除积分
+    const userCredits = ensureUserCredits(userToken);
+    if (userCredits.credits < creditCost) {
+      return res.status(400).json({ 
+        success: false, 
+        error: `积分不足，需要 ${creditCost} 积分`,
+        creditsNeeded: creditCost,
+        creditsHave: userCredits.credits
+      });
+    }
+    
+    // 获取当前游戏代码
+    const currentCode = game.code;
+    if (!currentCode || currentCode.trim().length === 0) {
+      return res.status(400).json({ success: false, error: '游戏代码为空，无法修复' });
+    }
+    
+    // 获取LLM配置（复用生成游戏的逻辑）
+    const defaultModel = getConfig('llm_default_model', 'deepseek-v3');
+    let finalModel, finalProvider, finalBaseUrl, selectedModelId, finalApiKey;
+    
+    // 使用默认模型配置
+    if (defaultModel && LLM_MODELS[defaultModel]) {
+      const modelConfig = LLM_MODELS[defaultModel];
+      finalModel = modelConfig.model;
+      finalProvider = modelConfig.provider;
+      finalBaseUrl = modelConfig.baseUrl;
+      selectedModelId = defaultModel;
+    } else {
+      const fallbackConfig = LLM_MODELS['deepseek-v3'];
+      finalModel = fallbackConfig.model;
+      finalProvider = fallbackConfig.provider;
+      finalBaseUrl = fallbackConfig.baseUrl;
+      selectedModelId = 'deepseek-v3';
+    }
+    
+    // 获取API Key
+    const getModelApiKey = (modelId) => {
+      if (!modelId) return null;
+      const apiKeyKey = `llm_apikey_${modelId}`;
+      const configuredKey = getConfig(apiKeyKey, null);
+      return (configuredKey && configuredKey.length > 0) ? configuredKey : null;
+    };
+    
+    const defaultApiKey = getConfig('llm_default_api_key', '');
+    const modelSpecificKey = getModelApiKey(selectedModelId);
+    
+    if (modelSpecificKey) {
+      finalApiKey = modelSpecificKey;
+    } else if (defaultApiKey) {
+      finalApiKey = defaultApiKey;
+    } else if (process.env.DEEPSEEK_API_KEY) {
+      finalApiKey = process.env.DEEPSEEK_API_KEY;
+    } else {
+      return res.status(400).json({ success: false, error: 'API Key 未配置' });
+    }
+    
+    console.log(`[修复API] 使用模型: ${finalModel}, Provider: ${finalProvider}`);
+    
+    // 构建修复提示词
+    const repairSystemPrompt = `你是一个专业的HTML5游戏代码修复专家。你的任务是修复用户游戏代码中的错误。
+
+修复原则：
+1. 仔细分析代码，找出所有JavaScript错误、语法错误、逻辑错误
+2. 修复未定义的变量、函数调用错误、DOM元素访问错误
+3. 修复事件监听器问题、动画循环问题
+4. 确保游戏可以正常运行
+5. 保持原有游戏逻辑和风格不变
+6. 只修复错误，不要添加新功能
+
+输出格式要求：
+1. 首先用一段简短的中文说明你发现并修复的问题（50字以内）
+2. 然后输出完整的修复后的HTML代码
+3. 代码必须用 \`\`\`html 和 \`\`\` 包裹
+
+例如：
+修复了未定义的score变量和缺失的游戏循环函数。
+
+\`\`\`html
+<!DOCTYPE html>
+...完整代码...
+\`\`\``;
+
+    const repairMessages = [
+      { role: 'system', content: repairSystemPrompt },
+      { role: 'user', content: `请修复以下游戏代码中的所有错误：\n\n\`\`\`html\n${currentCode}\n\`\`\`` }
+    ];
+    
+    // 调用LLM
+    let apiUrl = `${finalBaseUrl}/v1/chat/completions`;
+    let headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${finalApiKey}`
+    };
+    
+    // Anthropic特殊处理
+    if (finalProvider === 'anthropic') {
+      apiUrl = `${finalBaseUrl}/v1/messages`;
+      headers = {
+        'Content-Type': 'application/json',
+        'x-api-key': finalApiKey,
+        'anthropic-version': '2023-06-01'
+      };
+    }
+    
+    const requestBody = finalProvider === 'anthropic' ? {
+      model: finalModel,
+      max_tokens: 8192,
+      system: repairSystemPrompt,
+      messages: [{ role: 'user', content: `请修复以下游戏代码中的所有错误：\n\n\`\`\`html\n${currentCode}\n\`\`\`` }]
+    } : {
+      model: finalModel,
+      messages: repairMessages,
+      max_tokens: 8192,
+      temperature: 0.3
+    };
+    
+    console.log('[修复API] 开始调用LLM...');
+    const startTime = Date.now();
+    
+    const llmResponse = await fetch(apiUrl, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(requestBody)
+    });
+    
+    if (!llmResponse.ok) {
+      const errorText = await llmResponse.text();
+      console.error('[修复API] LLM调用失败:', errorText);
+      return res.status(500).json({ success: false, error: 'AI修复服务暂时不可用，请稍后重试' });
+    }
+    
+    const llmData = await llmResponse.json();
+    const llmTime = Date.now() - startTime;
+    console.log(`[修复API] LLM响应时间: ${llmTime}ms`);
+    
+    // 提取响应内容
+    let responseContent = '';
+    if (finalProvider === 'anthropic') {
+      responseContent = llmData.content?.[0]?.text || '';
+    } else {
+      responseContent = llmData.choices?.[0]?.message?.content || '';
+    }
+    
+    if (!responseContent) {
+      return res.status(500).json({ success: false, error: 'AI返回内容为空' });
+    }
+    
+    // 提取修复摘要和代码
+    let repairSummary = '';
+    let repairedCode = '';
+    
+    // 尝试提取代码块
+    const codeMatch = responseContent.match(/```html\s*([\s\S]*?)```/i);
+    if (codeMatch) {
+      repairedCode = codeMatch[1].trim();
+      // 提取代码块之前的内容作为摘要
+      const summaryPart = responseContent.substring(0, responseContent.indexOf('```html')).trim();
+      repairSummary = summaryPart || '代码已修复';
+    } else {
+      // 没有代码块，可能整个响应就是代码
+      if (responseContent.includes('<!DOCTYPE') || responseContent.includes('<html')) {
+        repairedCode = responseContent;
+        repairSummary = '代码已修复';
+      } else {
+        return res.status(500).json({ success: false, error: 'AI未能生成有效的修复代码' });
+      }
+    }
+    
+    // 验证修复后的代码
+    if (!repairedCode.includes('<html') && !repairedCode.includes('<!DOCTYPE')) {
+      return res.status(500).json({ success: false, error: '修复后的代码格式无效' });
+    }
+    
+    // 扣除积分
+    db.prepare(`
+      UPDATE user_credits 
+      SET credits = credits - ?, total_used = total_used + ?, updated_at = CURRENT_TIMESTAMP 
+      WHERE user_token = ?
+    `).run(creditCost, creditCost, userToken);
+    
+    // 记录积分消耗
+    db.prepare(`
+      INSERT INTO credit_logs (user_token, amount, type, description) 
+      VALUES (?, ?, 'repair_game', ?)
+    `).run(userToken, -creditCost, `AI修复游戏：${game.title}`);
+    
+    // 更新游戏代码
+    db.prepare('UPDATE games SET code = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(repairedCode, gameId);
+    
+    // 保存静态文件
+    saveGameStaticFile(gameId, repairedCode, {
+      title: game.title,
+      authorName: game.author_name,
+      authorToken: game.author_token,
+      prompt: game.prompt
+    });
+    
+    // 获取更新后的积分
+    const updatedCredits = db.prepare('SELECT credits FROM user_credits WHERE user_token = ?').get(userToken);
+    
+    console.log(`[修复API] 修复完成，游戏ID: ${gameId}, 耗时: ${llmTime}ms`);
+    
+    res.json({
+      success: true,
+      repairedCode,
+      repairSummary,
+      newCredits: updatedCredits?.credits || 0,
+      llmTime
+    });
+    
+  } catch (error) {
+    console.error('[修复API] 错误:', error);
+    res.status(500).json({ success: false, error: error.message || '服务器错误' });
+  }
+});
+
 // 删除我的游戏
 app.delete('/api/games/:id', (req, res) => {
   try {
@@ -9675,6 +10004,434 @@ app.post('/api/admin/games/batch', (req, res) => {
   }
 });
 
+// ==================== 管理员：重新生成单个游戏静态文件 ====================
+app.post('/api/admin/games/:id/regenerate', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { id } = req.params;
+    
+    const game = db.prepare(`
+      SELECT id, title, prompt, code, author_name, author_token, created_at 
+      FROM games WHERE id = ?
+    `).get(id);
+    
+    if (!game) {
+      return res.status(404).json({ success: false, error: '游戏不存在' });
+    }
+    
+    // 重新生成静态文件
+    saveGameStaticFile(game.id, game.code, {
+      title: game.title,
+      authorName: game.author_name,
+      prompt: game.prompt,
+      authorToken: game.author_token,
+      created_at: game.created_at
+    });
+    
+    console.log(`[ADMIN] 已重新生成游戏静态文件: ${game.id}`);
+    
+    res.json({ success: true, message: '静态文件已重新生成' });
+  } catch (error) {
+    console.error('[ERROR] 重新生成静态文件失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==================== AI修复任务队列 ====================
+const repairTaskQueue = new Map(); // 存储正在进行的修复任务
+
+// 获取AI修复的API配置
+function getRepairApiConfig() {
+  // 1. 首先获取默认模型ID
+  const defaultModelId = getConfig('llm_default_model', 'deepseek-chat');
+  
+  // 2. 获取该模型的API key
+  const modelApiKey = getConfig(`llm_apikey_${defaultModelId}`, '');
+  
+  if (modelApiKey) {
+    // 模型ID到实际API模型名称的映射
+    const modelIdToApiName = {
+      'deepseek-r1': 'deepseek-reasoner',
+      'deepseek-v3': 'deepseek-chat',
+      'deepseek-chat': 'deepseek-chat',
+      'deepseek-reasoner': 'deepseek-reasoner',
+      'gpt-4o': 'gpt-4o',
+      'gpt-4o-mini': 'gpt-4o-mini',
+      'gpt-5': 'gpt-5',
+      'gpt-5.1': 'gpt-5.1',
+      'gpt-5.1-codex': 'gpt-5.1-codex',
+      'claude-4.5-opus': 'claude-sonnet-4-20250514',
+      'claude-4-sonnet': 'claude-sonnet-4-20250514',
+      'o1': 'o1',
+      'o3': 'o3',
+      'o3-mini': 'o3-mini',
+      'o4-mini': 'o4-mini'
+    };
+    
+    const actualModelName = modelIdToApiName[defaultModelId] || defaultModelId;
+    
+    let baseUrl = 'https://api.deepseek.com';
+    if (defaultModelId.includes('gpt') || defaultModelId.includes('o1') || defaultModelId.includes('o3') || defaultModelId.includes('o4')) {
+      baseUrl = 'https://api.openai.com';
+    } else if (defaultModelId.includes('claude')) {
+      baseUrl = 'https://api.anthropic.com';
+    } else if (defaultModelId.includes('gemini')) {
+      baseUrl = 'https://generativelanguage.googleapis.com';
+    }
+    
+    return {
+      apiKey: modelApiKey,
+      model: actualModelName,
+      baseUrl: baseUrl,
+      modelId: defaultModelId
+    };
+  }
+  
+  // 3. 尝试环境变量
+  if (process.env.TRIAL_API_KEY) {
+    return {
+      apiKey: process.env.TRIAL_API_KEY,
+      model: process.env.TRIAL_MODEL || 'deepseek-chat',
+      baseUrl: process.env.TRIAL_BASE_URL || 'https://api.deepseek.com',
+      modelId: 'env'
+    };
+  }
+  
+  return null;
+}
+
+// 后台执行AI修复任务（异步，不阻塞请求）
+async function executeRepairTask(gameId, game, apiConfig, operator = 'admin') {
+  const taskId = `repair_${gameId}_${Date.now()}`;
+  
+  try {
+    repairTaskQueue.set(gameId, { taskId, status: 'running', startTime: Date.now() });
+    console.log(`[AI-REPAIR] 开始后台修复任务: ${taskId}`);
+    
+    // 构造修复Prompt
+    const repairPrompt = `你是一个专业的前端代码修复专家。请分析以下HTML游戏代码，找出并修复其中的错误。
+
+常见需要修复的问题包括：
+1. JavaScript语法错误（未闭合的括号、引号、缺少分号等）
+2. 未定义的变量或函数
+3. DOM元素引用错误
+4. 事件绑定问题
+5. CSS样式问题
+6. 资源加载失败的处理
+7. 移动端兼容性问题
+8. 性能问题（如内存泄漏）
+
+原始游戏代码：
+\`\`\`html
+${game.code}
+\`\`\`
+
+请：
+1. 仔细分析代码中的所有问题
+2. 修复所有发现的问题
+3. 确保游戏能正常运行
+
+输出格式要求：
+1. 首先输出修复摘要（列出修复了哪些问题），用 【修复摘要】 标记
+2. 然后输出完整的修复后代码，用 \`\`\`html 包裹
+
+示例：
+【修复摘要】
+1. 修复了XXX问题
+2. 修复了YYY问题
+
+\`\`\`html
+<!DOCTYPE html>
+...完整代码...
+</html>
+\`\`\``;
+
+    // 调用LLM API
+    const response = await fetch(`${apiConfig.baseUrl}/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiConfig.apiKey}`
+      },
+      body: JSON.stringify({
+        model: apiConfig.model,
+        messages: [
+          { role: 'system', content: '你是一个专业的游戏代码修复专家，擅长分析和修复HTML/CSS/JavaScript代码中的问题。' },
+          { role: 'user', content: repairPrompt }
+        ],
+        temperature: 0.3,
+        max_tokens: 16000
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[AI-REPAIR] LLM API错误 (${taskId}):`, errorText);
+      repairTaskQueue.set(gameId, { taskId, status: 'failed', error: 'AI服务调用失败', endTime: Date.now() });
+      return;
+    }
+    
+    const result = await response.json();
+    const aiResponse = result.choices?.[0]?.message?.content || '';
+    
+    if (!aiResponse) {
+      console.error(`[AI-REPAIR] AI未返回有效响应 (${taskId})`);
+      repairTaskQueue.set(gameId, { taskId, status: 'failed', error: 'AI未返回有效响应', endTime: Date.now() });
+      return;
+    }
+    
+    // 提取修复摘要
+    let repairSummary = '';
+    const summaryMatch = aiResponse.match(/【修复摘要】([\s\S]*?)```/);
+    if (summaryMatch) {
+      repairSummary = summaryMatch[1].trim();
+    }
+    
+    // 提取修复后的代码
+    const repairedCode = extractHtmlFromResponse(aiResponse);
+    
+    if (!repairedCode || repairedCode.length < 100) {
+      console.error(`[AI-REPAIR] AI未返回有效的修复代码 (${taskId})`);
+      repairTaskQueue.set(gameId, { taskId, status: 'failed', error: 'AI未返回有效的修复代码', endTime: Date.now() });
+      return;
+    }
+    
+    // 更新数据库中的代码
+    db.prepare('UPDATE games SET code = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+      .run(repairedCode, gameId);
+    
+    // 重新生成静态文件
+    saveGameStaticFile(game.id, repairedCode, {
+      title: game.title,
+      authorName: game.author_name,
+      prompt: game.prompt,
+      authorToken: game.author_token,
+      created_at: game.created_at
+    });
+    
+    const duration = ((Date.now() - repairTaskQueue.get(gameId).startTime) / 1000).toFixed(1);
+    console.log(`[AI-REPAIR] ✅ 游戏修复完成 (${taskId}): ${game.title}, 耗时 ${duration}s`);
+    if (repairSummary) {
+      console.log(`[AI-REPAIR] 修复摘要: ${repairSummary.substring(0, 200)}...`);
+    }
+    
+    repairTaskQueue.set(gameId, { 
+      taskId, 
+      status: 'completed', 
+      repairSummary: repairSummary || '已完成代码分析和修复',
+      endTime: Date.now(),
+      duration: duration
+    });
+    
+    // 10分钟后清理任务记录
+    setTimeout(() => {
+      repairTaskQueue.delete(gameId);
+    }, 10 * 60 * 1000);
+    
+  } catch (error) {
+    console.error(`[AI-REPAIR] 修复任务异常 (${taskId}):`, error);
+    repairTaskQueue.set(gameId, { taskId, status: 'failed', error: error.message, endTime: Date.now() });
+  }
+}
+
+// ==================== 管理员：AI修复游戏代码（异步后台任务） ====================
+app.post('/api/admin/games/:id/ai-repair', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { id } = req.params;
+    
+    // 检查是否已有修复任务在进行
+    const existingTask = repairTaskQueue.get(id);
+    if (existingTask && existingTask.status === 'running') {
+      return res.json({ 
+        success: true, 
+        message: '该游戏已有修复任务正在进行中，请稍后查看',
+        taskId: existingTask.taskId,
+        status: 'already_running'
+      });
+    }
+    
+    const game = db.prepare('SELECT * FROM games WHERE id = ?').get(id);
+    if (!game) {
+      return res.status(404).json({ success: false, error: '游戏不存在' });
+    }
+    
+    // 获取API配置
+    const apiConfig = getRepairApiConfig();
+    if (!apiConfig) {
+      const defaultModelId = getConfig('llm_default_model', 'deepseek-chat');
+      return res.status(500).json({ 
+        success: false, 
+        error: `未找到默认模型(${defaultModelId})的API Key。请在管理后台"大模型"页面为该模型配置API Key` 
+      });
+    }
+    
+    console.log(`[AI-REPAIR] 收到修复请求: ${id} - ${game.title}`);
+    console.log(`[AI-REPAIR] 使用模型: ${apiConfig.modelId} -> ${apiConfig.model}`);
+    
+    // 立即返回响应，后台异步执行修复
+    res.json({ 
+      success: true, 
+      message: '修复任务已启动，将在后台自动完成。完成后游戏代码会自动更新。',
+      gameId: id,
+      gameTitle: game.title,
+      status: 'started'
+    });
+    
+    // 异步执行修复任务（不等待完成）
+    executeRepairTask(id, game, apiConfig, 'admin');
+    
+  } catch (error) {
+    console.error('[ERROR] 启动AI修复失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 查询修复任务状态
+app.get('/api/admin/games/:id/repair-status', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  const { id } = req.params;
+  const task = repairTaskQueue.get(id);
+  
+  if (!task) {
+    return res.json({ success: true, status: 'none', message: '没有进行中的修复任务' });
+  }
+  
+  res.json({ success: true, ...task });
+});
+
+// ==================== 用户版：AI修复游戏代码（异步后台任务） ====================
+app.post('/api/games/:id/repair', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    const { id } = req.params;
+    const { creditCost } = req.body;
+    
+    // 验证用户登录
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '请先登录' });
+    }
+    
+    // 验证积分消耗参数
+    const REPAIR_CREDIT_COST = creditCost || 0.5;
+    
+    // 获取游戏信息
+    const game = db.prepare('SELECT * FROM games WHERE id = ?').get(id);
+    if (!game) {
+      return res.status(404).json({ success: false, error: '游戏不存在' });
+    }
+    
+    // 验证用户权限（只有作者或管理员可以修复）
+    const isAuthor = game.author_token === userToken;
+    const isAdmin = isUserAdmin(userToken);
+    
+    if (!isAuthor && !isAdmin) {
+      return res.status(403).json({ success: false, error: '只有游戏作者可以修复游戏' });
+    }
+    
+    // 检查是否已有修复任务在进行
+    const existingTask = repairTaskQueue.get(id);
+    if (existingTask && existingTask.status === 'running') {
+      return res.json({ 
+        success: true, 
+        message: '该游戏已有修复任务正在进行中，请稍后刷新页面查看',
+        status: 'already_running'
+      });
+    }
+    
+    // 检查用户积分（管理员免费）
+    if (!isAdmin) {
+      const userCredits = db.prepare('SELECT credits FROM user_credits WHERE user_token = ?').get(userToken);
+      if (!userCredits || userCredits.credits < REPAIR_CREDIT_COST) {
+        return res.status(400).json({ 
+          success: false, 
+          error: `积分不足，修复需要 ${REPAIR_CREDIT_COST} 积分` 
+        });
+      }
+      
+      // 扣除积分
+      db.prepare('UPDATE user_credits SET credits = credits - ?, total_used = total_used + ? WHERE user_token = ?')
+        .run(REPAIR_CREDIT_COST, REPAIR_CREDIT_COST, userToken);
+      db.prepare('INSERT INTO credit_logs (user_token, amount, type, description) VALUES (?, ?, ?, ?)')
+        .run(userToken, -REPAIR_CREDIT_COST, 'repair_game', `AI修复游戏: ${game.title}`);
+      
+      console.log(`[AI-REPAIR] 用户 ${userToken} 消耗 ${REPAIR_CREDIT_COST} 积分修复游戏`);
+    }
+    
+    // 获取API配置
+    const apiConfig = getRepairApiConfig();
+    if (!apiConfig) {
+      // 如果没有API配置，退还积分
+      if (!isAdmin) {
+        db.prepare('UPDATE user_credits SET credits = credits + ?, total_used = total_used - ? WHERE user_token = ?')
+          .run(REPAIR_CREDIT_COST, REPAIR_CREDIT_COST, userToken);
+      }
+      return res.status(500).json({ 
+        success: false, 
+        error: '系统未配置AI服务，请联系管理员' 
+      });
+    }
+    
+    console.log(`[AI-REPAIR] 用户修复请求: ${id} - ${game.title}`);
+    console.log(`[AI-REPAIR] 使用模型: ${apiConfig.modelId} -> ${apiConfig.model}`);
+    
+    // 立即返回响应，后台异步执行修复
+    res.json({ 
+      success: true, 
+      message: '修复任务已启动！AI正在后台分析并修复代码，完成后请刷新页面查看。',
+      gameId: id,
+      status: 'started'
+    });
+    
+    // 异步执行修复任务（不等待完成）
+    executeRepairTask(id, game, apiConfig, userToken);
+    
+  } catch (error) {
+    console.error('[ERROR] 启动用户AI修复失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 用户查询修复任务状态
+app.get('/api/games/:id/repair-status', (req, res) => {
+  const userToken = req.headers['x-user-token'];
+  const { id } = req.params;
+  
+  // 获取游戏信息验证权限
+  const game = db.prepare('SELECT author_token FROM games WHERE id = ?').get(id);
+  if (!game) {
+    return res.status(404).json({ success: false, error: '游戏不存在' });
+  }
+  
+  // 只有作者或管理员可以查询
+  const isAuthor = game.author_token === userToken;
+  const isAdmin = isUserAdmin(userToken);
+  
+  if (!isAuthor && !isAdmin) {
+    return res.status(403).json({ success: false, error: '无权限查看' });
+  }
+  
+  const task = repairTaskQueue.get(id);
+  
+  if (!task) {
+    return res.json({ success: true, status: 'none', message: '没有进行中的修复任务' });
+  }
+  
+  res.json({ success: true, ...task });
+});
+
 // 获取用户列表（管理员）
 app.get('/api/admin/users', (req, res) => {
   const adminKey = req.headers['x-admin-key'];
@@ -10214,12 +10971,16 @@ app.get('/api/user/status', (req, res) => {
     
     // 检查是否在DevTools白名单中
     try {
+      // 检查是否有通配符 * 或者具体匹配
       const whitelist = db.prepare(`
         SELECT value FROM devtools_whitelist 
-        WHERE (type = 'account' AND value = ?) OR (type = 'ip' AND value = ?)
+        WHERE (type = 'account' AND (value = ? OR value = '*')) 
+           OR (type = 'ip' AND (value = ? OR value = '*'))
       `).get(accountId || '', clientIP);
       result.allowDevTools = !!whitelist;
+      console.log(`[DevTools] 检查白名单: accountId=${accountId}, IP=${clientIP}, 结果=${result.allowDevTools}`);
     } catch (e) {
+      console.error('[DevTools] 白名单检查失败:', e.message);
       result.allowDevTools = false;
     }
     
@@ -11936,6 +12697,40 @@ app.get('/api/admin/security-status', (req, res) => {
   } catch (error) {
     console.error('[ERROR] 获取安全状态失败:', error.message);
     res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
+// ==================== 管理员：重新生成所有静态文件 ====================
+
+// 管理员API：强制重新生成所有游戏静态文件
+app.post('/api/admin/regenerate-static', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    
+    // 验证管理员权限
+    if (!userToken || !isUserAdmin(userToken)) {
+      return res.status(403).json({ success: false, error: '需要管理员权限' });
+    }
+    
+    console.log('[ADMIN] 开始强制重新生成所有静态游戏文件...');
+    
+    const result = generateAllStaticFiles(true); // true = 强制重新生成
+    
+    if (result.success) {
+      console.log(`[ADMIN] 静态文件重新生成完成: ${result.message}`);
+      res.json({
+        success: true,
+        message: result.message,
+        generated: result.generated,
+        skipped: result.skipped,
+        total: result.total
+      });
+    } else {
+      res.status(500).json({ success: false, error: result.error });
+    }
+  } catch (error) {
+    console.error('[ERROR] 重新生成静态文件失败:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

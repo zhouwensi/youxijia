@@ -302,6 +302,28 @@
 #stat-edit-btn.visible {
   display: flex !important;
 }
+#stat-repair-btn {
+  display: none !important;
+}
+#stat-repair-btn.visible {
+  display: flex !important;
+}
+#stat-repair-btn .tiktok-icon {
+  background: rgba(16, 185, 129, 0.3) !important;
+  border-color: rgba(16, 185, 129, 0.5) !important;
+}
+#stat-repair-btn:hover .tiktok-icon {
+  background: rgba(16, 185, 129, 0.5) !important;
+  border-color: rgba(16, 185, 129, 0.8) !important;
+}
+#stat-repair-btn.repairing .tiktok-icon {
+  animation: repairSpin 1s linear infinite !important;
+  background: rgba(16, 185, 129, 0.5) !important;
+}
+@keyframes repairSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 /* ====== 全屏模式样式 ====== */
 body.fullscreen-mode {
   padding-bottom: 0 !important;
@@ -1373,9 +1395,6 @@ body {
 <body>
   <!-- 原游戏body内容 -->
   
-
-
-
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
         
@@ -1492,6 +1511,7 @@ body {
                 left: false,
                 right: false,
                 up: false,
+                down: false,
                 attack: false,
                 jump: false
             };
@@ -1532,16 +1552,27 @@ body {
                 
                 // 键盘控制
                 document.addEventListener('keydown', function(e) {
-                    keys[e.key.toLowerCase()] = true;
+                    const key = e.key.toLowerCase();
+                    keys[key] = true;
                     
                     // 防止空格键滚动页面
                     if (e.key === ' ' && gameState === 'playing') {
                         e.preventDefault();
                     }
+                    
+                    // 处理空格键的别名
+                    if (e.key === ' ') {
+                        keys['space'] = true;
+                    }
                 });
                 
                 document.addEventListener('keyup', function(e) {
-                    keys[e.key.toLowerCase()] = false;
+                    const key = e.key.toLowerCase();
+                    keys[key] = false;
+                    
+                    if (e.key === ' ') {
+                        keys['space'] = false;
+                    }
                 });
                 
                 // 触屏控制
@@ -1551,9 +1582,20 @@ body {
                     btn.addEventListener('touchstart', function(e) {
                         e.preventDefault();
                         touchControls[id] = true;
-                    });
+                    }, { passive: false });
                     
                     btn.addEventListener('touchend', function(e) {
+                        e.preventDefault();
+                        touchControls[id] = false;
+                    }, { passive: false });
+                    
+                    // 鼠标事件支持（开发测试）
+                    btn.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        touchControls[id] = true;
+                    });
+                    
+                    btn.addEventListener('mouseup', function(e) {
                         e.preventDefault();
                         touchControls[id] = false;
                     });
@@ -1562,9 +1604,19 @@ body {
                 document.getElementById('attackBtn').addEventListener('touchstart', function(e) {
                     e.preventDefault();
                     touchControls.attack = true;
-                });
+                }, { passive: false });
                 
                 document.getElementById('attackBtn').addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    touchControls.attack = false;
+                }, { passive: false });
+                
+                document.getElementById('attackBtn').addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    touchControls.attack = true;
+                });
+                
+                document.getElementById('attackBtn').addEventListener('mouseup', function(e) {
                     e.preventDefault();
                     touchControls.attack = false;
                 });
@@ -1572,9 +1624,19 @@ body {
                 document.getElementById('jumpBtn').addEventListener('touchstart', function(e) {
                     e.preventDefault();
                     touchControls.jump = true;
-                });
+                }, { passive: false });
                 
                 document.getElementById('jumpBtn').addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    touchControls.jump = false;
+                }, { passive: false });
+                
+                document.getElementById('jumpBtn').addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    touchControls.jump = true;
+                });
+                
+                document.getElementById('jumpBtn').addEventListener('mouseup', function(e) {
                     e.preventDefault();
                     touchControls.jump = false;
                 });
@@ -1592,11 +1654,26 @@ body {
                     }
                 }, { passive: false });
                 
-                // 开始游戏循环
-                requestAnimationFrame(gameLoop);
-                
                 // 初始渲染
                 renderStartScreen();
+                
+                // 开始游戏循环
+                requestAnimationFrame(gameLoop);
+            }
+            
+            // 更新UI
+            function updateUI() {
+                healthValue.textContent = playerHealth;
+                healthFill.style.width = (playerHealth / playerMaxHealth * 100) + '%';
+                scoreValue.textContent = score;
+                comboValue.textContent = combo;
+            }
+            
+            // 游戏主循环
+            function gameLoop() {
+                update();
+                render();
+                requestAnimationFrame(gameLoop);
             }
             
             // 开始游戏
@@ -1773,7 +1850,7 @@ body {
                 if (moveX < 0) player.facing = -1;
                 
                 // 玩家跳跃
-                if ((keys['w'] || keys['arrowup'] || keys[' '] || touchControls.jump) && !player.isJumping) {
+                if ((keys['w'] || keys['arrowup'] || keys[' '] || keys['space'] || touchControls.jump) && !player.isJumping) {
                     player.velocityY = JUMP_FORCE;
                     player.isJumping = true;
                     createParticles(player.x + player.width/2, player.y + player.height, '#ffd166', 5);
@@ -1973,6 +2050,72 @@ body {
                 }
             }
             
+            // 渲染游戏
+            function render() {
+                if (gameState === 'start') {
+                    renderStartScreen();
+                    return;
+                }
+                
+                if (gameState === 'gameover') {
+                    return;
+                }
+                
+                // 清空画布
+                ctx.fillStyle = '#0c0c20';
+                ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+                
+                // 绘制地面
+                ctx.fillStyle = '#1a1a40';
+                ctx.fillRect(0, CANVAS_HEIGHT - 50, CANVAS_WIDTH, 50);
+                
+                // 绘制流星
+                for (let i = 0; i < meteors.length; i++) {
+                    const meteor = meteors[i];
+                    drawMeteor(meteor.x, meteor.y, meteor.width, meteor.height);
+                }
+                
+                // 绘制敌人
+                for (let i = 0; i < enemies.length; i++) {
+                    const enemy = enemies[i];
+                    drawEnemy(enemy.x, enemy.y, enemy.width, enemy.height, enemy.type);
+                }
+                
+                // 绘制玩家
+                drawPlayer(player.x, player.y, player.facing);
+                
+                // 绘制攻击效果
+                for (let i = 0; i < attacks.length; i++) {
+                    const attack = attacks[i];
+                    drawAttack(attack.x, attack.y, attack.width, attack.height, attack.type);
+                }
+                
+                // 绘制粒子效果
+                for (let i = 0; i < particles.length; i++) {
+                    const particle = particles[i];
+                    drawParticle(particle.x, particle.y, particle.size, particle.color);
+                }
+            }
+            
+            // 绘制粒子
+            function drawParticle(x, y, size, color) {
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // 绘制攻击效果
+            function drawAttack(x, y, width, height, type) {
+                ctx.fillStyle = type === 1 ? 'rgba(78, 205, 196, 0.5)' : 'rgba(255, 107, 107, 0.5)';
+                ctx.fillRect(x, y, width, height);
+                
+                // 攻击边框
+                ctx.strokeStyle = type === 1 ? '#4ecdc4' : '#ff6b6b';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x, y, width, height);
+            }
+            
             // 渲染开始画面
             function renderStartScreen() {
                 ctx.fillStyle = '#0c0c20';
@@ -1996,7 +2139,7 @@ body {
                 for (let i = 0; i < 5; i++) {
                     const x = (Date.now() / 50 + i * 100) % (CANVAS_WIDTH + 100) - 50;
                     const y = i * 60 + 50;
-                    drawMeteor(x, y, 10 + i * 3);
+                    drawMeteor(x, y, 10 + i * 3, 10 + i * 3);
                 }
             }
             
@@ -2075,9 +2218,44 @@ body {
             }
             
             // 绘制流星
-            function drawMeteor(x, y, size) {
+            function drawMeteor(x, y, width, height) {
                 // 流星核心
-                const gradient = ctx.createRadialGradient(x + size/2, y + size/2, 0, x +
+                const gradient = ctx.createRadialGradient(
+                    x + width/2, 
+                    y + height/2, 
+                    0, 
+                    x + width/2, 
+                    y + height/2, 
+                    width/2
+                );
+                gradient.addColorStop(0, '#4ecdc4');
+                gradient.addColorStop(1, '#1a5f7a');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.ellipse(x + width/2, y + height/2, width/2, height/2, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 流星尾迹
+                const trailGradient = ctx.createLinearGradient(x, y + height/2, x - 30, y + height/2);
+                trailGradient.addColorStop(0, 'rgba(78, 205, 196, 0.7)');
+                trailGradient.addColorStop(1, 'rgba(26, 95, 122, 0)');
+                
+                ctx.fillStyle = trailGradient;
+                ctx.fillRect(x - 30, y, 30, height);
+                
+                // 流星光晕
+                ctx.fillStyle = 'rgba(78, 205, 196, 0.2)';
+                ctx.beginPath();
+                ctx.ellipse(x + width/2, y + height/2, width, height, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // 初始化游戏
+            init();
+        });
+    </script>
+
   <!-- YXJ-PLATFORM-UI-START -->
   
 <!-- 游戏家顶部导航 - 返回按钮 -->
@@ -2141,6 +2319,9 @@ body {
     <div class="tiktok-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
     </div>
+  </div>
+  <div class="tiktok-action" id="stat-repair-btn" onclick="repairGame()" title="AI修复" style="display:none;">
+    <div class="tiktok-icon">🔧</div>
   </div>
   <div class="tiktok-action" id="fullscreen-btn" onclick="toggleFullscreenMode()" title="全屏游玩">
     <div class="tiktok-icon">
@@ -2439,12 +2620,16 @@ function checkIsAuthorAndShowEditBtn() {
     .then(data => {
       if (data.success && data.canEdit) {
         const editBtn = document.getElementById('stat-edit-btn');
+        const repairBtn = document.getElementById('stat-repair-btn');
         if (editBtn) {
           editBtn.classList.add('visible');
           // 如果是管理员编辑别人的游戏，添加提示
           if (data.isAdmin && !data.isAuthor) {
             editBtn.title = '管理员编辑模式';
           }
+        }
+        if (repairBtn) {
+          repairBtn.classList.add('visible');
         }
       }
     })
@@ -2453,9 +2638,63 @@ function checkIsAuthorAndShowEditBtn() {
       // 降级处理：只检查是否为作者
       if (userToken === authorToken) {
         const editBtn = document.getElementById('stat-edit-btn');
+        const repairBtn = document.getElementById('stat-repair-btn');
         if (editBtn) {
           editBtn.classList.add('visible');
         }
+        if (repairBtn) {
+          repairBtn.classList.add('visible');
+        }
+      }
+    });
+}
+
+// AI修复游戏（异步后台任务）
+function repairGame() {
+  const REPAIR_CREDIT_COST = 0.5;
+  const userToken = getUserToken();
+  
+  if (!userToken) {
+    showToast('请先登录');
+    return;
+  }
+  
+  if (!confirm('AI修复需要消耗 ' + REPAIR_CREDIT_COST + ' 积分\n\nAI将在后台自动分析并修复游戏代码中的错误\n修复完成后请刷新页面查看\n\n确定要修复吗？')) {
+    return;
+  }
+  
+  const repairBtn = document.getElementById('stat-repair-btn');
+  if (repairBtn) {
+    repairBtn.classList.add('repairing');
+  }
+  
+  fetch(API_BASE + '/' + gameId + '/repair', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Token': userToken
+    },
+    body: JSON.stringify({ creditCost: REPAIR_CREDIT_COST })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (data.status === 'already_running') {
+          showToast('该游戏已有修复任务正在进行中，请稍后刷新页面', 'info');
+        } else {
+          showToast('🔧 修复任务已启动！AI正在后台处理，完成后请刷新页面查看', 'success');
+        }
+      } else {
+        showToast(data.error || '修复失败，请重试', 'error');
+      }
+    })
+    .catch(err => {
+      console.error('AI修复失败:', err);
+      showToast('网络错误，请稍后重试', 'error');
+    })
+    .finally(() => {
+      if (repairBtn) {
+        repairBtn.classList.remove('repairing');
       }
     });
 }
@@ -3598,6 +3837,7 @@ window.addEventListener('load', function() {
   updateCommentInputUI();
   loadGameComments(true);
   initCommentsScroll();
+  checkIsAuthorAndShowEditBtn();
 });
 </script>
 

@@ -6311,13 +6311,15 @@ function applySourceCodeChanges() {
   }
 }
 
-// 检查是否可以编辑游戏（作者或管理员），显示编辑按钮
+// 检查是否可以编辑游戏（作者或管理员），显示编辑按钮和修复按钮
 async function checkIsAuthor(gameId) {
   const editBtn = document.getElementById('stat-edit-btn');
+  const repairBtn = document.getElementById('stat-repair-btn');
   const userToken = getUserToken();
   
   if (!editBtn || !userToken || !state.currentGame) {
     if (editBtn) editBtn.classList.remove('visible');
+    if (repairBtn) repairBtn.classList.remove('visible');
     return false;
   }
   
@@ -6330,6 +6332,7 @@ async function checkIsAuthor(gameId) {
     
     if (data.success && data.canEdit) {
       editBtn.classList.add('visible');
+      if (repairBtn) repairBtn.classList.add('visible');
       // 如果是管理员编辑别人的游戏，可以在按钮上添加提示
       if (data.isAdmin && !data.isAuthor) {
         editBtn.title = '管理员编辑模式';
@@ -6339,6 +6342,7 @@ async function checkIsAuthor(gameId) {
       return true;
     } else {
       editBtn.classList.remove('visible');
+      if (repairBtn) repairBtn.classList.remove('visible');
       return false;
     }
   } catch (error) {
@@ -6347,11 +6351,154 @@ async function checkIsAuthor(gameId) {
     const isAuthor = state.currentGame.author_token === userToken;
     if (isAuthor) {
       editBtn.classList.add('visible');
+      if (repairBtn) repairBtn.classList.add('visible');
       return true;
     } else {
       editBtn.classList.remove('visible');
+      if (repairBtn) repairBtn.classList.remove('visible');
       return false;
     }
+  }
+}
+
+// AI修复游戏代码
+async function repairGame() {
+  if (!state.currentGameId) {
+    showToast('请先打开一个游戏', 'warning');
+    return;
+  }
+  
+  const REPAIR_CREDIT_COST = 0.5;
+  
+  // 检查积分是否足够
+  if (state.credits < REPAIR_CREDIT_COST) {
+    showConfirmDialog(
+      '🔧 积分不足',
+      `AI修复功能需要 ${REPAIR_CREDIT_COST} 积分\n当前积分：${formatCredits(state.credits)}\n\n是否前往获取更多积分？`,
+      () => {
+        openCreditsModal();
+      },
+      '获取积分',
+      'primary'
+    );
+    return;
+  }
+  
+  // 显示确认对话框
+  showConfirmDialog(
+    '🔧 AI修复游戏',
+    `AI将自动分析并修复游戏代码中的错误\n\n消耗：${REPAIR_CREDIT_COST} 积分\n当前积分：${formatCredits(state.credits)}\n\n确定要修复吗？`,
+    async () => {
+      await executeRepairGame();
+    },
+    '确认修复',
+    'primary'
+  );
+}
+
+// 执行AI修复
+async function executeRepairGame() {
+  const REPAIR_CREDIT_COST = 0.5;
+  
+  showToast('🔧 AI正在分析并修复代码...', 'info');
+  
+  // 显示加载状态
+  const repairBtn = document.getElementById('stat-repair-btn');
+  if (repairBtn) {
+    repairBtn.classList.add('repairing');
+    repairBtn.style.pointerEvents = 'none';
+  }
+  
+  try {
+    const response = await fetch(`/api/games/${state.currentGameId}/repair`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Token': getUserToken()
+      },
+      body: JSON.stringify({
+        creditCost: REPAIR_CREDIT_COST
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // 更新积分显示
+      if (data.newCredits !== undefined) {
+        state.credits = data.newCredits;
+        updateCreditsDisplay();
+      }
+      
+      // 重新加载游戏以显示修复后的代码
+      if (data.repairedCode) {
+        state.currentGameCode = data.repairedCode;
+        const iframe = document.getElementById('game-frame');
+        if (iframe) {
+          // 使用 Blob URL 方式重新加载
+          const blob = new Blob([data.repairedCode], { type: 'text/html;charset=utf-8' });
+          const blobUrl = URL.createObjectURL(blob);
+          iframe.src = blobUrl;
+          iframe.onload = () => {
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+          };
+        }
+      }
+      
+      showToast(`✅ 修复完成！消耗 ${REPAIR_CREDIT_COST} 积分`, 'success');
+      
+      // 如果有修复说明，显示详情
+      if (data.repairSummary) {
+        setTimeout(() => {
+          showRepairSummary(data.repairSummary);
+        }, 500);
+      }
+    } else {
+      showToast(data.error || '修复失败，请重试', 'error');
+    }
+  } catch (error) {
+    console.error('AI修复失败:', error);
+    showToast('网络错误，请稍后重试', 'error');
+  } finally {
+    // 恢复按钮状态
+    if (repairBtn) {
+      repairBtn.classList.remove('repairing');
+      repairBtn.style.pointerEvents = '';
+    }
+  }
+}
+
+// 显示修复摘要
+function showRepairSummary(summary) {
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.id = 'repair-summary-modal';
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3>🔧 修复完成</h3>
+        <button class="btn-close" onclick="closeRepairSummaryModal()">×</button>
+      </div>
+      <div class="modal-body" style="padding: 1rem;">
+        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+          <div style="color: #10b981; font-weight: 600; margin-bottom: 8px;">✅ AI已自动修复以下问题：</div>
+          <div style="color: rgba(255,255,255,0.8); font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(summary)}</div>
+        </div>
+        <p style="color: rgba(255,255,255,0.5); font-size: 12px; text-align: center;">游戏已自动重新加载</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeRepairSummaryModal()">好的</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+// 关闭修复摘要弹窗
+function closeRepairSummaryModal() {
+  const modal = document.getElementById('repair-summary-modal');
+  if (modal) {
+    modal.remove();
   }
 }
 

@@ -4526,6 +4526,31 @@ body.modal-open .modal-content {
   display: flex !important;
 }
 
+/* 修复按钮（仅作者可见） */
+#stat-repair-btn {
+  display: none !important;
+}
+#stat-repair-btn.visible {
+  display: flex !important;
+}
+#stat-repair-btn .tiktok-icon {
+  background: rgba(16, 185, 129, 0.3);
+  border-color: rgba(16, 185, 129, 0.5);
+}
+#stat-repair-btn:hover .tiktok-icon {
+  background: rgba(16, 185, 129, 0.5);
+  border-color: rgba(16, 185, 129, 0.8);
+}
+/* 修复中旋转动画 */
+#stat-repair-btn.repairing .tiktok-icon {
+  animation: repairSpin 1s linear infinite;
+  background: rgba(16, 185, 129, 0.5);
+}
+@keyframes repairSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* 信息类按钮（不可点击感） */
 .tiktok-action.tiktok-info {
   cursor: default;

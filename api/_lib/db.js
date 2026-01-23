@@ -447,10 +447,24 @@ async function setDevToolsWhitelist(whitelist) {
 async function isInDevToolsWhitelist(accountId, ip) {
   const whitelist = await getDevToolsWhitelist();
   
-  if (accountId && whitelist.accounts.includes(accountId)) {
+  // 调试日志
+  console.log('[DevTools白名单检查]', { accountId, ip, whitelist });
+  
+  // 检查账号白名单是否包含 * （允许所有人）
+  if (whitelist.accounts && whitelist.accounts.includes('*')) {
+    console.log('[DevTools] 账号白名单包含 *，允许所有人');
     return true;
   }
-  if (ip && whitelist.ips.includes(ip)) {
+  // 检查IP白名单是否包含 * （允许所有IP）
+  if (whitelist.ips && whitelist.ips.includes('*')) {
+    console.log('[DevTools] IP白名单包含 *，允许所有IP');
+    return true;
+  }
+  
+  if (accountId && whitelist.accounts && whitelist.accounts.includes(accountId)) {
+    return true;
+  }
+  if (ip && whitelist.ips && whitelist.ips.includes(ip)) {
     return true;
   }
   return false;

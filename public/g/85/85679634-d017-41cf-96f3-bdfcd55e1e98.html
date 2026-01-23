@@ -302,6 +302,28 @@
 #stat-edit-btn.visible {
   display: flex !important;
 }
+#stat-repair-btn {
+  display: none !important;
+}
+#stat-repair-btn.visible {
+  display: flex !important;
+}
+#stat-repair-btn .tiktok-icon {
+  background: rgba(16, 185, 129, 0.3) !important;
+  border-color: rgba(16, 185, 129, 0.5) !important;
+}
+#stat-repair-btn:hover .tiktok-icon {
+  background: rgba(16, 185, 129, 0.5) !important;
+  border-color: rgba(16, 185, 129, 0.8) !important;
+}
+#stat-repair-btn.repairing .tiktok-icon {
+  animation: repairSpin 1s linear infinite !important;
+  background: rgba(16, 185, 129, 0.5) !important;
+}
+@keyframes repairSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 /* ====== 全屏模式样式 ====== */
 body.fullscreen-mode {
   padding-bottom: 0 !important;
@@ -1481,6 +1503,9 @@ body {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
     </div>
   </div>
+  <div class="tiktok-action" id="stat-repair-btn" onclick="repairGame()" title="AI修复" style="display:none;">
+    <div class="tiktok-icon">🔧</div>
+  </div>
   <div class="tiktok-action" id="fullscreen-btn" onclick="toggleFullscreenMode()" title="全屏游玩">
     <div class="tiktok-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
@@ -1778,12 +1803,16 @@ function checkIsAuthorAndShowEditBtn() {
     .then(data => {
       if (data.success && data.canEdit) {
         const editBtn = document.getElementById('stat-edit-btn');
+        const repairBtn = document.getElementById('stat-repair-btn');
         if (editBtn) {
           editBtn.classList.add('visible');
           // 如果是管理员编辑别人的游戏，添加提示
           if (data.isAdmin && !data.isAuthor) {
             editBtn.title = '管理员编辑模式';
           }
+        }
+        if (repairBtn) {
+          repairBtn.classList.add('visible');
         }
       }
     })
@@ -1792,9 +1821,63 @@ function checkIsAuthorAndShowEditBtn() {
       // 降级处理：只检查是否为作者
       if (userToken === authorToken) {
         const editBtn = document.getElementById('stat-edit-btn');
+        const repairBtn = document.getElementById('stat-repair-btn');
         if (editBtn) {
           editBtn.classList.add('visible');
         }
+        if (repairBtn) {
+          repairBtn.classList.add('visible');
+        }
+      }
+    });
+}
+
+// AI修复游戏（异步后台任务）
+function repairGame() {
+  const REPAIR_CREDIT_COST = 0.5;
+  const userToken = getUserToken();
+  
+  if (!userToken) {
+    showToast('请先登录');
+    return;
+  }
+  
+  if (!confirm('AI修复需要消耗 ' + REPAIR_CREDIT_COST + ' 积分\n\nAI将在后台自动分析并修复游戏代码中的错误\n修复完成后请刷新页面查看\n\n确定要修复吗？')) {
+    return;
+  }
+  
+  const repairBtn = document.getElementById('stat-repair-btn');
+  if (repairBtn) {
+    repairBtn.classList.add('repairing');
+  }
+  
+  fetch(API_BASE + '/' + gameId + '/repair', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Token': userToken
+    },
+    body: JSON.stringify({ creditCost: REPAIR_CREDIT_COST })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (data.status === 'already_running') {
+          showToast('该游戏已有修复任务正在进行中，请稍后刷新页面', 'info');
+        } else {
+          showToast('🔧 修复任务已启动！AI正在后台处理，完成后请刷新页面查看', 'success');
+        }
+      } else {
+        showToast(data.error || '修复失败，请重试', 'error');
+      }
+    })
+    .catch(err => {
+      console.error('AI修复失败:', err);
+      showToast('网络错误，请稍后重试', 'error');
+    })
+    .finally(() => {
+      if (repairBtn) {
+        repairBtn.classList.remove('repairing');
       }
     });
 }
@@ -2937,6 +3020,7 @@ window.addEventListener('load', function() {
   updateCommentInputUI();
   loadGameComments(true);
   initCommentsScroll();
+  checkIsAuthorAndShowEditBtn();
 });
 </script>
 
