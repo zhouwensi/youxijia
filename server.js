@@ -3599,6 +3599,15 @@ try {
   // 字段已存在，忽略
 }
 
+// 添加 wechat_openid 字段（如果不存在）- 微信小程序登录用
+try {
+  db.exec(`ALTER TABLE user_accounts ADD COLUMN wechat_openid TEXT`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_user_accounts_wechat_openid ON user_accounts(wechat_openid)`);
+  console.log('[DB] 添加 wechat_openid 字段成功');
+} catch (e) {
+  // 字段已存在，忽略
+}
+
 // 创建账号索引
 db.exec(`
   CREATE INDEX IF NOT EXISTS idx_user_accounts_account_id ON user_accounts(account_id);
@@ -4594,6 +4603,129 @@ app.post('/api/account/login', (req, res) => {
     });
   } catch (error) {
     console.error('[ERROR] 登录失败:', error);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
+// ==================== 微信小程序登录 ====================
+// 微信小程序登录接口
+app.post('/api/wechat/login', async (req, res) => {
+  try {
+    const { code } = req.body;
+    
+    console.log('[WECHAT] 小程序登录请求, code:', code ? code.substring(0, 10) + '...' : '(empty)');
+    
+    if (!code) {
+      return res.status(400).json({ success: false, error: '缺少code参数' });
+    }
+    
+    // 微信小程序配置
+    const WECHAT_APPID = process.env.WECHAT_APPID;
+    const WECHAT_SECRET = process.env.WECHAT_SECRET;
+    
+    // 如果没有配置微信小程序密钥，使用模拟模式（开发测试用）
+    if (!WECHAT_APPID || !WECHAT_SECRET) {
+      console.log('[WECHAT] 未配置小程序密钥，使用模拟模式');
+      
+      // 模拟模式：用code作为伪openid创建/查找用户
+      const mockOpenid = 'mock_' + crypto.createHash('md5').update(code).digest('hex').substring(0, 16);
+      
+      // 查找或创建用户
+      let account = db.prepare('SELECT * FROM user_accounts WHERE wechat_openid = ?').get(mockOpenid);
+      
+      if (!account) {
+        // 创建新用户
+        const userToken = uuidv4();
+        const accountId = 'WX' + Math.random().toString(36).substr(2, 6).toUpperCase();
+        
+        db.prepare(`
+          INSERT INTO user_accounts (user_token, account_id, nickname, wechat_openid, created_at)
+          VALUES (?, ?, ?, ?, datetime('now'))
+        `).run(userToken, accountId, '微信用户', mockOpenid);
+        
+        account = db.prepare('SELECT * FROM user_accounts WHERE user_token = ?').get(userToken);
+        console.log('[WECHAT] 创建新用户:', accountId);
+      }
+      
+      return res.json({
+        success: true,
+        data: {
+          token: account.user_token,
+          userInfo: {
+            account_id: account.account_id,
+            nickname: account.nickname || account.account_id,
+            avatar_emoji: '🎮',
+            credits: 0
+          }
+        }
+      });
+    }
+    
+    // 正式模式：调用微信API换取openid
+    const https = require('https');
+    const wxUrl = `https://api.weixin.qq.com/sns/jscode2session?appid=${WECHAT_APPID}&secret=${WECHAT_SECRET}&js_code=${code}&grant_type=authorization_code`;
+    
+    https.get(wxUrl, (wxRes) => {
+      let data = '';
+      wxRes.on('data', chunk => data += chunk);
+      wxRes.on('end', () => {
+        try {
+          const wxData = JSON.parse(data);
+          console.log('[WECHAT] 微信API响应:', wxData.errcode ? `错误${wxData.errcode}` : '成功');
+          
+          if (wxData.errcode) {
+            return res.json({ success: false, error: wxData.errmsg || '微信登录失败' });
+          }
+          
+          const { openid } = wxData;
+          
+          // 查找或创建用户
+          let account = db.prepare('SELECT * FROM user_accounts WHERE wechat_openid = ?').get(openid);
+          
+          if (!account) {
+            // 创建新用户
+            const userToken = uuidv4();
+            const accountId = 'WX' + Math.random().toString(36).substr(2, 6).toUpperCase();
+            
+            db.prepare(`
+              INSERT INTO user_accounts (user_token, account_id, nickname, wechat_openid, created_at)
+              VALUES (?, ?, ?, ?, datetime('now'))
+            `).run(userToken, accountId, '微信用户', openid);
+            
+            account = db.prepare('SELECT * FROM user_accounts WHERE user_token = ?').get(userToken);
+            console.log('[WECHAT] 创建新用户:', accountId);
+          } else {
+            console.log('[WECHAT] 用户已存在:', account.account_id);
+          }
+          
+          // 获取积分（使用 ensureUserCredits 函数）
+          const creditsRecord = ensureUserCredits(account.user_token);
+          const credits = creditsRecord ? creditsRecord.credits : 0;
+          
+          res.json({
+            success: true,
+            data: {
+              token: account.user_token,
+              userInfo: {
+                account_id: account.account_id,
+                nickname: account.nickname || account.account_id,
+                avatar_emoji: '🎮',
+                credits: credits
+              }
+            }
+          });
+        } catch (parseError) {
+          console.error('[WECHAT] 解析微信响应失败:', parseError);
+          res.json({ success: false, error: '微信登录响应解析失败' });
+        }
+      });
+    }).on('error', (err) => {
+      console.error('[WECHAT] 请求微信API失败:', err);
+      res.json({ success: false, error: '请求微信服务器失败' });
+    });
+    
+  } catch (error) {
+    console.error('[WECHAT] 登录失败:', error);
     res.status(500).json({ success: false, error: '服务器错误' });
   }
 });

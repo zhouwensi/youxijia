@@ -7,11 +7,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#1a1a2e">
-  <meta name="description" content="做个神泣Shaiya的手游版，战场版，需要有所有职业，所有技能，横屏，左边摇杆移动，右边多个技能键 - AI一句话生成的游戏">
-  <meta property="og:title" content="神泣战场手游版 - AI游戏">
+  <meta name="description" content="像雷电一样的飞行弹幕射击游戏 - AI一句话生成的游戏">
+  <meta property="og:title" content="星际守护者 - AI游戏">
   <meta property="og:description" content="这个游戏由AI一句话生成！关注公众号「游戏开发技术教程」，你也可以免费生成游戏！">
   <meta property="og:type" content="website">
-  <title>神泣战场手游版 - AI游戏</title>
+  <title>星际守护者 - AI游戏</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
   <!-- 引用主站CSS样式 -->
   <link rel="stylesheet" href="/css/style.css">
@@ -1056,31 +1056,20 @@ body {
             padding: 0;
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
+            touch-action: none;
         }
         body {
+            font-family: 'Arial', sans-serif;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
             width: 100vw;
             height: 100vh;
-            overflow: hidden;
-            background: #0a0a14;
-            font-family: 'Microsoft YaHei', sans-serif;
-            color: #e0e0ff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            position: relative;
         }
         canvas {
             display: block;
-            background: #111122;
-        }
-        .ui-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 100;
+            background: #000;
         }
         .screen {
             position: absolute;
@@ -1092,190 +1081,121 @@ body {
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: rgba(10, 10, 30, 0.95);
-            z-index: 200;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 10;
             transition: opacity 0.3s;
         }
-        .screen.hidden {
-            opacity: 0;
-            pointer-events: none;
+        .hidden {
+            display: none !important;
         }
-        .title {
+        h1 {
             font-size: 3.5rem;
             margin-bottom: 2rem;
-            text-shadow: 0 0 20px #0066ff, 0 0 40px #0044cc;
-            color: #66aaff;
-            letter-spacing: 4px;
+            text-align: center;
+            color: #0af;
+            text-shadow: 0 0 10px #0af, 0 0 20px #0af;
+            letter-spacing: 3px;
+        }
+        .subtitle {
+            font-size: 1.2rem;
+            color: #8cf;
+            margin-bottom: 3rem;
+            text-align: center;
         }
         .btn {
-            background: linear-gradient(145deg, #1a3a5f, #0a2440);
-            color: #aaddff;
-            border: 2px solid #3388ff;
-            border-radius: 12px;
-            padding: 1rem 2rem;
-            margin: 0.8rem;
-            font-size: 1.4rem;
+            background: linear-gradient(45deg, #0066cc, #0099ff);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.3rem;
+            border-radius: 50px;
             cursor: pointer;
-            pointer-events: auto;
+            margin: 10px;
             transition: all 0.2s;
+            box-shadow: 0 5px 15px rgba(0, 150, 255, 0.4);
             min-width: 200px;
             text-align: center;
-            box-shadow: 0 4px 12px rgba(0, 60, 255, 0.3);
-            -webkit-user-select: none;
-            user-select: none;
         }
         .btn:hover, .btn:active {
-            background: linear-gradient(145deg, #225588, #113366);
             transform: scale(1.05);
-            box-shadow: 0 6px 16px rgba(0, 80, 255, 0.5);
+            box-shadow: 0 8px 20px rgba(0, 150, 255, 0.6);
         }
-        .help-btn {
+        .btn-help {
             position: absolute;
             top: 20px;
             right: 20px;
             width: 50px;
             height: 50px;
-            background: rgba(30, 60, 120, 0.7);
             border-radius: 50%;
-            color: #aaddff;
-            font-size: 1.8rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            pointer-events: auto;
-            z-index: 300;
-            border: 2px solid #4488ff;
-            -webkit-user-select: none;
-            user-select: none;
+            padding: 0;
+            font-size: 1.5rem;
+            z-index: 20;
+            background: rgba(0, 100, 200, 0.7);
         }
         .help-content {
-            background: rgba(15, 25, 50, 0.95);
-            border: 2px solid #4488ff;
-            border-radius: 15px;
-            padding: 2rem;
             max-width: 500px;
-            margin: 2rem;
-            pointer-events: auto;
+            background: rgba(20, 30, 50, 0.95);
+            padding: 25px;
+            border-radius: 15px;
+            margin: 20px;
+            border: 2px solid #0af;
+            box-shadow: 0 0 30px rgba(0, 150, 255, 0.5);
         }
-        .help-content h3 {
-            color: #66aaff;
-            margin-bottom: 1rem;
+        .help-content h2 {
+            color: #0af;
+            margin-bottom: 15px;
             text-align: center;
         }
         .help-content p {
-            margin: 0.8rem 0;
+            margin: 10px 0;
             line-height: 1.5;
+            color: #bdf;
         }
-        .joystick {
-            position: absolute;
-            left: 40px;
-            bottom: 40px;
-            width: 140px;
-            height: 140px;
-            pointer-events: auto;
-            -webkit-user-select: none;
-            user-select: none;
+        .help-content ul {
+            margin: 15px 0 15px 20px;
         }
-        .joystick-bg {
+        .help-content li {
+            margin: 8px 0;
+            color: #8cf;
+        }
+        .touch-joystick {
             position: absolute;
-            width: 100%;
-            height: 100%;
-            background: rgba(40, 60, 100, 0.4);
+            left: 30px;
+            bottom: 30px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
-            border: 2px solid rgba(100, 150, 255, 0.6);
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            z-index: 5;
+            pointer-events: none;
         }
-        .joystick-thumb {
+        .touch-thumb {
             position: absolute;
-            width: 70px;
-            height: 70px;
-            background: rgba(80, 130, 255, 0.8);
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
-            left: 50%;
+            background: rgba(0, 170, 255, 0.7);
             top: 50%;
+            left: 50%;
             transform: translate(-50%, -50%);
-            border: 2px solid rgba(180, 220, 255, 0.9);
-        }
-        .skill-buttons {
-            position: absolute;
-            right: 30px;
-            bottom: 40px;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            pointer-events: auto;
-        }
-        .skill-btn {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(145deg, #2a4a7a, #1a3a6a);
-            border-radius: 20px;
-            border: 3px solid #5599ff;
-            color: #ccddff;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.1s;
-            box-shadow: 0 4px 10px rgba(0, 60, 255, 0.4);
-            -webkit-user-select: none;
-            user-select: none;
-        }
-        .skill-btn:active {
-            background: linear-gradient(145deg, #3a5a8a, #2a4a7a);
-            transform: scale(0.95);
-        }
-        .skill-btn.cooldown {
-            opacity: 0.5;
             pointer-events: none;
         }
-        .hud {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            pointer-events: none;
-            font-size: 1.2rem;
-            text-shadow: 1px 1px 2px #000;
+        .game-over h1 {
+            color: #f44;
+            text-shadow: 0 0 10px #f44, 0 0 20px #f44;
         }
-        .class-select {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 15px;
-            margin: 2rem;
-            max-width: 600px;
+        .score-display {
+            font-size: 2rem;
+            color: #ff0;
+            margin: 20px 0;
+            text-shadow: 0 0 5px #ff0;
         }
-        .class-option {
-            background: rgba(30, 50, 90, 0.7);
-            border: 2px solid #4477cc;
-            border-radius: 10px;
-            padding: 1rem;
-            width: 140px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            pointer-events: auto;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-        .class-option:hover, .class-option.selected {
-            background: rgba(50, 80, 140, 0.9);
-            border-color: #66aaff;
-            transform: scale(1.05);
-        }
-        .class-option h4 {
-            color: #88bbff;
-            margin-bottom: 0.5rem;
-        }
-        .end-stats {
-            text-align: center;
-            margin: 1.5rem;
-            font-size: 1.3rem;
-        }
-        .end-stats div {
-            margin: 0.5rem;
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            .btn { padding: 12px 30px; font-size: 1.1rem; min-width: 180px; }
+            .touch-joystick { width: 100px; height: 100px; }
+            .touch-thumb { width: 40px; height: 40px; }
         }
     </style>
 
@@ -1285,762 +1205,511 @@ body {
   
     <canvas id="gameCanvas"></canvas>
     
-    <div class="ui-overlay">
-        <div class="hud" id="hud">
-            <div>生命: <span id="hp">100</span>/100</div>
-            <div>魔法: <span id="mp">100</span>/100</div>
-            <div>击杀: <span id="kills">0</span></div>
-            <div>职业: <span id="class">战士</span></div>
-        </div>
-        
-        <div class="joystick" id="joystick">
-            <div class="joystick-bg"></div>
-            <div class="joystick-thumb" id="joystickThumb"></div>
-        </div>
-        
-        <div class="skill-buttons" id="skillButtons">
-            <!-- 技能按钮由JS动态生成 -->
-        </div>
-        
-        <div class="help-btn" id="helpBtn">?</div>
+    <div id="startScreen" class="screen">
+        <h1>星际守护者</h1>
+        <div class="subtitle">守护宇宙和平，击退入侵者！</div>
+        <button id="startBtn" class="btn">开始游戏</button>
+        <button id="helpBtn" class="btn">游戏说明</button>
     </div>
     
-    <div class="screen" id="startScreen">
-        <h1 class="title">神泣战场</h1>
-        <div class="class-select" id="classSelect">
-            <div class="class-option" data-class="warrior">
-                <h4>战士</h4>
-                <p>高防御 近战</p>
-            </div>
-            <div class="class-option" data-class="mage">
-                <h4>法师</h4>
-                <p>高魔法 远程</p>
-            </div>
-            <div class="class-option" data-class="archer">
-                <h4>弓箭手</h4>
-                <p>高敏捷 远程</p>
-            </div>
-            <div class="class-option" data-class="priest">
-                <h4>牧师</h4>
-                <p>治疗 辅助</p>
-            </div>
-        </div>
-        <div class="btn" id="startBtn">开始战斗</div>
-        <div class="btn" id="helpBtn2">游戏说明</div>
-    </div>
-    
-    <div class="screen hidden" id="endScreen">
-        <h1 class="title">战斗结束</h1>
-        <div class="end-stats" id="endStats">
-            <div>击杀数: <span id="finalKills">0</span></div>
-            <div>生存时间: <span id="survivalTime">0</span>秒</div>
-        </div>
-        <div class="btn" id="restartBtn">再战一场</div>
-        <div class="btn" id="backToMenuBtn">返回主菜单</div>
-    </div>
-    
-    <div class="screen hidden" id="helpScreen">
+    <div id="helpScreen" class="screen hidden">
         <div class="help-content">
-            <h3>游戏说明</h3>
-            <p><strong>操作方式:</strong></p>
-            <p>• 移动: 使用左侧虚拟摇杆或键盘WASD/方向键</p>
-            <p>• 技能: 点击右侧技能按钮或数字键1-4</p>
-            <p>• 目标: 自动攻击最近敌人</p>
-            <p><strong>职业特色:</strong></p>
-            <p>• 战士: 高生命，近战攻击</p>
-            <p>• 法师: 魔法攻击，范围技能</p>
-            <p>• 弓箭手: 远程攻击，高暴击</p>
-            <p>• 牧师: 治疗技能，辅助战斗</p>
-            <p><strong>目标:</strong> 在战场上生存并击败尽可能多的敌人！</p>
-            <div class="btn" id="closeHelpBtn">关闭</div>
+            <h2>游戏说明</h2>
+            <p>控制你的战机，消灭所有敌人，保护宇宙和平！</p>
+            <ul>
+                <li><strong>键盘控制</strong>: 方向键或WASD移动战机</li>
+                <li><strong>触摸控制</strong>: 拖动屏幕任意位置移动战机</li>
+                <li><strong>自动射击</strong>: 战机会自动向前方发射子弹</li>
+                <li><strong>躲避弹幕</strong>: 避开敌人的子弹和撞击</li>
+                <li><strong>消灭敌人</strong>: 击毁敌机获得分数</li>
+                <li><strong>生命值</strong>: 被击中或撞击会减少生命值</li>
+            </ul>
+            <p>坚持越久，分数越高！</p>
+            <button id="backBtn" class="btn">返回</button>
         </div>
+    </div>
+    
+    <div id="gameOverScreen" class="screen hidden">
+        <div class="help-content game-over">
+            <h1>游戏结束</h1>
+            <div id="finalScore" class="score-display">得分: 0</div>
+            <p>你成功守护了宇宙的和平！</p>
+            <button id="restartBtn" class="btn">重新开始</button>
+            <button id="menuBtn" class="btn">返回菜单</button>
+        </div>
+    </div>
+    
+    <button id="inGameHelpBtn" class="btn btn-help hidden">?</button>
+    
+    <div class="touch-joystick hidden">
+        <div class="touch-thumb"></div>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const startScreen = document.getElementById('startScreen');
-        const endScreen = document.getElementById('endScreen');
         const helpScreen = document.getElementById('helpScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
         const startBtn = document.getElementById('startBtn');
-        const restartBtn = document.getElementById('restartBtn');
-        const backToMenuBtn = document.getElementById('backToMenuBtn');
         const helpBtn = document.getElementById('helpBtn');
-        const helpBtn2 = document.getElementById('helpBtn2');
-        const closeHelpBtn = document.getElementById('closeHelpBtn');
-        const classSelect = document.getElementById('classSelect');
-        const joystick = document.getElementById('joystick');
-        const joystickThumb = document.getElementById('joystickThumb');
-        const skillButtons = document.getElementById('skillButtons');
-        const hud = {
-            hp: document.getElementById('hp'),
-            mp: document.getElementById('mp'),
-            kills: document.getElementById('kills'),
-            class: document.getElementById('class')
-        };
-        const endStats = {
-            kills: document.getElementById('finalKills'),
-            time: document.getElementById('survivalTime')
-        };
+        const backBtn = document.getElementById('backBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const menuBtn = document.getElementById('menuBtn');
+        const inGameHelpBtn = document.getElementById('inGameHelpBtn');
+        const finalScore = document.getElementById('finalScore');
+        const touchJoystick = document.querySelector('.touch-joystick');
+        const touchThumb = document.querySelector('.touch-thumb');
 
         let game = {
             running: false,
+            score: 0,
+            level: 1,
             player: null,
             enemies: [],
-            projectiles: [],
+            bullets: [],
+            enemyBullets: [],
             particles: [],
-            skills: [],
-            selectedClass: 'warrior',
-            kills: 0,
-            startTime: 0,
-            joystick: { x: 0, y: 0, active: false },
             keys: {},
-            skillCooldowns: [0, 0, 0, 0],
-            skillNames: ['攻击', '技能1', '技能2', '技能3'],
-            animationId: null,
+            touch: { active: false, x: 0, y: 0, startX: 0, startY: 0 },
+            lastTime: 0,
             enemySpawnTimer: 0,
-            joystickStartPos: { x: 0, y: 0 },
-            joystickCenter: { x: 0, y: 0 }
-        };
-
-        const classes = {
-            warrior: { name: '战士', hp: 150, mp: 80, speed: 3, color: '#ff6666', skills: ['重击', '旋风斩', '防御姿态', '冲锋'] },
-            mage: { name: '法师', hp: 90, mp: 150, speed: 2.5, color: '#66aaff', skills: ['火球', '冰环', '闪电链', '魔法盾'] },
-            archer: { name: '弓箭手', hp: 110, mp: 100, speed: 3.5, color: '#66ff66', skills: ['连射', '穿透箭', '箭雨', '疾跑'] },
-            priest: { name: '牧师', hp: 120, mp: 120, speed: 2.8, color: '#ffcc66', skills: ['治疗', '神圣打击', '祝福', '复活光环'] }
+            enemyBulletTimer: 0
         };
 
         class Player {
-            constructor(x, y, className) {
-                const cls = classes[className];
-                this.x = x;
-                this.y = y;
-                this.radius = 20;
-                this.hp = cls.hp;
-                this.maxHp = cls.hp;
-                this.mp = cls.mp;
-                this.maxMp = cls.mp;
-                this.speed = cls.speed;
-                this.color = cls.color;
-                this.className = className;
-                this.attackCooldown = 0;
-                this.attackDamage = 15;
-                this.attackRange = 60;
+            constructor() {
+                this.width = 40;
+                this.height = 50;
+                this.x = canvas.width / 2 - this.width / 2;
+                this.y = canvas.height - 100;
+                this.speed = 6;
+                this.color = '#0af';
+                this.lives = 3;
+                this.shootTimer = 0;
+                this.shootDelay = 10;
+                this.invincible = 0;
             }
-
+            
             update() {
-                if (game.joystick.active) {
-                    this.x += game.joystick.x * this.speed;
-                    this.y += game.joystick.y * this.speed;
-                } else {
-                    let dx = 0, dy = 0;
-                    if (game.keys['ArrowLeft'] || game.keys['a']) dx -= 1;
-                    if (game.keys['ArrowRight'] || game.keys['d']) dx += 1;
-                    if (game.keys['ArrowUp'] || game.keys['w']) dy -= 1;
-                    if (game.keys['ArrowDown'] || game.keys['s']) dy += 1;
-                    if (dx !== 0 || dy !== 0) {
-                        const len = Math.sqrt(dx * dx + dy * dy);
-                        this.x += (dx / len) * this.speed;
-                        this.y += (dy / len) * this.speed;
+                let moveX = 0, moveY = 0;
+                
+                if (game.keys['ArrowLeft'] || game.keys['a'] || game.keys['A']) moveX -= 1;
+                if (game.keys['ArrowRight'] || game.keys['d'] || game.keys['D']) moveX += 1;
+                if (game.keys['ArrowUp'] || game.keys['w'] || game.keys['W']) moveY -= 1;
+                if (game.keys['ArrowDown'] || game.keys['s'] || game.keys['S']) moveY += 1;
+                
+                if (game.touch.active) {
+                    const dx = game.touch.x - game.touch.startX;
+                    const dy = game.touch.y - game.touch.startY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist > 10) {
+                        moveX += dx / 50;
+                        moveY += dy / 50;
                     }
                 }
-
-                this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
-                this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
-
-                if (this.attackCooldown > 0) this.attackCooldown--;
-
-                if (this.attackCooldown === 0) {
-                    let nearestEnemy = null;
-                    let minDist = Infinity;
-                    for (const enemy of game.enemies) {
-                        const dx = enemy.x - this.x;
-                        const dy = enemy.y - this.y;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist < this.attackRange && dist < minDist) {
-                            minDist = dist;
-                            nearestEnemy = enemy;
-                        }
-                    }
-                    if (nearestEnemy) {
-                        this.attackCooldown = 30;
-                        nearestEnemy.hp -= this.attackDamage;
-                        game.particles.push(new Particle(
-                            nearestEnemy.x, nearestEnemy.y,
-                            this.color, 10, 1
-                        ));
-                        if (nearestEnemy.hp <= 0) {
-                            game.kills++;
-                            hud.kills.textContent = game.kills;
-                        }
-                    }
+                
+                if (moveX !== 0 || moveY !== 0) {
+                    const len = Math.sqrt(moveX * moveX + moveY * moveY);
+                    moveX /= len;
+                    moveY /= len;
                 }
-
-                this.mp = Math.min(this.maxMp, this.mp + 0.1);
-                hud.mp.textContent = Math.floor(this.mp);
+                
+                this.x += moveX * this.speed;
+                this.y += moveY * this.speed;
+                
+                this.x = Math.max(0, Math.min(canvas.width - this.width, this.x));
+                this.y = Math.max(0, Math.min(canvas.height - this.height, this.y));
+                
+                if (this.invincible > 0) this.invincible--;
+                
+                this.shootTimer++;
+                if (this.shootTimer >= this.shootDelay) {
+                    this.shoot();
+                    this.shootTimer = 0;
+                }
             }
-
+            
+            shoot() {
+                game.bullets.push({
+                    x: this.x + this.width / 2 - 2,
+                    y: this.y,
+                    width: 4,
+                    height: 15,
+                    speed: -12,
+                    color: '#0ff'
+                });
+            }
+            
             draw() {
                 ctx.save();
+                if (this.invincible > 0 && Math.floor(this.invincible / 3) % 2 === 0) {
+                    ctx.globalAlpha = 0.5;
+                }
+                
                 ctx.fillStyle = this.color;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.moveTo(this.x + this.width / 2, this.y);
+                ctx.lineTo(this.x + this.width, this.y + this.height);
+                ctx.lineTo(this.x, this.y + this.height);
+                ctx.closePath();
                 ctx.fill();
                 
-                ctx.fillStyle = '#ffffff';
-                ctx.font = '14px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(classes[this.className].name, this.x, this.y + 30);
+                ctx.fillStyle = '#8ff';
+                ctx.fillRect(this.x + this.width / 2 - 1, this.y - 10, 2, 10);
                 
-                ctx.fillStyle = '#ff0000';
-                ctx.fillRect(this.x - 25, this.y - 35, 50, 5);
-                ctx.fillStyle = '#00ff00';
-                ctx.fillRect(this.x - 25, this.y - 35, (this.hp / this.maxHp) * 50, 5);
-                
-                ctx.fillStyle = '#0000ff';
-                ctx.fillRect(this.x - 25, this.y - 30, 50, 3);
-                ctx.fillStyle = '#66aaff';
-                ctx.fillRect(this.x - 25, this.y - 30, (this.mp / this.maxMp) * 50, 3);
                 ctx.restore();
             }
-
-            useSkill(index) {
-                if (game.skillCooldowns[index] > 0 || this.mp < 20) return;
-                
-                const skillName = classes[this.className].skills[index];
-                this.mp -= 20;
-                game.skillCooldowns[index] = 60;
-                
-                switch (this.className) {
-                    case 'warrior':
-                        if (index === 1) {
-                            game.enemies.forEach(enemy => {
-                                const dx = enemy.x - this.x;
-                                const dy = enemy.y - this.y;
-                                if (Math.sqrt(dx * dx + dy * dy) < 80) {
-                                    enemy.hp -= 25;
-                                }
-                            });
-                        }
-                        break;
-                    case 'mage':
-                        if (index === 0) {
-                            game.projectiles.push(new Projectile(
-                                this.x, this.y,
-                                Math.random() * 10 - 5, Math.random() * 10 - 5,
-                                '#ff6600', 25, 1
-                            ));
-                        }
-                        break;
-                    case 'archer':
-                        if (index === 0) {
-                            for (let i = 0; i < 3; i++) {
-                                setTimeout(() => {
-                                    if (!game.running) return;
-                                    game.projectiles.push(new Projectile(
-                                        this.x, this.y,
-                                        Math.random() * 8 - 4, Math.random() * 8 - 4,
-                                        '#66ff66', 15, 2
-                                    ));
-                                }, i * 100);
-                            }
-                        }
-                        break;
-                    case 'priest':
-                        if (index === 0) {
-                            this.hp = Math.min(this.maxHp, this.hp + 30);
-                            hud.hp.textContent = Math.floor(this.hp);
-                        }
-                        break;
-                }
-                
-                for (let i = 0; i < 20; i++) {
-                    game.particles.push(new Particle(
-                        this.x, this.y,
-                        this.color, Math.random() * 10 + 5, 0.5
-                    ));
-                }
-                
-                updateSkillButtons();
+            
+            takeDamage() {
+                if (this.invincible > 0) return false;
+                this.lives--;
+                this.invincible = 60;
+                return this.lives <= 0;
             }
         }
 
         class Enemy {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.radius = 15;
-                this.hp = 30;
-                this.maxHp = 30;
-                this.speed = 1.5;
-                this.color = '#ff4444';
-                this.target = null;
+            constructor(type) {
+                this.type = type || Math.floor(Math.random() * 3);
+                this.width = [40, 50, 60][this.type];
+                this.height = [40, 50, 60][this.type];
+                this.x = Math.random() * (canvas.width - this.width);
+                this.y = -this.height;
+                this.speed = [2, 1.5, 1][this.type] + game.level * 0.2;
+                this.color = ['#f44', '#f84', '#f4f'][this.type];
+                this.health = [1, 2, 3][this.type];
+                this.shootChance = [0.01, 0.02, 0.03][this.type];
+                this.score = [100, 200, 300][this.type];
             }
-
+            
             update() {
-                if (!game.player) return;
+                this.y += this.speed;
                 
-                const dx = game.player.x - this.x;
-                const dy = game.player.y - this.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                
-                if (dist > 0) {
-                    this.x += (dx / dist) * this.speed;
-                    this.y += (dy / dist) * this.speed;
+                if (Math.random() < this.shootChance) {
+                    this.shoot();
                 }
                 
-                if (dist < 25) {
-                    game.player.hp -= 0.5;
-                    hud.hp.textContent = Math.floor(game.player.hp);
-                }
+                return this.y > canvas.height;
             }
-
+            
+            shoot() {
+                game.enemyBullets.push({
+                    x: this.x + this.width / 2 - 3,
+                    y: this.y + this.height,
+                    width: 6,
+                    height: 15,
+                    speed: 5,
+                    color: '#f44'
+                });
+            }
+            
             draw() {
-                ctx.save();
                 ctx.fillStyle = this.color;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.moveTo(this.x + this.width / 2, this.y + this.height);
+                ctx.lineTo(this.x + this.width, this.y);
+                ctx.lineTo(this.x, this.y);
+                ctx.closePath();
                 ctx.fill();
                 
-                ctx.fillStyle = '#ff0000';
-                ctx.fillRect(this.x - 15, this.y - 25, 30, 3);
-                ctx.fillStyle = '#ffff00';
-                ctx.fillRect(this.x - 15, this.y - 25, (this.hp / this.maxHp) * 30, 3);
-                ctx.restore();
+                ctx.fillStyle = '#f88';
+                ctx.fillRect(this.x + this.width / 2 - 2, this.y + this.height, 4, 10);
+            }
+            
+            takeDamage() {
+                this.health--;
+                return this.health <= 0;
             }
         }
 
-        class Projectile {
-            constructor(x, y, vx, vy, color, damage, lifetime) {
-                this.x = x;
-                this.y = y;
-                this.vx = vx;
-                this.vy = vy;
-                this.radius = 5;
-                this.color = color;
-                this.damage = damage;
-                this.lifetime = lifetime * 60;
-            }
+        function checkCollision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
 
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.lifetime--;
+        function createParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                game.particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    radius: Math.random() * 3 + 1,
+                    color: color,
+                    life: 30
+                });
+            }
+        }
+
+        function updateGame() {
+            if (!game.running) return;
+            
+            game.player.update();
+            
+            for (let i = game.bullets.length - 1; i >= 0; i--) {
+                const bullet = game.bullets[i];
+                bullet.y += bullet.speed;
                 
-                for (const enemy of game.enemies) {
-                    const dx = enemy.x - this.x;
-                    const dy = enemy.y - this.y;
-                    if (Math.sqrt(dx * dx + dy * dy) < this.radius + enemy.radius) {
-                        enemy.hp -= this.damage;
-                        if (enemy.hp <= 0) {
-                            game.kills++;
-                            hud.kills.textContent = game.kills;
+                if (bullet.y < -bullet.height) {
+                    game.bullets.splice(i, 1);
+                    continue;
+                }
+                
+                let hit = false;
+                for (let j = game.enemies.length - 1; j >= 0; j--) {
+                    const enemy = game.enemies[j];
+                    if (checkCollision(bullet, enemy)) {
+                        if (enemy.takeDamage()) {
+                            game.score += enemy.score;
+                            createParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.color, 15);
+                            game.enemies.splice(j, 1);
                         }
-                        return false;
+                        game.bullets.splice(i, 1);
+                        hit = true;
+                        break;
                     }
                 }
-                
-                return this.lifetime > 0 && 
-                       this.x > 0 && this.x < canvas.width && 
-                       this.y > 0 && this.y < canvas.height;
+                if (hit) continue;
             }
+            
+            for (let i = game.enemies.length - 1; i >= 0; i--) {
+                if (game.enemies[i].update()) {
+                    game.enemies.splice(i, 1);
+                    continue;
+                }
+                
+                if (checkCollision(game.player, game.enemies[i])) {
+                    if (game.player.takeDamage()) {
+                        gameOver();
+                        return;
+                    }
+                    createParticles(game.enemies[i].x + game.enemies[i].width / 2, 
+                                  game.enemies[i].y + game.enemies[i].height / 2, 
+                                  game.enemies[i].color, 15);
+                    game.enemies.splice(i, 1);
+                }
+            }
+            
+            for (let i = game.enemyBullets.length - 1; i >= 0; i--) {
+                const bullet = game.enemyBullets[i];
+                bullet.y += bullet.speed;
+                
+                if (bullet.y > canvas.height) {
+                    game.enemyBullets.splice(i, 1);
+                    continue;
+                }
+                
+                if (checkCollision(game.player, bullet)) {
+                    if (game.player.takeDamage()) {
+                        gameOver();
+                        return;
+                    }
+                    createParticles(bullet.x + bullet.width / 2, bullet.y + bullet.height / 2, bullet.color, 10);
+                    game.enemyBullets.splice(i, 1);
+                }
+            }
+            
+            for (let i = game.particles.length - 1; i >= 0; i--) {
+                const p = game.particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                p.vy += 0.1;
+                
+                if (p.life <= 0) {
+                    game.particles.splice(i, 1);
+                }
+            }
+            
+            game.enemySpawnTimer++;
+            if (game.enemySpawnTimer > 60 - game.level * 5) {
+                game.enemies.push(new Enemy());
+                game.enemySpawnTimer = 0;
+            }
+            
+            game.level = Math.floor(game.score / 1000) + 1;
+        }
 
-            draw() {
-                ctx.save();
-                ctx.fillStyle = this.color;
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#112';
+            for (let i = 0; i < 100; i++) {
+                const x = (i * 23 + Date.now() / 50) % canvas.width;
+                const y = (i * 17 + Date.now() / 30) % canvas.height;
+                ctx.fillRect(x, y, 1, 1);
+            }
+            
+            game.player.draw();
+            
+            game.enemies.forEach(enemy => enemy.draw());
+            game.bullets.forEach(bullet => {
+                ctx.fillStyle = bullet.color;
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            });
+            game.enemyBullets.forEach(bullet => {
+                ctx.fillStyle = bullet.color;
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            });
+            
+            game.particles.forEach(p => {
+                ctx.globalAlpha = p.life / 30;
+                ctx.fillStyle = p.color;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.restore();
+                ctx.globalAlpha = 1;
+            });
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(`得分: ${game.score}`, 20, 30);
+            ctx.fillText(`等级: ${game.level}`, 20, 60);
+            
+            ctx.fillStyle = '#0f0';
+            for (let i = 0; i < game.player.lives; i++) {
+                ctx.fillRect(20 + i * 25, 70, 20, 30);
+            }
+            
+            if (game.touch.active) {
+                touchJoystick.style.left = (game.touch.startX - 60) + 'px';
+                touchJoystick.style.bottom = (canvas.height - game.touch.startY - 60) + 'px';
+                touchThumb.style.left = (game.touch.x - game.touch.startX) + 'px';
+                touchThumb.style.top = (game.touch.y - game.touch.startY) + 'px';
             }
         }
 
-        class Particle {
-            constructor(x, y, color, speed, lifetime) {
-                this.x = x;
-                this.y = y;
-                this.vx = (Math.random() - 0.5) * speed;
-                this.vy = (Math.random() - 0.5) * speed;
-                this.radius = Math.random() * 3 + 1;
-                this.color = color;
-                this.lifetime = lifetime * 60;
+        function gameLoop(timestamp) {
+            const deltaTime = timestamp - game.lastTime;
+            game.lastTime = timestamp;
+            
+            updateGame();
+            drawGame();
+            
+            if (game.running) {
+                requestAnimationFrame(gameLoop);
             }
+        }
 
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.lifetime--;
-                return this.lifetime > 0;
-            }
+        function startGame() {
+            game = {
+                running: true,
+                score: 0,
+                level: 1,
+                player: new Player(),
+                enemies: [],
+                bullets: [],
+                enemyBullets: [],
+                particles: [],
+                keys: {},
+                touch: { active: false, x: 0, y: 0, startX: 0, startY: 0 },
+                lastTime: 0,
+                enemySpawnTimer: 0,
+                enemyBulletTimer: 0
+            };
+            
+            startScreen.classList.add('hidden');
+            helpScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            inGameHelpBtn.classList.remove('hidden');
+            touchJoystick.classList.remove('hidden');
+            
+            resizeCanvas();
+            game.lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
 
-            draw() {
-                ctx.save();
-                ctx.globalAlpha = this.lifetime / 60;
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-            }
+        function gameOver() {
+            game.running = false;
+            finalScore.textContent = `得分: ${game.score}`;
+            gameOverScreen.classList.remove('hidden');
+            inGameHelpBtn.classList.add('hidden');
+            touchJoystick.classList.add('hidden');
         }
 
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-        }
-
-        function updateSkillButtons() {
-            skillButtons.innerHTML = '';
-            if (!game.player) return;
             
-            const skills = classes[game.player.className].skills;
-            
-            for (let i = 0; i < 4; i++) {
-                const btn = document.createElement('div');
-                btn.className = 'skill-btn';
-                if (game.skillCooldowns[i] > 0) {
-                    btn.classList.add('cooldown');
-                }
-                btn.innerHTML = `<span>${skills[i]}</span><br><small>${game.skillCooldowns[i] > 0 ? game.skillCooldowns[i] : ''}</small>`;
-                btn.addEventListener('click', () => {
-                    if (game.running && game.player) {
-                        game.player.useSkill(i);
-                    }
-                });
-                btn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    if (game.running && game.player) {
-                        game.player.useSkill(i);
-                    }
-                });
-                skillButtons.appendChild(btn);
+            if (game.player) {
+                game.player.x = Math.max(0, Math.min(canvas.width - game.player.width, game.player.x));
+                game.player.y = Math.max(0, Math.min(canvas.height - game.player.height, game.player.y));
             }
         }
 
-        function spawnEnemy() {
-            const side = Math.floor(Math.random() * 4);
-            let x, y;
-            switch (side) {
-                case 0: // 上
-                    x = Math.random() * canvas.width;
-                    y = -20;
-                    break;
-                case 1: // 下
-                    x = Math.random() * canvas.width;
-                    y = canvas.height + 20;
-                    break;
-                case 2: // 左
-                    x = -20;
-                    y = Math.random() * canvas.height;
-                    break;
-                case 3: // 右
-                    x = canvas.width + 20;
-                    y = Math.random() * canvas.height;
-                    break;
-            }
-            game.enemies.push(new Enemy(x, y));
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            game.touch.active = true;
+            game.touch.startX = touch.clientX;
+            game.touch.startY = touch.clientY;
+            game.touch.x = touch.clientX;
+            game.touch.y = touch.clientY;
+            
+            touchJoystick.style.left = (touch.clientX - 60) + 'px';
+            touchJoystick.style.bottom = (canvas.height - touch.clientY - 60) + 'px';
+            touchJoystick.classList.remove('hidden');
         }
 
-        function initGame() {
-            if (game.animationId) {
-                cancelAnimationFrame(game.animationId);
-            }
-            
-            game.running = true;
-            game.player = new Player(canvas.width / 2, canvas.height / 2, game.selectedClass);
-            game.enemies = [];
-            game.projectiles = [];
-            game.particles = [];
-            game.kills = 0;
-            game.startTime = Date.now();
-            game.skillCooldowns = [0, 0, 0, 0];
-            game.joystick = { x: 0, y: 0, active: false };
-            game.enemySpawnTimer = 0;
-            
-            hud.hp.textContent = Math.floor(game.player.hp);
-            hud.mp.textContent = Math.floor(game.player.mp);
-            hud.kills.textContent = '0';
-            hud.class.textContent = classes[game.selectedClass].name;
-            
-            updateSkillButtons();
-            
-            for (let i = 0; i < 5; i++) {
-                setTimeout(() => {
-                    if (game.running) {
-                        spawnEnemy();
-                    }
-                }, i * 500);
-            }
-            
+        function handleTouchMove(e) {
+            if (!game.touch.active) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            game.touch.x = touch.clientX;
+            game.touch.y = touch.clientY;
+        }
+
+        function handleTouchEnd(e) {
+            game.touch.active = false;
+            touchJoystick.classList.add('hidden');
+        }
+
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', startGame);
+        
+        helpBtn.addEventListener('click', () => {
             startScreen.classList.add('hidden');
-            endScreen.classList.add('hidden');
+            helpScreen.classList.remove('hidden');
+        });
+        
+        backBtn.addEventListener('click', () => {
             helpScreen.classList.add('hidden');
-            
-            gameLoop();
-        }
-
-        function endGame() {
+            startScreen.classList.remove('hidden');
+        });
+        
+        menuBtn.addEventListener('click', () => {
+            gameOverScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+        });
+        
+        inGameHelpBtn.addEventListener('click', () => {
             game.running = false;
-            if (game.animationId) {
-                cancelAnimationFrame(game.animationId);
-                game.animationId = null;
-            }
-            
-            const survivalTime = Math.floor((Date.now() - game.startTime) / 1000);
-            endStats.kills.textContent = game.kills;
-            endStats.time.textContent = survivalTime;
-            
-            endScreen.classList.remove('hidden');
-        }
+            helpScreen.classList.remove('hidden');
+            inGameHelpBtn.classList.add('hidden');
+            touchJoystick.classList.add('hidden');
+        });
 
-        function gameLoop() {
-            if (!game.running) return;
-            
-            // 清空画布
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // 更新游戏状态
-            game.player.update();
-            
-            // 更新敌人
-            for (let i = game.enemies.length - 1; i >= 0; i--) {
-                const enemy = game.enemies[i];
-                enemy.update();
-                if (enemy.hp <= 0) {
-                    game.enemies.splice(i, 1);
-                    continue;
-                }
-                enemy.draw();
-            }
-            
-            // 更新投射物
-            for (let i = game.projectiles.length - 1; i >= 0; i--) {
-                const proj = game.projectiles[i];
-                if (!proj.update()) {
-                    game.projectiles.splice(i, 1);
-                    continue;
-                }
-                proj.draw();
-            }
-            
-            // 更新粒子
-            for (let i = game.particles.length - 1; i >= 0; i--) {
-                const part = game.particles[i];
-                if (!part.update()) {
-                    game.particles.splice(i, 1);
-                    continue;
-                }
-                part.draw();
-            }
-            
-            // 更新技能冷却
-            for (let i = 0; i < game.skillCooldowns.length; i++) {
-                if (game.skillCooldowns[i] > 0) {
-                    game.skillCooldowns[i]--;
-                }
-            }
-            
-            // 定期更新技能按钮
-            if (game.animationId % 10 === 0) {
-                updateSkillButtons();
-            }
-            
-            // 生成敌人
-            game.enemySpawnTimer++;
-            if (game.enemySpawnTimer >= 60) {
-                spawnEnemy();
-                game.enemySpawnTimer = 0;
-            }
-            
-            // 绘制玩家
-            game.player.draw();
-            
-            // 检查游戏结束
-            if (game.player.hp <= 0) {
-                endGame();
-                return;
-            }
-            
-            game.animationId = requestAnimationFrame(gameLoop);
-        }
+        window.addEventListener('keydown', (e) => {
+            game.keys[e.key] = true;
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            game.keys[e.key] = false;
+        });
 
-        function handleJoystickStart(e) {
-            e.preventDefault();
-            const rect = joystick.getBoundingClientRect();
-            game.joystickCenter.x = rect.left + rect.width / 2;
-            game.joystickCenter.y = rect.top + rect.height / 2;
-            
-            let clientX, clientY;
-            if (e.type.startsWith('touch')) {
-                clientX = e.touches[0].clientX;
-                clientY = e.touches[0].clientY;
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
-            }
-            
-            game.joystickStartPos.x = clientX;
-            game.joystickStartPos.y = clientY;
-            game.joystick.active = true;
-            
-            updateJoystick(clientX, clientY);
-        }
+        canvas.addEventListener('touchstart', handleTouchStart);
+        canvas.addEventListener('touchmove', handleTouchMove);
+        canvas.addEventListener('touchend', handleTouchEnd);
+        canvas.addEventListener('touchcancel', handleTouchEnd);
 
-        function handleJoystickMove(e) {
-            if (!game.joystick.active) return;
-            e.preventDefault();
-            
-            let clientX, clientY;
-            if (e.type.startsWith('touch')) {
-                clientX = e.touches[0].clientX;
-                clientY = e.touches[0].clientY;
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
-            }
-            
-            updateJoystick(clientX, clientY);
-        }
+        window.addEventListener('resize', resizeCanvas);
 
-        function handleJoystickEnd() {
-            if (!game.joystick.active) return;
-            
-            game.joystick.active = false;
-            game.joystick.x = 0;
-            game.joystick.y = 0;
-            
-            joystickThumb.style.transform = 'translate(-50%, -50%)';
-        }
-
-        function updateJoystick(clientX, clientY) {
-            if (!game.joystick.active) return;
-            
-            const dx = clientX - game.joystickCenter.x;
-            const dy = clientY - game.joystickCenter.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            const maxDistance = 70;
-            
-            if (distance > maxDistance) {
-                const angle = Math.atan2(dy, dx);
-                game.joystick.x = Math.cos(angle);
-                game.joystick.y = Math.sin(angle);
-                
-                const thumbX = Math.cos(angle) * maxDistance;
-                const thumbY = Math.sin(angle) * maxDistance;
-                joystickThumb.style.transform = `translate(${thumbX}px, ${thumbY}px)`;
-            } else {
-                game.joystick.x = dx / maxDistance;
-                game.joystick.y = dy / maxDistance;
-                
-                joystickThumb.style.transform = `translate(${dx}px, ${dy}px)`;
-            }
-        }
-
-        function initEventListeners() {
-            // 窗口调整大小
-            window.addEventListener('resize', resizeCanvas);
-            
-            // 键盘事件
-            window.addEventListener('keydown', (e) => {
-                game.keys[e.key.toLowerCase()] = true;
-                
-                // 数字键1-4触发技能
-                if (e.key >= '1' && e.key <= '4' && game.running && game.player) {
-                    const index = parseInt(e.key) - 1;
-                    game.player.useSkill(index);
-                }
-            });
-            
-            window.addEventListener('keyup', (e) => {
-                game.keys[e.key.toLowerCase()] = false;
-            });
-            
-            // 摇杆事件
-            joystick.addEventListener('mousedown', handleJoystickStart);
-            joystick.addEventListener('touchstart', handleJoystickStart);
-            
-            window.addEventListener('mousemove', handleJoystickMove);
-            window.addEventListener('touchmove', handleJoystickMove);
-            
-            window.addEventListener('mouseup', handleJoystickEnd);
-            window.addEventListener('touchend', handleJoystickEnd);
-            
-            // 游戏按钮事件 - 添加touch事件支持
-            startBtn.addEventListener('click', () => {
-                initGame();
-            });
-            startBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                initGame();
-            });
-            
-            restartBtn.addEventListener('click', () => {
-                initGame();
-            });
-            restartBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                initGame();
-            });
-            
-            backToMenuBtn.addEventListener('click', () => {
-                endScreen.classList.add('hidden');
-                startScreen.classList.remove('hidden');
-            });
-            backToMenuBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                endScreen.classList.add('hidden');
-                startScreen.classList.remove('hidden');
-            });
-            
-            helpBtn.addEventListener('click', () => {
-                helpScreen.classList.remove('hidden');
-            });
-            helpBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                helpScreen.classList.remove('hidden');
-            });
-            
-            helpBtn2.addEventListener('click', () => {
-                helpScreen.classList.remove('hidden');
-            });
-            helpBtn2.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                helpScreen.classList.remove('hidden');
-            });
-            
-            closeHelpBtn.addEventListener('click', () => {
-                helpScreen.classList.add('hidden');
-            });
-            closeHelpBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                helpScreen.classList.add('hidden');
-            });
-            
-            // 职业选择
-            const classOptions = classSelect.querySelectorAll('.class-option');
-            classOptions.forEach(option => {
-                option.addEventListener('click', () => {
-                    classOptions.forEach(opt => opt.classList.remove('selected'));
-                    option.classList.add('selected');
-                    game.selectedClass = option.dataset.class;
-                    hud.class.textContent = classes[game.selectedClass].name;
-                });
-                option.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    classOptions.forEach(opt => opt.classList.remove('selected'));
-                    option.classList.add('selected');
-                    game.selectedClass = option.dataset.class;
-                    hud.class.textContent = classes[game.selectedClass].name;
-                });
-            });
-            
-            // 默认选择战士
-            classOptions[0].classList.add('selected');
-        }
-
-        // 初始化
         resizeCanvas();
-        initEventListeners();
+        drawGame();
     </script>
 
   <!-- YXJ-PLATFORM-UI-START -->
@@ -2056,12 +1725,12 @@ body {
     <div class="tiktok-author-avatar" id="author-avatar" onclick="openAuthorProfile()">👤</div>
     <div class="tiktok-author-details" style="display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;min-height:32px!important;gap:2px!important;">
       <div class="tiktok-author-name-row" style="display:flex!important;flex-direction:row!important;align-items:center!important;gap:10px!important;">
-        <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">MarsZhou</span>
-        <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="bc4f918d-df7f-42ac-96ba-dc2e46a88d29" onclick="toggleFollow()">
+        <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">player_4rha5s</span>
+        <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="d21cbf46-526d-4a44-a12f-55650a398db6" onclick="toggleFollow()">
           <span class="follow-icon">+</span> 关注
         </button>
       </div>
-      <span class="tiktok-publish-time" style="display:block!important;margin:0!important;padding:0!important;">发布于 2026年1月22日</span>
+      <span class="tiktok-publish-time" style="display:block!important;margin:0!important;padding:0!important;">发布于 2026年1月23日</span>
     </div>
   </div>
 </div>
@@ -2187,10 +1856,10 @@ body {
 
 <script>
 // 获取游戏ID和作者信息
-const gameId = 'be9093a9-6b99-448e-8a6e-4fbe2a3ff9dc';
-const gameTitle = '神泣战场手游版';
-const authorToken = 'bc4f918d-df7f-42ac-96ba-dc2e46a88d29';
-const authorName = 'MarsZhou';
+const gameId = 'c40523b5-3c1b-48a8-b2bd-1c76cfe0f129';
+const gameTitle = '星际守护者';
+const authorToken = 'd21cbf46-526d-4a44-a12f-55650a398db6';
+const authorName = 'player_4rha5s';
 const API_BASE = '/api/games';
 
 // 调试日志

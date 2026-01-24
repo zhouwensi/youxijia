@@ -7,11 +7,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#1a1a2e">
-  <meta name="description" content="做个神泣Shaiya的手游版，战场版，需要有所有职业，所有技能，横屏，左边摇杆移动，右边多个技能键 - AI一句话生成的游戏">
-  <meta property="og:title" content="神泣战场手游版 - AI游戏">
+  <meta name="description" content="做一款融合王者万象棋和金铲铲之战玩法的超强自走棋游戏。 - AI一句话生成的游戏">
+  <meta property="og:title" content="万象自走棋 - AI游戏">
   <meta property="og:description" content="这个游戏由AI一句话生成！关注公众号「游戏开发技术教程」，你也可以免费生成游戏！">
   <meta property="og:type" content="website">
-  <title>神泣战场手游版 - AI游戏</title>
+  <title>万象自走棋 - AI游戏</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
   <!-- 引用主站CSS样式 -->
   <link rel="stylesheet" href="/css/style.css">
@@ -1059,28 +1059,17 @@ body {
             touch-action: manipulation;
         }
         body {
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0a0a2a 0%, #1a1a3a 100%);
+            color: #fff;
+            overflow: hidden;
             width: 100vw;
             height: 100vh;
-            overflow: hidden;
-            background: #0a0a14;
-            font-family: 'Microsoft YaHei', sans-serif;
-            color: #e0e0ff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            position: relative;
         }
         canvas {
             display: block;
-            background: #111122;
-        }
-        .ui-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 100;
+            background: #0c0c1f;
         }
         .screen {
             position: absolute;
@@ -1092,190 +1081,119 @@ body {
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: rgba(10, 10, 30, 0.95);
-            z-index: 200;
+            background: rgba(10, 10, 40, 0.95);
+            z-index: 10;
             transition: opacity 0.3s;
         }
-        .screen.hidden {
-            opacity: 0;
-            pointer-events: none;
+        .hidden {
+            display: none !important;
         }
-        .title {
-            font-size: 3.5rem;
+        h1 {
+            font-size: min(8vw, 4rem);
             margin-bottom: 2rem;
-            text-shadow: 0 0 20px #0066ff, 0 0 40px #0044cc;
-            color: #66aaff;
-            letter-spacing: 4px;
+            text-align: center;
+            background: linear-gradient(90deg, #ffd700, #ff9500);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
         }
         .btn {
-            background: linear-gradient(145deg, #1a3a5f, #0a2440);
-            color: #aaddff;
-            border: 2px solid #3388ff;
-            border-radius: 12px;
+            background: linear-gradient(135deg, #3a3aff, #6a6aff);
+            color: white;
+            border: none;
             padding: 1rem 2rem;
             margin: 0.8rem;
-            font-size: 1.4rem;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
             cursor: pointer;
-            pointer-events: auto;
-            transition: all 0.2s;
             min-width: 200px;
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(0, 60, 255, 0.3);
-            -webkit-user-select: none;
-            user-select: none;
+            box-shadow: 0 8px 20px rgba(58, 58, 255, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
         }
         .btn:hover, .btn:active {
-            background: linear-gradient(145deg, #225588, #113366);
-            transform: scale(1.05);
-            box-shadow: 0 6px 16px rgba(0, 80, 255, 0.5);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(58, 58, 255, 0.6);
         }
-        .help-btn {
+        .btn-help {
             position: absolute;
             top: 20px;
             right: 20px;
             width: 50px;
             height: 50px;
-            background: rgba(30, 60, 120, 0.7);
             border-radius: 50%;
-            color: #aaddff;
-            font-size: 1.8rem;
+            background: rgba(255, 255, 255, 0.15);
             display: flex;
             justify-content: center;
             align-items: center;
+            font-size: 1.5rem;
+            z-index: 20;
             cursor: pointer;
-            pointer-events: auto;
-            z-index: 300;
-            border: 2px solid #4488ff;
-            -webkit-user-select: none;
-            user-select: none;
         }
-        .help-content {
-            background: rgba(15, 25, 50, 0.95);
-            border: 2px solid #4488ff;
-            border-radius: 15px;
+        .help-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(20, 20, 50, 0.95);
             padding: 2rem;
-            max-width: 500px;
-            margin: 2rem;
-            pointer-events: auto;
+            border-radius: 20px;
+            max-width: 90%;
+            max-height: 80%;
+            overflow-y: auto;
+            z-index: 30;
+            border: 2px solid #3a3aff;
         }
-        .help-content h3 {
-            color: #66aaff;
+        .help-panel h2 {
+            color: #ffd700;
             margin-bottom: 1rem;
-            text-align: center;
         }
-        .help-content p {
+        .help-panel p {
             margin: 0.8rem 0;
             line-height: 1.5;
         }
-        .joystick {
+        .close-help {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #aaa;
+        }
+        .touch-control {
             position: absolute;
             left: 40px;
             bottom: 40px;
-            width: 140px;
-            height: 140px;
-            pointer-events: auto;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-        .joystick-bg {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: rgba(40, 60, 100, 0.4);
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 50%;
-            border: 2px solid rgba(100, 150, 255, 0.6);
+            z-index: 5;
+            border: 2px solid rgba(255, 255, 255, 0.2);
         }
-        .joystick-thumb {
+        .touch-thumb {
             position: absolute;
-            width: 70px;
-            height: 70px;
-            background: rgba(80, 130, 255, 0.8);
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.3);
             border-radius: 50%;
-            left: 50%;
             top: 50%;
+            left: 50%;
             transform: translate(-50%, -50%);
-            border: 2px solid rgba(180, 220, 255, 0.9);
+            transition: transform 0.1s;
         }
-        .skill-buttons {
-            position: absolute;
-            right: 30px;
-            bottom: 40px;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            pointer-events: auto;
-        }
-        .skill-btn {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(145deg, #2a4a7a, #1a3a6a);
-            border-radius: 20px;
-            border: 3px solid #5599ff;
-            color: #ccddff;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.1s;
-            box-shadow: 0 4px 10px rgba(0, 60, 255, 0.4);
-            -webkit-user-select: none;
-            user-select: none;
-        }
-        .skill-btn:active {
-            background: linear-gradient(145deg, #3a5a8a, #2a4a7a);
-            transform: scale(0.95);
-        }
-        .skill-btn.cooldown {
-            opacity: 0.5;
-            pointer-events: none;
-        }
-        .hud {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            pointer-events: none;
-            font-size: 1.2rem;
-            text-shadow: 1px 1px 2px #000;
-        }
-        .class-select {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 15px;
-            margin: 2rem;
-            max-width: 600px;
-        }
-        .class-option {
-            background: rgba(30, 50, 90, 0.7);
-            border: 2px solid #4477cc;
-            border-radius: 10px;
-            padding: 1rem;
-            width: 140px;
+        .end-screen {
             text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            pointer-events: auto;
-            -webkit-user-select: none;
-            user-select: none;
         }
-        .class-option:hover, .class-option.selected {
-            background: rgba(50, 80, 140, 0.9);
-            border-color: #66aaff;
-            transform: scale(1.05);
+        .end-screen h2 {
+            font-size: 3rem;
+            color: #ffd700;
+            margin-bottom: 1rem;
         }
-        .class-option h4 {
-            color: #88bbff;
-            margin-bottom: 0.5rem;
-        }
-        .end-stats {
-            text-align: center;
-            margin: 1.5rem;
-            font-size: 1.3rem;
-        }
-        .end-stats div {
-            margin: 0.5rem;
+        .stats {
+            font-size: 1.5rem;
+            margin: 1rem 0;
         }
     </style>
 
@@ -1285,75 +1203,40 @@ body {
   
     <canvas id="gameCanvas"></canvas>
     
-    <div class="ui-overlay">
-        <div class="hud" id="hud">
-            <div>生命: <span id="hp">100</span>/100</div>
-            <div>魔法: <span id="mp">100</span>/100</div>
-            <div>击杀: <span id="kills">0</span></div>
-            <div>职业: <span id="class">战士</span></div>
-        </div>
-        
-        <div class="joystick" id="joystick">
-            <div class="joystick-bg"></div>
-            <div class="joystick-thumb" id="joystickThumb"></div>
-        </div>
-        
-        <div class="skill-buttons" id="skillButtons">
-            <!-- 技能按钮由JS动态生成 -->
-        </div>
-        
-        <div class="help-btn" id="helpBtn">?</div>
+    <div id="startScreen" class="screen">
+        <h1>万象自走棋</h1>
+        <button id="startBtn" class="btn">开始游戏</button>
+        <button id="helpBtn" class="btn">游戏说明</button>
     </div>
     
-    <div class="screen" id="startScreen">
-        <h1 class="title">神泣战场</h1>
-        <div class="class-select" id="classSelect">
-            <div class="class-option" data-class="warrior">
-                <h4>战士</h4>
-                <p>高防御 近战</p>
-            </div>
-            <div class="class-option" data-class="mage">
-                <h4>法师</h4>
-                <p>高魔法 远程</p>
-            </div>
-            <div class="class-option" data-class="archer">
-                <h4>弓箭手</h4>
-                <p>高敏捷 远程</p>
-            </div>
-            <div class="class-option" data-class="priest">
-                <h4>牧师</h4>
-                <p>治疗 辅助</p>
-            </div>
+    <div id="endScreen" class="screen hidden">
+        <div class="end-screen">
+            <h2 id="endTitle">游戏结束</h2>
+            <div class="stats">最终回合: <span id="finalRound">0</span></div>
+            <div class="stats">最高连胜: <span id="maxStreak">0</span></div>
+            <button id="restartBtn" class="btn">再来一局</button>
         </div>
-        <div class="btn" id="startBtn">开始战斗</div>
-        <div class="btn" id="helpBtn2">游戏说明</div>
     </div>
     
-    <div class="screen hidden" id="endScreen">
-        <h1 class="title">战斗结束</h1>
-        <div class="end-stats" id="endStats">
-            <div>击杀数: <span id="finalKills">0</span></div>
-            <div>生存时间: <span id="survivalTime">0</span>秒</div>
-        </div>
-        <div class="btn" id="restartBtn">再战一场</div>
-        <div class="btn" id="backToMenuBtn">返回主菜单</div>
+    <div id="helpBtnFixed" class="btn-help hidden">?</div>
+    
+    <div id="helpPanel" class="help-panel hidden">
+        <div class="close-help" id="closeHelp">×</div>
+        <h2>游戏说明</h2>
+        <p><strong>游戏目标：</strong>在棋盘上布置英雄，自动对战，存活到最后！</p>
+        <p><strong>操作方式：</strong></p>
+        <p>1. 触摸屏幕任意位置拖动可移动视角</p>
+        <p>2. 点击英雄可选中，再次点击棋盘放置</p>
+        <p>3. 键盘方向键/WASD也可移动视角</p>
+        <p><strong>游戏规则：</strong></p>
+        <p>• 每回合获得金币，可购买英雄</p>
+        <p>• 3个相同英雄可合成更高星级</p>
+        <p>• 英雄自动战斗，连胜获得额外金币</p>
+        <p>• 生命值归零则游戏结束</p>
     </div>
     
-    <div class="screen hidden" id="helpScreen">
-        <div class="help-content">
-            <h3>游戏说明</h3>
-            <p><strong>操作方式:</strong></p>
-            <p>• 移动: 使用左侧虚拟摇杆或键盘WASD/方向键</p>
-            <p>• 技能: 点击右侧技能按钮或数字键1-4</p>
-            <p>• 目标: 自动攻击最近敌人</p>
-            <p><strong>职业特色:</strong></p>
-            <p>• 战士: 高生命，近战攻击</p>
-            <p>• 法师: 魔法攻击，范围技能</p>
-            <p>• 弓箭手: 远程攻击，高暴击</p>
-            <p>• 牧师: 治疗技能，辅助战斗</p>
-            <p><strong>目标:</strong> 在战场上生存并击败尽可能多的敌人！</p>
-            <div class="btn" id="closeHelpBtn">关闭</div>
-        </div>
+    <div id="touchControl" class="touch-control hidden">
+        <div class="touch-thumb"></div>
     </div>
 
     <script>
@@ -1361,686 +1244,395 @@ body {
         const ctx = canvas.getContext('2d');
         const startScreen = document.getElementById('startScreen');
         const endScreen = document.getElementById('endScreen');
-        const helpScreen = document.getElementById('helpScreen');
-        const startBtn = document.getElementById('startBtn');
-        const restartBtn = document.getElementById('restartBtn');
-        const backToMenuBtn = document.getElementById('backToMenuBtn');
-        const helpBtn = document.getElementById('helpBtn');
-        const helpBtn2 = document.getElementById('helpBtn2');
-        const closeHelpBtn = document.getElementById('closeHelpBtn');
-        const classSelect = document.getElementById('classSelect');
-        const joystick = document.getElementById('joystick');
-        const joystickThumb = document.getElementById('joystickThumb');
-        const skillButtons = document.getElementById('skillButtons');
-        const hud = {
-            hp: document.getElementById('hp'),
-            mp: document.getElementById('mp'),
-            kills: document.getElementById('kills'),
-            class: document.getElementById('class')
-        };
-        const endStats = {
-            kills: document.getElementById('finalKills'),
-            time: document.getElementById('survivalTime')
-        };
-
-        let game = {
-            running: false,
-            player: null,
-            enemies: [],
-            projectiles: [],
-            particles: [],
-            skills: [],
-            selectedClass: 'warrior',
-            kills: 0,
-            startTime: 0,
-            joystick: { x: 0, y: 0, active: false },
-            keys: {},
-            skillCooldowns: [0, 0, 0, 0],
-            skillNames: ['攻击', '技能1', '技能2', '技能3'],
-            animationId: null,
-            enemySpawnTimer: 0,
-            joystickStartPos: { x: 0, y: 0 },
-            joystickCenter: { x: 0, y: 0 }
-        };
-
-        const classes = {
-            warrior: { name: '战士', hp: 150, mp: 80, speed: 3, color: '#ff6666', skills: ['重击', '旋风斩', '防御姿态', '冲锋'] },
-            mage: { name: '法师', hp: 90, mp: 150, speed: 2.5, color: '#66aaff', skills: ['火球', '冰环', '闪电链', '魔法盾'] },
-            archer: { name: '弓箭手', hp: 110, mp: 100, speed: 3.5, color: '#66ff66', skills: ['连射', '穿透箭', '箭雨', '疾跑'] },
-            priest: { name: '牧师', hp: 120, mp: 120, speed: 2.8, color: '#ffcc66', skills: ['治疗', '神圣打击', '祝福', '复活光环'] }
-        };
-
-        class Player {
-            constructor(x, y, className) {
-                const cls = classes[className];
-                this.x = x;
-                this.y = y;
-                this.radius = 20;
-                this.hp = cls.hp;
-                this.maxHp = cls.hp;
-                this.mp = cls.mp;
-                this.maxMp = cls.mp;
-                this.speed = cls.speed;
-                this.color = cls.color;
-                this.className = className;
-                this.attackCooldown = 0;
-                this.attackDamage = 15;
-                this.attackRange = 60;
-            }
-
-            update() {
-                if (game.joystick.active) {
-                    this.x += game.joystick.x * this.speed;
-                    this.y += game.joystick.y * this.speed;
-                } else {
-                    let dx = 0, dy = 0;
-                    if (game.keys['ArrowLeft'] || game.keys['a']) dx -= 1;
-                    if (game.keys['ArrowRight'] || game.keys['d']) dx += 1;
-                    if (game.keys['ArrowUp'] || game.keys['w']) dy -= 1;
-                    if (game.keys['ArrowDown'] || game.keys['s']) dy += 1;
-                    if (dx !== 0 || dy !== 0) {
-                        const len = Math.sqrt(dx * dx + dy * dy);
-                        this.x += (dx / len) * this.speed;
-                        this.y += (dy / len) * this.speed;
-                    }
-                }
-
-                this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
-                this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
-
-                if (this.attackCooldown > 0) this.attackCooldown--;
-
-                if (this.attackCooldown === 0) {
-                    let nearestEnemy = null;
-                    let minDist = Infinity;
-                    for (const enemy of game.enemies) {
-                        const dx = enemy.x - this.x;
-                        const dy = enemy.y - this.y;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist < this.attackRange && dist < minDist) {
-                            minDist = dist;
-                            nearestEnemy = enemy;
-                        }
-                    }
-                    if (nearestEnemy) {
-                        this.attackCooldown = 30;
-                        nearestEnemy.hp -= this.attackDamage;
-                        game.particles.push(new Particle(
-                            nearestEnemy.x, nearestEnemy.y,
-                            this.color, 10, 1
-                        ));
-                        if (nearestEnemy.hp <= 0) {
-                            game.kills++;
-                            hud.kills.textContent = game.kills;
-                        }
-                    }
-                }
-
-                this.mp = Math.min(this.maxMp, this.mp + 0.1);
-                hud.mp.textContent = Math.floor(this.mp);
-            }
-
-            draw() {
-                ctx.save();
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.fillStyle = '#ffffff';
-                ctx.font = '14px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(classes[this.className].name, this.x, this.y + 30);
-                
-                ctx.fillStyle = '#ff0000';
-                ctx.fillRect(this.x - 25, this.y - 35, 50, 5);
-                ctx.fillStyle = '#00ff00';
-                ctx.fillRect(this.x - 25, this.y - 35, (this.hp / this.maxHp) * 50, 5);
-                
-                ctx.fillStyle = '#0000ff';
-                ctx.fillRect(this.x - 25, this.y - 30, 50, 3);
-                ctx.fillStyle = '#66aaff';
-                ctx.fillRect(this.x - 25, this.y - 30, (this.mp / this.maxMp) * 50, 3);
-                ctx.restore();
-            }
-
-            useSkill(index) {
-                if (game.skillCooldowns[index] > 0 || this.mp < 20) return;
-                
-                const skillName = classes[this.className].skills[index];
-                this.mp -= 20;
-                game.skillCooldowns[index] = 60;
-                
-                switch (this.className) {
-                    case 'warrior':
-                        if (index === 1) {
-                            game.enemies.forEach(enemy => {
-                                const dx = enemy.x - this.x;
-                                const dy = enemy.y - this.y;
-                                if (Math.sqrt(dx * dx + dy * dy) < 80) {
-                                    enemy.hp -= 25;
-                                }
-                            });
-                        }
-                        break;
-                    case 'mage':
-                        if (index === 0) {
-                            game.projectiles.push(new Projectile(
-                                this.x, this.y,
-                                Math.random() * 10 - 5, Math.random() * 10 - 5,
-                                '#ff6600', 25, 1
-                            ));
-                        }
-                        break;
-                    case 'archer':
-                        if (index === 0) {
-                            for (let i = 0; i < 3; i++) {
-                                setTimeout(() => {
-                                    if (!game.running) return;
-                                    game.projectiles.push(new Projectile(
-                                        this.x, this.y,
-                                        Math.random() * 8 - 4, Math.random() * 8 - 4,
-                                        '#66ff66', 15, 2
-                                    ));
-                                }, i * 100);
-                            }
-                        }
-                        break;
-                    case 'priest':
-                        if (index === 0) {
-                            this.hp = Math.min(this.maxHp, this.hp + 30);
-                            hud.hp.textContent = Math.floor(this.hp);
-                        }
-                        break;
-                }
-                
-                for (let i = 0; i < 20; i++) {
-                    game.particles.push(new Particle(
-                        this.x, this.y,
-                        this.color, Math.random() * 10 + 5, 0.5
-                    ));
-                }
-                
-                updateSkillButtons();
-            }
-        }
-
-        class Enemy {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.radius = 15;
-                this.hp = 30;
-                this.maxHp = 30;
-                this.speed = 1.5;
-                this.color = '#ff4444';
-                this.target = null;
-            }
-
-            update() {
-                if (!game.player) return;
-                
-                const dx = game.player.x - this.x;
-                const dy = game.player.y - this.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                
-                if (dist > 0) {
-                    this.x += (dx / dist) * this.speed;
-                    this.y += (dy / dist) * this.speed;
-                }
-                
-                if (dist < 25) {
-                    game.player.hp -= 0.5;
-                    hud.hp.textContent = Math.floor(game.player.hp);
-                }
-            }
-
-            draw() {
-                ctx.save();
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.fillStyle = '#ff0000';
-                ctx.fillRect(this.x - 15, this.y - 25, 30, 3);
-                ctx.fillStyle = '#ffff00';
-                ctx.fillRect(this.x - 15, this.y - 25, (this.hp / this.maxHp) * 30, 3);
-                ctx.restore();
-            }
-        }
-
-        class Projectile {
-            constructor(x, y, vx, vy, color, damage, lifetime) {
-                this.x = x;
-                this.y = y;
-                this.vx = vx;
-                this.vy = vy;
-                this.radius = 5;
-                this.color = color;
-                this.damage = damage;
-                this.lifetime = lifetime * 60;
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.lifetime--;
-                
-                for (const enemy of game.enemies) {
-                    const dx = enemy.x - this.x;
-                    const dy = enemy.y - this.y;
-                    if (Math.sqrt(dx * dx + dy * dy) < this.radius + enemy.radius) {
-                        enemy.hp -= this.damage;
-                        if (enemy.hp <= 0) {
-                            game.kills++;
-                            hud.kills.textContent = game.kills;
-                        }
-                        return false;
-                    }
-                }
-                
-                return this.lifetime > 0 && 
-                       this.x > 0 && this.x < canvas.width && 
-                       this.y > 0 && this.y < canvas.height;
-            }
-
-            draw() {
-                ctx.save();
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-            }
-        }
-
-        class Particle {
-            constructor(x, y, color, speed, lifetime) {
-                this.x = x;
-                this.y = y;
-                this.vx = (Math.random() - 0.5) * speed;
-                this.vy = (Math.random() - 0.5) * speed;
-                this.radius = Math.random() * 3 + 1;
-                this.color = color;
-                this.lifetime = lifetime * 60;
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.lifetime--;
-                return this.lifetime > 0;
-            }
-
-            draw() {
-                ctx.save();
-                ctx.globalAlpha = this.lifetime / 60;
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-            }
-        }
-
+        const helpBtnFixed = document.getElementById('helpBtnFixed');
+        const helpPanel = document.getElementById('helpPanel');
+        const touchControl = document.getElementById('touchControl');
+        
+        let gameRunning = false;
+        let cameraX = 0, cameraY = 0;
+        let touchStartX = 0, touchStartY = 0;
+        let isDragging = false;
+        let selectedHero = null;
+        let lastTime = 0;
+        let coins = 30;
+        let health = 100;
+        let round = 1;
+        let winStreak = 0;
+        let maxStreak = 0;
+        
+        const heroes = [
+            { id: 1, name: '战士', cost: 1, damage: 10, hp: 100, color: '#ff6b6b' },
+            { id: 2, name: '法师', cost: 2, damage: 25, hp: 60, color: '#4ecdc4' },
+            { id: 3, name: '射手', cost: 3, damage: 15, hp: 70, color: '#ffe66d' },
+            { id: 4, name: '坦克', cost: 4, damage: 8, hp: 150, color: '#1a936f' }
+        ];
+        
+        let board = [];
+        let shop = [];
+        let playerHeroes = [];
+        
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
+            drawGame();
         }
-
-        function updateSkillButtons() {
-            skillButtons.innerHTML = '';
-            if (!game.player) return;
-            
-            const skills = classes[game.player.className].skills;
-            
-            for (let i = 0; i < 4; i++) {
-                const btn = document.createElement('div');
-                btn.className = 'skill-btn';
-                if (game.skillCooldowns[i] > 0) {
-                    btn.classList.add('cooldown');
-                }
-                btn.innerHTML = `<span>${skills[i]}</span><br><small>${game.skillCooldowns[i] > 0 ? game.skillCooldowns[i] : ''}</small>`;
-                btn.addEventListener('click', () => {
-                    if (game.running && game.player) {
-                        game.player.useSkill(i);
-                    }
-                });
-                btn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    if (game.running && game.player) {
-                        game.player.useSkill(i);
-                    }
-                });
-                skillButtons.appendChild(btn);
-            }
-        }
-
-        function spawnEnemy() {
-            const side = Math.floor(Math.random() * 4);
-            let x, y;
-            switch (side) {
-                case 0: // 上
-                    x = Math.random() * canvas.width;
-                    y = -20;
-                    break;
-                case 1: // 下
-                    x = Math.random() * canvas.width;
-                    y = canvas.height + 20;
-                    break;
-                case 2: // 左
-                    x = -20;
-                    y = Math.random() * canvas.height;
-                    break;
-                case 3: // 右
-                    x = canvas.width + 20;
-                    y = Math.random() * canvas.height;
-                    break;
-            }
-            game.enemies.push(new Enemy(x, y));
-        }
-
+        
         function initGame() {
-            if (game.animationId) {
-                cancelAnimationFrame(game.animationId);
-            }
-            
-            game.running = true;
-            game.player = new Player(canvas.width / 2, canvas.height / 2, game.selectedClass);
-            game.enemies = [];
-            game.projectiles = [];
-            game.particles = [];
-            game.kills = 0;
-            game.startTime = Date.now();
-            game.skillCooldowns = [0, 0, 0, 0];
-            game.joystick = { x: 0, y: 0, active: false };
-            game.enemySpawnTimer = 0;
-            
-            hud.hp.textContent = Math.floor(game.player.hp);
-            hud.mp.textContent = Math.floor(game.player.mp);
-            hud.kills.textContent = '0';
-            hud.class.textContent = classes[game.selectedClass].name;
-            
-            updateSkillButtons();
-            
+            board = Array(8).fill().map(() => Array(8).fill(null));
+            generateShop();
+            playerHeroes = [];
+            coins = 30;
+            health = 100;
+            round = 1;
+            winStreak = 0;
+            maxStreak = 0;
+            cameraX = 0;
+            cameraY = 0;
+        }
+        
+        function generateShop() {
+            shop = [];
             for (let i = 0; i < 5; i++) {
-                setTimeout(() => {
-                    if (game.running) {
-                        spawnEnemy();
-                    }
-                }, i * 500);
+                shop.push({...heroes[Math.floor(Math.random() * heroes.length)], level: 1});
             }
-            
-            startScreen.classList.add('hidden');
-            endScreen.classList.add('hidden');
-            helpScreen.classList.add('hidden');
-            
-            gameLoop();
         }
-
-        function endGame() {
-            game.running = false;
-            if (game.animationId) {
-                cancelAnimationFrame(game.animationId);
-                game.animationId = null;
-            }
+        
+        function drawGame() {
+            if (!gameRunning) return;
             
-            const survivalTime = Math.floor((Date.now() - game.startTime) / 1000);
-            endStats.kills.textContent = game.kills;
-            endStats.time.textContent = survivalTime;
-            
-            endScreen.classList.remove('hidden');
-        }
-
-        function gameLoop() {
-            if (!game.running) return;
-            
-            // 清空画布
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // 更新游戏状态
-            game.player.update();
+            const gridSize = 60;
+            const offsetX = canvas.width/2 + cameraX;
+            const offsetY = canvas.height/2 + cameraY;
             
-            // 更新敌人
-            for (let i = game.enemies.length - 1; i >= 0; i--) {
-                const enemy = game.enemies[i];
-                enemy.update();
-                if (enemy.hp <= 0) {
-                    game.enemies.splice(i, 1);
-                    continue;
-                }
-                enemy.draw();
-            }
+            ctx.fillStyle = '#1a1a3a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // 更新投射物
-            for (let i = game.projectiles.length - 1; i >= 0; i--) {
-                const proj = game.projectiles[i];
-                if (!proj.update()) {
-                    game.projectiles.splice(i, 1);
-                    continue;
-                }
-                proj.draw();
-            }
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
             
-            // 更新粒子
-            for (let i = game.particles.length - 1; i >= 0; i--) {
-                const part = game.particles[i];
-                if (!part.update()) {
-                    game.particles.splice(i, 1);
-                    continue;
-                }
-                part.draw();
-            }
-            
-            // 更新技能冷却
-            for (let i = 0; i < game.skillCooldowns.length; i++) {
-                if (game.skillCooldowns[i] > 0) {
-                    game.skillCooldowns[i]--;
+            for (let x = -10; x <= 10; x++) {
+                for (let y = -10; y <= 10; y++) {
+                    const px = offsetX + x * gridSize;
+                    const py = offsetY + y * gridSize;
+                    
+                    if (px >= -gridSize && px <= canvas.width + gridSize && 
+                        py >= -gridSize && py <= canvas.height + gridSize) {
+                        ctx.strokeRect(px - gridSize/2, py - gridSize/2, gridSize, gridSize);
+                    }
                 }
             }
             
-            // 定期更新技能按钮
-            if (game.animationId % 10 === 0) {
-                updateSkillButtons();
-            }
-            
-            // 生成敌人
-            game.enemySpawnTimer++;
-            if (game.enemySpawnTimer >= 60) {
-                spawnEnemy();
-                game.enemySpawnTimer = 0;
-            }
-            
-            // 绘制玩家
-            game.player.draw();
-            
-            // 检查游戏结束
-            if (game.player.hp <= 0) {
-                endGame();
-                return;
-            }
-            
-            game.animationId = requestAnimationFrame(gameLoop);
-        }
-
-        function handleJoystickStart(e) {
-            e.preventDefault();
-            const rect = joystick.getBoundingClientRect();
-            game.joystickCenter.x = rect.left + rect.width / 2;
-            game.joystickCenter.y = rect.top + rect.height / 2;
-            
-            let clientX, clientY;
-            if (e.type.startsWith('touch')) {
-                clientX = e.touches[0].clientX;
-                clientY = e.touches[0].clientY;
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
-            }
-            
-            game.joystickStartPos.x = clientX;
-            game.joystickStartPos.y = clientY;
-            game.joystick.active = true;
-            
-            updateJoystick(clientX, clientY);
-        }
-
-        function handleJoystickMove(e) {
-            if (!game.joystick.active) return;
-            e.preventDefault();
-            
-            let clientX, clientY;
-            if (e.type.startsWith('touch')) {
-                clientX = e.touches[0].clientX;
-                clientY = e.touches[0].clientY;
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
-            }
-            
-            updateJoystick(clientX, clientY);
-        }
-
-        function handleJoystickEnd() {
-            if (!game.joystick.active) return;
-            
-            game.joystick.active = false;
-            game.joystick.x = 0;
-            game.joystick.y = 0;
-            
-            joystickThumb.style.transform = 'translate(-50%, -50%)';
-        }
-
-        function updateJoystick(clientX, clientY) {
-            if (!game.joystick.active) return;
-            
-            const dx = clientX - game.joystickCenter.x;
-            const dy = clientY - game.joystickCenter.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            const maxDistance = 70;
-            
-            if (distance > maxDistance) {
-                const angle = Math.atan2(dy, dx);
-                game.joystick.x = Math.cos(angle);
-                game.joystick.y = Math.sin(angle);
-                
-                const thumbX = Math.cos(angle) * maxDistance;
-                const thumbY = Math.sin(angle) * maxDistance;
-                joystickThumb.style.transform = `translate(${thumbX}px, ${thumbY}px)`;
-            } else {
-                game.joystick.x = dx / maxDistance;
-                game.joystick.y = dy / maxDistance;
-                
-                joystickThumb.style.transform = `translate(${dx}px, ${dy}px)`;
-            }
-        }
-
-        function initEventListeners() {
-            // 窗口调整大小
-            window.addEventListener('resize', resizeCanvas);
-            
-            // 键盘事件
-            window.addEventListener('keydown', (e) => {
-                game.keys[e.key.toLowerCase()] = true;
-                
-                // 数字键1-4触发技能
-                if (e.key >= '1' && e.key <= '4' && game.running && game.player) {
-                    const index = parseInt(e.key) - 1;
-                    game.player.useSkill(index);
-                }
-            });
-            
-            window.addEventListener('keyup', (e) => {
-                game.keys[e.key.toLowerCase()] = false;
-            });
-            
-            // 摇杆事件
-            joystick.addEventListener('mousedown', handleJoystickStart);
-            joystick.addEventListener('touchstart', handleJoystickStart);
-            
-            window.addEventListener('mousemove', handleJoystickMove);
-            window.addEventListener('touchmove', handleJoystickMove);
-            
-            window.addEventListener('mouseup', handleJoystickEnd);
-            window.addEventListener('touchend', handleJoystickEnd);
-            
-            // 游戏按钮事件 - 添加touch事件支持
-            startBtn.addEventListener('click', () => {
-                initGame();
-            });
-            startBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                initGame();
-            });
-            
-            restartBtn.addEventListener('click', () => {
-                initGame();
-            });
-            restartBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                initGame();
-            });
-            
-            backToMenuBtn.addEventListener('click', () => {
-                endScreen.classList.add('hidden');
-                startScreen.classList.remove('hidden');
-            });
-            backToMenuBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                endScreen.classList.add('hidden');
-                startScreen.classList.remove('hidden');
-            });
-            
-            helpBtn.addEventListener('click', () => {
-                helpScreen.classList.remove('hidden');
-            });
-            helpBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                helpScreen.classList.remove('hidden');
-            });
-            
-            helpBtn2.addEventListener('click', () => {
-                helpScreen.classList.remove('hidden');
-            });
-            helpBtn2.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                helpScreen.classList.remove('hidden');
-            });
-            
-            closeHelpBtn.addEventListener('click', () => {
-                helpScreen.classList.add('hidden');
-            });
-            closeHelpBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                helpScreen.classList.add('hidden');
-            });
-            
-            // 职业选择
-            const classOptions = classSelect.querySelectorAll('.class-option');
-            classOptions.forEach(option => {
-                option.addEventListener('click', () => {
-                    classOptions.forEach(opt => opt.classList.remove('selected'));
-                    option.classList.add('selected');
-                    game.selectedClass = option.dataset.class;
-                    hud.class.textContent = classes[game.selectedClass].name;
-                });
-                option.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    classOptions.forEach(opt => opt.classList.remove('selected'));
-                    option.classList.add('selected');
-                    game.selectedClass = option.dataset.class;
-                    hud.class.textContent = classes[game.selectedClass].name;
+            board.forEach((row, x) => {
+                row.forEach((hero, y) => {
+                    if (hero) {
+                        const px = offsetX + (x - 4) * gridSize;
+                        const py = offsetY + (y - 4) * gridSize;
+                        drawHero(hero, px, py, gridSize);
+                    }
                 });
             });
             
-            // 默认选择战士
-            classOptions[0].classList.add('selected');
+            drawShop();
+            drawHUD();
+            
+            if (selectedHero) {
+                ctx.globalAlpha = 0.7;
+                ctx.fillStyle = selectedHero.color;
+                ctx.beginPath();
+                ctx.arc(canvas.width/2, canvas.height/2, gridSize/2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
         }
-
-        // 初始化
+        
+        function drawHero(hero, x, y, size) {
+            ctx.fillStyle = hero.color;
+            ctx.beginPath();
+            ctx.arc(x, y, size/2 - 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(hero.name, x, y + 4);
+            
+            ctx.font = '12px Arial';
+            ctx.fillText(`★${hero.level}`, x, y - 10);
+        }
+        
+        function drawShop() {
+            const shopY = canvas.height - 120;
+            const cardWidth = 100;
+            const spacing = 20;
+            const startX = (canvas.width - (5 * cardWidth + 4 * spacing)) / 2;
+            
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, shopY - 20, canvas.width, 140);
+            
+            shop.forEach((hero, i) => {
+                const x = startX + i * (cardWidth + spacing);
+                const y = shopY;
+                
+                ctx.fillStyle = hero.color;
+                ctx.fillRect(x, y, cardWidth, 80);
+                
+                ctx.strokeStyle = coins >= hero.cost ? '#ffd700' : '#888';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(x, y, cardWidth, 80);
+                
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(hero.name, x + cardWidth/2, y + 25);
+                ctx.fillText(`${hero.cost}金币`, x + cardWidth/2, y + 50);
+                
+                ctx.font = '12px Arial';
+                ctx.fillText(`伤害:${hero.damage}`, x + 25, y + 70);
+                ctx.fillText(`生命:${hero.hp}`, x + 65, y + 70);
+            });
+            
+            ctx.fillStyle = '#ffd700';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(`刷新商店 (2金币)`, startX, shopY + 110);
+        }
+        
+        function drawHUD() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(10, 10, 200, 100);
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(`金币: ${coins}`, 20, 35);
+            ctx.fillText(`生命: ${health}`, 20, 60);
+            ctx.fillText(`回合: ${round}`, 20, 85);
+            ctx.fillText(`连胜: ${winStreak}`, 20, 110);
+            
+            ctx.fillStyle = '#ffd700';
+            ctx.font = 'bold 18px Arial';
+            ctx.textAlign = 'right';
+            ctx.fillText('万象自走棋', canvas.width - 20, 40);
+        }
+        
+        function updateGame(deltaTime) {
+            if (!gameRunning) return;
+            
+            if (Math.random() < 0.01) {
+                const emptyCells = [];
+                board.forEach((row, x) => {
+                    row.forEach((cell, y) => {
+                        if (!cell) emptyCells.push({x, y});
+                    });
+                });
+                
+                if (emptyCells.length > 0 && Math.random() < 0.3) {
+                    const cell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                    const hero = {...heroes[Math.floor(Math.random() * heroes.length)], level: 1};
+                    board[cell.x][cell.y] = hero;
+                }
+            }
+            
+            if (Math.random() < 0.005) {
+                health -= 5;
+                if (health <= 0) {
+                    endGame(false);
+                }
+            }
+            
+            if (Math.random() < 0.002) {
+                round++;
+                coins += 5 + Math.floor(winStreak / 3);
+                winStreak++;
+                maxStreak = Math.max(maxStreak, winStreak);
+                if (Math.random() < 0.3) generateShop();
+            }
+        }
+        
+        function gameLoop(timestamp) {
+            const deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+            
+            updateGame(deltaTime);
+            drawGame();
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function startGame() {
+            initGame();
+            gameRunning = true;
+            startScreen.classList.add('hidden');
+            endScreen.classList.add('hidden');
+            helpBtnFixed.classList.remove('hidden');
+            touchControl.classList.remove('hidden');
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function endGame(isWin) {
+            gameRunning = false;
+            document.getElementById('endTitle').textContent = isWin ? '胜利!' : '游戏结束';
+            document.getElementById('finalRound').textContent = round;
+            document.getElementById('maxStreak').textContent = maxStreak;
+            endScreen.classList.remove('hidden');
+            helpBtnFixed.classList.add('hidden');
+            touchControl.classList.add('hidden');
+        }
+        
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            isDragging = true;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            
+            const gridSize = 60;
+            const offsetX = canvas.width/2 + cameraX;
+            const offsetY = canvas.height/2 + cameraY;
+            
+            const shopY = canvas.height - 120;
+            const cardWidth = 100;
+            const spacing = 20;
+            const startX = (canvas.width - (5 * cardWidth + 4 * spacing)) / 2;
+            
+            if (y > shopY && y < shopY + 80) {
+                for (let i = 0; i < 5; i++) {
+                    const cardX = startX + i * (cardWidth + spacing);
+                    if (x > cardX && x < cardX + cardWidth) {
+                        if (coins >= shop[i].cost) {
+                            coins -= shop[i].cost;
+                            selectedHero = {...shop[i]};
+                            shop.splice(i, 1);
+                            shop.push({...heroes[Math.floor(Math.random() * heroes.length)], level: 1});
+                        }
+                        return;
+                    }
+                }
+                
+                if (x > startX && x < startX + 120 && y > shopY + 90) {
+                    if (coins >= 2) {
+                        coins -= 2;
+                        generateShop();
+                    }
+                    return;
+                }
+            }
+            
+            if (selectedHero) {
+                const gridX = Math.round((x - offsetX) / gridSize + 4);
+                const gridY = Math.round((y - offsetY) / gridSize + 4);
+                
+                if (gridX >= 0 && gridX < 8 && gridY >= 0 && gridY < 8 && !board[gridX][gridY]) {
+                    board[gridX][gridY] = selectedHero;
+                    selectedHero = null;
+                }
+            } else {
+                for (let gx = 0; gx < 8; gx++) {
+                    for (let gy = 0; gy < 8; gy++) {
+                        if (board[gx][gy]) {
+                            const px = offsetX + (gx - 4) * gridSize;
+                            const py = offsetY + (gy - 4) * gridSize;
+                            const dist = Math.sqrt((x - px)**2 + (y - py)**2);
+                            if (dist < gridSize/2) {
+                                selectedHero = board[gx][gy];
+                                board[gx][gy] = null;
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        function handleTouchMove(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            const dx = touch.clientX - touchStartX;
+            const dy = touch.clientY - touchStartY;
+            cameraX += dx * 0.8;
+            cameraY += dy * 0.8;
+            cameraX = Math.max(-canvas.width/2, Math.min(canvas.width/2, cameraX));
+            cameraY = Math.max(-canvas.height/2, Math.min(canvas.height/2, cameraY));
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+        }
+        
+        function handleTouchEnd() {
+            isDragging = false;
+        }
+        
+        function handleKeyDown(e) {
+            if (!gameRunning) return;
+            
+            const speed = 20;
+            switch(e.key) {
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    cameraX -= speed;
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    cameraX += speed;
+                    break;
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    cameraY -= speed;
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    cameraY += speed;
+                    break;
+                case ' ':
+                    if (coins >= 2) {
+                        coins -= 2;
+                        generateShop();
+                    }
+                    break;
+            }
+            
+            cameraX = Math.max(-canvas.width/2, Math.min(canvas.width/2, cameraX));
+            cameraY = Math.max(-canvas.height/2, Math.min(canvas.height/2, cameraY));
+        }
+        
+        function showHelp() {
+            helpPanel.classList.remove('hidden');
+        }
+        
+        function hideHelp() {
+            helpPanel.classList.add('hidden');
+        }
+        
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('restartBtn').addEventListener('click', startGame);
+        document.getElementById('helpBtn').addEventListener('click', showHelp);
+        document.getElementById('helpBtnFixed').addEventListener('click', showHelp);
+        document.getElementById('closeHelp').addEventListener('click', hideHelp);
+        
+        canvas.addEventListener('touchstart', handleTouchStart);
+        canvas.addEventListener('touchmove', handleTouchMove);
+        canvas.addEventListener('touchend', handleTouchEnd);
+        
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('resize', resizeCanvas);
+        
         resizeCanvas();
-        initEventListeners();
+        drawGame();
     </script>
 
   <!-- YXJ-PLATFORM-UI-START -->
@@ -2056,12 +1648,12 @@ body {
     <div class="tiktok-author-avatar" id="author-avatar" onclick="openAuthorProfile()">👤</div>
     <div class="tiktok-author-details" style="display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;min-height:32px!important;gap:2px!important;">
       <div class="tiktok-author-name-row" style="display:flex!important;flex-direction:row!important;align-items:center!important;gap:10px!important;">
-        <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">MarsZhou</span>
-        <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="bc4f918d-df7f-42ac-96ba-dc2e46a88d29" onclick="toggleFollow()">
+        <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">player_086qxe</span>
+        <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="137029ed-5b19-4414-8e96-f81176951174" onclick="toggleFollow()">
           <span class="follow-icon">+</span> 关注
         </button>
       </div>
-      <span class="tiktok-publish-time" style="display:block!important;margin:0!important;padding:0!important;">发布于 2026年1月22日</span>
+      <span class="tiktok-publish-time" style="display:block!important;margin:0!important;padding:0!important;">发布于 2026年1月23日</span>
     </div>
   </div>
 </div>
@@ -2187,10 +1779,10 @@ body {
 
 <script>
 // 获取游戏ID和作者信息
-const gameId = 'be9093a9-6b99-448e-8a6e-4fbe2a3ff9dc';
-const gameTitle = '神泣战场手游版';
-const authorToken = 'bc4f918d-df7f-42ac-96ba-dc2e46a88d29';
-const authorName = 'MarsZhou';
+const gameId = 'd0f362bc-b75a-452d-a3ac-b3e3db3e7521';
+const gameTitle = '万象自走棋';
+const authorToken = '137029ed-5b19-4414-8e96-f81176951174';
+const authorName = 'player_086qxe';
 const API_BASE = '/api/games';
 
 // 调试日志

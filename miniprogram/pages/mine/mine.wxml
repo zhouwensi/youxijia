@@ -1,0 +1,110 @@
+<!--
+  我的页面
+-->
+<view class="page-container">
+  <!-- 用户信息卡片 -->
+  <view class="user-card">
+    <!-- 未登录状态 -->
+    <view class="login-prompt" wx:if="{{!isLoggedIn}}">
+      <view class="avatar-placeholder">
+        <text>👤</text>
+      </view>
+      <view class="login-info">
+        <text class="login-title">登录体验更多功能</text>
+        <text class="login-desc">登录后可同步数据、保存游戏</text>
+      </view>
+      <button class="login-btn btn btn-primary" bindtap="handleLogin">
+        微信登录
+      </button>
+    </view>
+    
+    <!-- 已登录状态 -->
+    <view class="user-info" wx:else>
+      <view class="avatar">
+        <text>{{userInfo.avatar_emoji || '🎮'}}</text>
+      </view>
+      <view class="user-details">
+        <view class="nickname">{{userInfo.nickname || userInfo.account_id || '游戏玩家'}}</view>
+        <view class="account-id">ID: {{userInfo.account_id || '-'}}</view>
+      </view>
+      <view class="share-btn" bindtap="onShareAppMessage">
+        <text>📤</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 统计数据 -->
+  <view class="stats-card" wx:if="{{isLoggedIn}}">
+    <view class="stats-item">
+      <text class="stats-value">{{stats.games}}</text>
+      <text class="stats-label">创作</text>
+    </view>
+    <view class="stats-divider"></view>
+    <view class="stats-item">
+      <text class="stats-value">{{stats.credits}}</text>
+      <text class="stats-label">积分</text>
+    </view>
+    <view class="stats-divider"></view>
+    <view class="stats-item">
+      <text class="stats-value">{{stats.favorites}}</text>
+      <text class="stats-label">收藏</text>
+    </view>
+  </view>
+
+  <!-- 功能菜单 -->
+  <view class="menu-card">
+    <view 
+      class="menu-item" 
+      wx:for="{{menuList}}" 
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="handleMenuClick"
+    >
+      <view class="menu-left">
+        <text class="menu-icon">{{item.icon}}</text>
+        <text class="menu-name">{{item.name}}</text>
+      </view>
+      <view class="menu-right">
+        <text class="menu-badge" wx:if="{{item.badge > 0}}">{{item.badge}}</text>
+        <text class="menu-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 更多功能 -->
+  <view class="menu-card">
+    <view class="menu-item" bindtap="goToWeb">
+      <view class="menu-left">
+        <text class="menu-icon">🌐</text>
+        <text class="menu-name">访问网页版</text>
+      </view>
+      <view class="menu-right">
+        <text class="menu-tip">完整功能</text>
+        <text class="menu-arrow">›</text>
+      </view>
+    </view>
+    <view class="menu-item" bindtap="showAbout">
+      <view class="menu-left">
+        <text class="menu-icon">ℹ️</text>
+        <text class="menu-name">关于我们</text>
+      </view>
+      <view class="menu-right">
+        <text class="menu-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部提示 -->
+  <view class="footer-tip">
+    <text>更多功能请使用网页版</text>
+    <text class="website">www.yijuhuayouxi.com</text>
+  </view>
+
+  <!-- 创作按钮 -->
+  <view class="create-btn-wrapper safe-area-bottom">
+    <view class="create-btn" bindtap="goToCreate">
+      <text class="create-icon">✨</text>
+      <text class="create-text">去网页创作游戏</text>
+    </view>
+  </view>
+</view>
