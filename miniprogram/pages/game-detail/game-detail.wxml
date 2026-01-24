@@ -1,0 +1,115 @@
+<!--
+  游戏详情页
+-->
+<view class="page-container">
+  <!-- 加载状态 -->
+  <view class="loading-container" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 游戏内容 -->
+  <block wx:if="{{!loading && game}}">
+    <!-- 游戏卡片 -->
+    <view class="game-card">
+      <!-- 游戏图标 -->
+      <view class="game-cover">
+        <text class="game-emoji">🎮</text>
+      </view>
+      
+      <!-- 游戏标题 -->
+      <view class="game-title">{{game.title || '未命名游戏'}}</view>
+      
+      <!-- 游戏描述 -->
+      <view class="game-prompt">{{game.prompt || '暂无描述'}}</view>
+      
+      <!-- 作者信息 -->
+      <view class="author-info" bindtap="viewAuthor">
+        <view class="author-avatar">
+          <text>{{game.author_avatar || '👤'}}</text>
+        </view>
+        <view class="author-name">{{game.author_name || '匿名'}}</view>
+        <view class="author-arrow">›</view>
+      </view>
+      
+      <!-- 统计数据 -->
+      <view class="game-stats">
+        <view class="stat-item">
+          <text class="stat-icon">👁️</text>
+          <text class="stat-value">{{game.plays || 0}}</text>
+          <text class="stat-label">播放</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-icon">❤️</text>
+          <text class="stat-value">{{likeCount}}</text>
+          <text class="stat-label">点赞</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-icon">💬</text>
+          <text class="stat-value">{{game.comments_count || 0}}</text>
+          <text class="stat-label">评论</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-bar">
+      <view class="action-btn {{liked ? 'active' : ''}}" bindtap="handleLike">
+        <text class="action-icon">{{liked ? '❤️' : '🤍'}}</text>
+        <text class="action-text">{{liked ? '已赞' : '点赞'}}</text>
+      </view>
+      <view class="action-btn {{favorited ? 'active' : ''}}" bindtap="handleFavorite">
+        <text class="action-icon">{{favorited ? '⭐' : '☆'}}</text>
+        <text class="action-text">{{favorited ? '已收藏' : '收藏'}}</text>
+      </view>
+      <button class="action-btn share-btn-native" open-type="share">
+        <text class="action-icon">📤</text>
+        <text class="action-text">分享</text>
+      </button>
+    </view>
+
+    <!-- 评论区 -->
+    <view class="comments-section">
+      <view class="section-header">
+        <text class="section-title">评论</text>
+        <text class="section-count">{{comments.length}}条</text>
+      </view>
+      
+      <!-- 评论列表 -->
+      <view class="comments-list" wx:if="{{comments.length > 0}}">
+        <view class="comment-item" wx:for="{{comments}}" wx:key="id">
+          <view class="comment-avatar">
+            <text>{{item.user_avatar || '👤'}}</text>
+          </view>
+          <view class="comment-content">
+            <view class="comment-header">
+              <text class="comment-author">{{item.user_name || '匿名'}}</text>
+              <text class="comment-time">{{item.created_at}}</text>
+            </view>
+            <view class="comment-text">{{item.content}}</view>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 无评论 -->
+      <view class="no-comments" wx:else>
+        <text class="no-comments-icon">💬</text>
+        <text class="no-comments-text">暂无评论，去网页版抢沙发吧！</text>
+      </view>
+    </view>
+
+    <!-- 提示 -->
+    <view class="tip-card">
+      <text class="tip-icon">💡</text>
+      <text class="tip-text">小程序暂不支持直接游玩，请点击下方按钮在浏览器中打开</text>
+    </view>
+  </block>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-bar safe-area-bottom" wx:if="{{!loading && game}}">
+    <view class="play-btn" bindtap="playGame">
+      <text class="play-icon">🎮</text>
+      <text class="play-text">去网页玩游戏</text>
+    </view>
+  </view>
+</view>
