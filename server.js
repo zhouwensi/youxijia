@@ -6498,6 +6498,7 @@ app.get('/api/generate-status/:taskId', (req, res) => {
 });
 
 // 内部生成处理函数（供异步任务调用）
+// 复用原有的 /api/generate 中的完整逻辑
 async function handleGenerateInternal(body, headers, progressCallback) {
   const startTime = Date.now();
   const { prompt, llmConfig, draftId, advancedSettings, turboModel, isTurboSwitch, requestId } = body;
@@ -6515,7 +6516,7 @@ async function handleGenerateInternal(body, headers, progressCallback) {
       return { success: false, error: '游戏生成功能暂时不可用，请稍后再试' };
     }
 
-    progressCallback && progressCallback(25, 'AI正在构思游戏...');
+    progressCallback && progressCallback(20, '正在配置AI模型...');
 
     // 获取默认LLM配置
     const defaultModel = getConfig('llm_default_model', 'deepseek-chat');
@@ -6531,32 +6532,125 @@ async function handleGenerateInternal(body, headers, progressCallback) {
       return 'deepseek';
     };
     
-    // 确定最终使用的模型
-    let finalModel = defaultModel;
-    let finalProvider = getProviderFromModel(defaultModel);
-    let finalBaseUrl = defaultBaseUrl || 'https://api.deepseek.com';
-    let finalApiKey = defaultApiKey;
+    // 判断用户是否提供了自己的API Key
+    const useUserApiKey = llmConfig?.apiKey && llmConfig.apiKey.length > 0;
     
-    // 如果用户提供了自己的配置
-    if (llmConfig?.apiKey) {
+    // ========== 模型选择逻辑 ==========
+    let finalModel, finalProvider, finalBaseUrl;
+    let selectedModelId = null;
+    
+    // 检查前端传来的 modelId
+    const requestedModelId = llmConfig?.provider || null;
+    
+    // 优先从后端 LLM_MODELS 中获取配置
+    if (requestedModelId && LLM_MODELS[requestedModelId]) {
+      const modelConfig = LLM_MODELS[requestedModelId];
+      finalModel = modelConfig.model;
+      finalProvider = modelConfig.provider;
+      finalBaseUrl = modelConfig.baseUrl;
+      selectedModelId = requestedModelId;
+      console.log(`[AsyncGenerate] 使用后端配置的模型: ${modelConfig.name}`);
+    } else if (requestedModelId === 'custom' && useUserApiKey) {
+      // 用户使用自定义接口
+      finalModel = llmConfig?.model || 'deepseek-chat';
+      finalProvider = 'custom';
+      finalBaseUrl = llmConfig?.baseUrl || 'https://api.deepseek.com';
+      selectedModelId = null;
+      console.log('[AsyncGenerate] 使用用户自定义接口配置');
+    } else {
+      // 使用后台配置的默认模型
+      if (defaultModel && LLM_MODELS[defaultModel]) {
+        const modelConfig = LLM_MODELS[defaultModel];
+        finalModel = modelConfig.model;
+        finalProvider = modelConfig.provider;
+        finalBaseUrl = modelConfig.baseUrl;
+        selectedModelId = defaultModel;
+      } else {
+        // 尝试通过 model 名称匹配
+        const matchedId = Object.keys(LLM_MODELS).find(key => LLM_MODELS[key].model === defaultModel);
+        if (matchedId) {
+          const modelConfig = LLM_MODELS[matchedId];
+          finalModel = modelConfig.model;
+          finalProvider = modelConfig.provider;
+          finalBaseUrl = modelConfig.baseUrl;
+          selectedModelId = matchedId;
+        } else {
+          // 回退：使用 deepseek-v3
+          const fallbackConfig = LLM_MODELS['deepseek-v3'];
+          if (fallbackConfig) {
+            finalModel = fallbackConfig.model;
+            finalProvider = fallbackConfig.provider;
+            finalBaseUrl = fallbackConfig.baseUrl;
+            selectedModelId = 'deepseek-v3';
+          } else {
+            finalModel = 'deepseek-chat';
+            finalProvider = 'deepseek';
+            finalBaseUrl = 'https://api.deepseek.com';
+          }
+        }
+      }
+      console.log(`[AsyncGenerate] 使用默认模型: ${selectedModelId || finalModel}`);
+    }
+
+    // ========== API Key 获取逻辑 ==========
+    // 获取模型特定的API Key配置
+    const getModelApiKey = (modelId) => {
+      if (!modelId) return null;
+      const apiKeyKey = `llm_apikey_${modelId}`;
+      const configuredKey = getConfig(apiKeyKey, null);
+      if (configuredKey && configuredKey.length > 0) {
+        return configuredKey;
+      }
+      return null;
+    };
+    
+    // API Key优先级：用户Key > 模型专属Key > 默认Key > 环境变量
+    let finalApiKey = null;
+    let keySource = '';
+    
+    if (useUserApiKey && llmConfig.apiKey) {
       finalApiKey = llmConfig.apiKey;
+      keySource = 'user';
+      console.log('[AsyncGenerate] 使用用户自己配置的API Key');
+    } else {
+      const modelSpecificKey = getModelApiKey(selectedModelId);
+      if (modelSpecificKey) {
+        finalApiKey = modelSpecificKey;
+        keySource = 'model_specific';
+        console.log(`[AsyncGenerate] 使用模型 ${selectedModelId} 的专属API Key`);
+      } else if (defaultApiKey) {
+        finalApiKey = defaultApiKey;
+        keySource = 'default';
+        console.log('[AsyncGenerate] 使用后台默认API Key');
+      } else if (process.env.DEEPSEEK_API_KEY) {
+        finalApiKey = process.env.DEEPSEEK_API_KEY;
+        keySource = 'env';
+        console.log('[AsyncGenerate] 使用环境变量API Key');
+      }
     }
-    if (llmConfig?.model) {
-      finalModel = llmConfig.model;
-      finalProvider = getProviderFromModel(llmConfig.model);
-    }
-    if (llmConfig?.baseUrl) {
-      finalBaseUrl = llmConfig.baseUrl;
-    }
+    
+    // 调试信息
+    const keyPreview = finalApiKey ? 
+      `${finalApiKey.substring(0, 8)}...${finalApiKey.substring(finalApiKey.length - 4)}` : 
+      '未设置';
+    console.log('[AsyncGenerate] LLM配置:', { 
+      provider: finalProvider, 
+      baseUrl: finalBaseUrl, 
+      model: finalModel,
+      apiKeyPreview: keyPreview,
+      keySource: keySource
+    });
     
     if (!finalApiKey) {
-      return { success: false, error: 'API Key未配置' };
+      return { success: false, error: 'API Key未配置，请在后台设置或使用自己的Key' };
     }
 
-    progressCallback && progressCallback(40, '正在编写游戏代码...');
+    progressCallback && progressCallback(30, 'AI正在构思游戏...');
 
-    // 构建 System Prompt
-    const systemPrompt = `你是一个专业的HTML5游戏开发专家。用户会给你一个游戏创意描述，你需要生成一个完整的、可以直接运行的HTML5单文件游戏。
+    // 获取系统提示词
+    let systemPrompt = getConfig('llm_system_prompt', '');
+    if (!systemPrompt) {
+      systemPrompt = `你是一个专业的HTML5游戏开发专家。用户会给你一个游戏创意描述，你需要生成一个完整的、可以直接运行的HTML5单文件游戏。
 
 要求：
 1. 生成的代码必须是完整的HTML文件，包含所有必需的HTML、CSS和JavaScript
@@ -6566,6 +6660,9 @@ async function handleGenerateInternal(body, headers, progressCallback) {
 5. 游戏界面要美观、有良好的用户体验
 6. 代码要简洁高效
 7. 只输出HTML代码，不要有任何解释或markdown标记`;
+    }
+
+    progressCallback && progressCallback(40, '正在编写游戏代码...');
 
     // 调用 LLM API
     const response = await fetch(`${finalBaseUrl}/v1/chat/completions`, {
