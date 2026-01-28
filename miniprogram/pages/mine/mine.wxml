@@ -1,5 +1,5 @@
 <!--
-  我的页面
+  我的页面 - 增强版
 -->
 <view class="page-container">
   <!-- 用户信息卡片 -->
@@ -13,66 +13,118 @@
         <text class="login-title">登录体验更多功能</text>
         <text class="login-desc">登录后可同步数据、保存游戏</text>
       </view>
-      <button class="login-btn btn btn-primary" bindtap="handleLogin">
+      <button class="login-btn" bindtap="handleLogin">
         微信登录
       </button>
     </view>
     
     <!-- 已登录状态 -->
     <view class="user-info" wx:else>
-      <view class="avatar">
-        <text>{{userInfo.avatar_emoji || '🎮'}}</text>
+      <view class="user-top">
+        <view class="avatar">
+          <text>{{userInfo.avatar_emoji || '🎮'}}</text>
+        </view>
+        <view class="user-details">
+          <view class="nickname">{{userInfo.nickname || userInfo.account_id || '游戏玩家'}}</view>
+          <view class="account-id">ID: {{userInfo.account_id || '-'}}</view>
+        </view>
+        <view class="settings-btn" bindtap="goToSettings">
+          <text>⚙️</text>
+        </view>
       </view>
-      <view class="user-details">
-        <view class="nickname">{{userInfo.nickname || userInfo.account_id || '游戏玩家'}}</view>
-        <view class="account-id">ID: {{userInfo.account_id || '-'}}</view>
-      </view>
-      <view class="share-btn" bindtap="onShareAppMessage">
-        <text>📤</text>
+      
+      <!-- 关注/粉丝/积分统计 -->
+      <view class="user-stats">
+        <view class="stat-item" bindtap="showFollowing">
+          <text class="stat-value">{{stats.following}}</text>
+          <text class="stat-label">关注</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item" bindtap="showFollowers">
+          <text class="stat-value">{{stats.followers}}</text>
+          <text class="stat-label">粉丝</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item" bindtap="showCreditsInfo">
+          <text class="stat-value">{{stats.credits}}</text>
+          <text class="stat-label">积分</text>
+        </view>
       </view>
     </view>
   </view>
 
-  <!-- 统计数据 -->
-  <view class="stats-card" wx:if="{{isLoggedIn}}">
-    <view class="stats-item">
-      <text class="stats-value">{{stats.games}}</text>
-      <text class="stats-label">创作</text>
-    </view>
-    <view class="stats-divider"></view>
-    <view class="stats-item">
-      <text class="stats-value">{{stats.credits}}</text>
-      <text class="stats-label">积分</text>
-    </view>
-    <view class="stats-divider"></view>
-    <view class="stats-item">
-      <text class="stats-value">{{stats.favorites}}</text>
-      <text class="stats-label">收藏</text>
-    </view>
-  </view>
-
-  <!-- 功能菜单 -->
-  <view class="menu-card">
+  <!-- Tab切换 -->
+  <view class="tab-bar" wx:if="{{isLoggedIn}}">
     <view 
-      class="menu-item" 
-      wx:for="{{menuList}}" 
+      class="tab-item {{currentTab === item.id ? 'active' : ''}}"
+      wx:for="{{tabs}}"
       wx:key="id"
-      data-id="{{item.id}}"
-      bindtap="handleMenuClick"
+      data-tab="{{item.id}}"
+      bindtap="switchTab"
     >
-      <view class="menu-left">
-        <text class="menu-icon">{{item.icon}}</text>
-        <text class="menu-name">{{item.name}}</text>
-      </view>
-      <view class="menu-right">
-        <text class="menu-badge" wx:if="{{item.badge > 0}}">{{item.badge}}</text>
-        <text class="menu-arrow">›</text>
-      </view>
+      <text class="tab-icon">{{item.icon}}</text>
+      <text class="tab-name">{{item.name}}</text>
     </view>
   </view>
 
-  <!-- 更多功能 -->
-  <view class="menu-card">
+  <!-- 列表内容 -->
+  <scroll-view 
+    class="list-container"
+    scroll-y
+    wx:if="{{isLoggedIn}}"
+    bindscrolltolower="onReachBottom"
+  >
+    <!-- 游戏列表 -->
+    <view class="game-list">
+      <view 
+        class="game-item" 
+        wx:for="{{listData}}" 
+        wx:key="id"
+        data-game="{{item}}"
+        bindtap="goToGameDetail"
+      >
+        <view class="game-cover">
+          <text class="game-emoji">🎮</text>
+        </view>
+        <view class="game-info">
+          <view class="game-title ellipsis">{{item.title || '未命名游戏'}}</view>
+          <view class="game-desc ellipsis">{{item.prompt || '暂无描述'}}</view>
+          <view class="game-meta">
+            <text class="meta-item">❤️ {{item.likes || 0}}</text>
+            <text class="meta-item">👁️ {{item.plays || 0}}</text>
+          </view>
+        </view>
+        <view class="game-arrow">›</view>
+      </view>
+    </view>
+
+    <!-- 加载状态 -->
+    <view class="loading-more" wx:if="{{loading}}">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <!-- 没有更多 -->
+    <view class="no-more" wx:if="{{!hasMore && listData.length > 0}}">
+      <text>— 已经到底啦 —</text>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{!loading && listData.length === 0}}">
+      <text class="empty-icon" wx:if="{{currentTab === 'games'}}">🎮</text>
+      <text class="empty-icon" wx:elif="{{currentTab === 'likes'}}">❤️</text>
+      <text class="empty-icon" wx:else>⭐</text>
+      <text class="empty-text" wx:if="{{currentTab === 'games'}}">还没有创作游戏哦</text>
+      <text class="empty-text" wx:elif="{{currentTab === 'likes'}}">还没有点赞游戏</text>
+      <text class="empty-text" wx:else>还没有收藏游戏</text>
+      <view class="empty-btn" bindtap="goToCreate" wx:if="{{currentTab === 'games'}}">
+        <text>✨ 去创作</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 更多功能菜单 -->
+  <view class="menu-card" wx:if="{{isLoggedIn}}">
     <view class="menu-item" bindtap="goToWeb">
       <view class="menu-left">
         <text class="menu-icon">🌐</text>
@@ -94,17 +146,60 @@
     </view>
   </view>
 
-  <!-- 底部提示 -->
-  <view class="footer-tip">
-    <text>更多功能请使用网页版</text>
-    <text class="website">www.yijuhuayouxi.com</text>
-  </view>
+  <!-- 底部安全区 -->
+  <view class="safe-area-bottom"></view>
 
-  <!-- 创作按钮 -->
-  <view class="create-btn-wrapper safe-area-bottom">
-    <view class="create-btn" bindtap="goToCreate">
-      <text class="create-icon">✨</text>
-      <text class="create-text">去网页创作游戏</text>
+  <!-- 关注/粉丝弹窗 -->
+  <view class="modal-mask" wx:if="{{showFollowModal}}" bindtap="closeFollowModal">
+    <view class="modal-content" catchtap="preventClose">
+      <view class="modal-header">
+        <view class="modal-tabs">
+          <view 
+            class="modal-tab {{followModalTab === 'following' ? 'active' : ''}}"
+            data-tab="following"
+            bindtap="switchFollowTab"
+          >关注 {{stats.following}}</view>
+          <view 
+            class="modal-tab {{followModalTab === 'followers' ? 'active' : ''}}"
+            data-tab="followers"
+            bindtap="switchFollowTab"
+          >粉丝 {{stats.followers}}</view>
+        </view>
+        <view class="modal-close" bindtap="closeFollowModal">×</view>
+      </view>
+      
+      <scroll-view class="modal-body" scroll-y>
+        <!-- 用户列表 -->
+        <view 
+          class="follow-item"
+          wx:for="{{followList}}"
+          wx:key="token"
+          data-user="{{item}}"
+          bindtap="goToUserProfile"
+        >
+          <view class="follow-avatar">
+            <text>{{item.avatar_emoji || '🎮'}}</text>
+          </view>
+          <view class="follow-info">
+            <view class="follow-name">{{item.nickname || '游戏家用户'}}</view>
+            <view class="follow-meta">🎮 {{item.games_count || 0}} 作品</view>
+          </view>
+          <view class="follow-arrow">›</view>
+        </view>
+
+        <!-- 加载状态 -->
+        <view class="loading-more" wx:if="{{loadingFollow}}">
+          <view class="loading-spinner"></view>
+          <text class="loading-text">加载中...</text>
+        </view>
+
+        <!-- 空状态 -->
+        <view class="modal-empty" wx:if="{{!loadingFollow && followList.length === 0}}">
+          <text class="empty-icon">👥</text>
+          <text class="empty-text" wx:if="{{followModalTab === 'following'}}">还没有关注任何人</text>
+          <text class="empty-text" wx:else>还没有粉丝</text>
+        </view>
+      </scroll-view>
     </view>
   </view>
 </view>

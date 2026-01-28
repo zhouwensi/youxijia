@@ -1,8 +1,12 @@
 {
   "pages": [
-    "pages/index/index",
+    "pages/create/create",
+    "pages/rank/rank",
     "pages/mine/mine",
-    "pages/game-detail/game-detail"
+    "pages/game-detail/game-detail",
+    "pages/index/index",
+    "pages/user/user",
+    "pages/search/search"
   ],
   "window": {
     "navigationBarBackgroundColor": "#1a1a2e",
@@ -18,10 +22,16 @@
     "borderStyle": "black",
     "list": [
       {
-        "pagePath": "pages/index/index",
-        "text": "首页",
-        "iconPath": "assets/icons/home.png",
-        "selectedIconPath": "assets/icons/home-active.png"
+        "pagePath": "pages/create/create",
+        "text": "创作",
+        "iconPath": "assets/icons/create.png",
+        "selectedIconPath": "assets/icons/create-active.png"
+      },
+      {
+        "pagePath": "pages/rank/rank",
+        "text": "排行",
+        "iconPath": "assets/icons/rank.png",
+        "selectedIconPath": "assets/icons/rank-active.png"
       },
       {
         "pagePath": "pages/mine/mine",

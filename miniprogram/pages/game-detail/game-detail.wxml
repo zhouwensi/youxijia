@@ -1,5 +1,5 @@
 <!--
-  游戏详情页
+  游戏详情页 - 增强版
 -->
 <view class="page-container">
   <!-- 加载状态 -->
@@ -9,7 +9,7 @@
   </view>
 
   <!-- 游戏内容 -->
-  <block wx:if="{{!loading && game}}">
+  <scroll-view class="main-scroll" scroll-y wx:if="{{!loading && game}}">
     <!-- 游戏卡片 -->
     <view class="game-card">
       <!-- 游戏图标 -->
@@ -23,19 +23,10 @@
       <!-- 游戏描述 -->
       <view class="game-prompt">{{game.prompt || '暂无描述'}}</view>
       
-      <!-- 作者信息 -->
-      <view class="author-info" bindtap="viewAuthor">
-        <view class="author-avatar">
-          <text>{{game.author_avatar || '👤'}}</text>
-        </view>
-        <view class="author-name">{{game.author_name || '匿名'}}</view>
-        <view class="author-arrow">›</view>
-      </view>
-      
       <!-- 统计数据 -->
       <view class="game-stats">
         <view class="stat-item">
-          <text class="stat-icon">👁️</text>
+          <text class="stat-icon">�️</text>
           <text class="stat-value">{{game.plays || 0}}</text>
           <text class="stat-label">播放</text>
         </view>
@@ -49,6 +40,26 @@
           <text class="stat-value">{{game.comments_count || 0}}</text>
           <text class="stat-label">评论</text>
         </view>
+      </view>
+    </view>
+
+    <!-- 作者信息卡片 -->
+    <view class="author-card">
+      <view class="author-left" bindtap="viewAuthor">
+        <view class="author-avatar">
+          <text>{{game.author_avatar || '�'}}</text>
+        </view>
+        <view class="author-info">
+          <view class="author-name">{{game.author_name || '匿名'}}</view>
+          <view class="author-meta">🎮 {{game.author_games_count || 0}} 作品</view>
+        </view>
+      </view>
+      <view 
+        class="follow-btn {{authorFollowed ? 'followed' : ''}} {{followingAuthor ? 'loading' : ''}}"
+        bindtap="handleFollowAuthor"
+      >
+        <text wx:if="{{authorFollowed}}">✓ 已关注</text>
+        <text wx:else>+ 关注</text>
       </view>
     </view>
 
@@ -71,7 +82,7 @@
     <!-- 评论区 -->
     <view class="comments-section">
       <view class="section-header">
-        <text class="section-title">评论</text>
+        <text class="section-title">💬 评论</text>
         <text class="section-count">{{comments.length}}条</text>
       </view>
       
@@ -103,10 +114,13 @@
       <text class="tip-icon">💡</text>
       <text class="tip-text">小程序暂不支持直接游玩，请点击下方按钮在浏览器中打开</text>
     </view>
-  </block>
+
+    <!-- 底部安全区占位 -->
+    <view class="bottom-placeholder"></view>
+  </scroll-view>
 
   <!-- 底部操作栏 -->
-  <view class="bottom-bar safe-area-bottom" wx:if="{{!loading && game}}">
+  <view class="bottom-bar" wx:if="{{!loading && game}}">
     <view class="play-btn" bindtap="playGame">
       <text class="play-icon">🎮</text>
       <text class="play-text">去网页玩游戏</text>

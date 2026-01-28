@@ -1,5 +1,5 @@
 /**
- * 游戏详情页
+ * 游戏详情页 - 增强版
  */
 const app = getApp();
 
@@ -13,6 +13,10 @@ Page({
     liked: false,
     favorited: false,
     likeCount: 0,
+    
+    // 作者关注状态
+    authorFollowed: false,
+    followingAuthor: false,
     
     // 评论
     comments: [],
@@ -49,8 +53,8 @@ Page({
           title: result.game.title || '游戏详情'
         });
 
-        // 加载点赞状态
-        this.loadLikeStatus(id);
+        // 并行加载状态
+        this.loadInteractionStatus(id, result.game.author_token);
         
         // 加载评论
         this.loadComments(id);
@@ -71,15 +75,35 @@ Page({
     }
   },
 
-  // 加载点赞状态
-  async loadLikeStatus(id) {
+  // 并行加载交互状态
+  async loadInteractionStatus(gameId, authorToken) {
     try {
-      const result = await app.request(`/api/games/${id}/like-status`);
-      if (result.success) {
-        this.setData({ liked: result.liked });
+      const requests = [
+        app.request(`/api/games/${gameId}/like-status`),
+        app.request(`/api/games/${gameId}/favorite-status`)
+      ];
+
+      // 如果有作者token，加载关注状态
+      if (authorToken) {
+        requests.push(app.request(`/api/users/${authorToken}/follow-status`));
       }
+
+      const [likeResult, favoriteResult, followResult] = await Promise.all(requests);
+
+      const updates = {};
+      if (likeResult?.success) {
+        updates.liked = likeResult.liked;
+      }
+      if (favoriteResult?.success) {
+        updates.favorited = favoriteResult.favorited;
+      }
+      if (followResult?.success) {
+        updates.authorFollowed = followResult.followed;
+      }
+
+      this.setData(updates);
     } catch (err) {
-      console.error('加载点赞状态失败:', err);
+      console.error('加载交互状态失败:', err);
     }
   },
 
@@ -190,6 +214,47 @@ Page({
     }
   },
 
+  // 关注作者
+  async handleFollowAuthor() {
+    if (!app.globalData.isLoggedIn) {
+      app.showToast('请先登录');
+      return;
+    }
+
+    const game = this.data.game;
+    if (!game || !game.author_token) {
+      app.showToast('作者信息不可用');
+      return;
+    }
+
+    // 防止重复点击
+    if (this.data.followingAuthor) return;
+    this.setData({ followingAuthor: true });
+
+    const currentFollowed = this.data.authorFollowed;
+    
+    // 乐观更新
+    this.setData({ authorFollowed: !currentFollowed });
+
+    try {
+      const result = await app.request(`/api/users/${game.author_token}/follow`, {
+        method: 'POST'
+      });
+      
+      if (result.success) {
+        app.showToast(currentFollowed ? '已取消关注' : '关注成功', 'success');
+      } else {
+        this.setData({ authorFollowed: currentFollowed });
+        app.showToast(result.error || '操作失败');
+      }
+    } catch (err) {
+      this.setData({ authorFollowed: currentFollowed });
+      app.showToast('网络错误');
+    } finally {
+      this.setData({ followingAuthor: false });
+    }
+  },
+
   // 分享
   onShareAppMessage() {
     const game = this.data.game;
@@ -200,7 +265,7 @@ Page({
     };
   },
 
-  // 查看作者
+  // 查看作者主页
   viewAuthor() {
     const game = this.data.game;
     if (!game || !game.author_token) {
@@ -208,11 +273,9 @@ Page({
       return;
     }
     
-    // 跳转到网页查看作者
-    app.copyAndOpenWeb(
-      `${app.globalData.config.webUrl}#user/${game.author_token}`,
-      '请在浏览器中查看作者主页'
-    );
+    wx.navigateTo({
+      url: `/pages/user/user?token=${game.author_token}`
+    });
   },
 
   // 格式化时间

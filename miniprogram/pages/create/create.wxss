@@ -1,0 +1,648 @@
+/**
+ * 创作页面 - 首页样式
+ */
+
+.page-container {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+/* 顶部标题栏 */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx 32rpx;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.logo-icon {
+  font-size: 40rpx;
+}
+
+.logo-text {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #fff;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.search-btn {
+  padding: 16rpx;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+.search-icon {
+  font-size: 32rpx;
+}
+
+/* 主滚动区 */
+.main-scroll {
+  flex: 1;
+  height: calc(100vh - 100rpx);
+}
+
+/* 创作区域 */
+.create-section {
+  padding: 24rpx 32rpx;
+}
+
+.create-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 24rpx;
+  padding: 32rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+}
+
+.create-title {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 24rpx;
+}
+
+.title-icon {
+  font-size: 36rpx;
+}
+
+.title-text {
+  font-size: 34rpx;
+  font-weight: bold;
+  color: #fff;
+}
+
+/* 输入框 */
+.input-wrapper {
+  position: relative;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.prompt-input {
+  width: 100%;
+  min-height: 120rpx;
+  font-size: 30rpx;
+  color: #fff;
+  line-height: 1.6;
+}
+
+.placeholder {
+  color: #666;
+}
+
+.char-count {
+  position: absolute;
+  right: 24rpx;
+  bottom: 16rpx;
+  font-size: 22rpx;
+  color: #666;
+}
+
+.clear-btn {
+  position: absolute;
+  right: 24rpx;
+  top: 24rpx;
+  width: 40rpx;
+  height: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  color: #666;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+/* 高级设置切换 */
+.advanced-toggle {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  margin-bottom: 16rpx;
+  gap: 12rpx;
+}
+
+.toggle-icon {
+  font-size: 28rpx;
+}
+
+.toggle-text {
+  flex: 1;
+  font-size: 28rpx;
+  color: #aaa;
+}
+
+.toggle-arrow {
+  font-size: 28rpx;
+  color: #666;
+  transform: rotate(0deg);
+  transition: transform 0.3s;
+}
+
+.toggle-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+/* 高级设置面板 */
+.advanced-panel {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.05);
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+}
+
+.setting-label {
+  font-size: 28rpx;
+  color: #aaa;
+}
+
+.setting-input {
+  flex: 1;
+  text-align: right;
+  font-size: 28rpx;
+  color: #fff;
+  background: transparent;
+}
+
+.setting-picker {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 28rpx;
+  color: #fff;
+}
+
+.picker-arrow {
+  color: #666;
+  font-size: 24rpx;
+}
+
+/* LLM设置 */
+.llm-section {
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid rgba(255, 255, 255, 0.05);
+}
+
+.llm-header {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 0;
+  gap: 12rpx;
+}
+
+.llm-icon {
+  font-size: 28rpx;
+}
+
+.llm-title {
+  flex: 1;
+  font-size: 28rpx;
+  color: #aaa;
+}
+
+.llm-arrow {
+  font-size: 24rpx;
+  color: #666;
+  transform: rotate(0deg);
+  transition: transform 0.3s;
+}
+
+.llm-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+.llm-content {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12rpx;
+  padding: 16rpx;
+  margin-top: 12rpx;
+}
+
+.llm-content .setting-item {
+  padding: 16rpx 0;
+}
+
+.llm-content .setting-label {
+  font-size: 26rpx;
+}
+
+.llm-content .setting-input {
+  font-size: 26rpx;
+}
+
+/* 重置按钮 */
+.reset-btn {
+  margin-top: 20rpx;
+  padding: 16rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: #8b8b8b;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12rpx;
+}
+
+/* 生成按钮 */
+.generate-btn {
+  width: 100%;
+  height: 96rpx;
+  line-height: 96rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+  border-radius: 48rpx;
+  border: none;
+  margin-top: 24rpx;
+}
+
+.generate-btn.disabled {
+  opacity: 0.6;
+}
+
+.generate-btn::after {
+  border: none;
+}
+
+/* 生成进度 */
+.progress-section {
+  margin-top: 24rpx;
+}
+
+.progress-container {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16rpx;
+  padding: 24rpx;
+}
+
+.progress-bar {
+  height: 12rpx;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6rpx;
+  overflow: hidden;
+  margin-bottom: 16rpx;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00d4ff 0%, #7b2cbf 100%);
+  border-radius: 6rpx;
+  transition: width 0.3s;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.progress-text {
+  font-size: 26rpx;
+  color: #aaa;
+}
+
+.progress-percent {
+  font-size: 26rpx;
+  color: #00d4ff;
+  font-weight: bold;
+}
+
+/* 灵感推荐 */
+.inspiration-section {
+  margin-top: 32rpx;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 20rpx;
+}
+
+.inspiration-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.inspiration-tag {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 16rpx 24rpx;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 32rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+}
+
+.inspiration-tag:active {
+  background: rgba(0, 212, 255, 0.2);
+  border-color: rgba(0, 212, 255, 0.5);
+}
+
+.tag-icon {
+  font-size: 28rpx;
+}
+
+.tag-text {
+  font-size: 26rpx;
+  color: #fff;
+}
+
+/* 生成结果 */
+.result-section {
+  padding: 24rpx 32rpx;
+}
+
+.success-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 24rpx;
+  padding: 40rpx 32rpx;
+  text-align: center;
+}
+
+.success-icon {
+  font-size: 80rpx;
+  margin-bottom: 16rpx;
+}
+
+.success-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 32rpx;
+}
+
+.success-card .game-card {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 32rpx;
+  text-align: left;
+}
+
+.success-card .game-emoji {
+  font-size: 48rpx;
+  margin-right: 20rpx;
+}
+
+.success-card .game-info {
+  flex: 1;
+}
+
+.success-card .game-title {
+  font-size: 32rpx;
+  color: #fff;
+  font-weight: bold;
+  margin-bottom: 8rpx;
+}
+
+.success-card .game-prompt {
+  font-size: 26rpx;
+  color: #8b8b8b;
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-bottom: 32rpx;
+}
+
+.action-btn {
+  flex: 1;
+  min-width: 45%;
+  height: 80rpx;
+  line-height: 80rpx;
+  font-size: 28rpx;
+  border-radius: 40rpx;
+  border: none;
+}
+
+.action-btn::after {
+  border: none;
+}
+
+.action-btn.primary {
+  background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+  color: #fff;
+}
+
+.action-btn.secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.action-btn.outline {
+  background: transparent;
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
+  color: #aaa;
+}
+
+.game-url-section {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 16rpx;
+  padding: 24rpx;
+}
+
+.url-label {
+  font-size: 24rpx;
+  color: #8b8b8b;
+  margin-bottom: 12rpx;
+  text-align: left;
+}
+
+.url-box {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12rpx;
+  padding: 16rpx;
+}
+
+.url-text {
+  flex: 1;
+  font-size: 24rpx;
+  color: #00d4ff;
+  word-break: break-all;
+}
+
+.copy-icon {
+  font-size: 28rpx;
+  margin-left: 16rpx;
+}
+
+.url-tip {
+  font-size: 22rpx;
+  color: #666;
+  margin-top: 12rpx;
+  text-align: left;
+}
+
+/* 最新创作列表 */
+.recent-section {
+  padding: 24rpx 32rpx;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.game-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.game-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16rpx;
+  transition: transform 0.2s;
+}
+
+.game-item:active {
+  transform: scale(0.98);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.game-cover {
+  width: 80rpx;
+  height: 80rpx;
+  background: linear-gradient(135deg, #1a1a2e 0%, #2a2a4e 100%);
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20rpx;
+}
+
+.game-cover .game-emoji {
+  font-size: 40rpx;
+}
+
+.game-item .game-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.game-name {
+  font-size: 30rpx;
+  color: #fff;
+  font-weight: 500;
+  margin-bottom: 8rpx;
+}
+
+.game-desc {
+  font-size: 24rpx;
+  color: #8b8b8b;
+  margin-bottom: 8rpx;
+}
+
+.game-meta {
+  display: flex;
+  gap: 24rpx;
+  font-size: 22rpx;
+  color: #666;
+}
+
+.game-arrow {
+  font-size: 40rpx;
+  color: #666;
+  margin-left: 16rpx;
+}
+
+/* 文本省略 */
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 加载状态 */
+.loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx;
+  gap: 16rpx;
+}
+
+.loading-spinner {
+  width: 32rpx;
+  height: 32rpx;
+  border: 3rpx solid rgba(0, 212, 255, 0.3);
+  border-top-color: #00d4ff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 26rpx;
+  color: #8b8b8b;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 32rpx;
+}
+
+.empty-icon {
+  font-size: 64rpx;
+  margin-bottom: 16rpx;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #8b8b8b;
+}
+
+/* 底部安全区 */
+.safe-area-bottom {
+  height: calc(env(safe-area-inset-bottom) + 120rpx);
+}

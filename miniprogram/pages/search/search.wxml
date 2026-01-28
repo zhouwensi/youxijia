@@ -1,0 +1,112 @@
+<!--
+  搜索页面
+-->
+<view class="page-container">
+  <!-- 搜索框 -->
+  <view class="search-bar">
+    <view class="search-input-wrapper">
+      <text class="search-icon">🔍</text>
+      <input 
+        class="search-input"
+        type="text"
+        placeholder="搜索游戏或用户"
+        value="{{keyword}}"
+        bindinput="onKeywordInput"
+        bindconfirm="doSearch"
+        confirm-type="search"
+      />
+      <text class="clear-icon" wx:if="{{keyword}}" bindtap="clearSearch">×</text>
+    </view>
+    <view class="search-btn" bindtap="doSearch">搜索</view>
+  </view>
+
+  <!-- 类型切换 -->
+  <view class="type-tabs" wx:if="{{showResult}}">
+    <view 
+      class="type-tab {{searchType === 'games' ? 'active' : ''}}"
+      data-type="games"
+      bindtap="switchType"
+    >🎮 游戏</view>
+    <view 
+      class="type-tab {{searchType === 'users' ? 'active' : ''}}"
+      data-type="users"
+      bindtap="switchType"
+    >👤 用户</view>
+  </view>
+
+  <!-- 搜索结果 -->
+  <scroll-view 
+    class="result-list"
+    scroll-y
+    wx:if="{{showResult}}"
+    bindscrolltolower="onReachBottom"
+  >
+    <!-- 游戏结果 -->
+    <block wx:if="{{searchType === 'games'}}">
+      <view 
+        class="result-item game-item"
+        wx:for="{{results}}"
+        wx:key="id"
+        data-game="{{item}}"
+        bindtap="goToGameDetail"
+      >
+        <view class="game-cover">
+          <text class="game-emoji">🎮</text>
+        </view>
+        <view class="game-info">
+          <view class="game-title ellipsis">{{item.title || '未命名游戏'}}</view>
+          <view class="game-author">by {{item.author_name || '匿名'}}</view>
+          <view class="game-stats">
+            <text>❤️ {{item.likes || 0}}</text>
+            <text>👁️ {{item.plays || 0}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!-- 用户结果 -->
+    <block wx:if="{{searchType === 'users'}}">
+      <view 
+        class="result-item user-item"
+        wx:for="{{results}}"
+        wx:key="token"
+        data-user="{{item}}"
+        bindtap="goToUserProfile"
+      >
+        <view class="user-avatar">
+          <text>{{item.avatar_emoji || '🎮'}}</text>
+        </view>
+        <view class="user-info">
+          <view class="user-name ellipsis">{{item.nickname || '游戏家用户'}}</view>
+          <view class="user-stats">
+            <text>🎮 {{item.games_count || 0}} 作品</text>
+            <text>👥 {{item.followers_count || 0}} 粉丝</text>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!-- 加载状态 -->
+    <view class="loading-more" wx:if="{{loading}}">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">搜索中...</text>
+    </view>
+
+    <!-- 没有更多 -->
+    <view class="no-more" wx:if="{{!hasMore && results.length > 0}}">
+      <text>— 没有更多了 —</text>
+    </view>
+
+    <!-- 空结果 -->
+    <view class="empty" wx:if="{{!loading && results.length === 0}}">
+      <text class="empty-icon">🔍</text>
+      <text class="empty-text">未找到相关结果</text>
+    </view>
+  </scroll-view>
+
+  <!-- 默认状态 -->
+  <view class="default-state" wx:if="{{!showResult}}">
+    <text class="default-icon">🔍</text>
+    <text class="default-text">搜索游戏或用户</text>
+  </view>
+</view>

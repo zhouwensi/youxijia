@@ -1,0 +1,101 @@
+<!--
+  用户主页
+-->
+<view class="page-container">
+  <!-- 用户信息卡片 -->
+  <view class="user-card" wx:if="{{userInfo}}">
+    <!-- 头像 -->
+    <view class="user-avatar">
+      <text>{{userInfo.avatar_emoji || '🎮'}}</text>
+    </view>
+    
+    <!-- 用户名 -->
+    <view class="user-name">{{userInfo.nickname || '游戏家用户'}}</view>
+    <view class="user-id">ID: {{userInfo.account_id || userToken}}</view>
+    
+    <!-- 简介 -->
+    <view class="user-bio" wx:if="{{userInfo.bio}}">{{userInfo.bio}}</view>
+    
+    <!-- 统计数据 -->
+    <view class="user-stats">
+      <view class="stat-item" bindtap="showFollowing">
+        <text class="stat-value">{{stats.following}}</text>
+        <text class="stat-label">关注</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item" bindtap="showFollowers">
+        <text class="stat-value">{{stats.followers}}</text>
+        <text class="stat-label">粉丝</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <text class="stat-value">{{stats.games}}</text>
+        <text class="stat-label">作品</text>
+      </view>
+    </view>
+    
+    <!-- 关注按钮 -->
+    <view class="action-area" wx:if="{{!isSelf}}">
+      <button 
+        class="follow-btn {{isFollowing ? 'following' : ''}}"
+        bindtap="toggleFollow"
+      >
+        {{isFollowing ? '已关注' : '+ 关注'}}
+      </button>
+    </view>
+  </view>
+
+  <!-- 作品列表 -->
+  <view class="section-header">
+    <text class="section-title">📋 TA的作品</text>
+    <text class="section-count">共 {{stats.games}} 个</text>
+  </view>
+
+  <scroll-view 
+    class="games-list"
+    scroll-y
+    bindscrolltolower="onReachBottom"
+  >
+    <view 
+      class="game-card"
+      wx:for="{{games}}"
+      wx:key="id"
+      data-game="{{item}}"
+      bindtap="goToGameDetail"
+    >
+      <!-- 游戏封面 -->
+      <view class="game-cover">
+        <text class="game-emoji">🎮</text>
+      </view>
+      
+      <!-- 游戏信息 -->
+      <view class="game-info">
+        <view class="game-title ellipsis">{{item.title || '未命名游戏'}}</view>
+        <view class="game-desc ellipsis">{{item.prompt || '暂无描述'}}</view>
+        <view class="game-meta">
+          <text class="meta-item">❤️ {{item.likes || 0}}</text>
+          <text class="meta-item">👁️ {{item.plays || 0}}</text>
+        </view>
+      </view>
+      
+      <view class="game-arrow">›</view>
+    </view>
+
+    <!-- 加载状态 -->
+    <view class="loading-more" wx:if="{{loading}}">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <!-- 没有更多 -->
+    <view class="no-more" wx:if="{{!hasMore && games.length > 0}}">
+      <text>— 已经到底啦 —</text>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty" wx:if="{{!loading && games.length === 0}}">
+      <text class="empty-icon">📝</text>
+      <text class="empty-text">暂无作品</text>
+    </view>
+  </scroll-view>
+</view>

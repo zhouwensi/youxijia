@@ -3144,10 +3144,21 @@ const LLM_MODELS = {
   'gemini-2.0-flash': { name: 'Gemini 2.0 Flash', provider: 'openrouter', model: 'google/gemini-2.0-flash-001', baseUrl: 'https://openrouter.ai/api', tier: 'standard', creditCost: 1, speed: 'very-fast', quality: 'high', maxTokens: 8192 },
   
   // 国产模型
-  // GLM-4 系列最大输出 4096 tokens
-  'glm-4.7': { name: 'GLM 4.7', provider: 'zhipu', model: 'glm-4.7', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'high', maxTokens: 4096, new: true },
-  'glm-4.6': { name: 'GLM 4.6', provider: 'zhipu', model: 'glm-4.6', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'medium', maxTokens: 4096 },
-  'glm-4.5': { name: 'GLM 4.5', provider: 'zhipu', model: 'glm-4.5', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'medium', maxTokens: 4096 },
+  // GLM-4 系列（智谱AI使用 /v4 版本的API）- 根据官方文档 https://docs.bigmodel.cn
+  // GLM-4.7: 高智能旗舰，上下文200K，最大输出128K
+  'glm-4.7': { name: 'GLM-4.7 (旗舰)', provider: 'zhipu', model: 'glm-4.7', baseUrl: 'https://open.bigmodel.cn/api/paas', tier: 'standard', creditCost: 2, speed: 'medium', quality: 'high', maxTokens: 128000, new: true },
+  // GLM-4.7-FlashX: 轻量高速，上下文200K，最大输出128K
+  'glm-4.7-flashx': { name: 'GLM-4.7-FlashX (轻量高速)', provider: 'zhipu', model: 'glm-4.7-flashx', baseUrl: 'https://open.bigmodel.cn/api/paas', tier: 'standard', creditCost: 1, speed: 'fast', quality: 'high', maxTokens: 128000 },
+  // GLM-4.7-Flash: 免费模型，上下文200K，最大输出128K
+  'glm-4.7-flash': { name: 'GLM-4.7-Flash (免费)', provider: 'zhipu', model: 'glm-4.7-flash', baseUrl: 'https://open.bigmodel.cn/api/paas', tier: 'free', creditCost: 0, speed: 'fast', quality: 'medium', maxTokens: 128000 },
+  // GLM-4.6: 超强性能，上下文200K，最大输出128K
+  'glm-4.6': { name: 'GLM-4.6 (超强性能)', provider: 'zhipu', model: 'glm-4.6', baseUrl: 'https://open.bigmodel.cn/api/paas', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'high', maxTokens: 128000 },
+  // GLM-4.5-Air: 高性价比，上下文128K，最大输出96K
+  'glm-4.5-air': { name: 'GLM-4.5-Air (高性价比)', provider: 'zhipu', model: 'glm-4.5-air', baseUrl: 'https://open.bigmodel.cn/api/paas', tier: 'standard', creditCost: 1, speed: 'fast', quality: 'medium', maxTokens: 96000 },
+  // GLM-4.5-AirX: 高性价比极速版，上下文128K，最大输出96K
+  'glm-4.5-airx': { name: 'GLM-4.5-AirX (极速)', provider: 'zhipu', model: 'glm-4.5-airx', baseUrl: 'https://open.bigmodel.cn/api/paas', tier: 'standard', creditCost: 1, speed: 'fast', quality: 'medium', maxTokens: 96000 },
+  // GLM-4-Long: 超长输入1M，最大输出4K
+  'glm-4-long': { name: 'GLM-4-Long (超长上下文)', provider: 'zhipu', model: 'glm-4-long', baseUrl: 'https://open.bigmodel.cn/api/paas', tier: 'standard', creditCost: 1, speed: 'slow', quality: 'high', maxTokens: 4000 },
   // Kimi K2 支持超长上下文，最大输出 131072 tokens
   'kimi-k2': { name: 'Kimi K2', provider: 'moonshot', model: 'kimi-k2', baseUrl: 'https://api.moonshot.cn', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'high', maxTokens: 131072 },
   // Qwen Coder Plus 最大输出 8192 tokens
@@ -3167,17 +3178,21 @@ function getModelCreditCost(modelId) {
   return model ? model.creditCost : 0;
 }
 
-// 获取模型的最大Token数（优先从配置读取，否则使用默认值）
+// 获取模型的最大Token数（优先使用代码中定义的默认值，数据库配置可覆盖但不能低于默认值）
 function getModelMaxTokens(modelId) {
+  const model = LLM_MODELS[modelId];
+  const codeDefault = model ? (model.maxTokens || 8000) : 8000;
+  
   // 尝试从数据库配置读取
   const configKey = `llm_maxtokens_${modelId}`;
   const configValue = getConfig(configKey, null);
   if (configValue !== null) {
-    return parseInt(configValue, 10) || 8000;
+    const dbValue = parseInt(configValue, 10) || 8000;
+    // 如果数据库配置值比代码默认值小，使用代码默认值（防止旧配置导致截断）
+    return Math.max(dbValue, codeDefault);
   }
-  // 使用默认值
-  const model = LLM_MODELS[modelId];
-  return model ? (model.maxTokens || 8000) : 8000;
+  
+  return codeDefault;
 }
 
 // 获取模型的效果等级（优先从配置读取）
@@ -4698,9 +4713,8 @@ app.post('/api/wechat/login', async (req, res) => {
             console.log('[WECHAT] 用户已存在:', account.account_id);
           }
           
-          // 获取积分（使用 ensureUserCredits 函数）
-          const creditsRecord = ensureUserCredits(account.user_token);
-          const credits = creditsRecord ? creditsRecord.credits : 0;
+          // 获取积分
+          const credits = getUserCredits(account.user_token);
           
           res.json({
             success: true,
@@ -6850,7 +6864,9 @@ ${advancedHint}${gameNameHint}
     const maxTokens = selectedModelId ? getModelMaxTokens(selectedModelId) : 8000;
     console.log(`[INFO] 使用最大Token数: ${maxTokens} (模型: ${selectedModelId || 'default'})`);
     
-    const response = await fetch(`${config.baseUrl}/v1/chat/completions`, {
+    // 智谱AI使用 /v4/chat/completions 端点
+    const apiPath = config.provider === 'zhipu' ? '/v4/chat/completions' : '/v1/chat/completions';
+    const response = await fetch(`${config.baseUrl}${apiPath}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -7607,7 +7623,8 @@ app.post('/api/games/:id/edit', async (req, res) => {
         });
         
         // 根据 provider 调整 API 调用
-        let apiUrl = `${baseUrl}/v1/chat/completions`;
+        // 智谱AI使用 /v4/chat/completions 端点
+        let apiUrl = provider === 'zhipu' ? `${baseUrl}/v4/chat/completions` : `${baseUrl}/v1/chat/completions`;
         let headers = {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`
@@ -7954,7 +7971,8 @@ app.post('/api/games/:id/repair', async (req, res) => {
     ];
     
     // 调用LLM
-    let apiUrl = `${finalBaseUrl}/v1/chat/completions`;
+    // 智谱AI使用 /v4/chat/completions 端点
+    let apiUrl = finalProvider === 'zhipu' ? `${finalBaseUrl}/v4/chat/completions` : `${finalBaseUrl}/v1/chat/completions`;
     let headers = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${finalApiKey}`
