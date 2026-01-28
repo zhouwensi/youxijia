@@ -55,6 +55,7 @@ App({
       return loginResult;
     } catch (err) {
       console.error('静默登录失败:', err);
+      // 静默登录失败不影响使用，只是用户处于未登录状态
       return null;
     }
   },
@@ -72,27 +73,67 @@ App({
                 data: { code: res.code }
               });
               
-              if (result.success) {
+              console.log('微信登录响应:', result);
+              
+              // 兼容多种响应格式
+              // 格式1: { success: true, data: { token, userInfo } }
+              // 格式2: { success: true, token, userInfo }
+              // 格式3: { success: true, token, account/user }
+              // 格式4: { token, userInfo } (无success字段)
+              
+              let token = null;
+              let userInfo = null;
+              
+              if (result) {
+                // 提取token
+                token = result.token || result.data?.token || result.accessToken;
+                
+                // 提取用户信息
+                userInfo = result.userInfo || result.data?.userInfo || 
+                           result.user || result.data?.user ||
+                           result.account || result.data?.account;
+                
+                // 如果有success字段，检查是否成功
+                if (result.success === false) {
+                  reject(new Error(result.error || result.message || '登录失败'));
+                  return;
+                }
+              }
+              
+              if (token && userInfo) {
                 // 保存登录信息
-                this.globalData.token = result.data.token;
-                this.globalData.userInfo = result.data.userInfo;
+                this.globalData.token = token;
+                this.globalData.userInfo = userInfo;
                 this.globalData.isLoggedIn = true;
                 
-                wx.setStorageSync('token', result.data.token);
-                wx.setStorageSync('userInfo', result.data.userInfo);
+                wx.setStorageSync('token', token);
+                wx.setStorageSync('userInfo', userInfo);
                 
-                resolve(result.data);
+                resolve({ token, userInfo });
+              } else if (token) {
+                // 只有token没有用户信息，也算登录成功
+                this.globalData.token = token;
+                this.globalData.isLoggedIn = true;
+                wx.setStorageSync('token', token);
+                
+                resolve({ token });
               } else {
-                reject(new Error(result.error || '登录失败'));
+                // 无法识别的响应格式，打印调试信息
+                console.warn('微信登录响应格式不符合预期:', JSON.stringify(result));
+                reject(new Error('登录响应格式异常'));
               }
             } catch (err) {
+              console.error('微信登录请求失败:', err);
               reject(err);
             }
           } else {
             reject(new Error('获取微信登录code失败'));
           }
         },
-        fail: reject
+        fail: (err) => {
+          console.error('wx.login失败:', err);
+          reject(err);
+        }
       });
     });
   },
@@ -106,13 +147,14 @@ App({
       // 计算安全区域（用于适配刘海屏等）
       this.globalData.statusBarHeight = systemInfo.statusBarHeight || 20;
       this.globalData.navBarHeight = 44;
-      this.globalData.safeAreaBottom = systemInfo.screenHeight - systemInfo.safeArea.bottom;
+      this.globalData.safeAreaBottom = systemInfo.screenHeight - (systemInfo.safeArea?.bottom || systemInfo.screenHeight);
     } catch (e) {
       console.error('获取系统信息失败:', e);
     }
   },
 
   // 封装请求方法
+  // options.timeout: 超时时间（毫秒），默认60000，AI生成等长时间操作建议设置300000（5分钟）
   request(url, options = {}) {
     return new Promise((resolve, reject) => {
       const fullUrl = url.startsWith('http') ? url : config.baseUrl + url;
@@ -121,6 +163,7 @@ App({
         url: fullUrl,
         method: options.method || 'GET',
         data: options.data || {},
+        timeout: options.timeout || 1800000, // 默认60秒，可通过options.timeout自定义
         header: {
           'Content-Type': 'application/json',
           'x-user-token': this.globalData.token || '',
@@ -130,15 +173,29 @@ App({
         success: (res) => {
           if (res.statusCode === 200) {
             resolve(res.data);
+          } else if (res.statusCode === 401) {
+            // token过期，清除登录状态
+            this.clearLoginStatus();
+            reject(new Error('登录已过期，请重新登录'));
           } else {
             reject(new Error(`请求失败: ${res.statusCode}`));
           }
         },
         fail: (err) => {
+          console.error('请求失败:', fullUrl, err);
           reject(err);
         }
       });
     });
+  },
+
+  // 清除登录状态
+  clearLoginStatus() {
+    this.globalData.token = null;
+    this.globalData.userInfo = null;
+    this.globalData.isLoggedIn = false;
+    wx.removeStorageSync('token');
+    wx.removeStorageSync('userInfo');
   },
 
   // 显示提示

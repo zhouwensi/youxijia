@@ -21,6 +21,9 @@ Page({
       { id: 'total', name: '总榜' }
     ],
     
+    // 排序类型（游戏榜）
+    currentType: 'likes',
+    
     // 列表数据
     rankList: [],
     loading: false,
@@ -34,7 +37,10 @@ Page({
   },
 
   onShow() {
-    // 刷新数据
+    // 更新自定义TabBar选中状态
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({ selected: 1 });
+    }
   },
 
   // 切换主分类
@@ -73,21 +79,58 @@ Page({
     this.setData({ loading: true });
 
     try {
-      const { currentCategory, currentPeriod, page, pageSize } = this.data;
-      const url = currentCategory === 'games' 
-        ? '/api/rank/games' 
-        : '/api/rank/authors';
+      const { currentCategory, currentPeriod, currentType, page, pageSize } = this.data;
+      
+      let url, params;
+      
+      if (currentCategory === 'games') {
+        // 游戏排行榜 - 使用 /api/leaderboard/games
+        url = '/api/leaderboard/games';
+        params = {
+          type: currentType, // likes, plays, recent
+          limit: pageSize,
+          period: currentPeriod
+        };
+      } else {
+        // 作者排行榜 - 使用 /api/author-leaderboard/popularity (热度榜)
+        // 支持的type: fans(粉丝榜), works(作品榜), credits(积分榜), popularity(热度榜), newstar(新星榜)
+        url = '/api/author-leaderboard/popularity';
+        params = {
+          limit: pageSize,
+          offset: (page - 1) * pageSize,
+          period: currentPeriod === 'total' ? 'all' : currentPeriod // 服务端用 'all' 表示总榜
+        };
+      }
+
+      console.log('排行榜请求:', url, params);
 
       const result = await app.request(url, {
-        data: {
-          period: currentPeriod,
-          page: page,
-          limit: pageSize
-        }
+        data: params
       });
 
-      if (result.success) {
-        const newList = result.data || [];
+      console.log('排行榜响应:', result);
+
+      if (result.success !== false) {
+        let newList = [];
+        
+        if (currentCategory === 'games') {
+          // 游戏榜数据
+          newList = result.games || result.data || result.list || [];
+          // 添加排名
+          newList = newList.map((item, index) => ({
+            ...item,
+            rank: (page - 1) * pageSize + index + 1
+          }));
+        } else {
+          // 作者榜数据
+          newList = result.creators || result.list || result.data || [];
+          // 添加排名（如果没有）
+          newList = newList.map((item, index) => ({
+            ...item,
+            rank: item.rank || ((page - 1) * pageSize + index + 1)
+          }));
+        }
+        
         const rankList = isLoadMore ? [...this.data.rankList, ...newList] : newList;
         
         this.setData({
@@ -96,6 +139,7 @@ Page({
           page: isLoadMore ? page + 1 : 2
         });
       } else {
+        console.error('排行榜加载失败:', result.error);
         app.showToast(result.error || '加载失败');
       }
     } catch (err) {
@@ -124,17 +168,22 @@ Page({
   // 点击游戏
   goToGameDetail(e) {
     const game = e.currentTarget.dataset.game;
-    wx.navigateTo({
-      url: `/pages/game-detail/game-detail?id=${game.id}`
-    });
+    if (game && game.id) {
+      wx.navigateTo({
+        url: `/pages/game-detail/game-detail?id=${game.id}`
+      });
+    }
   },
 
   // 点击作者
   goToUserProfile(e) {
     const user = e.currentTarget.dataset.user;
-    wx.navigateTo({
-      url: `/pages/user/user?token=${user.token}`
-    });
+    const token = user.token || user.user_token || user.author_token;
+    if (token) {
+      wx.navigateTo({
+        url: `/pages/user/user?token=${token}`
+      });
+    }
   },
 
   // 分享

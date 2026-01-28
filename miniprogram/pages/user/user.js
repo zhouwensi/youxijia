@@ -41,39 +41,53 @@ Page({
   async loadUserProfile() {
     try {
       const { userToken } = this.data;
-      const myToken = app.globalData.userToken;
+      const myToken = app.globalData.token;
       
       // 并行请求用户信息和关注状态
-      const [profileRes, statsRes, followRes] = await Promise.all([
+      const requests = [
         app.request(`/api/users/${userToken}/profile`),
-        app.request(`/api/users/${userToken}/follow-stats`),
-        myToken ? app.request(`/api/users/${userToken}/follow-status`) : Promise.resolve({ success: false })
-      ]);
+        app.request(`/api/users/${userToken}/follow-stats`)
+      ];
 
-      if (profileRes.success) {
-        this.setData({
-          userInfo: profileRes.data,
-          isSelf: userToken === myToken
-        });
-        
-        // 设置页面标题
-        wx.setNavigationBarTitle({
-          title: profileRes.data.nickname || '用户主页'
-        });
+      // 只有登录用户才请求关注状态
+      if (myToken) {
+        requests.push(app.request(`/api/users/${userToken}/follow-status`));
       }
 
-      if (statsRes.success) {
+      const [profileRes, statsRes, followRes] = await Promise.all(requests);
+
+      console.log('用户资料响应:', profileRes);
+
+      if (profileRes && profileRes.success !== false) {
+        // 兼容多种响应格式：data对象 或 直接返回用户数据
+        const userData = profileRes.data || profileRes.user || profileRes;
+        
+        // 确保有有效数据
+        if (userData && (userData.nickname || userData.account_id)) {
+          this.setData({
+            userInfo: userData,
+            isSelf: userToken === myToken
+          });
+          
+          // 设置页面标题
+          wx.setNavigationBarTitle({
+            title: userData.nickname || userData.account_id || '用户主页'
+          });
+        }
+      }
+
+      if (statsRes && statsRes.success !== false) {
         this.setData({
           stats: {
-            following: statsRes.followingCount || statsRes.following || 0,
-            followers: statsRes.followerCount || statsRes.followers || 0,
-            games: statsRes.gamesCount || 0
+            following: statsRes.followingCount || statsRes.following || statsRes.data?.following || 0,
+            followers: statsRes.followerCount || statsRes.followers || statsRes.data?.followers || 0,
+            games: statsRes.gamesCount || statsRes.games || statsRes.data?.games || 0
           }
         });
       }
 
-      if (followRes.success) {
-        this.setData({ isFollowing: followRes.following });
+      if (followRes && followRes.success !== false) {
+        this.setData({ isFollowing: followRes.following || followRes.followed || false });
       }
     } catch (err) {
       console.error('加载用户信息失败:', err);
@@ -94,7 +108,7 @@ Page({
         data: { page, limit: pageSize }
       });
 
-      if (result.success) {
+      if (result && result.success !== false) {
         const newGames = result.data || result.games || [];
         const games = isLoadMore ? [...this.data.games, ...newGames] : newGames;
         
@@ -130,11 +144,12 @@ Page({
       });
 
       if (result.success) {
+        const newFollowState = result.following !== undefined ? result.following : !isFollowing;
         this.setData({
-          isFollowing: result.following,
-          'stats.followers': result.following ? stats.followers + 1 : stats.followers - 1
+          isFollowing: newFollowState,
+          'stats.followers': newFollowState ? stats.followers + 1 : Math.max(0, stats.followers - 1)
         });
-        app.showToast(result.following ? '关注成功' : '已取消关注');
+        app.showToast(newFollowState ? '关注成功' : '已取消关注');
       }
     } catch (err) {
       console.error('关注操作失败:', err);
@@ -157,9 +172,11 @@ Page({
   // 点击游戏
   goToGameDetail(e) {
     const game = e.currentTarget.dataset.game;
-    wx.navigateTo({
-      url: `/pages/game-detail/game-detail?id=${game.id}`
-    });
+    if (game && game.id) {
+      wx.navigateTo({
+        url: `/pages/game-detail/game-detail?id=${game.id}`
+      });
+    }
   },
 
   // 上拉加载

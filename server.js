@@ -3284,6 +3284,24 @@ const activeGenerations = new Map(); // requestId -> { userToken, startTime, can
 // 用于追踪活跃的编辑请求，支持取消功能
 const activeEdits = new Map(); // sessionId -> { userToken, startTime, cancelled, abortController }
 
+// ============ 异步生成任务系统（解决Cloudflare 524超时问题） ============
+// 用于存储异步生成任务的状态和结果
+const asyncGenerateTasks = new Map(); // taskId -> { status, progress, progressText, result, error, createdAt, userToken }
+
+// 清理过期的异步任务（超过30分钟的）
+function cleanupOldAsyncTasks() {
+  const now = Date.now();
+  const expireTime = 30 * 60 * 1000; // 30分钟
+  for (const [taskId, task] of asyncGenerateTasks.entries()) {
+    if (now - task.createdAt > expireTime) {
+      asyncGenerateTasks.delete(taskId);
+      console.log(`[AsyncTask] 清理过期任务: ${taskId}`);
+    }
+  }
+}
+// 每5分钟清理一次过期任务
+setInterval(cleanupOldAsyncTasks, 5 * 60 * 1000);
+
 // 标记编辑请求为已取消
 function cancelEditRequest(sessionId) {
   const info = activeEdits.get(sessionId);
@@ -4714,7 +4732,8 @@ app.post('/api/wechat/login', async (req, res) => {
           }
           
           // 获取积分
-          const credits = getUserCredits(account.user_token);
+          const userCredits = db.prepare('SELECT credits FROM user_credits WHERE user_token = ?').get(account.user_token);
+          const credits = userCredits?.credits || 0;
           
           res.json({
             success: true,
@@ -6084,6 +6103,17 @@ app.get('/api/games/:id', (req, res) => {
       return res.status(404).json({ success: false, error: '游戏不存在' });
     }
     
+    // 查询作者作品数（排除隐藏的游戏）
+    if (game.author_token) {
+      const authorStats = db.prepare(`
+        SELECT COUNT(*) as games_count FROM games 
+        WHERE author_token = ? AND is_hidden = 0
+      `).get(game.author_token);
+      game.author_games_count = authorStats ? authorStats.games_count : 0;
+    } else {
+      game.author_games_count = 0;
+    }
+    
     // 增加播放次数
     db.prepare('UPDATE games SET play_count = play_count + 1 WHERE id = ?').run(req.params.id);
     
@@ -6340,7 +6370,278 @@ app.delete('/api/games/:id/comments/:commentId', (req, res) => {
   }
 });
 
-// 生成游戏（调用LLM）
+// ============ 异步生成游戏 API（解决Cloudflare 524超时问题） ============
+
+// 异步生成游戏 - 立即返回 taskId，后台处理
+app.post('/api/generate-async', async (req, res) => {
+  const taskId = `task_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+  const userToken = req.headers['x-user-token'] || null;
+  
+  console.log(`[AsyncTask] 创建异步任务: ${taskId}`);
+  
+  // 检查创作封禁状态
+  const banStatus = checkBanStatus(req, BAN_TYPES.CREATE);
+  if (banStatus.banned) {
+    console.log('[BLOCKED] 被禁止创作用户尝试异步生成游戏:', banStatus);
+    return res.status(403).json({ 
+      success: false, 
+      error: `您已被禁止创作游戏。原因：${banStatus.reason}`,
+      banned: true
+    });
+  }
+  
+  const { prompt } = req.body;
+  if (!prompt || prompt.trim().length === 0) {
+    return res.status(400).json({ success: false, error: '请输入游戏描述' });
+  }
+  
+  // 创建任务记录
+  asyncGenerateTasks.set(taskId, {
+    status: 'pending', // pending, processing, completed, failed
+    progress: 0,
+    progressText: '任务已创建，等待处理...',
+    result: null,
+    error: null,
+    createdAt: Date.now(),
+    userToken
+  });
+  
+  // 立即返回 taskId
+  res.json({ success: true, taskId });
+  
+  // 后台异步处理生成
+  (async () => {
+    try {
+      // 更新状态为处理中
+      const task = asyncGenerateTasks.get(taskId);
+      if (!task) return;
+      task.status = 'processing';
+      task.progress = 10;
+      task.progressText = '正在连接AI...';
+      
+      // 调用现有的生成逻辑（模拟 internal request）
+      const generateResult = await handleGenerateInternal(req.body, req.headers, (progress, text) => {
+        // 进度回调
+        const t = asyncGenerateTasks.get(taskId);
+        if (t) {
+          t.progress = progress;
+          t.progressText = text;
+        }
+      });
+      
+      // 更新任务结果
+      const finalTask = asyncGenerateTasks.get(taskId);
+      if (finalTask) {
+        if (generateResult.success) {
+          finalTask.status = 'completed';
+          finalTask.progress = 100;
+          finalTask.progressText = '生成完成！';
+          finalTask.result = generateResult;
+        } else {
+          finalTask.status = 'failed';
+          finalTask.error = generateResult.error || '生成失败';
+        }
+      }
+      
+      console.log(`[AsyncTask] 任务完成: ${taskId}, 状态: ${finalTask?.status}`);
+    } catch (error) {
+      console.error(`[AsyncTask] 任务失败: ${taskId}`, error);
+      const task = asyncGenerateTasks.get(taskId);
+      if (task) {
+        task.status = 'failed';
+        task.error = error.message || '生成失败';
+      }
+    }
+  })();
+});
+
+// 查询异步生成任务状态
+app.get('/api/generate-status/:taskId', (req, res) => {
+  const { taskId } = req.params;
+  const task = asyncGenerateTasks.get(taskId);
+  
+  if (!task) {
+    return res.status(404).json({ 
+      success: false, 
+      error: '任务不存在或已过期',
+      status: 'not_found'
+    });
+  }
+  
+  const response = {
+    success: true,
+    taskId,
+    status: task.status,
+    progress: task.progress,
+    progressText: task.progressText
+  };
+  
+  // 如果任务完成，返回结果
+  if (task.status === 'completed' && task.result) {
+    response.result = task.result;
+    // 任务完成后30秒删除，避免重复查询
+    setTimeout(() => {
+      asyncGenerateTasks.delete(taskId);
+    }, 30000);
+  }
+  
+  // 如果任务失败，返回错误
+  if (task.status === 'failed') {
+    response.error = task.error;
+    // 失败任务30秒后删除
+    setTimeout(() => {
+      asyncGenerateTasks.delete(taskId);
+    }, 30000);
+  }
+  
+  res.json(response);
+});
+
+// 内部生成处理函数（供异步任务调用）
+async function handleGenerateInternal(body, headers, progressCallback) {
+  const startTime = Date.now();
+  const { prompt, llmConfig, draftId, advancedSettings, turboModel, isTurboSwitch, requestId } = body;
+  const userToken = headers['x-user-token'] || null;
+  const authorToken = headers['x-author-token'] || null;
+  
+  console.log('[AsyncGenerate] 开始内部生成:', { prompt: prompt?.substring(0, 50), userToken: userToken?.substring(0, 8) });
+  
+  progressCallback && progressCallback(15, '正在分析需求...');
+  
+  try {
+    // 检查LLM功能是否启用
+    const llmEnabled = getConfig('llm_enabled', 'true') === 'true';
+    if (!llmEnabled) {
+      return { success: false, error: '游戏生成功能暂时不可用，请稍后再试' };
+    }
+
+    progressCallback && progressCallback(25, 'AI正在构思游戏...');
+
+    // 获取默认LLM配置
+    const defaultModel = getConfig('llm_default_model', 'deepseek-chat');
+    const defaultApiKey = getConfig('llm_default_api_key', '');
+    const defaultBaseUrl = getConfig('llm_default_base_url', '');
+    
+    // 根据模型确定provider
+    const getProviderFromModel = (model) => {
+      if (model.includes('claude')) return 'anthropic';
+      if (model.includes('gpt') || model.includes('o1') || model.includes('o3') || model.includes('o4')) return 'openai';
+      if (model.includes('gemini')) return 'google';
+      if (model.includes('qwen')) return 'qwen';
+      return 'deepseek';
+    };
+    
+    // 确定最终使用的模型
+    let finalModel = defaultModel;
+    let finalProvider = getProviderFromModel(defaultModel);
+    let finalBaseUrl = defaultBaseUrl || 'https://api.deepseek.com';
+    let finalApiKey = defaultApiKey;
+    
+    // 如果用户提供了自己的配置
+    if (llmConfig?.apiKey) {
+      finalApiKey = llmConfig.apiKey;
+    }
+    if (llmConfig?.model) {
+      finalModel = llmConfig.model;
+      finalProvider = getProviderFromModel(llmConfig.model);
+    }
+    if (llmConfig?.baseUrl) {
+      finalBaseUrl = llmConfig.baseUrl;
+    }
+    
+    if (!finalApiKey) {
+      return { success: false, error: 'API Key未配置' };
+    }
+
+    progressCallback && progressCallback(40, '正在编写游戏代码...');
+
+    // 构建 System Prompt
+    const systemPrompt = `你是一个专业的HTML5游戏开发专家。用户会给你一个游戏创意描述，你需要生成一个完整的、可以直接运行的HTML5单文件游戏。
+
+要求：
+1. 生成的代码必须是完整的HTML文件，包含所有必需的HTML、CSS和JavaScript
+2. 游戏必须可以在现代浏览器中直接运行，不依赖任何外部文件
+3. 使用Canvas或DOM进行渲染
+4. 添加适当的触摸和键盘控制支持
+5. 游戏界面要美观、有良好的用户体验
+6. 代码要简洁高效
+7. 只输出HTML代码，不要有任何解释或markdown标记`;
+
+    // 调用 LLM API
+    const response = await fetch(`${finalBaseUrl}/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${finalApiKey}`
+      },
+      body: JSON.stringify({
+        model: finalModel,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `请根据以下描述生成一个HTML5游戏：\n\n${prompt}` }
+        ],
+        max_tokens: 16000,
+        temperature: 0.7
+      })
+    });
+
+    progressCallback && progressCallback(70, '正在优化游戏逻辑...');
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[AsyncGenerate] LLM API 错误:', response.status, errorText);
+      return { success: false, error: `AI服务错误: ${response.status}` };
+    }
+
+    const llmResult = await response.json();
+    let code = llmResult.choices?.[0]?.message?.content || '';
+    
+    // 清理代码（移除markdown标记）
+    code = code.replace(/```html\n?/g, '').replace(/```\n?/g, '').trim();
+    
+    if (!code || code.length < 100) {
+      return { success: false, error: 'AI生成的代码无效' };
+    }
+
+    progressCallback && progressCallback(85, '正在保存游戏...');
+
+    // 提取标题
+    const titleMatch = code.match(/<title>(.*?)<\/title>/i);
+    let title = titleMatch ? titleMatch[1] : prompt.substring(0, 20);
+    
+    // 生成游戏ID并保存
+    const gameId = generateGameId();
+    const authorName = advancedSettings?.authorName || '游戏家用户';
+    
+    // 保存到数据库
+    db.prepare(`
+      INSERT INTO games (id, title, prompt, code, author_name, author_token, llm_model, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'active', datetime('now'))
+    `).run(gameId, title, prompt, code, authorName, userToken || authorToken, finalModel);
+    
+    // 保存静态文件
+    saveGameToStatic(gameId, code);
+    
+    progressCallback && progressCallback(95, '即将完成...');
+    
+    const totalTime = Date.now() - startTime;
+    console.log(`[AsyncGenerate] 生成成功: ${gameId}, 耗时: ${totalTime}ms`);
+    
+    return {
+      success: true,
+      game: { id: gameId, title, prompt },
+      code,
+      title,
+      debug: { totalTime, model: finalModel }
+    };
+    
+  } catch (error) {
+    console.error('[AsyncGenerate] 生成失败:', error);
+    return { success: false, error: error.message || '生成失败' };
+  }
+}
+
+// 生成游戏（调用LLM）- 原同步方式，保留兼容性
 app.post('/api/generate', async (req, res) => {
   const startTime = Date.now();
   console.log('\n========== 开始生成游戏 ==========');
@@ -8563,16 +8864,23 @@ app.get('/api/users/:token/following', (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
     const offset = parseInt(req.query.offset) || 0;
 
+    // 改进查询：同时从 user_accounts 和 games 表获取用户信息
     const users = db.prepare(`
       SELECT uf.following_token as token, uf.created_at as followed_at,
-             (SELECT author_name FROM games WHERE author_token = uf.following_token LIMIT 1) as nickname,
-             (SELECT COUNT(*) FROM games WHERE author_token = uf.following_token) as games_count,
+             COALESCE(
+               (SELECT nickname FROM user_accounts WHERE user_token = uf.following_token),
+               (SELECT author_name FROM games WHERE author_token = uf.following_token LIMIT 1),
+               '游戏家用户'
+             ) as nickname,
+             (SELECT COUNT(*) FROM games WHERE author_token = uf.following_token AND is_hidden = 0) as games_count,
              (SELECT COUNT(*) FROM user_follows WHERE following_token = uf.following_token) as followers_count
       FROM user_follows uf
       WHERE uf.follower_token = ?
       ORDER BY uf.created_at DESC
       LIMIT ? OFFSET ?
     `).all(userToken, limit, offset);
+
+    console.log('[DEBUG] 关注列表查询结果:', userToken, users);
 
     // 添加 is_following 字段（当前用户是否关注了这个人）
     const usersWithFollowStatus = users.map(user => {
@@ -8600,16 +8908,23 @@ app.get('/api/users/:token/followers', (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
     const offset = parseInt(req.query.offset) || 0;
 
+    // 改进查询：同时从 user_accounts 和 games 表获取用户信息
     const users = db.prepare(`
       SELECT uf.follower_token as token, uf.created_at as followed_at,
-             (SELECT author_name FROM games WHERE author_token = uf.follower_token LIMIT 1) as nickname,
-             (SELECT COUNT(*) FROM games WHERE author_token = uf.follower_token) as games_count,
+             COALESCE(
+               (SELECT nickname FROM user_accounts WHERE user_token = uf.follower_token),
+               (SELECT author_name FROM games WHERE author_token = uf.follower_token LIMIT 1),
+               '游戏家用户'
+             ) as nickname,
+             (SELECT COUNT(*) FROM games WHERE author_token = uf.follower_token AND is_hidden = 0) as games_count,
              (SELECT COUNT(*) FROM user_follows WHERE following_token = uf.follower_token) as followers_count
       FROM user_follows uf
       WHERE uf.following_token = ?
       ORDER BY uf.created_at DESC
       LIMIT ? OFFSET ?
     `).all(userToken, limit, offset);
+
+    console.log('[DEBUG] 粉丝列表查询结果:', userToken, users);
 
     // 添加 is_following 字段（当前用户是否关注了这个粉丝）
     const usersWithFollowStatus = users.map(user => {

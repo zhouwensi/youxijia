@@ -98,9 +98,11 @@ Page({
         updates.favorited = favoriteResult.favorited;
       }
       if (followResult?.success) {
-        updates.authorFollowed = followResult.followed;
+        // 服务端返回的字段是 'following' 不是 'followed'
+        updates.authorFollowed = followResult.following || followResult.followed || false;
       }
 
+      console.log('交互状态:', { likeResult, favoriteResult, followResult, updates });
       this.setData(updates);
     } catch (err) {
       console.error('加载交互状态失败:', err);

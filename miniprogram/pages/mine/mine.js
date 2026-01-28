@@ -45,6 +45,11 @@ Page({
   },
 
   onShow() {
+    // 更新自定义TabBar选中状态
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({ selected: 2 });
+    }
+    
     this.checkLoginStatus();
     if (app.globalData.isLoggedIn) {
       this.loadUserData();
@@ -66,31 +71,45 @@ Page({
   // 加载用户数据
   async loadUserData() {
     try {
+      const myToken = app.globalData.token;
+      
       // 并行请求
-      const [creditsResult, accountResult, statsResult] = await Promise.all([
+      const requests = [
         app.request('/api/credits'),
-        app.request('/api/account'),
-        app.request('/api/account/follow-stats')
-      ]);
+        app.request('/api/account')
+      ];
+      
+      // 如果有token，请求关注统计
+      if (myToken) {
+        requests.push(app.request(`/api/users/${myToken}/follow-stats`));
+      }
+
+      const [creditsResult, accountResult, statsResult] = await Promise.all(requests);
+
+      console.log('我的页面数据:', { creditsResult, accountResult, statsResult });
 
       const updates = {};
 
-      if (creditsResult.success) {
+      if (creditsResult && creditsResult.success !== false) {
         updates['stats.credits'] = creditsResult.credits || 0;
       }
 
-      if (accountResult.success) {
-        updates.userInfo = accountResult.account;
-        updates['stats.games'] = accountResult.account.games_count || 0;
-        
-        // 更新全局状态
-        app.globalData.userInfo = accountResult.account;
-        wx.setStorageSync('userInfo', accountResult.account);
+      if (accountResult && accountResult.success !== false) {
+        const account = accountResult.account || accountResult.data || accountResult;
+        if (account && account.account_id) {
+          updates.userInfo = account;
+          updates['stats.games'] = account.games_count || 0;
+          
+          // 更新全局状态
+          app.globalData.userInfo = account;
+          wx.setStorageSync('userInfo', account);
+        }
       }
 
-      if (statsResult.success) {
+      if (statsResult && statsResult.success !== false) {
         updates['stats.following'] = statsResult.followingCount || statsResult.following || 0;
         updates['stats.followers'] = statsResult.followerCount || statsResult.followers || 0;
+        console.log('关注统计:', updates['stats.following'], updates['stats.followers']);
       }
 
       this.setData(updates);
@@ -127,13 +146,13 @@ Page({
       let url = '';
       switch (currentTab) {
         case 'games':
-          url = '/api/account/games';
+          url = '/api/my-games';
           break;
         case 'likes':
-          url = '/api/account/likes';
+          url = '/api/my-likes';
           break;
         case 'favorites':
-          url = '/api/account/favorites';
+          url = '/api/my-favorites';
           break;
       }
 
@@ -213,10 +232,20 @@ Page({
     this.setData({ loadingFollow: true });
 
     try {
-      const url = type === 'following' ? '/api/account/following' : '/api/account/followers';
+      const myToken = app.globalData.token;
+      if (!myToken) {
+        console.error('未登录，无法获取关注列表');
+        return;
+      }
+      
+      const url = type === 'following' 
+        ? `/api/users/${myToken}/following` 
+        : `/api/users/${myToken}/followers`;
       const result = await app.request(url);
 
-      if (result.success) {
+      console.log('关注列表响应:', type, result);
+
+      if (result.success !== false) {
         this.setData({
           followList: result.data || result.users || []
         });

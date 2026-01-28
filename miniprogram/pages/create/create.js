@@ -86,6 +86,11 @@ Page({
   },
 
   onShow() {
+    // 更新自定义TabBar选中状态
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({ selected: 0 });
+    }
+    
     // 检查登录状态
     if (!app.globalData.isLoggedIn) {
       app.silentLogin();
@@ -267,23 +272,39 @@ Page({
         }
       }
 
-      // 调用生成接口
-      const result = await app.request('/api/generate', {
+      // 使用异步生成API（解决Cloudflare 524超时问题）
+      const startResult = await app.request('/api/generate-async', {
         method: 'POST',
         data: requestData
       });
 
+      if (!startResult.success || !startResult.taskId) {
+        throw new Error(startResult.error || '无法启动生成任务');
+      }
+
+      const taskId = startResult.taskId;
+      console.log('异步任务已创建:', taskId);
+
+      this.setData({
+        progress: 10,
+        progressText: '任务已创建，AI正在思考...'
+      });
+
+      // 轮询任务状态
+      const result = await this.pollTaskStatus(taskId);
+
       // 停止进度动画
       this.stopProgressAnimation();
 
-      if (result.success && result.game) {
+      if (result.success && result.result && result.result.game) {
         // 生成成功
-        const gameUrl = `${app.globalData.config.webUrl}/g/${result.game.id.substring(0, 2)}/${result.game.id}.html`;
+        const game = result.result.game;
+        const gameUrl = `${app.globalData.config.webUrl}/g/${game.id.substring(0, 2)}/${game.id}.html`;
         
         this.setData({
           progress: 100,
           progressText: '生成完成！',
-          generatedGame: result.game,
+          generatedGame: game,
           gameUrl: gameUrl
         });
 
@@ -436,6 +457,65 @@ Page({
       title: 'AI游戏工坊 - 一句话生成游戏',
       path: '/pages/create/create'
     };
+  },
+
+  // 轮询任务状态
+  async pollTaskStatus(taskId) {
+    const maxWaitTime = 30 * 60 * 1000; // 最长等待30分钟
+    const pollInterval = 3000; // 每3秒轮询一次
+    const startTime = Date.now();
+    
+    return new Promise((resolve, reject) => {
+      const poll = async () => {
+        try {
+          // 检查是否超时
+          if (Date.now() - startTime > maxWaitTime) {
+            reject(new Error('生成超时，请稍后重试'));
+            return;
+          }
+          
+          // 查询任务状态
+          const result = await app.request(`/api/generate-status/${taskId}`);
+          
+          console.log('轮询任务状态:', result);
+          
+          // 更新进度
+          if (result.progress !== undefined) {
+            this.setData({
+              progress: result.progress,
+              progressText: result.progressText || '正在生成...'
+            });
+          }
+          
+          // 检查状态
+          if (result.status === 'completed') {
+            resolve(result);
+            return;
+          }
+          
+          if (result.status === 'failed') {
+            reject(new Error(result.error || '生成失败'));
+            return;
+          }
+          
+          if (result.status === 'not_found') {
+            reject(new Error('任务不存在或已过期'));
+            return;
+          }
+          
+          // 继续轮询
+          setTimeout(poll, pollInterval);
+          
+        } catch (err) {
+          console.error('轮询失败:', err);
+          // 网络错误时继续尝试
+          setTimeout(poll, pollInterval);
+        }
+      };
+      
+      // 开始轮询
+      poll();
+    });
   },
 
   onUnload() {
