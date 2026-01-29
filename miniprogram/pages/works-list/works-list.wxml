@@ -1,0 +1,57 @@
+<!--pages/works-list/works-list.wxml-->
+<view class="page-container">
+  <!-- 游戏列表 -->
+  <scroll-view 
+    class="games-scroll" 
+    scroll-y 
+    enhanced 
+    show-scrollbar="{{false}}"
+    bindscrolltolower="onReachBottom"
+  >
+    <!-- 游戏网格 -->
+    <view class="games-grid" wx:if="{{games.length > 0}}">
+      <view 
+        class="game-card" 
+        wx:for="{{games}}" 
+        wx:key="id"
+        bindtap="goToGameDetail"
+        data-game="{{item}}"
+      >
+        <view class="game-cover">
+          <text class="game-emoji">{{item.emoji || '🎮'}}</text>
+        </view>
+        <view class="game-info">
+          <text class="game-title ellipsis">{{item.title || '未命名'}}</text>
+          <view class="game-meta">
+            <text class="meta-author">👤 {{item.author_name || '匿名'}}</text>
+          </view>
+          <view class="game-stats">
+            <text class="stat-item">❤️ {{item.likes || 0}}</text>
+            <text class="stat-item">👁️ {{item.plays || 0}}</text>
+            <text class="stat-item">⭐ {{item.favorites || 0}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 加载中 -->
+    <view class="loading-box" wx:if="{{loading}}">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <!-- 没有更多 -->
+    <view class="no-more" wx:if="{{!hasMore && games.length > 0}}">
+      <text>— 没有更多了 —</text>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{!loading && games.length === 0}}">
+      <text class="empty-icon">🎮</text>
+      <text class="empty-text">暂无游戏</text>
+    </view>
+
+    <!-- 底部安全区 -->
+    <view class="safe-area-bottom"></view>
+  </scroll-view>
+</view>

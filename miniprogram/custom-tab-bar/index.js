@@ -11,10 +11,10 @@ Component({
         selectedIcon: "🎨"
       },
       {
-        pagePath: "/pages/rank/rank",
-        text: "排行",
-        icon: "📊",
-        selectedIcon: "🏆"
+        pagePath: "/pages/works/works",
+        text: "作品",
+        icon: "🎮",
+        selectedIcon: "�"
       },
       {
         pagePath: "/pages/mine/mine",

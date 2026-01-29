@@ -2,7 +2,7 @@
  * 我的页面样式 - 增强版
  */
 
-.page-container {
+ .page-container {
   min-height: 100vh;
   background: linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%);
   padding-bottom: env(safe-area-inset-bottom);
@@ -99,11 +99,22 @@
   flex: 1;
 }
 
+.nickname-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 8rpx;
+}
+
 .nickname {
   font-size: 36rpx;
   font-weight: 600;
   color: #fff;
-  margin-bottom: 8rpx;
+}
+
+.edit-icon {
+  font-size: 24rpx;
+  opacity: 0.6;
 }
 
 .account-id {
@@ -504,3 +515,72 @@
   align-items: center;
   padding: 60rpx 0;
 }
+
+/* 昵称编辑弹窗 */
+.nickname-modal {
+  max-height: 50vh;
+}
+
+.nickname-modal .modal-header {
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #fff;
+}
+
+.nickname-input-wrap {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+}
+
+.nickname-input {
+  width: 100%;
+  font-size: 32rpx;
+  color: #fff;
+  background: transparent;
+}
+
+.nickname-input::placeholder {
+  color: #666;
+}
+
+.nickname-tip {
+  font-size: 24rpx;
+  color: #8b8b8b;
+  margin-bottom: 32rpx;
+  text-align: center;
+}
+
+.nickname-actions {
+  display: flex;
+  gap: 24rpx;
+}
+
+.nickname-actions button {
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
+  font-size: 30rpx;
+  border-radius: 44rpx;
+  border: none;
+}
+
+.nickname-actions button::after {
+  border: none;
+}
+
+.btn-cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.btn-confirm {
+  background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+  color: #fff;
+}
+

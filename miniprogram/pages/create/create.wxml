@@ -42,15 +42,58 @@
           <view class="clear-btn" wx:if="{{prompt && !generating}}" bindtap="clearPrompt">×</view>
         </view>
 
-        <!-- 高级设置切换 -->
-        <view class="advanced-toggle" bindtap="toggleAdvanced">
-          <text class="toggle-icon">⚙️</text>
-          <text class="toggle-text">高级设置</text>
-          <text class="toggle-arrow {{showAdvanced ? 'expanded' : ''}}">›</text>
+        <!-- 生成按钮 - 紧挨输入框 -->
+        <button 
+          class="generate-btn {{generating ? 'disabled' : ''}}" 
+          bindtap="startGenerate"
+          disabled="{{generating}}"
+        >
+          <text wx:if="{{!generating}}">✨ 开始生成</text>
+          <text wx:else>生成中...</text>
+        </button>
+
+        <!-- 生成进度 -->
+        <view class="progress-section" wx:if="{{generating || progress > 0}}">
+          <view class="progress-container">
+            <view class="progress-bar">
+              <view class="progress-fill" style="width: {{progress}}%"></view>
+            </view>
+            <view class="progress-info">
+              <text class="progress-text">{{progressText}}</text>
+              <text class="progress-percent">{{progress}}%</text>
+            </view>
+          </view>
         </view>
 
-        <!-- 高级设置面板 -->
-        <view class="advanced-panel" wx:if="{{showAdvanced}}">
+        <!-- 灵感推荐 -->
+        <view class="inspiration-section">
+          <view class="section-title">
+            <text class="title-icon">💡</text>
+            <text>灵感推荐</text>
+          </view>
+          <view class="inspiration-list">
+            <view 
+              class="inspiration-tag" 
+              wx:for="{{inspirations}}" 
+              wx:key="text"
+              data-text="{{item.text}}"
+              bindtap="useInspiration"
+            >
+              <text class="tag-icon">{{item.icon}}</text>
+              <text class="tag-text">{{item.text}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 高级设置区域 - 始终展开 -->
+      <view class="advanced-section">
+        <view class="section-title">
+          <text class="title-icon">⚙️</text>
+          <text>高级设置</text>
+        </view>
+
+        <view class="advanced-panel">
           <!-- 游戏名称 -->
           <view class="setting-item">
             <text class="setting-label">🎮 游戏名称</text>
@@ -82,7 +125,7 @@
 
           <!-- 屏幕方向 -->
           <view class="setting-item">
-            <text class="setting-label">📐 屏幕方向</text>
+            <text class="setting-label">� 屏幕方向</text>
             <picker 
               mode="selector" 
               range="{{orientationOptions}}" 
@@ -92,40 +135,6 @@
             >
               <view class="setting-picker">
                 <text>{{advancedSettings.orientation === 'auto' ? '自动' : advancedSettings.orientation === 'portrait' ? '竖屏' : '横屏'}}</text>
-                <text class="picker-arrow">›</text>
-              </view>
-            </picker>
-          </view>
-
-          <!-- 平台 -->
-          <view class="setting-item">
-            <text class="setting-label">📱 平台</text>
-            <picker 
-              mode="selector" 
-              range="{{platformOptions}}" 
-              range-key="label"
-              data-field="platform"
-              bindchange="onPickerChange"
-            >
-              <view class="setting-picker">
-                <text>{{advancedSettings.platform === 'all' ? '全部' : advancedSettings.platform === 'mobile' ? '移动端' : 'PC端'}}</text>
-                <text class="picker-arrow">›</text>
-              </view>
-            </picker>
-          </view>
-
-          <!-- 音效 -->
-          <view class="setting-item">
-            <text class="setting-label">🔊 音效</text>
-            <picker 
-              mode="selector" 
-              range="{{soundOptions}}" 
-              range-key="label"
-              data-field="soundEffect"
-              bindchange="onPickerChange"
-            >
-              <view class="setting-picker">
-                <text>{{advancedSettings.soundEffect === 'none' ? '无音效' : '开启'}}</text>
                 <text class="picker-arrow">›</text>
               </view>
             </picker>
@@ -148,95 +157,18 @@
             </picker>
           </view>
 
-          <!-- LLM设置 -->
-          <view class="llm-section">
-            <view class="llm-header" bindtap="toggleLLMSettings">
-              <text class="llm-icon">🤖</text>
-              <text class="llm-title">LLM设置</text>
-              <text class="llm-arrow {{showLLMSettings ? 'expanded' : ''}}">›</text>
-            </view>
-            
-            <view class="llm-content" wx:if="{{showLLMSettings}}">
-              <view class="setting-item">
-                <text class="setting-label">模型</text>
-                <input 
-                  class="setting-input" 
-                  placeholder="使用默认模型"
-                  value="{{llmSettings.model}}"
-                  data-field="model"
-                  bindinput="onLLMChange"
-                />
-              </view>
-              <view class="setting-item">
-                <text class="setting-label">API Key</text>
-                <input 
-                  class="setting-input" 
-                  placeholder="使用系统Key"
-                  password
-                  value="{{llmSettings.apiKey}}"
-                  data-field="apiKey"
-                  bindinput="onLLMChange"
-                />
-              </view>
-              <view class="setting-item">
-                <text class="setting-label">API URL</text>
-                <input 
-                  class="setting-input" 
-                  placeholder="使用默认地址"
-                  value="{{llmSettings.apiUrl}}"
-                  data-field="apiUrl"
-                  bindinput="onLLMChange"
-                />
-              </view>
+          <!-- LLM设置 - 跳转链接 -->
+          <view class="setting-item llm-link" bindtap="goToLLMSettings">
+            <text class="setting-label">🤖 LLM 设置</text>
+            <view class="setting-link">
+              <text class="link-text">配置模型与API Key</text>
+              <text class="link-arrow">›</text>
             </view>
           </view>
 
           <!-- 重置按钮 -->
           <view class="reset-btn" bindtap="resetAdvancedSettings">
             <text>🔄 重置设置</text>
-          </view>
-        </view>
-
-        <!-- 生成按钮 -->
-        <button 
-          class="generate-btn {{generating ? 'disabled' : ''}}" 
-          bindtap="startGenerate"
-          disabled="{{generating}}"
-        >
-          <text wx:if="{{!generating}}">✨ 开始生成</text>
-          <text wx:else>生成中...</text>
-        </button>
-      </view>
-
-      <!-- 生成进度 -->
-      <view class="progress-section" wx:if="{{generating || progress > 0}}">
-        <view class="progress-container">
-          <view class="progress-bar">
-            <view class="progress-fill" style="width: {{progress}}%"></view>
-          </view>
-          <view class="progress-info">
-            <text class="progress-text">{{progressText}}</text>
-            <text class="progress-percent">{{progress}}%</text>
-          </view>
-        </view>
-      </view>
-
-      <!-- 灵感推荐 -->
-      <view class="inspiration-section">
-        <view class="section-title">
-          <text class="title-icon">💡</text>
-          <text>灵感推荐</text>
-        </view>
-        <view class="inspiration-list">
-          <view 
-            class="inspiration-tag" 
-            wx:for="{{inspirations}}" 
-            wx:key="text"
-            data-text="{{item.text}}"
-            bindtap="useInspiration"
-          >
-            <text class="tag-icon">{{item.icon}}</text>
-            <text class="tag-text">{{item.text}}</text>
           </view>
         </view>
       </view>
@@ -284,49 +216,51 @@
       </view>
     </view>
 
-    <!-- 最新创作列表 -->
-    <view class="recent-section">
+    <!-- 我的创作记录 -->
+    <view class="my-works-section">
       <view class="section-header">
         <view class="section-title">
-          <text class="title-icon">🔥</text>
-          <text>最新创作</text>
+          <text class="title-icon">�</text>
+          <text>我的创作记录</text>
+        </view>
+        <view class="section-more" bindtap="goToMyWorks" wx:if="{{myGames.length > 0}}">
+          <text>全部</text>
+          <text class="arrow">→</text>
         </view>
       </view>
 
-      <!-- 游戏列表 -->
-      <view class="game-list">
+      <!-- 我的游戏列表 - 最多显示3个 -->
+      <view class="my-games-grid" wx:if="{{myGames.length > 0}}">
         <view 
-          class="game-item" 
-          wx:for="{{recentGames}}" 
+          class="my-game-card" 
+          wx:for="{{myGames}}" 
           wx:key="id"
           data-game="{{item}}"
           bindtap="goToGameDetail"
         >
-          <view class="game-cover">
-            <text class="game-emoji">🎮</text>
+          <view class="my-game-cover">
+            <text class="my-game-emoji">{{item.emoji || '🎮'}}</text>
           </view>
-          <view class="game-info">
-            <view class="game-name ellipsis">{{item.title || '未命名游戏'}}</view>
-            <view class="game-desc ellipsis">{{item.prompt || '暂无描述'}}</view>
-            <view class="game-meta">
-              <text class="meta-author">👤 {{item.author_name || '匿名'}}</text>
-              <text class="meta-likes">❤️ {{item.likes || 0}}</text>
+          <view class="my-game-info">
+            <text class="my-game-title ellipsis">{{item.title || '未命名'}}</text>
+            <view class="my-game-stats">
+              <text class="stat-item">❤️ {{item.likes || 0}}</text>
+              <text class="stat-item">👁️ {{item.plays || 0}}</text>
             </view>
           </view>
-          <view class="game-arrow">›</view>
         </view>
       </view>
 
       <!-- 加载状态 -->
-      <view class="loading-more" wx:if="{{loadingGames}}">
+      <view class="loading-more" wx:if="{{loadingMyGames}}">
         <view class="loading-spinner"></view>
         <text class="loading-text">加载中...</text>
       </view>
 
       <!-- 空状态 -->
-      <view class="empty-state" wx:if="{{!loadingGames && recentGames.length === 0}}">
+      <view class="empty-state" wx:if="{{!loadingMyGames && myGames.length === 0}}">
         <text class="empty-icon">🎮</text>
-        <text class="empty-text">暂无游戏，快来创作第一个吧！</text>
+        <text class="empty-text">还没有创作过游戏，快来试试吧！</text>
       </view>
     </view>
 

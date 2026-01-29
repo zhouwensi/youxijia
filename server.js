@@ -3680,6 +3680,11 @@ try {
   console.error('[DB迁移] 更新作者名时出错:', e.message);
 }
 
+// 生成唯一游戏ID的函数
+function generateGameId() {
+  return uuidv4();
+}
+
 // 生成唯一账号ID的函数
 function generateAccountId() {
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -4333,12 +4338,15 @@ app.get('/api/account', (req, res) => {
     res.json({
       success: true,
       account: {
-        accountId: account.account_id,
+        account_id: account.account_id,
+        accountId: account.account_id, // 兼容旧版
         nickname: displayNickname,
         rawNickname: account.nickname, // 原始昵称
         hasPassword: !!account.has_password,
+        has_password: !!account.has_password, // 兼容下划线命名
         email: account.email,
-        createdAt: account.created_at
+        createdAt: account.created_at,
+        created_at: account.created_at // 兼容下划线命名
       }
     });
   } catch (error) {
@@ -6717,7 +6725,12 @@ async function handleGenerateInternal(body, headers, progressCallback) {
     `).run(gameId, title, prompt, code, authorName, userToken || authorToken, finalModel);
     
     // 保存静态文件
-    saveGameToStatic(gameId, code);
+    saveGameStaticFile(gameId, code, {
+      title,
+      authorName,
+      authorToken: userToken || authorToken,
+      prompt
+    });
     
     progressCallback && progressCallback(95, '即将完成...');
     
@@ -7651,7 +7664,8 @@ app.get('/api/games/search/:keyword', (req, res) => {
 // 获取我的游戏列表（包括草稿）
 app.get('/api/my-games', (req, res) => {
   try {
-    const authorToken = req.headers['x-author-token'];
+    // 兼容两种token请求头：x-author-token（网页端）和 x-user-token（小程序端）
+    const authorToken = req.headers['x-author-token'] || req.headers['x-user-token'];
     if (!authorToken) {
       return res.json({ success: true, games: [], stats: { count: 0, plays: 0, likes: 0 } });
     }

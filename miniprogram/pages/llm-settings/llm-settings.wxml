@@ -1,0 +1,129 @@
+<!--pages/llm-settings/llm-settings.wxml-->
+<view class="page-container">
+  <!-- 加载中 -->
+  <view class="loading-container" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 设置内容 -->
+  <scroll-view class="settings-scroll" scroll-y wx:else>
+    <!-- 页面标题区 -->
+    <view class="page-header">
+      <view class="page-title">LLM 设置</view>
+      <view class="page-desc">选择默认模型并配置 API Key</view>
+    </view>
+
+    <!-- 模型配置区 -->
+    <view class="settings-group">
+      <view class="group-header">
+        <text class="group-title">模型配置</text>
+      </view>
+      <view class="group-hint">勾选设为默认模型，可配置您自己的 API Key（留空使用平台配置）</view>
+      
+      <!-- 模型列表 -->
+      <view class="llm-keys-list">
+        <view 
+          class="llm-key-item {{selectedModel === item.id ? 'is-default' : ''}}"
+          wx:for="{{models}}"
+          wx:key="id"
+          data-model-id="{{item.id}}"
+        >
+          <!-- 模型头部 -->
+          <view class="llm-key-header">
+            <label class="llm-default-check" bindtap="selectModel" data-id="{{item.id}}">
+              <view class="custom-radio {{selectedModel === item.id ? 'checked' : ''}}">
+                <view class="radio-dot" wx:if="{{selectedModel === item.id}}"></view>
+              </view>
+              <text class="llm-default-label">默认</text>
+            </label>
+            <view class="llm-key-info">
+              <view class="llm-key-name">
+                <text>{{item.name}}</text>
+                <text class="llm-badge {{item.hasDefaultKey ? 'has-key' : 'need-key'}}">
+                  {{item.hasDefaultKey ? '平台已配置' : '需API Key'}}
+                </text>
+              </view>
+              <view class="llm-key-status {{apiKeys[item.id] ? 'configured' : ''}}">
+                {{apiKeys[item.id] ? '✓ 已配置' : (item.hasDefaultKey ? '使用平台配置' : '未配置')}}
+              </view>
+            </view>
+          </view>
+          
+          <!-- API Key 输入区 -->
+          <view class="llm-key-input">
+            <input 
+              type="{{showApiKey[item.id] ? 'text' : 'password'}}"
+              value="{{apiKeys[item.id] || ''}}"
+              placeholder="{{item.hasDefaultKey ? '留空使用平台默认（可选）' : '请输入 API Key'}}"
+              data-id="{{item.id}}"
+              bindinput="onApiKeyInput"
+              class="key-input"
+            />
+            <view class="btn-toggle-pwd" bindtap="toggleApiKeyVisibility" data-id="{{item.id}}">
+              <text>{{showApiKey[item.id] ? '🙈' : '👁️'}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 自定义接口区 -->
+    <view class="settings-group" wx:if="{{selectedModel === 'custom' || customApi.enabled}}">
+      <view class="group-header">
+        <text class="group-title">自定义接口</text>
+      </view>
+      
+      <view class="custom-api-form">
+        <view class="form-group">
+          <text class="form-label">API 地址</text>
+          <input 
+            class="form-input"
+            placeholder="https://api.example.com/v1"
+            value="{{customApi.baseUrl}}"
+            data-field="baseUrl"
+            bindinput="onCustomApiInput"
+          />
+        </view>
+        <view class="form-group">
+          <text class="form-label">模型名称</text>
+          <input 
+            class="form-input"
+            placeholder="gpt-4o"
+            value="{{customApi.model}}"
+            data-field="model"
+            bindinput="onCustomApiInput"
+          />
+        </view>
+        <view class="form-group">
+          <text class="form-label">API Key</text>
+          <view class="input-with-toggle">
+            <input 
+              type="{{showApiKey.custom ? 'text' : 'password'}}"
+              class="form-input"
+              placeholder="输入您的 API Key"
+              value="{{customApi.apiKey}}"
+              data-field="apiKey"
+              bindinput="onCustomApiInput"
+            />
+            <view class="btn-toggle-pwd" bindtap="toggleCustomApiKeyVisibility">
+              <text>{{showApiKey.custom ? '🙈' : '👁️'}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 底部操作按钮 -->
+    <view class="settings-footer">
+      <button class="btn btn-secondary" bindtap="resetSettings">取消</button>
+      <button class="btn btn-primary {{saving ? 'disabled' : ''}}" bindtap="saveSettings" disabled="{{saving}}">
+        <text wx:if="{{!saving}}">保存设置</text>
+        <text wx:else>保存中...</text>
+      </button>
+    </view>
+
+    <!-- 底部安全区 -->
+    <view class="safe-area-bottom"></view>
+  </scroll-view>
+</view>

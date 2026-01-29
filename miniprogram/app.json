@@ -1,12 +1,14 @@
 {
   "pages": [
     "pages/create/create",
-    "pages/rank/rank",
+    "pages/works/works",
     "pages/mine/mine",
     "pages/game-detail/game-detail",
     "pages/index/index",
     "pages/user/user",
-    "pages/search/search"
+    "pages/search/search",
+    "pages/works-list/works-list",
+    "pages/llm-settings/llm-settings"
   ],
   "window": {
     "navigationBarBackgroundColor": "#1a1a2e",
@@ -27,8 +29,8 @@
         "text": "创作"
       },
       {
-        "pagePath": "pages/rank/rank",
-        "text": "排行"
+        "pagePath": "pages/works/works",
+        "text": "作品"
       },
       {
         "pagePath": "pages/mine/mine",

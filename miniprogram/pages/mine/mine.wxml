@@ -25,7 +25,10 @@
           <text>{{userInfo.avatar_emoji || '🎮'}}</text>
         </view>
         <view class="user-details">
-          <view class="nickname">{{userInfo.nickname || userInfo.account_id || '游戏玩家'}}</view>
+          <view class="nickname-row" bindtap="showNicknameEditor">
+            <text class="nickname">{{userInfo.nickname || userInfo.account_id || '游戏玩家'}}</text>
+            <text class="edit-icon">✏️</text>
+          </view>
           <view class="account-id">ID: {{userInfo.account_id || '-'}}</view>
         </view>
         <view class="settings-btn" bindtap="goToSettings">
@@ -125,6 +128,16 @@
 
   <!-- 更多功能菜单 -->
   <view class="menu-card" wx:if="{{isLoggedIn}}">
+    <view class="menu-item" bindtap="goToLLMSettings">
+      <view class="menu-left">
+        <text class="menu-icon">🤖</text>
+        <text class="menu-name">LLM 设置</text>
+      </view>
+      <view class="menu-right">
+        <text class="menu-tip">模型与API Key</text>
+        <text class="menu-arrow">›</text>
+      </view>
+    </view>
     <view class="menu-item" bindtap="goToWeb">
       <view class="menu-left">
         <text class="menu-icon">🌐</text>
@@ -148,6 +161,36 @@
 
   <!-- 底部安全区 -->
   <view class="safe-area-bottom"></view>
+
+  <!-- 昵称编辑弹窗 -->
+  <view class="modal-mask" wx:if="{{showNicknameModal}}" bindtap="closeNicknameModal">
+    <view class="modal-content nickname-modal" catchtap="preventClose">
+      <view class="modal-header">
+        <view class="modal-title">设置昵称</view>
+        <view class="modal-close" bindtap="closeNicknameModal">×</view>
+      </view>
+      <view class="modal-body">
+        <view class="nickname-input-wrap">
+          <input 
+            class="nickname-input" 
+            type="nickname"
+            placeholder="请输入昵称"
+            value="{{nicknameInput}}"
+            bindinput="onNicknameInput"
+            bindblur="onNicknameBlur"
+            maxlength="20"
+          />
+        </view>
+        <view class="nickname-tip">
+          <text>💡 点击输入框可使用微信昵称</text>
+        </view>
+        <view class="nickname-actions">
+          <button class="btn-cancel" bindtap="closeNicknameModal">取消</button>
+          <button class="btn-confirm" bindtap="saveNickname">保存</button>
+        </view>
+      </view>
+    </view>
+  </view>
 
   <!-- 关注/粉丝弹窗 -->
   <view class="modal-mask" wx:if="{{showFollowModal}}" bindtap="closeFollowModal">

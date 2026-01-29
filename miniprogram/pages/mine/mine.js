@@ -37,7 +37,11 @@ Page({
     showFollowModal: false,
     followModalTab: 'following', // following / followers
     followList: [],
-    loadingFollow: false
+    loadingFollow: false,
+    
+    // 昵称编辑弹窗
+    showNicknameModal: false,
+    nicknameInput: ''
   },
 
   onLoad() {
@@ -287,11 +291,14 @@ Page({
     wx.showLoading({ title: '登录中...' });
     
     try {
-      await app.wxLogin();
+      const loginResult = await app.wxLogin();
       this.checkLoginStatus();
-      this.loadUserData();
+      await this.loadUserData();
       this.loadListData();
       app.showToast('登录成功', 'success');
+      
+      // 检查是否需要引导设置昵称（新用户或默认昵称）
+      this.checkNicknameGuide();
     } catch (err) {
       console.error('登录失败:', err);
       app.showToast('登录失败，请重试');
@@ -300,10 +307,48 @@ Page({
     }
   },
 
-  // 去设置页
+  // 检查是否需要引导设置昵称
+  checkNicknameGuide() {
+    const userInfo = this.data.userInfo;
+    if (!userInfo) return;
+    
+    const nickname = userInfo.nickname || '';
+    // 如果昵称是默认值，引导用户设置
+    const isDefaultNickname = !nickname || 
+      nickname === '微信用户' || 
+      nickname === '游戏玩家' ||
+      nickname === userInfo.account_id;
+    
+    if (isDefaultNickname) {
+      // 延迟弹出，避免与登录成功提示冲突
+      setTimeout(() => {
+        wx.showModal({
+          title: '欢迎来到AI游戏工坊！',
+          content: '设置一个昵称，让大家认识你吧～',
+          confirmText: '去设置',
+          cancelText: '稍后再说',
+          success: (res) => {
+            if (res.confirm) {
+              this.showNicknameEditor();
+            }
+          }
+        });
+      }, 800);
+    }
+  },
+
+  // 去设置页（目前跳转到LLM设置）
   goToSettings() {
-    // TODO: 跳转设置页
-    app.showToast('功能开发中');
+    wx.navigateTo({
+      url: '/pages/llm-settings/llm-settings'
+    });
+  },
+
+  // 去LLM设置页
+  goToLLMSettings() {
+    wx.navigateTo({
+      url: '/pages/llm-settings/llm-settings'
+    });
   },
 
   // 显示积分信息
@@ -344,5 +389,95 @@ Page({
       showCancel: false,
       confirmText: '知道了'
     });
+  },
+
+  // 显示昵称编辑弹窗
+  showNicknameEditor() {
+    const currentNickname = this.data.userInfo?.nickname || '';
+    // 如果当前昵称是"微信用户"或与account_id相同，则显示空
+    const displayNickname = (currentNickname === '微信用户' || currentNickname === this.data.userInfo?.account_id) 
+      ? '' 
+      : currentNickname;
+    
+    this.setData({
+      showNicknameModal: true,
+      nicknameInput: displayNickname
+    });
+  },
+
+  // 关闭昵称编辑弹窗
+  closeNicknameModal() {
+    this.setData({
+      showNicknameModal: false,
+      nicknameInput: ''
+    });
+  },
+
+  // 昵称输入事件
+  onNicknameInput(e) {
+    this.setData({
+      nicknameInput: e.detail.value
+    });
+  },
+
+  // 昵称输入框失去焦点（微信昵称选择完成）
+  onNicknameBlur(e) {
+    // 当用户从微信昵称选择器中选择昵称后，会触发blur事件
+    if (e.detail.value) {
+      this.setData({
+        nicknameInput: e.detail.value
+      });
+    }
+  },
+
+  // 保存昵称
+  async saveNickname() {
+    const nickname = this.data.nicknameInput.trim();
+    
+    if (!nickname) {
+      app.showToast('请输入昵称');
+      return;
+    }
+    
+    if (nickname.length < 1 || nickname.length > 20) {
+      app.showToast('昵称长度1-20个字符');
+      return;
+    }
+
+    wx.showLoading({ title: '保存中...' });
+
+    try {
+      const result = await app.request('/api/account/nickname', {
+        method: 'PUT',
+        data: { nickname }
+      });
+
+      if (result.success !== false) {
+        // 更新本地数据
+        const updatedUserInfo = {
+          ...this.data.userInfo,
+          nickname: nickname
+        };
+        
+        this.setData({
+          userInfo: updatedUserInfo,
+          showNicknameModal: false,
+          nicknameInput: ''
+        });
+
+        // 更新全局状态
+        app.globalData.userInfo = updatedUserInfo;
+        wx.setStorageSync('userInfo', updatedUserInfo);
+
+        app.showToast('昵称已更新', 'success');
+      } else {
+        app.showToast(result.error || '保存失败');
+      }
+    } catch (err) {
+      console.error('保存昵称失败:', err);
+      app.showToast('保存失败，请重试');
+    } finally {
+      wx.hideLoading();
+    }
   }
 });

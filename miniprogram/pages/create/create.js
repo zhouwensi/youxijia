@@ -26,12 +26,12 @@ Page({
       { text: '弹球', icon: '⚪' }
     ],
     
-    // 最新创作
-    recentGames: [],
-    loadingGames: false,
+    // 我的创作记录
+    myGames: [],
+    loadingMyGames: false,
     
-    // 高级设置
-    showAdvanced: false,
+    // 高级设置（始终启用）
+    showAdvanced: true,
     advancedSettings: {
       gameName: '',
       artStyle: 'auto',
@@ -82,7 +82,7 @@ Page({
   },
 
   onLoad() {
-    this.loadRecentGames();
+    this.loadMyGames();
   },
 
   onShow() {
@@ -97,32 +97,38 @@ Page({
     }
   },
 
-  // 加载最新创作
-  async loadRecentGames() {
-    if (this.data.loadingGames) return;
+  // 加载我的创作记录
+  async loadMyGames() {
+    if (this.data.loadingMyGames) return;
     
-    this.setData({ loadingGames: true });
+    // 需要登录才能加载
+    if (!app.globalData.isLoggedIn || !app.globalData.accountId) {
+      this.setData({ myGames: [], loadingMyGames: false });
+      return;
+    }
+    
+    this.setData({ loadingMyGames: true });
     
     try {
-      const result = await app.request('/api/games/recent', {
-        data: { limit: 10 }
+      const result = await app.request('/api/games/my', {
+        data: { limit: 3 }
       });
       
       if (result.success) {
         this.setData({
-          recentGames: result.data || result.games || []
+          myGames: result.data || result.games || []
         });
       }
     } catch (err) {
-      console.error('加载最新创作失败:', err);
+      console.error('加载我的创作失败:', err);
     } finally {
-      this.setData({ loadingGames: false });
+      this.setData({ loadingMyGames: false });
     }
   },
 
   // 下拉刷新
   onPullDownRefresh() {
-    this.loadRecentGames().then(() => {
+    this.loadMyGames().then(() => {
       wx.stopPullDownRefresh();
     });
   },
@@ -143,14 +149,18 @@ Page({
     this.setData({ prompt: '' });
   },
 
-  // 切换高级设置显示
-  toggleAdvanced() {
-    this.setData({ showAdvanced: !this.data.showAdvanced });
+  // 跳转到LLM设置页面
+  goToLLMSettings() {
+    wx.navigateTo({
+      url: '/pages/llm-settings/llm-settings'
+    });
   },
-
-  // 切换LLM设置显示
-  toggleLLMSettings() {
-    this.setData({ showLLMSettings: !this.data.showLLMSettings });
+  
+  // 跳转到我的作品列表
+  goToMyWorks() {
+    wx.switchTab({
+      url: '/pages/mine/mine'
+    });
   },
 
   // 更新高级设置
@@ -310,8 +320,8 @@ Page({
 
         app.showToast('游戏生成成功！', 'success');
         
-        // 刷新最新创作列表
-        this.loadRecentGames();
+        // 刷新我的创作列表
+        this.loadMyGames();
       } else {
         throw new Error(result.error || '生成失败');
       }
@@ -361,7 +371,12 @@ Page({
 
   // 进度动画
   progressTimer: null,
+  _isPageActive: true, // 页面是否活跃标记
+  
   startProgressAnimation() {
+    // 先清理可能存在的旧定时器
+    this.stopProgressAnimation();
+    
     const steps = [
       { progress: 10, text: '正在分析需求...' },
       { progress: 25, text: 'AI正在构思游戏...' },
@@ -372,13 +387,27 @@ Page({
     ];
     
     let stepIndex = 0;
+    const that = this; // 保存this引用
+    
     this.progressTimer = setInterval(() => {
+      // 安全检查：确保页面仍然活跃且this可用
+      if (!that || !that._isPageActive || !that.setData) {
+        clearInterval(that.progressTimer);
+        return;
+      }
+      
       if (stepIndex < steps.length) {
-        this.setData({
-          progress: steps[stepIndex].progress,
-          progressText: steps[stepIndex].text
-        });
-        stepIndex++;
+        try {
+          that.setData({
+            progress: steps[stepIndex].progress,
+            progressText: steps[stepIndex].text
+          });
+          stepIndex++;
+        } catch (e) {
+          // 捕获可能的setData错误
+          console.warn('进度动画setData失败:', e);
+          clearInterval(that.progressTimer);
+        }
       }
     }, 2000);
   },
@@ -519,6 +548,11 @@ Page({
   },
 
   onUnload() {
+    this.stopProgressAnimation();
+  },
+
+  onHide() {
+    // 页面隐藏时也清理定时器，防止后台运行导致错误
     this.stopProgressAnimation();
   }
 });
