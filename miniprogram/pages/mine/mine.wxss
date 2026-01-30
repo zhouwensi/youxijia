@@ -2,7 +2,7 @@
  * 我的页面样式 - 增强版
  */
 
- .page-container {
+.page-container {
   min-height: 100vh;
   background: linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%);
   padding-bottom: env(safe-area-inset-bottom);

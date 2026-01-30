@@ -7,11 +7,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#1a1a2e">
-  <meta name="description" content="寻找向日葵的秘密 - AI一句话生成的游戏">
-  <meta property="og:title" content="寻找向日葵的秘密 - AI游戏">
+  <meta name="description" content="2048 - AI一句话生成的游戏">
+  <meta property="og:title" content="2048 - AI游戏">
   <meta property="og:description" content="这个游戏由AI一句话生成！关注公众号「游戏开发技术教程」，你也可以免费生成游戏！">
   <meta property="og:type" content="website">
-  <title>寻找向日葵的秘密 - AI游戏</title>
+  <title>2048 - AI游戏</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
   <!-- 引用主站CSS样式 -->
   <link rel="stylesheet" href="/css/style.css">
@@ -1055,175 +1055,326 @@ body {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            touch-action: manipulation;
+            user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
+        
         body {
-            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
-            background: linear-gradient(135deg, #0c2461 0%, #1e3799 50%, #0c2461 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             color: #fff;
-            overflow: hidden;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        #gameCanvas {
-            display: block;
-            background: #0a1931;
-            border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        }
-        .screen {
-            position: absolute;
-            width: 100%;
-            height: 100%;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            background: rgba(10, 25, 49, 0.95);
-            z-index: 10;
-            transition: opacity 0.3s;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            touch-action: manipulation;
         }
-        .hidden {
-            display: none !important;
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 500px;
         }
+        
         h1 {
-            font-size: min(8vw, 3.5rem);
-            margin-bottom: 30px;
-            text-align: center;
-            color: #ffdd59;
-            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-            background: linear-gradient(to right, #ff9f1a, #ffdd59);
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #f72585, #7209b7, #3a0ca3);
             -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
         }
+        
         .subtitle {
-            font-size: min(4vw, 1.5rem);
-            margin-bottom: 50px;
-            color: #a5b1c2;
-            text-align: center;
-            max-width: 90%;
+            color: #a9b7c6;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
         }
-        .btn {
-            background: linear-gradient(145deg, #ff9f1a, #ffaf40);
-            color: #0a1931;
-            border: none;
-            padding: 15px 40px;
-            font-size: min(4vw, 1.3rem);
-            border-radius: 50px;
-            cursor: pointer;
-            margin: 10px;
+        
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 20px;
+        }
+        
+        .score-container, .best-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px 20px;
+            text-align: center;
+            min-width: 120px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .score-label, .best-label {
+            font-size: 0.9rem;
+            color: #a9b7c6;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .score, .best {
+            font-size: 2rem;
             font-weight: bold;
-            box-shadow: 0 6px 0 #e67e22, 0 10px 20px rgba(0, 0, 0, 0.3);
-            transition: all 0.1s;
-            min-width: 200px;
+            margin-top: 5px;
+            color: #f8f9fa;
         }
-        .btn:hover, .btn:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px 0 #e67e22, 0 6px 10px rgba(0, 0, 0, 0.3);
+        
+        .game-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto 30px;
         }
-        .btn.secondary {
-            background: linear-gradient(145deg, #3498db, #2980b9);
-            box-shadow: 0 6px 0 #1c5d8a, 0 10px 20px rgba(0, 0, 0, 0.3);
+        
+        .game-board {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .btn.secondary:hover, .btn.secondary:active {
-            box-shadow: 0 2px 0 #1c5d8a, 0 6px 10px rgba(0, 0, 0, 0.3);
+        
+        .grid-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 100%; /* 保持正方形 */
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            overflow: hidden;
         }
-        .instructions {
-            background: rgba(26, 37, 69, 0.95);
-            padding: 25px;
-            border-radius: 20px;
-            max-width: 90%;
-            width: 500px;
-            margin-top: 30px;
-            border: 2px solid #ffdd59;
-            display: none;
-        }
-        .instructions.show {
-            display: block;
-        }
-        .instructions h2 {
-            color: #ffdd59;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-        .instructions p {
-            margin: 10px 0;
-            line-height: 1.5;
-            color: #d1d8e0;
-        }
-        .instructions kbd {
-            background: #2c3e50;
-            padding: 3px 8px;
-            border-radius: 5px;
-            font-family: monospace;
-            color: #ffdd59;
-        }
-        #helpBtn {
+        
+        .grid-background, .tile-container {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: rgba(255, 221, 89, 0.9);
-            color: #0a1931;
-            border: none;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 12px;
+            padding: 12px;
+        }
+        
+        .grid-cell {
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 6px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .tile {
+            position: absolute;
+            width: calc(25% - 12px);
+            height: calc(25% - 12px);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
             font-size: 1.8rem;
-            font-weight: bold;
+            transition: all 0.15s ease;
+            z-index: 10;
+        }
+        
+        .tile.new {
+            animation: appear 0.2s ease;
+        }
+        
+        .tile.merged {
+            animation: pop 0.3s ease;
+        }
+        
+        @keyframes appear {
+            0% { transform: scale(0); }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 30px;
+        }
+        
+        .button {
+            background: linear-gradient(45deg, #4361ee, #3a0ca3);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 15px 25px;
             cursor: pointer;
-            z-index: 20;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-            display: none;
+            transition: all 0.2s ease;
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
         }
-        #helpBtn.show {
-            display: block;
+        
+        .button:hover, .button:active {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(67, 97, 238, 0.4);
         }
-        #endScreen .score {
-            font-size: min(6vw, 2.5rem);
-            color: #ffdd59;
-            margin: 20px 0;
+        
+        .button:active {
+            transform: translateY(-1px);
         }
-        .joystick {
+        
+        .instructions {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 500px;
+            margin-top: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #4cc9f0;
+        }
+        
+        .instructions p {
+            margin-bottom: 10px;
+            color: #a9b7c6;
+            line-height: 1.5;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+            color: #a9b7c6;
+            line-height: 1.5;
+        }
+        
+        .game-message {
             position: absolute;
-            left: 40px;
-            bottom: 40px;
-            width: 120px;
-            height: 120px;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 50%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             display: none;
-            z-index: 5;
-            border: 2px solid rgba(255, 221, 89, 0.5);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 12px;
+            z-index: 100;
+            text-align: center;
+            padding: 20px;
         }
-        .joystick.show {
-            display: block;
+        
+        .game-message.show {
+            display: flex;
+            animation: fadeIn 0.5s ease;
         }
-        .joystick-handle {
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 221, 89, 0.9);
-            border-radius: 50%;
-            top: 30px;
-            left: 30px;
-            transition: transform 0.1s;
+        
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
         }
+        
+        .game-message h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        
+        .game-message p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            max-width: 80%;
+        }
+        
+        .mobile-controls {
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            width: 200px;
+            height: 200px;
+            margin: 20px auto;
+        }
+        
+        .mobile-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .mobile-control:active {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(0.95);
+        }
+        
+        .mobile-up { grid-column: 2; grid-row: 1; }
+        .mobile-left { grid-column: 1; grid-row: 2; }
+        .mobile-right { grid-column: 3; grid-row: 2; }
+        .mobile-down { grid-column: 2; grid-row: 3; }
+        
         @media (max-width: 768px) {
-            .joystick {
-                width: 100px;
-                height: 100px;
-                left: 25px;
-                bottom: 25px;
+            h1 {
+                font-size: 2.8rem;
             }
-            .joystick-handle {
-                width: 50px;
-                height: 50px;
-                top: 25px;
-                left: 25px;
+            
+            .score, .best {
+                font-size: 1.7rem;
+            }
+            
+            .tile {
+                font-size: 1.5rem;
+            }
+            
+            .mobile-controls {
+                display: grid;
+            }
+            
+            .instructions {
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .score-container, .best-container {
+                padding: 12px 15px;
+                min-width: 100px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .button {
+                width: 100%;
+            }
+            
+            .mobile-controls {
+                width: 160px;
+                height: 160px;
             }
         }
     </style>
@@ -1232,513 +1383,612 @@ body {
 <body>
   <!-- 原游戏body内容 -->
   
-    <canvas id="gameCanvas"></canvas>
+    <div class="header">
+        <h1>2048</h1>
+        <p class="subtitle">合并相同数字的方块，创造出2048！</p>
+    </div>
     
-    <div id="startScreen" class="screen">
-        <h1>🌻 寻找向日葵的秘密</h1>
-        <p class="subtitle">在神秘的星光花园中，收集散落的阳光能量</p>
-        <button id="startBtn" class="btn">开始游戏</button>
-        <button id="howtoBtn" class="btn secondary">游戏说明</button>
-        <div id="instructions" class="instructions">
-            <h2>游戏说明</h2>
-            <p>🎮 <strong>控制方式：</strong></p>
-            <p>• 键盘：使用 <kbd>WASD</kbd> 或 <kbd>方向键</kbd> 移动角色</p>
-            <p>• 触屏：触摸屏幕任意位置并拖动来控制移动方向</p>
-            <p>• 左下角虚拟摇杆（移动设备）</p>
-            <p>🎯 <strong>游戏目标：</strong></p>
-            <p>控制小园丁收集散落的阳光能量（黄色光点）</p>
-            <p>避开移动的暗影（黑色圆球）</p>
-            <p>收集全部10个阳光能量即可发现向日葵的秘密！</p>
-            <p>⏱️ <strong>时间限制：</strong>60秒</p>
-            <p>❤️ <strong>生命值：</strong>3点，被暗影碰到会减少生命</p>
+    <div class="stats-container">
+        <div class="score-container">
+            <div class="score-label">分数</div>
+            <div class="score">0</div>
+        </div>
+        <div class="best-container">
+            <div class="best-label">最高分</div>
+            <div class="best">0</div>
         </div>
     </div>
     
-    <div id="endScreen" class="screen hidden">
-        <h1>游戏结束</h1>
-        <div id="endMessage" class="subtitle"></div>
-        <div id="finalScore" class="score"></div>
-        <button id="restartBtn" class="btn">再玩一次</button>
-        <button id="menuBtn" class="btn secondary">返回菜单</button>
+    <div class="game-container">
+        <div class="game-board">
+            <div class="grid-container">
+                <div class="grid-background">
+                    <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                    <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                    <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                    <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                </div>
+                <div class="tile-container" id="tile-container">
+                    <!-- 方块将通过JavaScript动态生成 -->
+                </div>
+            </div>
+            
+            <div class="game-message" id="game-message">
+                <h2 id="message-title">游戏结束</h2>
+                <p id="message-text">你输了！再试一次吧。</p>
+                <button class="button" id="try-again-btn">再试一次</button>
+            </div>
+        </div>
     </div>
     
-    <button id="helpBtn">?</button>
+    <div class="mobile-controls">
+        <div class="mobile-control mobile-up" id="up-btn">↑</div>
+        <div class="mobile-control mobile-left" id="left-btn">←</div>
+        <div class="mobile-control mobile-right" id="right-btn">→</div>
+        <div class="mobile-control mobile-down" id="down-btn">↓</div>
+    </div>
     
-    <div id="joystick" class="joystick">
-        <div class="joystick-handle"></div>
+    <div class="controls">
+        <button class="button" id="new-game-btn">新游戏</button>
+        <button class="button" id="undo-btn">撤销</button>
+    </div>
+    
+    <div class="instructions">
+        <h3>游戏玩法</h3>
+        <p>使用<strong>方向键</strong>或<strong>WASD</strong>键或<strong>屏幕上的方向按钮</strong>移动方块。当两个相同数字的方块碰撞时，它们会合并成一个新方块，数字是它们之和。每次移动后，会在空白位置随机生成一个新的2或4方块。</p>
+        <p><strong>目标：</strong>创建一个值为2048的方块！</p>
+        <ul>
+            <li>每次合并数字都会增加分数</li>
+            <li>"撤销"按钮可以回退一步（最多10步）</li>
+            <li>最高分会自动保存</li>
+        </ul>
     </div>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const startScreen = document.getElementById('startScreen');
-        const endScreen = document.getElementById('endScreen');
-        const startBtn = document.getElementById('startBtn');
-        const howtoBtn = document.getElementById('howtoBtn');
-        const restartBtn = document.getElementById('restartBtn');
-        const menuBtn = document.getElementById('menuBtn');
-        const helpBtn = document.getElementById('helpBtn');
-        const instructions = document.getElementById('instructions');
-        const joystick = document.getElementById('joystick');
-        const joystickHandle = document.querySelector('.joystick-handle');
-        const endMessage = document.getElementById('endMessage');
-        const finalScore = document.getElementById('finalScore');
-
-        let game = {
-            running: false,
-            score: 0,
-            timeLeft: 60,
-            lives: 3,
-            level: 1,
-            collected: 0,
-            totalSunlights: 10
+        // 游戏状态
+        let grid = [];
+        let score = 0;
+        let bestScore = localStorage.getItem('2048-best-score') || 0;
+        let gameOver = false;
+        let gameWon = false;
+        let moveHistory = [];
+        const maxHistory = 10;
+        
+        // DOM元素
+        const tileContainer = document.getElementById('tile-container');
+        const scoreElement = document.querySelector('.score');
+        const bestElement = document.querySelector('.best');
+        const gameMessage = document.getElementById('game-message');
+        const messageTitle = document.getElementById('message-title');
+        const messageText = document.getElementById('message-text');
+        const newGameBtn = document.getElementById('new-game-btn');
+        const tryAgainBtn = document.getElementById('try-again-btn');
+        const undoBtn = document.getElementById('undo-btn');
+        
+        // 移动控制按钮
+        const upBtn = document.getElementById('up-btn');
+        const downBtn = document.getElementById('down-btn');
+        const leftBtn = document.getElementById('left-btn');
+        const rightBtn = document.getElementById('right-btn');
+        
+        // 方块颜色映射
+        const tileColors = {
+            2: { background: '#EEE4DA', color: '#776E65' },
+            4: { background: '#EDE0C8', color: '#776E65' },
+            8: { background: '#F2B179', color: '#F9F6F2' },
+            16: { background: '#F59563', color: '#F9F6F2' },
+            32: { background: '#F67C5F', color: '#F9F6F2' },
+            64: { background: '#F65E3B', color: '#F9F6F2' },
+            128: { background: '#EDCF72', color: '#F9F6F2' },
+            256: { background: '#EDCC61', color: '#F9F6F2' },
+            512: { background: '#EDC850', color: '#F9F6F2' },
+            1024: { background: '#EDC53F', color: '#F9F6F2' },
+            2048: { background: '#EDC22E', color: '#F9F6F2' },
+            4096: { background: '#3D3A33', color: '#F9F6F2' },
+            8192: { background: '#0C0B09', color: '#F9F6F2' }
         };
-
-        let player = {
-            x: 0,
-            y: 0,
-            radius: 20,
-            speed: 5,
-            color: '#4cd137',
-            faceColor: '#44bd32'
-        };
-
-        let sunlights = [];
-        let shadows = [];
-        let keys = {};
-        let touch = { x: 0, y: 0, active: false };
-        let joystickActive = false;
-        let joystickVector = { x: 0, y: 0 };
-        let animationId;
-        let lastTime = 0;
-        const FPS = 60;
-        const frameInterval = 1000 / FPS;
-
-        function resizeCanvas() {
-            const width = window.innerWidth;
-            const height = window.innerHeight;
-            const size = Math.min(width, height) * 0.9;
+        
+        // 初始化游戏
+        function initGame() {
+            // 初始化4x4网格
+            grid = Array.from({ length: 4 }, () => Array(4).fill(0));
             
-            canvas.width = Math.min(size, 800);
-            canvas.height = Math.min(size, 800);
+            // 重置游戏状态
+            score = 0;
+            gameOver = false;
+            gameWon = false;
+            moveHistory = [];
             
-            player.x = canvas.width / 2;
-            player.y = canvas.height / 2;
+            // 更新UI
+            updateScore();
+            bestElement.textContent = bestScore;
+            gameMessage.classList.remove('show');
             
-            if (game.running) {
-                generateGameElements();
-            }
+            // 清空方块容器
+            tileContainer.innerHTML = '';
+            
+            // 添加两个初始方块
+            addRandomTile();
+            addRandomTile();
+            
+            // 渲染网格
+            renderTiles();
         }
-
-        function generateGameElements() {
-            sunlights = [];
-            shadows = [];
-            
-            for (let i = 0; i < game.totalSunlights; i++) {
-                sunlights.push({
-                    x: Math.random() * (canvas.width - 40) + 20,
-                    y: Math.random() * (canvas.height - 40) + 20,
-                    radius: 12,
-                    color: '#ffdd59',
-                    glow: 0,
-                    glowDirection: 1
-                });
-            }
-            
-            for (let i = 0; i < 3 + game.level; i++) {
-                shadows.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    radius: 15 + Math.random() * 10,
-                    speedX: (Math.random() - 0.5) * 4,
-                    speedY: (Math.random() - 0.5) * 4,
-                    color: '#2c3e50'
-                });
-            }
-        }
-
-        function drawPlayer() {
-            ctx.save();
-            ctx.shadowColor = player.color;
-            ctx.shadowBlur = 15;
-            ctx.fillStyle = player.color;
-            ctx.beginPath();
-            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-            ctx.fill();
-            
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = player.faceColor;
-            ctx.beginPath();
-            ctx.arc(player.x - 8, player.y - 8, 6, 0, Math.PI * 2);
-            ctx.arc(player.x + 8, player.y - 8, 6, 0, Math.PI * 2);
-            ctx.fill();
-            
-            ctx.beginPath();
-            ctx.arc(player.x, player.y + 5, 8, 0, Math.PI);
-            ctx.strokeStyle = player.faceColor;
-            ctx.lineWidth = 3;
-            ctx.stroke();
-            ctx.restore();
-        }
-
-        function drawSunlights() {
-            sunlights.forEach(sun => {
-                ctx.save();
-                sun.glow += 0.05 * sun.glowDirection;
-                if (sun.glow > 1 || sun.glow < 0.3) sun.glowDirection *= -1;
-                
-                ctx.shadowColor = sun.color;
-                ctx.shadowBlur = 20 + sun.glow * 10;
-                ctx.fillStyle = sun.color;
-                ctx.beginPath();
-                ctx.arc(sun.x, sun.y, sun.radius, 0, Math.PI * 2);
-                ctx.fill();
-                
-                for (let i = 0; i < 8; i++) {
-                    const angle = (i * Math.PI) / 4;
-                    const rayLength = sun.radius + 5 + sun.glow * 3;
-                    ctx.beginPath();
-                    ctx.moveTo(sun.x + Math.cos(angle) * sun.radius, sun.y + Math.sin(angle) * sun.radius);
-                    ctx.lineTo(sun.x + Math.cos(angle) * rayLength, sun.y + Math.sin(angle) * rayLength);
-                    ctx.strokeStyle = sun.color;
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                }
-                ctx.restore();
-            });
-        }
-
-        function drawShadows() {
-            shadows.forEach(shadow => {
-                ctx.save();
-                ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-                ctx.shadowBlur = 15;
-                ctx.fillStyle = shadow.color;
-                ctx.beginPath();
-                ctx.arc(shadow.x, shadow.y, shadow.radius, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.shadowBlur = 0;
-                ctx.fillStyle = '#34495e';
-                ctx.beginPath();
-                ctx.arc(shadow.x - 5, shadow.y - 5, 4, 0, Math.PI * 2);
-                ctx.arc(shadow.x + 5, shadow.y - 5, 4, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-            });
-        }
-
-        function drawHUD() {
-            ctx.save();
-            ctx.fillStyle = 'rgba(26, 37, 69, 0.8)';
-            ctx.fillRect(10, 10, 200, 90);
-            ctx.strokeStyle = '#ffdd59';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(10, 10, 200, 90);
-            
-            ctx.font = 'bold 18px Arial';
-            ctx.fillStyle = '#fff';
-            ctx.fillText(`阳光能量: ${game.collected}/${game.totalSunlights}`, 20, 40);
-            ctx.fillText(`时间: ${Math.ceil(game.timeLeft)}秒`, 20, 70);
-            ctx.fillText(`生命: ${game.lives}`, 20, 100);
-            
-            ctx.fillStyle = '#ffdd59';
-            ctx.font = 'bold 24px Arial';
-            ctx.textAlign = 'right';
-            ctx.fillText(`关卡: ${game.level}`, canvas.width - 20, 40);
-            ctx.restore();
-        }
-
-        function updatePlayer() {
-            let moveX = 0;
-            let moveY = 0;
-            
-            if (joystickActive) {
-                moveX = joystickVector.x * player.speed;
-                moveY = joystickVector.y * player.speed;
-            } else if (touch.active) {
-                const dx = touch.x - player.x;
-                const dy = touch.y - player.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                if (distance > player.radius) {
-                    moveX = (dx / distance) * player.speed;
-                    moveY = (dy / distance) * player.speed;
-                }
-            } else {
-                if (keys['ArrowLeft'] || keys['a'] || keys['A']) moveX = -player.speed;
-                if (keys['ArrowRight'] || keys['d'] || keys['D']) moveX = player.speed;
-                if (keys['ArrowUp'] || keys['w'] || keys['W']) moveY = -player.speed;
-                if (keys['ArrowDown'] || keys['s'] || keys['S']) moveY = player.speed;
-            }
-            
-            player.x += moveX;
-            player.y += moveY;
-            
-            player.x = Math.max(player.radius, Math.min(canvas.width - player.radius, player.x));
-            player.y = Math.max(player.radius, Math.min(canvas.height - player.radius, player.y));
-        }
-
-        function updateShadows() {
-            shadows.forEach(shadow => {
-                shadow.x += shadow.speedX;
-                shadow.y += shadow.speedY;
-                
-                if (shadow.x < shadow.radius || shadow.x > canvas.width - shadow.radius) {
-                    shadow.speedX *= -1;
-                }
-                if (shadow.y < shadow.radius || shadow.y > canvas.height - shadow.radius) {
-                    shadow.speedY *= -1;
-                }
-                
-                const dx = player.x - shadow.x;
-                const dy = player.y - shadow.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                
-                if (distance < player.radius + shadow.radius) {
-                    if (game.lives > 0) {
-                        game.lives--;
-                        player.x = canvas.width / 2;
-                        player.y = canvas.height / 2;
-                        
-                        if (game.lives === 0) {
-                            endGame(false);
-                        }
-                    }
-                }
-            });
-        }
-
-        function checkSunlightCollision() {
-            for (let i = sunlights.length - 1; i >= 0; i--) {
-                const sun = sunlights[i];
-                const dx = player.x - sun.x;
-                const dy = player.y - sun.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                
-                if (distance < player.radius + sun.radius) {
-                    sunlights.splice(i, 1);
-                    game.collected++;
-                    game.score += 100;
-                    
-                    if (game.collected === game.totalSunlights) {
-                        game.level++;
-                        if (game.level > 3) {
-                            endGame(true);
-                        } else {
-                            game.collected = 0;
-                            generateGameElements();
-                            game.timeLeft += 15;
-                        }
-                    }
-                }
-            }
-        }
-
-        function updateGame(time) {
-            if (!lastTime) lastTime = time;
-            const deltaTime = time - lastTime;
-            
-            if (deltaTime > frameInterval) {
-                updatePlayer();
-                updateShadows();
-                checkSunlightCollision();
-                
-                game.timeLeft -= deltaTime / 1000;
-                if (game.timeLeft <= 0) {
-                    endGame(false);
-                }
-                
-                lastTime = time - (deltaTime % frameInterval);
-            }
-        }
-
-        function drawGame() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.save();
-            ctx.fillStyle = '#0a1931';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            for (let i = 0; i < 50; i++) {
-                ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.5})`;
-                ctx.beginPath();
-                ctx.arc(
-                    Math.random() * canvas.width,
-                    Math.random() * canvas.height,
-                    Math.random() * 2,
-                    0,
-                    Math.PI * 2
-                );
-                ctx.fill();
-            }
-            ctx.restore();
-            
-            drawSunlights();
-            drawShadows();
-            drawPlayer();
-            drawHUD();
-        }
-
-        function gameLoop(time) {
-            if (game.running) {
-                updateGame(time);
-                drawGame();
-                animationId = requestAnimationFrame(gameLoop);
-            }
-        }
-
-        function startGame() {
-            game = {
-                running: true,
-                score: 0,
-                timeLeft: 60,
-                lives: 3,
-                level: 1,
-                collected: 0,
-                totalSunlights: 10
+        
+        // 保存当前状态到历史记录
+        function saveToHistory() {
+            // 深度复制网格和分数
+            const gridCopy = grid.map(row => [...row]);
+            const historyItem = {
+                grid: gridCopy,
+                score: score
             };
             
-            player.x = canvas.width / 2;
-            player.y = canvas.height / 2;
+            moveHistory.push(historyItem);
             
-            startScreen.classList.add('hidden');
-            endScreen.classList.add('hidden');
-            helpBtn.classList.add('show');
-            
-            if ('ontouchstart' in window) {
-                joystick.classList.add('show');
+            // 限制历史记录数量
+            if (moveHistory.length > maxHistory) {
+                moveHistory.shift();
             }
-            
-            generateGameElements();
-            lastTime = 0;
-            animationId = requestAnimationFrame(gameLoop);
         }
-
-        function endGame(success) {
-            game.running = false;
-            cancelAnimationFrame(animationId);
+        
+        // 撤销上一步
+        function undoMove() {
+            if (moveHistory.length === 0) return;
             
-            if (success) {
-                endMessage.textContent = '🎉 恭喜！你发现了向日葵的秘密！';
-                finalScore.textContent = `最终得分: ${game.score + Math.ceil(game.timeLeft) * 10}`;
-            } else {
-                endMessage.textContent = game.timeLeft <= 0 ? '⏰ 时间到了！' : '💔 生命值耗尽！';
-                finalScore.textContent = `收集的阳光: ${game.collected}`;
-            }
+            const previousState = moveHistory.pop();
+            grid = previousState.grid.map(row => [...row]);
+            score = previousState.score;
             
-            helpBtn.classList.remove('show');
-            joystick.classList.remove('show');
-            endScreen.classList.remove('hidden');
+            updateScore();
+            renderTiles();
+            
+            // 检查游戏是否结束
+            gameOver = false;
+            gameMessage.classList.remove('show');
         }
-
-        function setupEventListeners() {
-            window.addEventListener('resize', resizeCanvas);
-            resizeCanvas();
+        
+        // 添加随机方块
+        function addRandomTile() {
+            const emptyCells = [];
             
-            startBtn.addEventListener('click', startGame);
-            restartBtn.addEventListener('click', startGame);
-            menuBtn.addEventListener('click', () => {
-                endScreen.classList.add('hidden');
-                startScreen.classList.remove('hidden');
-                helpBtn.classList.remove('show');
-                joystick.classList.remove('show');
-            });
-            
-            howtoBtn.addEventListener('click', () => {
-                instructions.classList.toggle('show');
-            });
-            
-            helpBtn.addEventListener('click', () => {
-                instructions.classList.toggle('show');
-            });
-            
-            document.addEventListener('keydown', (e) => {
-                keys[e.key] = true;
-            });
-            
-            document.addEventListener('keyup', (e) => {
-                keys[e.key] = false;
-            });
-            
-            canvas.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                const rect = canvas.getBoundingClientRect();
-                touch.x = e.touches[0].clientX - rect.left;
-                touch.y = e.touches[0].clientY - rect.top;
-                touch.active = true;
-                
-                if (touch.x < canvas.width * 0.3 && touch.y > canvas.height * 0.7) {
-                    joystickActive = true;
-                    updateJoystick(touch.x, touch.y);
+            // 查找所有空白格子
+            for (let row = 0; row < 4; row++) {
+                for (let col = 0; col < 4; col++) {
+                    if (grid[row][col] === 0) {
+                        emptyCells.push({ row, col });
+                    }
                 }
-            });
+            }
             
-            canvas.addEventListener('touchmove', (e) => {
-                e.preventDefault();
-                if (!touch.active) return;
+            if (emptyCells.length > 0) {
+                // 随机选择一个空白格子
+                const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
                 
-                const rect = canvas.getBoundingClientRect();
-                touch.x = e.touches[0].clientX - rect.left;
-                touch.y = e.touches[0].clientY - rect.top;
+                // 90%的概率生成2，10%的概率生成4
+                const value = Math.random() < 0.9 ? 2 : 4;
                 
-                if (joystickActive) {
-                    updateJoystick(touch.x, touch.y);
-                }
-            });
+                // 设置方块值
+                grid[randomCell.row][randomCell.col] = value;
+                
+                return true;
+            }
             
-            canvas.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                touch.active = false;
-                joystickActive = false;
-                joystickVector = { x: 0, y: 0 };
-                joystickHandle.style.transform = 'translate(0, 0)';
-            });
-            
-            canvas.addEventListener('mousedown', (e) => {
-                const rect = canvas.getBoundingClientRect();
-                touch.x = e.clientX - rect.left;
-                touch.y = e.clientY - rect.top;
-                touch.active = true;
-            });
-            
-            canvas.addEventListener('mousemove', (e) => {
-                if (!touch.active) return;
-                const rect = canvas.getBoundingClientRect();
-                touch.x = e.clientX - rect.left;
-                touch.y = e.clientY - rect.top;
-            });
-            
-            canvas.addEventListener('mouseup', () => {
-                touch.active = false;
-            });
-            
-            canvas.addEventListener('mouseleave', () => {
-                touch.active = false;
-            });
+            return false;
         }
-
-        function updateJoystick(x, y) {
-            const joystickRect = joystick.getBoundingClientRect();
-            const centerX = joystickRect.left + joystickRect.width / 2;
-            const centerY = joystickRect.top + joystickRect.height / 2;
-            const dx = x - centerX;
-            const dy = y - centerY;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            const maxDistance = joystickRect.width / 2 - 30;
+        
+        // 渲染所有方块
+        function renderTiles() {
+            // 清空容器
+            tileContainer.innerHTML = '';
             
-            if (distance > maxDistance) {
-                const angle = Math.atan2(dy, dx);
-                joystickVector.x = Math.cos(angle);
-                joystickVector.y = Math.sin(angle);
-                joystickHandle.style.transform = `translate(${Math.cos(angle) * maxDistance}px, ${Math.sin(angle) * maxDistance}px)`;
-            } else {
-                joystickVector.x = dx / maxDistance;
-                joystickVector.y = dy / maxDistance;
-                joystickHandle.style.transform = `translate(${dx}px, ${dy}px)`;
+            for (let row = 0; row < 4; row++) {
+                for (let col = 0; col < 4; col++) {
+                    const value = grid[row][col];
+                    
+                    if (value !== 0) {
+                        const tile = document.createElement('div');
+                        tile.className = 'tile';
+                        tile.textContent = value;
+                        
+                        // 设置位置
+                        tile.style.left = `calc(${col * 25}% + ${col * 12}px + 12px)`;
+                        tile.style.top = `calc(${row * 25}% + ${row * 12}px + 12px)`;
+                        
+                        // 设置颜色
+                        if (value <= 8192) {
+                            tile.style.background = tileColors[value].background;
+                            tile.style.color = tileColors[value].color;
+                        } else {
+                            // 对于大于8192的值，使用默认颜色
+                            tile.style.background = '#0C0B09';
+                            tile.style.color = '#F9F6F2';
+                        }
+                        
+                        // 调整字体大小
+                        if (value >= 1000) {
+                            tile.style.fontSize = '1.4rem';
+                        } else if (value >= 100) {
+                            tile.style.fontSize = '1.6rem';
+                        }
+                        
+                        tileContainer.appendChild(tile);
+                    }
+                }
             }
         }
-
-        setupEventListeners();
+        
+        // 更新分数显示
+        function updateScore() {
+            scoreElement.textContent = score;
+            
+            // 更新最高分
+            if (score > bestScore) {
+                bestScore = score;
+                bestElement.textContent = bestScore;
+                localStorage.setItem('2048-best-score', bestScore);
+            }
+        }
+        
+        // 移动方块
+        function move(direction) {
+            if (gameOver) return false;
+            
+            // 保存当前状态到历史记录
+            saveToHistory();
+            
+            let moved = false;
+            const oldGrid = grid.map(row => [...row]);
+            
+            switch (direction) {
+                case 'up':
+                    moved = moveUp();
+                    break;
+                case 'down':
+                    moved = moveDown();
+                    break;
+                case 'left':
+                    moved = moveLeft();
+                    break;
+                case 'right':
+                    moved = moveRight();
+                    break;
+            }
+            
+            // 如果有移动，添加新方块并检查游戏状态
+            if (moved) {
+                addRandomTile();
+                renderTiles();
+                updateScore();
+                checkGameStatus();
+            } else {
+                // 如果没有移动，从历史记录中移除最后一项
+                moveHistory.pop();
+            }
+            
+            return moved;
+        }
+        
+        // 向上移动
+        function moveUp() {
+            let moved = false;
+            
+            for (let col = 0; col < 4; col++) {
+                // 收集当前列的所有非零值
+                const column = [];
+                for (let row = 0; row < 4; row++) {
+                    if (grid[row][col] !== 0) {
+                        column.push(grid[row][col]);
+                    }
+                }
+                
+                // 合并相同数字
+                for (let i = 0; i < column.length - 1; i++) {
+                    if (column[i] === column[i + 1]) {
+                        column[i] *= 2;
+                        column[i + 1] = 0;
+                        score += column[i];
+                        moved = true;
+                    }
+                }
+                
+                // 移除零值并填充到顶部
+                const newColumn = column.filter(val => val !== 0);
+                while (newColumn.length < 4) {
+                    newColumn.push(0);
+                }
+                
+                // 更新网格
+                for (let row = 0; row < 4; row++) {
+                    if (grid[row][col] !== newColumn[row]) {
+                        moved = true;
+                    }
+                    grid[row][col] = newColumn[row];
+                }
+            }
+            
+            return moved;
+        }
+        
+        // 向下移动
+        function moveDown() {
+            let moved = false;
+            
+            for (let col = 0; col < 4; col++) {
+                // 收集当前列的所有非零值（从底部开始）
+                const column = [];
+                for (let row = 3; row >= 0; row--) {
+                    if (grid[row][col] !== 0) {
+                        column.push(grid[row][col]);
+                    }
+                }
+                
+                // 合并相同数字
+                for (let i = 0; i < column.length - 1; i++) {
+                    if (column[i] === column[i + 1]) {
+                        column[i] *= 2;
+                        column[i + 1] = 0;
+                        score += column[i];
+                        moved = true;
+                    }
+                }
+                
+                // 移除零值并填充到底部
+                const newColumn = column.filter(val => val !== 0);
+                while (newColumn.length < 4) {
+                    newColumn.push(0);
+                }
+                
+                // 更新网格（从底部开始）
+                for (let row = 3; row >= 0; row--) {
+                    const value = newColumn[3 - row] || 0;
+                    if (grid[row][col] !== value) {
+                        moved = true;
+                    }
+                    grid[row][col] = value;
+                }
+            }
+            
+            return moved;
+        }
+        
+        // 向左移动
+        function moveLeft() {
+            let moved = false;
+            
+            for (let row = 0; row < 4; row++) {
+                // 收集当前行的所有非零值
+                const rowValues = [];
+                for (let col = 0; col < 4; col++) {
+                    if (grid[row][col] !== 0) {
+                        rowValues.push(grid[row][col]);
+                    }
+                }
+                
+                // 合并相同数字
+                for (let i = 0; i < rowValues.length - 1; i++) {
+                    if (rowValues[i] === rowValues[i + 1]) {
+                        rowValues[i] *= 2;
+                        rowValues[i + 1] = 0;
+                        score += rowValues[i];
+                        moved = true;
+                    }
+                }
+                
+                // 移除零值并填充到左侧
+                const newRow = rowValues.filter(val => val !== 0);
+                while (newRow.length < 4) {
+                    newRow.push(0);
+                }
+                
+                // 更新网格
+                for (let col = 0; col < 4; col++) {
+                    if (grid[row][col] !== newRow[col]) {
+                        moved = true;
+                    }
+                    grid[row][col] = newRow[col];
+                }
+            }
+            
+            return moved;
+        }
+        
+        // 向右移动
+        function moveRight() {
+            let moved = false;
+            
+            for (let row = 0; row < 4; row++) {
+                // 收集当前行的所有非零值（从右侧开始）
+                const rowValues = [];
+                for (let col = 3; col >= 0; col--) {
+                    if (grid[row][col] !== 0) {
+                        rowValues.push(grid[row][col]);
+                    }
+                }
+                
+                // 合并相同数字
+                for (let i = 0; i < rowValues.length - 1; i++) {
+                    if (rowValues[i] === rowValues[i + 1]) {
+                        rowValues[i] *= 2;
+                        rowValues[i + 1] = 0;
+                        score += rowValues[i];
+                        moved = true;
+                    }
+                }
+                
+                // 移除零值并填充到右侧
+                const newRow = rowValues.filter(val => val !== 0);
+                while (newRow.length < 4) {
+                    newRow.push(0);
+                }
+                
+                // 更新网格（从右侧开始）
+                for (let col = 3; col >= 0; col--) {
+                    const value = newRow[3 - col] || 0;
+                    if (grid[row][col] !== value) {
+                        moved = true;
+                    }
+                    grid[row][col] = value;
+                }
+            }
+            
+            return moved;
+        }
+        
+        // 检查游戏状态
+        function checkGameStatus() {
+            // 检查是否获胜
+            for (let row = 0; row < 4; row++) {
+                for (let col = 0; col < 4; col++) {
+                    if (grid[row][col] === 2048) {
+                        gameWon = true;
+                        showGameMessage('恭喜！', '你成功创造了2048方块！');
+                        return;
+                    }
+                }
+            }
+            
+            // 检查是否还有空位
+            for (let row = 0; row < 4; row++) {
+                for (let col = 0; col < 4; col++) {
+                    if (grid[row][col] === 0) {
+                        return; // 还有空位，游戏继续
+                    }
+                }
+            }
+            
+            // 检查是否还有可能的移动
+            // 检查水平方向
+            for (let row = 0; row < 4; row++) {
+                for (let col = 0; col < 3; col++) {
+                    if (grid[row][col] === grid[row][col + 1]) {
+                        return; // 有相邻相同数字，游戏继续
+                    }
+                }
+            }
+            
+            // 检查垂直方向
+            for (let col = 0; col < 4; col++) {
+                for (let row = 0; row < 3; row++) {
+                    if (grid[row][col] === grid[row + 1][col]) {
+                        return; // 有相邻相同数字，游戏继续
+                    }
+                }
+            }
+            
+            // 没有空位且没有可能的移动，游戏结束
+            gameOver = true;
+            showGameMessage('游戏结束', '没有更多移动可能了。再试一次吧！');
+        }
+        
+        // 显示游戏消息
+        function showGameMessage(title, text) {
+            messageTitle.textContent = title;
+            messageText.textContent = text;
+            gameMessage.classList.add('show');
+        }
+        
+        // 触摸控制
+        let touchStartX, touchStartY;
+        
+        function handleTouchStart(e) {
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            e.preventDefault();
+        }
+        
+        function handleTouchEnd(e) {
+            if (!touchStartX || !touchStartY) return;
+            
+            const touch = e.changedTouches[0];
+            const touchEndX = touch.clientX;
+            const touchEndY = touch.clientY;
+            
+            const dx = touchEndX - touchStartX;
+            const dy = touchEndY - touchStartY;
+            
+            // 确定滑动方向
+            if (Math.abs(dx) > Math.abs(dy)) {
+                // 水平滑动
+                if (dx > 30) {
+                    move('right');
+                } else if (dx < -30) {
+                    move('left');
+                }
+            } else {
+                // 垂直滑动
+                if (dy > 30) {
+                    move('down');
+                } else if (dy < -30) {
+                    move('up');
+                }
+            }
+            
+            touchStartX = null;
+            touchStartY = null;
+            e.preventDefault();
+        }
+        
+        // 键盘控制
+        function handleKeyDown(e) {
+            if (gameOver && !gameWon) return;
+            
+            switch (e.key) {
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    e.preventDefault();
+                    move('up');
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    e.preventDefault();
+                    move('down');
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    e.preventDefault();
+                    move('left');
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    e.preventDefault();
+                    move('right');
+                    break;
+            }
+        }
+        
+        // 事件监听器
+        document.addEventListener('keydown', handleKeyDown);
+        
+        // 触摸事件监听
+        document.addEventListener('touchstart', handleTouchStart, { passive: false });
+        document.addEventListener('touchend', handleTouchEnd, { passive: false });
+        
+        // 按钮事件监听
+        newGameBtn.addEventListener('click', initGame);
+        tryAgainBtn.addEventListener('click', initGame);
+        undoBtn.addEventListener('click', undoMove);
+        
+        // 移动控制按钮事件
+        upBtn.addEventListener('click', () => move('up'));
+        downBtn.addEventListener('click', () => move('down'));
+        leftBtn.addEventListener('click', () => move('left'));
+        rightBtn.addEventListener('click', () => move('right'));
+        
+        // 初始化游戏
+        initGame();
+        
+        // 防止页面滚动
+        document.body.addEventListener('touchmove', function(e) {
+            if (e.target.classList.contains('mobile-control')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
     </script>
 
   <!-- YXJ-PLATFORM-UI-START -->
@@ -1754,12 +2004,12 @@ body {
     <div class="tiktok-author-avatar" id="author-avatar" onclick="openAuthorProfile()">👤</div>
     <div class="tiktok-author-details" style="display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;min-height:32px!important;gap:2px!important;">
       <div class="tiktok-author-name-row" style="display:flex!important;flex-direction:row!important;align-items:center!important;gap:10px!important;">
-        <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">player_699ypg</span>
-        <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="ae94b9e4-ad0f-485f-bc7f-b58c41a6eecf" onclick="toggleFollow()">
+        <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">游戏家用户</span>
+        <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="12351cd0-ac53-43bf-8e14-50913b352442" onclick="toggleFollow()">
           <span class="follow-icon">+</span> 关注
         </button>
       </div>
-      <span class="tiktok-publish-time" style="display:block!important;margin:0!important;padding:0!important;">发布于 2026年1月26日</span>
+      
     </div>
   </div>
 </div>
@@ -1885,10 +2135,10 @@ body {
 
 <script>
 // 获取游戏ID和作者信息
-const gameId = '4231aaa7-cd09-44b1-b56f-d8c91a9392bf';
-const gameTitle = '寻找向日葵的秘密';
-const authorToken = 'ae94b9e4-ad0f-485f-bc7f-b58c41a6eecf';
-const authorName = 'player_699ypg';
+const gameId = 'd4c7e262-f381-40ac-ac32-77ff1922679e';
+const gameTitle = '2048';
+const authorToken = '12351cd0-ac53-43bf-8e14-50913b352442';
+const authorName = '游戏家用户';
 const API_BASE = '/api/games';
 
 // 调试日志

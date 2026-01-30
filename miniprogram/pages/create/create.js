@@ -78,7 +78,9 @@ Page({
     
     // 订阅消息
     subscribed: false,
-    tmplId: ''
+    // 订阅消息模板ID - 游戏创建完成通知
+    // 请在微信公众平台 -> 小程序后台 -> 订阅消息 -> 我的模板 中获取，并替换下面的值
+    tmplId: '7ByssPfgCjnVLLUZHEQoohc-i7rcepq3cOt6tx4WKgc'
   },
 
   onLoad() {
@@ -220,9 +222,41 @@ Page({
     app.showToast('已重置');
   },
 
+  // 请求订阅消息授权
+  async requestSubscribeAuth() {
+    const { tmplId } = this.data;
+    
+    // 如果模板ID未配置，跳过订阅
+    if (!tmplId || tmplId === 'your-subscribe-template-id') {
+      console.log('[Subscribe] 订阅消息模板ID未配置，跳过订阅');
+      return false;
+    }
+    
+    return new Promise((resolve) => {
+      wx.requestSubscribeMessage({
+        tmplIds: [tmplId],
+        success: (res) => {
+          console.log('[Subscribe] 订阅授权结果:', res);
+          // res[tmplId] 可能是 'accept', 'reject', 'ban'
+          if (res[tmplId] === 'accept') {
+            this.setData({ subscribed: true });
+            resolve(true);
+          } else {
+            console.log('[Subscribe] 用户拒绝或已被禁止订阅');
+            resolve(false);
+          }
+        },
+        fail: (err) => {
+          console.error('[Subscribe] 请求订阅授权失败:', err);
+          resolve(false);
+        }
+      });
+    });
+  },
+
   // 开始生成游戏
   async startGenerate() {
-    const { prompt, generating, advancedSettings, llmSettings, showAdvanced } = this.data;
+    const { prompt, generating, advancedSettings, llmSettings, showAdvanced, tmplId } = this.data;
     
     if (generating) return;
     
@@ -242,11 +276,16 @@ Page({
       return;
     }
 
+    // 请求订阅消息授权（游戏做好后会通知用户）
+    // 这里先请求授权，不论成功与否都继续生成
+    const subscribed = await this.requestSubscribeAuth();
+    console.log('[Generate] 订阅状态:', subscribed);
+
     // 开始生成
     this.setData({
       generating: true,
       progress: 0,
-      progressText: '正在连接AI...',
+      progressText: subscribed ? '正在连接AI...（完成后会通知您）' : '正在连接AI...',
       generatedGame: null,
       gameUrl: ''
     });
@@ -258,8 +297,36 @@ Page({
       // 构建请求数据
       const requestData = {
         prompt: prompt.trim(),
-        source: 'miniprogram'
+        source: 'miniprogram',
+        // 告诉后端用户是否已订阅通知
+        subscribeNotify: subscribed
       };
+
+      // 读取用户保存的 LLM 设置（从 LLM 设置页面保存的）
+      const savedLLMSettings = wx.getStorageSync('llm_settings') || {};
+      const selectedModel = savedLLMSettings.selectedModel || '';
+      const savedApiKeys = savedLLMSettings.apiKeys || {};
+      const savedCustomApi = savedLLMSettings.customApi || {};
+
+      // 构建 llmConfig 传递给后端
+      if (selectedModel) {
+        if (selectedModel === 'custom' && savedCustomApi.enabled) {
+          // 用户使用自定义接口
+          requestData.llmConfig = {
+            provider: 'custom',
+            model: savedCustomApi.model || '',
+            apiKey: savedCustomApi.apiKey || '',
+            baseUrl: savedCustomApi.baseUrl || ''
+          };
+        } else {
+          // 用户选择了预设模型
+          requestData.llmConfig = {
+            provider: selectedModel,  // 传递 modelId，后端会从 LLM_MODELS 获取完整配置
+            apiKey: savedApiKeys[selectedModel] || ''  // 如果用户配置了该模型的 API Key
+          };
+        }
+        console.log('[Generate] 使用用户选择的模型:', selectedModel);
+      }
 
       // 添加高级设置
       if (showAdvanced) {
@@ -272,7 +339,7 @@ Page({
           visibility: advancedSettings.visibility
         };
 
-        // 添加LLM设置
+        // 添加LLM设置（兼容旧的页面内 LLM 设置）
         if (this.data.showLLMSettings && (llmSettings.model || llmSettings.apiKey || llmSettings.apiUrl)) {
           requestData.advancedSettings.llmOverride = {
             model: llmSettings.model || null,

@@ -10,6 +10,9 @@ const crypto = require('crypto');
 // ==================== 安全模块引入 ====================
 const security = require('./security');
 
+// ==================== 微信小程序工具模块 ====================
+const wechatUtils = require('./api/_lib/wechat');
+
 // ==================== 静态游戏文件系统 ====================
 
 // 静态游戏存储目录
@@ -3584,6 +3587,25 @@ try {
   // 字段已存在，忽略
 }
 
+// ==================== 数据迁移：修复 status='active' 的游戏 ====================
+// 小程序异步生成的游戏之前错误地设置了 status='active'，导致网站无法显示
+// 将这些游戏的 status 更新为 'published'，使其能够在网站正常显示
+try {
+  const result = db.prepare(`
+    UPDATE games 
+    SET status = 'published', 
+        visibility = COALESCE(visibility, 'public'),
+        is_public = COALESCE(is_public, 1)
+    WHERE status = 'active'
+  `).run();
+  
+  if (result.changes > 0) {
+    console.log(`[DB-Migration] 修复了 ${result.changes} 个 status='active' 的游戏，已更新为 'published'`);
+  }
+} catch (e) {
+  console.error('[DB-Migration] 修复游戏状态失败:', e.message);
+}
+
 // 创建索引
 db.exec(`
   CREATE INDEX IF NOT EXISTS idx_games_created_at ON games(created_at DESC);
@@ -4660,12 +4682,12 @@ app.post('/api/wechat/login', async (req, res) => {
       return res.status(400).json({ success: false, error: '缺少code参数' });
     }
     
-    // 微信小程序配置
-    const WECHAT_APPID = process.env.WECHAT_APPID;
-    const WECHAT_SECRET = process.env.WECHAT_SECRET;
+    // 微信小程序配置（统一使用 WX_APPID/WX_APPSECRET，与订阅消息工具保持一致）
+    const WX_APPID = process.env.WX_APPID;
+    const WX_APPSECRET = process.env.WX_APPSECRET;
     
     // 如果没有配置微信小程序密钥，使用模拟模式（开发测试用）
-    if (!WECHAT_APPID || !WECHAT_SECRET) {
+    if (!WX_APPID || !WX_APPSECRET) {
       console.log('[WECHAT] 未配置小程序密钥，使用模拟模式');
       
       // 模拟模式：用code作为伪openid创建/查找用户
@@ -4704,7 +4726,7 @@ app.post('/api/wechat/login', async (req, res) => {
     
     // 正式模式：调用微信API换取openid
     const https = require('https');
-    const wxUrl = `https://api.weixin.qq.com/sns/jscode2session?appid=${WECHAT_APPID}&secret=${WECHAT_SECRET}&js_code=${code}&grant_type=authorization_code`;
+    const wxUrl = `https://api.weixin.qq.com/sns/jscode2session?appid=${WX_APPID}&secret=${WX_APPSECRET}&js_code=${code}&grant_type=authorization_code`;
     
     https.get(wxUrl, (wxRes) => {
       let data = '';
@@ -6398,9 +6420,23 @@ app.post('/api/generate-async', async (req, res) => {
     });
   }
   
-  const { prompt } = req.body;
+  const { prompt, subscribeNotify } = req.body;
   if (!prompt || prompt.trim().length === 0) {
     return res.status(400).json({ success: false, error: '请输入游戏描述' });
+  }
+  
+  // 获取用户的微信 openId（用于发送订阅消息通知）
+  let wechatOpenId = null;
+  if (userToken && subscribeNotify) {
+    try {
+      const userAccount = db.prepare('SELECT wechat_openid FROM user_accounts WHERE user_token = ?').get(userToken);
+      if (userAccount && userAccount.wechat_openid) {
+        wechatOpenId = userAccount.wechat_openid;
+        console.log(`[AsyncTask] 用户已订阅通知, openId: ${wechatOpenId.substring(0, 8)}...`);
+      }
+    } catch (err) {
+      console.error('[AsyncTask] 获取用户 openId 失败:', err);
+    }
   }
   
   // 创建任务记录
@@ -6411,7 +6447,10 @@ app.post('/api/generate-async', async (req, res) => {
     result: null,
     error: null,
     createdAt: Date.now(),
-    userToken
+    userToken,
+    // 订阅消息相关
+    subscribeNotify: !!subscribeNotify,
+    wechatOpenId: wechatOpenId
   });
   
   // 立即返回 taskId
@@ -6445,6 +6484,23 @@ app.post('/api/generate-async', async (req, res) => {
           finalTask.progress = 100;
           finalTask.progressText = '生成完成！';
           finalTask.result = generateResult;
+          
+          // ===== 发送订阅消息通知 =====
+          if (finalTask.subscribeNotify && finalTask.wechatOpenId && generateResult.game) {
+            try {
+              console.log(`[AsyncTask] 准备发送订阅消息通知, openId: ${finalTask.wechatOpenId.substring(0, 8)}...`);
+              await wechatUtils.sendGameCreatedNotification({
+                openId: finalTask.wechatOpenId,
+                gameName: generateResult.game.title || '您的游戏',
+                gameId: generateResult.game.id,
+                status: '已完成'
+              });
+              console.log(`[AsyncTask] 订阅消息通知发送成功`);
+            } catch (notifyErr) {
+              // 通知发送失败不影响任务结果
+              console.error(`[AsyncTask] 发送订阅消息通知失败:`, notifyErr.message);
+            }
+          }
         } else {
           finalTask.status = 'failed';
           finalTask.error = generateResult.error || '生成失败';
@@ -6672,6 +6728,10 @@ async function handleGenerateInternal(body, headers, progressCallback) {
 
     progressCallback && progressCallback(40, '正在编写游戏代码...');
 
+    // 获取模型的 maxTokens 配置（基于后台配置动态获取）
+    const modelMaxTokens = selectedModelId ? getModelMaxTokens(selectedModelId) : 8192;
+    console.log(`[AsyncGenerate] 使用模型: ${finalModel}, Provider: ${finalProvider}, MaxTokens: ${modelMaxTokens}`);
+
     // 调用 LLM API
     const response = await fetch(`${finalBaseUrl}/v1/chat/completions`, {
       method: 'POST',
@@ -6685,7 +6745,7 @@ async function handleGenerateInternal(body, headers, progressCallback) {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `请根据以下描述生成一个HTML5游戏：\n\n${prompt}` }
         ],
-        max_tokens: 16000,
+        max_tokens: modelMaxTokens,
         temperature: 0.7
       })
     });
@@ -6718,11 +6778,16 @@ async function handleGenerateInternal(body, headers, progressCallback) {
     const gameId = generateGameId();
     const authorName = advancedSettings?.authorName || '游戏家用户';
     
-    // 保存到数据库
+    // 获取可见性设置（从小程序传递的 advancedSettings 中读取）
+    const gameVisibility = advancedSettings?.visibility || 'public';
+    const gameOrientation = advancedSettings?.orientation || 'portrait';
+    const isPublic = gameVisibility === 'public' ? 1 : 0;
+    
+    // 保存到数据库（status 设置为 'published' 确保网站可见）
     db.prepare(`
-      INSERT INTO games (id, title, prompt, code, author_name, author_token, llm_model, status, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 'active', datetime('now'))
-    `).run(gameId, title, prompt, code, authorName, userToken || authorToken, finalModel);
+      INSERT INTO games (id, title, prompt, code, author_name, author_token, llm_model, status, visibility, is_public, orientation, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'published', ?, ?, ?, datetime('now'))
+    `).run(gameId, title, prompt, code, authorName, userToken || authorToken, finalModel, gameVisibility, isPublic, gameOrientation);
     
     // 保存静态文件
     saveGameStaticFile(gameId, code, {
