@@ -180,7 +180,9 @@ async function handleEditMessage(req, res, game, userToken) {
   const startTime = Date.now();
   
   try {
-    const response = await fetch(`${config.baseUrl}/v1/chat/completions`, {
+    // 智谱AI使用 /v4/chat/completions 端点
+    const apiPath = config.provider === 'zhipu' ? '/v4/chat/completions' : '/v1/chat/completions';
+    const response = await fetch(`${config.baseUrl}${apiPath}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -436,7 +438,9 @@ async function handleQuickEdit(req, res, game, userToken) {
   console.log('[快速编辑] 开始调用LLM...');
   
   try {
-    const response = await fetch(`${config.baseUrl}/v1/chat/completions`, {
+    // 智谱AI使用 /v4/chat/completions 端点
+    const apiPath = config.provider === 'zhipu' ? '/v4/chat/completions' : '/v1/chat/completions';
+    const response = await fetch(`${config.baseUrl}${apiPath}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -30,8 +30,8 @@ Page({
     myGames: [],
     loadingMyGames: false,
     
-    // 高级设置（始终启用）
-    showAdvanced: true,
+    // 高级设置（默认折叠）
+    showAdvanced: false,
     advancedSettings: {
       gameName: '',
       artStyle: 'auto',
@@ -112,7 +112,7 @@ Page({
     this.setData({ loadingMyGames: true });
     
     try {
-      const result = await app.request('/api/games/my', {
+      const result = await app.request('/api/my-games', {
         data: { limit: 3 }
       });
       
@@ -149,6 +149,13 @@ Page({
   // 清空输入
   clearPrompt() {
     this.setData({ prompt: '' });
+  },
+
+  // 切换高级设置展开/折叠
+  toggleAdvanced() {
+    this.setData({
+      showAdvanced: !this.data.showAdvanced
+    });
   },
 
   // 跳转到LLM设置页面

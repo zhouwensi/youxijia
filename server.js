@@ -6757,7 +6757,9 @@ async function handleGenerateInternal(body, headers, progressCallback) {
     console.log(`[AsyncGenerate] 使用模型: ${finalModel}, Provider: ${finalProvider}, MaxTokens: ${modelMaxTokens}, Temperature: ${modelTemperature}`);
 
     // 调用 LLM API
-    const response = await fetch(`${finalBaseUrl}/v1/chat/completions`, {
+    // 智谱AI使用 /v4/chat/completions 端点
+    const apiPath = finalProvider === 'zhipu' ? '/v4/chat/completions' : '/v1/chat/completions';
+    const response = await fetch(`${finalBaseUrl}${apiPath}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

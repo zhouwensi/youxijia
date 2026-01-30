@@ -86,14 +86,17 @@
         </view>
       </view>
 
-      <!-- 高级设置区域 - 始终展开 -->
+      <!-- 高级设置区域 - 可折叠 -->
       <view class="advanced-section">
-        <view class="section-title">
-          <text class="title-icon">⚙️</text>
-          <text>高级设置</text>
+        <view class="section-title collapsible" bindtap="toggleAdvanced">
+          <view class="title-left">
+            <text class="title-icon">⚙️</text>
+            <text>高级设置</text>
+          </view>
+          <text class="collapse-arrow {{showAdvanced ? 'expanded' : ''}}">›</text>
         </view>
 
-        <view class="advanced-panel">
+        <view class="advanced-panel {{showAdvanced ? 'show' : 'hide'}}">
           <!-- 游戏名称 -->
           <view class="setting-item">
             <text class="setting-label">🎮 游戏名称</text>

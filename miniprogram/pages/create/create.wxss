@@ -511,7 +511,7 @@
   text-align: left;
 }
 
-/* 高级设置区域 - 始终展开 */
+/* 高级设置区域 - 可折叠 */
 .advanced-section {
   padding: 0 32rpx 24rpx;
 }
@@ -520,11 +520,60 @@
   margin-bottom: 16rpx;
 }
 
+.advanced-section .section-title.collapsible {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 24rpx;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  border-radius: 20rpx;
+  cursor: pointer;
+}
+
+.advanced-section .section-title.collapsible:active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.advanced-section .section-title .title-left {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.advanced-section .collapse-arrow {
+  font-size: 32rpx;
+  color: #666;
+  transform: rotate(0deg);
+  transition: transform 0.3s ease;
+}
+
+.advanced-section .collapse-arrow.expanded {
+  transform: rotate(90deg);
+}
+
 .advanced-section .advanced-panel {
   background: rgba(255, 255, 255, 0.03);
   border: 1rpx solid rgba(255, 255, 255, 0.08);
   border-radius: 20rpx;
   padding: 8rpx 24rpx;
+  margin-top: 16rpx;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.advanced-section .advanced-panel.show {
+  max-height: 1000rpx;
+  opacity: 1;
+}
+
+.advanced-section .advanced-panel.hide {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+  border: none;
 }
 
 /* LLM设置链接样式 */

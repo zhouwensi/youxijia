@@ -150,7 +150,9 @@ canvas.addEventListener('touchend', () => { isTouching = false; });
     console.log('[INFO] 开始调用LLM API...');
     const apiStartTime = Date.now();
     
-    const response = await fetch(`${config.baseUrl}/v1/chat/completions`, {
+    // 智谱AI使用 /v4/chat/completions 端点
+    const apiPath = config.provider === 'zhipu' ? '/v4/chat/completions' : '/v1/chat/completions';
+    const response = await fetch(`${config.baseUrl}${apiPath}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
