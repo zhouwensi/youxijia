@@ -2972,7 +2972,8 @@ function getTrialApiConfig() {
     return {
       apiKey: TRIAL_CONFIG.apiKey,
       model: TRIAL_CONFIG.model,
-      baseUrl: TRIAL_CONFIG.baseUrl
+      baseUrl: TRIAL_CONFIG.baseUrl,
+      provider: 'deepseek' // 环境变量配置默认使用deepseek
     };
   }
   
@@ -2982,10 +2983,27 @@ function getTrialApiConfig() {
   const defaultBaseUrl = getConfig('llm_default_base_url', 'https://api.deepseek.com');
   
   if (defaultApiKey) {
+    // 根据模型名称判断 provider（因为此时 AVAILABLE_MODELS 尚未定义）
+    let provider = 'deepseek';
+    if (defaultModel.startsWith('glm-')) {
+      provider = 'zhipu';
+    } else if (defaultModel.startsWith('kimi-') || defaultModel.startsWith('moonshot-')) {
+      provider = 'moonshot';
+    } else if (defaultModel.startsWith('qwen')) {
+      provider = 'alibaba';
+    } else if (defaultModel.startsWith('gpt-') || defaultModel.startsWith('o1') || defaultModel.startsWith('o3') || defaultModel.startsWith('o4')) {
+      provider = 'openai';
+    } else if (defaultModel.startsWith('claude-')) {
+      provider = 'anthropic';
+    } else if (defaultModel.startsWith('gemini-')) {
+      provider = 'openrouter';
+    }
+    
     return {
       apiKey: defaultApiKey,
       model: defaultModel,
-      baseUrl: defaultBaseUrl || 'https://api.deepseek.com'
+      baseUrl: defaultBaseUrl || 'https://api.deepseek.com',
+      provider: provider
     };
   }
   
@@ -9513,8 +9531,10 @@ app.post('/api/trial/generate', async (req, res) => {
       const timeoutId = setTimeout(() => controller.abort(), 120000); // 2分钟超时
       
       try {
-        console.log(`[TRIAL] 发送API请求 (尝试${attempt}/${MAX_RETRIES}): ${apiConfig.baseUrl}/v1/chat/completions`);
-        response = await fetch(`${apiConfig.baseUrl}/v1/chat/completions`, {
+        // 智谱AI使用 /v4/chat/completions 端点
+        const trialApiPath = apiConfig.provider === 'zhipu' ? '/v4/chat/completions' : '/v1/chat/completions';
+        console.log(`[TRIAL] 发送API请求 (尝试${attempt}/${MAX_RETRIES}): ${apiConfig.baseUrl}${trialApiPath}`);
+        response = await fetch(`${apiConfig.baseUrl}${trialApiPath}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -10734,41 +10754,18 @@ function getRepairApiConfig() {
   const modelApiKey = getConfig(`llm_apikey_${defaultModelId}`, '');
   
   if (modelApiKey) {
-    // 模型ID到实际API模型名称的映射
-    const modelIdToApiName = {
-      'deepseek-r1': 'deepseek-reasoner',
-      'deepseek-v3': 'deepseek-chat',
-      'deepseek-chat': 'deepseek-chat',
-      'deepseek-reasoner': 'deepseek-reasoner',
-      'gpt-4o': 'gpt-4o',
-      'gpt-4o-mini': 'gpt-4o-mini',
-      'gpt-5': 'gpt-5',
-      'gpt-5.1': 'gpt-5.1',
-      'gpt-5.1-codex': 'gpt-5.1-codex',
-      'claude-4.5-opus': 'claude-sonnet-4-20250514',
-      'claude-4-sonnet': 'claude-sonnet-4-20250514',
-      'o1': 'o1',
-      'o3': 'o3',
-      'o3-mini': 'o3-mini',
-      'o4-mini': 'o4-mini'
-    };
-    
-    const actualModelName = modelIdToApiName[defaultModelId] || defaultModelId;
-    
-    let baseUrl = 'https://api.deepseek.com';
-    if (defaultModelId.includes('gpt') || defaultModelId.includes('o1') || defaultModelId.includes('o3') || defaultModelId.includes('o4')) {
-      baseUrl = 'https://api.openai.com';
-    } else if (defaultModelId.includes('claude')) {
-      baseUrl = 'https://api.anthropic.com';
-    } else if (defaultModelId.includes('gemini')) {
-      baseUrl = 'https://generativelanguage.googleapis.com';
-    }
+    // 从 AVAILABLE_MODELS 获取模型配置信息
+    const modelConfig = AVAILABLE_MODELS[defaultModelId];
+    const provider = modelConfig?.provider || 'deepseek';
+    const actualModelName = modelConfig?.model || defaultModelId;
+    const baseUrl = modelConfig?.baseUrl || 'https://api.deepseek.com';
     
     return {
       apiKey: modelApiKey,
       model: actualModelName,
       baseUrl: baseUrl,
-      modelId: defaultModelId
+      modelId: defaultModelId,
+      provider: provider
     };
   }
   
@@ -10778,7 +10775,8 @@ function getRepairApiConfig() {
       apiKey: process.env.TRIAL_API_KEY,
       model: process.env.TRIAL_MODEL || 'deepseek-chat',
       baseUrl: process.env.TRIAL_BASE_URL || 'https://api.deepseek.com',
-      modelId: 'env'
+      modelId: 'env',
+      provider: 'deepseek'
     };
   }
   
@@ -10836,7 +10834,9 @@ ${game.code}
     console.log(`[AI-REPAIR] 使用模型: ${apiConfig.model}, Temperature: ${aiRepairTemperature}`);
 
     // 调用LLM API
-    const response = await fetch(`${apiConfig.baseUrl}/v1/chat/completions`, {
+    // 智谱AI使用 /v4/chat/completions 端点
+    const repairApiPath = apiConfig.provider === 'zhipu' ? '/v4/chat/completions' : '/v1/chat/completions';
+    const response = await fetch(`${apiConfig.baseUrl}${repairApiPath}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

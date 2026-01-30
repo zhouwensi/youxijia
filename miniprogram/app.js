@@ -40,6 +40,8 @@ App({
       this.globalData.token = token;
       this.globalData.userInfo = userInfo;
       this.globalData.isLoggedIn = true;
+      // 恢复accountId
+      this.globalData.accountId = userInfo.account_id || userInfo.accountId || null;
       console.log('用户已登录:', userInfo.nickname || userInfo.account_id);
     } else {
       // 自动静默登录
@@ -105,6 +107,8 @@ App({
                 this.globalData.token = token;
                 this.globalData.userInfo = userInfo;
                 this.globalData.isLoggedIn = true;
+                // 设置accountId（从userInfo中获取）
+                this.globalData.accountId = userInfo.account_id || userInfo.accountId || null;
                 
                 wx.setStorageSync('token', token);
                 wx.setStorageSync('userInfo', userInfo);
@@ -114,6 +118,7 @@ App({
                 // 只有token没有用户信息，也算登录成功
                 this.globalData.token = token;
                 this.globalData.isLoggedIn = true;
+                this.globalData.accountId = null;  // 无用户信息时accountId为空
                 wx.setStorageSync('token', token);
                 
                 resolve({ token });
