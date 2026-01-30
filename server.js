@@ -3162,8 +3162,19 @@ const LLM_MODELS = {
   'glm-4.5-airx': { name: 'GLM-4.5-AirX (极速)', provider: 'zhipu', model: 'glm-4.5-airx', baseUrl: 'https://open.bigmodel.cn/api/paas', tier: 'standard', creditCost: 1, speed: 'fast', quality: 'medium', maxTokens: 96000 },
   // GLM-4-Long: 超长输入1M，最大输出4K
   'glm-4-long': { name: 'GLM-4-Long (超长上下文)', provider: 'zhipu', model: 'glm-4-long', baseUrl: 'https://open.bigmodel.cn/api/paas', tier: 'standard', creditCost: 1, speed: 'slow', quality: 'high', maxTokens: 4000 },
-  // Kimi K2 支持超长上下文，最大输出 131072 tokens
-  'kimi-k2': { name: 'Kimi K2', provider: 'moonshot', model: 'kimi-k2', baseUrl: 'https://api.moonshot.cn', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'high', maxTokens: 131072 },
+  // Kimi K2 系列模型
+  // kimi-k2.5: 多模态模型，支持视觉与文本输入，上下文256K，最大输出 262,144 tokens
+  'kimi-k2.5': { name: 'Kimi K2.5 (多模态推荐)', provider: 'moonshot', model: 'kimi-k2.5', baseUrl: 'https://api.moonshot.cn', tier: 'premium', creditCost: 2, speed: 'medium', quality: 'excellent', maxTokens: 262144 },
+  // kimi-k2-turbo-preview: 推荐的高性能版本，上下文262K，最大输出 262,144 tokens
+  'kimi-k2-turbo-preview': { name: 'Kimi K2 Turbo (推荐)', provider: 'moonshot', model: 'kimi-k2-turbo-preview', baseUrl: 'https://api.moonshot.cn', tier: 'standard', creditCost: 1, speed: 'fast', quality: 'high', maxTokens: 262144 },
+  // kimi-k2-0905-preview: 最新版本，上下文262K，最大输出 262,144 tokens
+  'kimi-k2-0905-preview': { name: 'Kimi K2 0905', provider: 'moonshot', model: 'kimi-k2-0905-preview', baseUrl: 'https://api.moonshot.cn', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'high', maxTokens: 262144 },
+  // kimi-k2-0711-preview: 稳定版本，上下文131K，最大输出 131,072 tokens
+  'kimi-k2-0711-preview': { name: 'Kimi K2 0711', provider: 'moonshot', model: 'kimi-k2-0711-preview', baseUrl: 'https://api.moonshot.cn', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'high', maxTokens: 131072 },
+  // kimi-k2-thinking: 思考模型，支持深度推理，上下文262K，最大输出 262,144 tokens
+  'kimi-k2-thinking': { name: 'Kimi K2 Thinking', provider: 'moonshot', model: 'kimi-k2-thinking', baseUrl: 'https://api.moonshot.cn', tier: 'standard', creditCost: 1, speed: 'slow', quality: 'excellent', maxTokens: 262144 },
+  // kimi-k2-thinking-turbo: 快速思考模型，上下文262K，最大输出 262,144 tokens
+  'kimi-k2-thinking-turbo': { name: 'Kimi K2 Thinking Turbo', provider: 'moonshot', model: 'kimi-k2-thinking-turbo', baseUrl: 'https://api.moonshot.cn', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'excellent', maxTokens: 262144 },
   // Qwen Coder Plus 最大输出 8192 tokens
   'qwen3-coder-plus': { name: 'Qwen3 Coder Plus', provider: 'alibaba', model: 'qwen-coder-plus', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode', tier: 'standard', creditCost: 1, speed: 'medium', quality: 'high', maxTokens: 8192 },
 };
@@ -3207,6 +3218,17 @@ function getModelQuality(modelId) {
   }
   const model = LLM_MODELS[modelId];
   return model ? model.quality : 'medium';
+}
+
+// 获取模型的 temperature 参数（某些模型有特殊要求）
+function getModelTemperature(modelId, defaultTemp = 0.7) {
+  // kimi-k2.5 只允许 temperature=1
+  if (modelId === 'kimi-k2.5') {
+    return 1;
+  }
+  // 其他 kimi-k2 thinking 系列模型也可能有限制，暂时使用默认值
+  // 如果后续发现其他模型有限制，可以在这里添加
+  return defaultTemp;
 }
 
 // 检查模型是否启用（默认只启用 deepseek 和 gemini 相关的模型）
@@ -6730,7 +6752,9 @@ async function handleGenerateInternal(body, headers, progressCallback) {
 
     // 获取模型的 maxTokens 配置（基于后台配置动态获取）
     const modelMaxTokens = selectedModelId ? getModelMaxTokens(selectedModelId) : 8192;
-    console.log(`[AsyncGenerate] 使用模型: ${finalModel}, Provider: ${finalProvider}, MaxTokens: ${modelMaxTokens}`);
+    // 获取模型的 temperature 配置（某些模型有特殊要求）
+    const modelTemperature = selectedModelId ? getModelTemperature(selectedModelId, 0.7) : 0.7;
+    console.log(`[AsyncGenerate] 使用模型: ${finalModel}, Provider: ${finalProvider}, MaxTokens: ${modelMaxTokens}, Temperature: ${modelTemperature}`);
 
     // 调用 LLM API
     const response = await fetch(`${finalBaseUrl}/v1/chat/completions`, {
@@ -6746,7 +6770,7 @@ async function handleGenerateInternal(body, headers, progressCallback) {
           { role: 'user', content: `请根据以下描述生成一个HTML5游戏：\n\n${prompt}` }
         ],
         max_tokens: modelMaxTokens,
-        temperature: 0.7
+        temperature: modelTemperature
       })
     });
 
@@ -7338,7 +7362,9 @@ ${advancedHint}${gameNameHint}
     
     // 获取模型的最大Token配置
     const maxTokens = selectedModelId ? getModelMaxTokens(selectedModelId) : 8000;
-    console.log(`[INFO] 使用最大Token数: ${maxTokens} (模型: ${selectedModelId || 'default'})`);
+    // 获取模型的 temperature 配置（某些模型有特殊要求）
+    const temperature = selectedModelId ? getModelTemperature(selectedModelId, 0.7) : 0.7;
+    console.log(`[INFO] 使用最大Token数: ${maxTokens} (模型: ${selectedModelId || 'default'}), Temperature: ${temperature}`);
     
     // 智谱AI使用 /v4/chat/completions 端点
     const apiPath = config.provider === 'zhipu' ? '/v4/chat/completions' : '/v1/chat/completions';
@@ -7354,7 +7380,7 @@ ${advancedHint}${gameNameHint}
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `请生成游戏：${prompt}` }
         ],
-        temperature: 0.7,
+        temperature: temperature,
         max_tokens: maxTokens
       }),
       signal: llmAbortController.signal  // 支持中断 LLM 请求
@@ -8083,8 +8109,10 @@ app.post('/api/games/:id/edit', async (req, res) => {
         
         // 获取模型的 maxTokens 配置
         const modelMaxTokens = selectedModelId ? getModelMaxTokens(selectedModelId) : 8192;
+        // 获取模型的 temperature 配置（某些模型有特殊要求）
+        const modelTemperature = selectedModelId ? getModelTemperature(selectedModelId, 0.7) : 0.7;
         
-        console.log(`[编辑] 使用模型: ${model}, Provider: ${provider}, MaxTokens: ${modelMaxTokens}`);
+        console.log(`[编辑] 使用模型: ${model}, Provider: ${provider}, MaxTokens: ${modelMaxTokens}, Temperature: ${modelTemperature}`);
         console.log('[编辑] 开始调用LLM优化游戏...');
         const startTime = Date.now();
         
@@ -8137,7 +8165,7 @@ app.post('/api/games/:id/edit', async (req, res) => {
           } : {
             model: model,
             messages: messages,
-            temperature: 0.7,
+            temperature: modelTemperature,
             max_tokens: modelMaxTokens
           }),
           signal: editAbortController.signal
@@ -8416,7 +8444,10 @@ app.post('/api/games/:id/repair', async (req, res) => {
       return res.status(400).json({ success: false, error: 'API Key 未配置' });
     }
     
-    console.log(`[修复API] 使用模型: ${finalModel}, Provider: ${finalProvider}`);
+    // 获取模型的 temperature 配置（某些模型有特殊要求，如 kimi-k2.5 只支持 temperature=1）
+    // 对于修复任务默认使用较低温度 0.3，但如果模型有限制则使用模型要求的值
+    const repairTemperature = getModelTemperature(selectedModelId, 0.3);
+    console.log(`[修复API] 使用模型: ${finalModel}, Provider: ${finalProvider}, Temperature: ${repairTemperature}`);
     
     // 构建修复提示词
     const repairSystemPrompt = `你是一个专业的HTML5游戏代码修复专家。你的任务是修复用户游戏代码中的错误。
@@ -8474,7 +8505,7 @@ app.post('/api/games/:id/repair', async (req, res) => {
       model: finalModel,
       messages: repairMessages,
       max_tokens: 8192,
-      temperature: 0.3
+      temperature: repairTemperature
     };
     
     console.log('[修复API] 开始调用LLM...');
@@ -9466,7 +9497,9 @@ app.post('/api/trial/generate', async (req, res) => {
     // 获取试玩模式使用的模型的最大Token配置
     const defaultModel = getConfig('llm_default_model', 'deepseek-v3');
     const trialMaxTokens = getModelMaxTokens(defaultModel);
-    console.log(`[TRIAL] 使用最大Token数: ${trialMaxTokens} (模型: ${defaultModel})`);
+    // 获取模型的 temperature 配置（某些模型有特殊要求）
+    const trialTemperature = getModelTemperature(defaultModel, 0.7);
+    console.log(`[TRIAL] 使用最大Token数: ${trialMaxTokens} (模型: ${defaultModel}), Temperature: ${trialTemperature}`);
 
     // 带重试机制的API请求
     const MAX_RETRIES = 2;
@@ -9492,7 +9525,7 @@ app.post('/api/trial/generate', async (req, res) => {
               { role: 'system', content: systemPrompt },
               { role: 'user', content: `请生成游戏：${enhancedPrompt}` }
             ],
-            temperature: 0.7,
+            temperature: trialTemperature,
             max_tokens: trialMaxTokens
           }),
           signal: controller.signal
@@ -10322,7 +10355,12 @@ function getDefaultModelTime(modelId) {
     'glm-4.7': 300,
     'glm-4.6': 300,
     'glm-4.5': 300,
-    'kimi-k2': 350,
+    'kimi-k2.5': 450,
+    'kimi-k2-turbo-preview': 380,
+    'kimi-k2-0905-preview': 350,
+    'kimi-k2-0711-preview': 350,
+    'kimi-k2-thinking': 400,
+    'kimi-k2-thinking-turbo': 420,
     'qwen3-coder-plus': 320
   };
   return defaultTimes[modelId] || 300;
@@ -10791,6 +10829,10 @@ ${game.code}
 </html>
 \`\`\``;
 
+    // 获取模型的 temperature 配置（某些模型有特殊要求，如 kimi-k2.5 只支持 temperature=1）
+    const aiRepairTemperature = apiConfig.modelId ? getModelTemperature(apiConfig.modelId, 0.3) : 0.3;
+    console.log(`[AI-REPAIR] 使用模型: ${apiConfig.model}, Temperature: ${aiRepairTemperature}`);
+
     // 调用LLM API
     const response = await fetch(`${apiConfig.baseUrl}/v1/chat/completions`, {
       method: 'POST',
@@ -10804,7 +10846,7 @@ ${game.code}
           { role: 'system', content: '你是一个专业的游戏代码修复专家，擅长分析和修复HTML/CSS/JavaScript代码中的问题。' },
           { role: 'user', content: repairPrompt }
         ],
-        temperature: 0.3,
+        temperature: aiRepairTemperature,
         max_tokens: 16000
       })
     });
