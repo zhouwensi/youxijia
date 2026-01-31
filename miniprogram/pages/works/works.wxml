@@ -4,7 +4,7 @@
   <view class="header">
     <view class="header-left">
       <text class="logo-icon">🎮</text>
-      <text class="logo-text">AI游戏工坊</text>
+      <text class="logo-text">{{appName}}</text>
     </view>
     <view class="header-right">
       <view class="search-btn" bindtap="goToSearch">

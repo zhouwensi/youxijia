@@ -48,6 +48,27 @@ function getGameStaticUrl(gameId) {
   return `/g/${subDir}/${gameId}.html`;
 }
 
+// ==================== 游戏数据字段别名处理 ====================
+// 为游戏数据添加兼容性字段别名，同时支持 like_count/likes 等格式
+function addGameFieldAliases(game) {
+  if (!game) return game;
+  return {
+    ...game,
+    // 添加短名称别名
+    likes: game.like_count || 0,
+    plays: game.play_count || 0,
+    favorites: game.favorite_count || 0,
+    comments: game.comment_count || 0,
+    views: game.play_count || 0  // 兼容 views 字段
+  };
+}
+
+// 批量处理游戏数组
+function addGamesFieldAliases(games) {
+  if (!Array.isArray(games)) return games;
+  return games.map(addGameFieldAliases);
+}
+
 // HTML属性转义（用于srcdoc）
 function escapeHtmlAttr(str) {
   if (!str) return '';
@@ -5246,6 +5267,10 @@ app.get('/api/site-config', (req, res) => {
     // 获取网站写操作禁用配置（默认为禁用，即 'true'）
     const webWriteDisabled = getConfig('web_write_disabled', 'true') === 'true';
     
+    // 站点名称和标语
+    const siteName = getConfig('site_name', 'AI游戏工坊');
+    const siteSlogan = getConfig('site_slogan', '一句话生成游戏');
+    
     // 小程序相关配置
     const miniprogramName = getConfig('miniprogram_name', 'AI游戏工坊');
     const miniprogramAppId = getConfig('miniprogram_appid', '');
@@ -5253,10 +5278,14 @@ app.get('/api/site-config', (req, res) => {
     
     res.json({
       success: true,
+      // 直接返回字段（供前端页面使用）
+      siteName: siteName,
+      siteSlogan: siteSlogan,
+      miniprogramName: miniprogramName,
+      webWriteDisabled: webWriteDisabled,
+      // 同时返回 config 对象（兼容旧版）
       config: {
-        // 网站写操作是否禁用（创作、编辑、修复、评论、点赞、收藏等）
         webWriteDisabled: webWriteDisabled,
-        // 小程序配置
         miniprogram: {
           name: miniprogramName,
           appId: miniprogramAppId,
@@ -6316,13 +6345,14 @@ app.get('/api/games/recent', (req, res) => {
     const limit = parseInt(req.query.limit) || 12;
     const offset = parseInt(req.query.offset) || 0;
     const games = db.prepare(`
-      SELECT id, title, prompt, author_name, play_count, like_count, is_featured, created_at 
+      SELECT id, title, prompt, author_name, play_count, like_count, favorite_count, is_featured, created_at,
+             (SELECT COUNT(*) FROM game_comments WHERE game_id = games.id AND is_deleted = 0) as comment_count
       FROM games 
       WHERE is_hidden = 0 AND (is_public = 1 OR is_public IS NULL)
       ORDER BY created_at DESC 
       LIMIT ? OFFSET ?
     `).all(limit, offset);
-    res.json({ success: true, games });
+    res.json({ success: true, games: addGamesFieldAliases(games) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -6341,7 +6371,7 @@ app.get('/api/games/featured', (req, res) => {
       ORDER BY g.is_featured DESC, g.like_count DESC, g.play_count DESC 
       LIMIT ? OFFSET ?
     `).all(limit, offset);
-    res.json({ success: true, games });
+    res.json({ success: true, games: addGamesFieldAliases(games) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -7972,7 +8002,7 @@ app.get('/api/games/search/:keyword', (req, res) => {
       ORDER BY like_count DESC, created_at DESC
       LIMIT 20
     `).all(keyword, keyword, keyword);
-    res.json({ success: true, games });
+    res.json({ success: true, games: addGamesFieldAliases(games) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -7990,7 +8020,7 @@ app.get('/api/my-games', (req, res) => {
     }
 
     const games = db.prepare(`
-      SELECT g.id, g.title, g.prompt, g.author_name, g.play_count, g.like_count, g.created_at,
+      SELECT g.id, g.title, g.prompt, g.author_name, g.play_count, g.like_count, g.favorite_count, g.created_at,
              COALESCE(g.status, 'published') as status,
              COALESCE(g.visibility, CASE WHEN g.is_public = 0 THEN 'private' ELSE 'public' END) as visibility,
              (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) as comment_count
@@ -8007,7 +8037,7 @@ app.get('/api/my-games', (req, res) => {
       likes: publishedGames.reduce((sum, g) => sum + (g.like_count || 0), 0)
     };
 
-    res.json({ success: true, games, stats });
+    res.json({ success: true, games: addGamesFieldAliases(games), stats });
   } catch (error) {
     console.error('[ERROR] 获取我的游戏失败:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -8929,7 +8959,7 @@ app.get('/api/my-likes', (req, res) => {
       ORDER BY ul.created_at DESC
     `).all(userToken);
     
-    res.json({ success: true, games, count: games.length });
+    res.json({ success: true, games: addGamesFieldAliases(games), count: games.length });
   } catch (error) {
     console.error('[ERROR] 获取我的点赞失败:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -8953,7 +8983,7 @@ app.get('/api/my-favorites', (req, res) => {
       ORDER BY uf.created_at DESC
     `).all(userToken);
     
-    res.json({ success: true, games, count: games.length });
+    res.json({ success: true, games: addGamesFieldAliases(games), count: games.length });
   } catch (error) {
     console.error('[ERROR] 获取我的收藏失败:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -9291,7 +9321,7 @@ app.get('/api/users/:token/games', (req, res) => {
       LIMIT ? OFFSET ?
     `).all(userToken, limit, offset);
 
-    res.json({ success: true, games, count: games.length });
+    res.json({ success: true, games: addGamesFieldAliases(games), count: games.length });
   } catch (error) {
     console.error('[ERROR] 获取用户游戏列表失败:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -10383,7 +10413,7 @@ app.get('/api/leaderboard/games', (req, res) => {
       LIMIT ?
     `).all(limit);
     
-    res.json({ success: true, games, type });
+    res.json({ success: true, games: addGamesFieldAliases(games), type });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -12202,7 +12232,7 @@ app.get('/api/leaderboard/featured', (req, res) => {
       ORDER BY g.updated_at DESC, g.like_count DESC
       LIMIT ?
     `).all(limit);
-    res.json({ success: true, games });
+    res.json({ success: true, games: addGamesFieldAliases(games) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -12224,7 +12254,7 @@ app.get('/api/leaderboard/favorites', (req, res) => {
       LIMIT ? OFFSET ?
     `).all(limit, offset);
     
-    res.json({ success: true, games });
+    res.json({ success: true, games: addGamesFieldAliases(games) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -12246,7 +12276,7 @@ app.get('/api/leaderboard/comments', (req, res) => {
       LIMIT ? OFFSET ?
     `).all(limit, offset);
     
-    res.json({ success: true, games });
+    res.json({ success: true, games: addGamesFieldAliases(games) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -12345,7 +12375,7 @@ app.get('/api/games', (req, res) => {
     
     res.json({ 
       success: true, 
-      games,
+      games: addGamesFieldAliases(games),
       pagination: {
         total,
         limit,
@@ -12371,7 +12401,7 @@ app.get('/api/leaderboard/likes', (req, res) => {
       ORDER BY like_count DESC, play_count DESC
       LIMIT ? OFFSET ?
     `).all(limit, offset);
-    res.json({ success: true, games });
+    res.json({ success: true, games: addGamesFieldAliases(games) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -12391,7 +12421,7 @@ app.get('/api/leaderboard/hot', (req, res) => {
       ORDER BY score DESC
       LIMIT ? OFFSET ?
     `).all(limit, offset);
-    res.json({ success: true, games });
+    res.json({ success: true, games: addGamesFieldAliases(games) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -12657,7 +12687,7 @@ app.get('/api/games/hot', (req, res) => {
       LIMIT ?
     `).all(limit);
     
-    res.json({ success: true, games, period });
+    res.json({ success: true, games: addGamesFieldAliases(games), period });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

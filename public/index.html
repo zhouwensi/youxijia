@@ -9,10 +9,36 @@
   <meta name="theme-color" content="#080810">
   <!-- 微信分享相关 -->
   <meta name="description" content="用一句话描述，AI帮你生成可玩的小游戏！未来科技，一触即发！">
-  <meta property="og:title" content="AI游戏工坊 - 一句话生成游戏">
+  <meta property="og:title" content="" id="og-title">
   <meta property="og:description" content="用一句话描述，AI帮你生成可玩的小游戏！未来科技，一触即发！">
   <meta property="og:type" content="website">
-  <title>AI游戏工坊 - 一句话生成游戏</title>
+  <title>加载中...</title>
+  <script>
+    // 尽早加载站点配置，动态设置标题和品牌名称
+    (function() {
+      fetch('/api/site-config')
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            const siteName = data.siteName || 'AI游戏工坊';
+            const siteSlogan = data.siteSlogan || '一句话生成游戏';
+            const fullTitle = siteName + ' - ' + siteSlogan;
+            document.title = fullTitle;
+            const ogTitle = document.getElementById('og-title');
+            if (ogTitle) ogTitle.setAttribute('content', fullTitle);
+            // 页面加载完成后更新品牌名称
+            document.addEventListener('DOMContentLoaded', function() {
+              document.querySelectorAll('.brand-name').forEach(function(el) {
+                el.textContent = siteName;
+              });
+            });
+          }
+        })
+        .catch(function() {
+          document.title = 'AI游戏工坊 - 一句话生成游戏';
+        });
+    })();
+  </script>
   <!-- 科技字体 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

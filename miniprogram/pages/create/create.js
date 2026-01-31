@@ -9,6 +9,7 @@ Page({
     generating: false,
     progress: 0,
     progressText: '',
+    appName: 'AI游戏工坊', // 从全局配置获取
     
     // 生成结果
     generatedGame: null,
@@ -99,6 +100,11 @@ Page({
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 0 });
     }
+    
+    // 更新应用名称（从全局配置获取）
+    this.setData({
+      appName: app.getAppName()
+    });
     
     // 检查登录状态
     if (!app.globalData.isLoggedIn) {
@@ -565,6 +571,7 @@ Page({
   // 分享
   onShareAppMessage() {
     const game = this.data.generatedGame;
+    const appName = app.getAppName();
     if (game) {
       return {
         title: `我用AI创作了一个游戏：${game.title}`,
@@ -572,7 +579,7 @@ Page({
       };
     }
     return {
-      title: 'AI游戏工坊 - 一句话生成游戏',
+      title: `${appName} - 一句话生成游戏`,
       path: '/pages/create/create'
     };
   },

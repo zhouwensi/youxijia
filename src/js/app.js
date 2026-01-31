@@ -309,17 +309,54 @@ async function loadSiteConfig() {
   try {
     const response = await fetch('/api/site-config');
     const data = await response.json();
-    if (data.success && data.config) {
+    if (data.success) {
+      // API 直接返回字段，不包装在 config 中
       state.siteConfig = {
-        ...data.config,
+        siteName: data.siteName,
+        miniprogramName: data.miniprogramName,
+        siteSlogan: data.siteSlogan,
+        webWriteDisabled: data.webWriteDisabled ?? state.siteConfig.webWriteDisabled,
+        miniprogram: {
+          name: data.miniprogramName || data.siteName || 'AI游戏工坊',
+          appId: data.miniprogramAppId || '',
+          defaultPath: data.miniprogramPath || '/pages/create/create'
+        },
         loaded: true
       };
       console.log('[SiteConfig] 配置已加载:', state.siteConfig);
+      
+      // 动态更新页面标题和品牌名称
+      updatePageBranding();
     }
   } catch (error) {
     console.error('[SiteConfig] 加载配置失败:', error);
     state.siteConfig.loaded = true; // 标记为已加载，使用默认值
   }
+}
+
+/**
+ * 动态更新页面标题和品牌名称
+ */
+function updatePageBranding() {
+  const siteName = state.siteConfig.siteName || state.siteConfig.miniprogram?.name || 'AI游戏工坊';
+  const siteSlogan = state.siteConfig.siteSlogan || '一句话生成游戏';
+  
+  // 更新页面标题
+  document.title = `${siteName} - ${siteSlogan}`;
+  
+  // 更新 og:title meta 标签
+  const ogTitle = document.querySelector('meta[property="og:title"]');
+  if (ogTitle) {
+    ogTitle.setAttribute('content', `${siteName} - ${siteSlogan}`);
+  }
+  
+  // 更新品牌名称元素
+  const brandNameElements = document.querySelectorAll('.brand-name');
+  brandNameElements.forEach(el => {
+    el.textContent = siteName;
+  });
+  
+  console.log('[SiteConfig] 页面品牌已更新:', siteName);
 }
 
 /**

@@ -1,5 +1,5 @@
 /**
- * 游戏编辑页面
+ * 游戏编辑页面 - 对话式界面
  */
 const app = getApp();
 
@@ -8,16 +8,22 @@ Page({
     gameId: null,
     game: null,
     loading: true,
-    saving: false,
     
-    // 编辑表单
-    title: '',
-    prompt: '',
+    // 游戏信息
+    gameEmoji: '🎮',
     visibility: 'public',
     
-    // AI编辑功能
-    editInstruction: '',
-    aiEditing: false
+    // 对话相关
+    messages: [],
+    inputText: '',
+    isEditing: false,
+    scrollToMessage: '',
+    
+    // 编辑会话
+    sessionId: null,
+    
+    // 消息ID计数器
+    messageIdCounter: 0
   },
 
   onLoad(options) {
@@ -52,13 +58,12 @@ Page({
         
         this.setData({
           game: result.game,
-          title: result.game.title || '',
-          prompt: result.game.prompt || '',
-          visibility: result.game.visibility || 'public'
+          visibility: result.game.visibility || 'public',
+          gameEmoji: this.extractEmoji(result.game.title) || '🎮'
         });
         
         wx.setNavigationBarTitle({
-          title: '编辑游戏'
+          title: 'AI编辑游戏'
         });
       } else {
         app.showToast('游戏不存在或已删除');
@@ -74,58 +79,198 @@ Page({
     }
   },
 
-  // 输入标题
-  onTitleInput(e) {
-    this.setData({ title: e.detail.value });
+  // 提取标题中的emoji
+  extractEmoji(title) {
+    if (!title) return null;
+    const emojiRegex = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]/u;
+    const match = title.match(emojiRegex);
+    return match ? match[0] : null;
   },
 
-  // 输入描述
-  onPromptInput(e) {
-    this.setData({ prompt: e.detail.value });
+  // 生成消息ID
+  generateMessageId() {
+    const id = this.data.messageIdCounter + 1;
+    this.setData({ messageIdCounter: id });
+    return `msg-${Date.now()}-${id}`;
   },
 
-  // 选择可见性
-  onVisibilityChange(e) {
-    const options = ['public', 'followers', 'private'];
-    this.setData({ visibility: options[e.detail.value] });
+  // 获取当前时间
+  getCurrentTime() {
+    const now = new Date();
+    return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
   },
 
-  // 保存游戏
-  async saveGame() {
-    const { title, prompt, visibility, gameId } = this.data;
+  // 输入变化
+  onInputChange(e) {
+    this.setData({ inputText: e.detail.value });
+  },
+
+  // 发送消息
+  async sendMessage() {
+    const { inputText, isEditing, gameId, game, messages } = this.data;
     
-    if (!title.trim()) {
-      app.showToast('请输入游戏标题');
-      return;
-    }
+    if (!inputText.trim() || isEditing) return;
     
-    if (this.data.saving) return;
-    this.setData({ saving: true });
+    const userMessage = {
+      id: this.generateMessageId(),
+      role: 'user',
+      content: inputText.trim(),
+      time: this.getCurrentTime()
+    };
+    
+    const aiMessage = {
+      id: this.generateMessageId(),
+      role: 'assistant',
+      content: '',
+      time: this.getCurrentTime(),
+      status: 'loading'
+    };
+    
+    // 添加用户消息和AI占位消息
+    this.setData({
+      messages: [...messages, userMessage, aiMessage],
+      inputText: '',
+      isEditing: true,
+      scrollToMessage: `msg-${aiMessage.id}`
+    });
+    
+    // 滚动到底部
+    setTimeout(() => {
+      this.setData({ scrollToMessage: 'scroll-bottom' });
+    }, 100);
     
     try {
-      const result = await app.request(`/api/games/${gameId}`, {
-        method: 'PUT',
-        data: {
-          title: title.trim(),
-          prompt: prompt.trim(),
-          visibility
+      // 调用AI编辑API
+      await this.executeAIEdit(userMessage.content, aiMessage.id);
+    } catch (err) {
+      console.error('AI编辑失败:', err);
+      this.updateAIMessage(aiMessage.id, {
+        content: '抱歉，编辑失败了：' + (err.message || '网络错误'),
+        status: 'error'
+      });
+    } finally {
+      this.setData({ isEditing: false });
+    }
+  },
+
+  // 执行AI编辑
+  async executeAIEdit(instruction, aiMessageId) {
+    const { gameId, game, sessionId } = this.data;
+    
+    this.updateAIMessage(aiMessageId, {
+      content: '正在分析您的需求...'
+    });
+    
+    try {
+      // 如果没有会话，先开始会话
+      let currentSessionId = sessionId;
+      if (!currentSessionId) {
+        const startResult = await app.request(`/api/games/${gameId}/edit`, {
+          method: 'POST',
+          data: {
+            action: 'start'
+          }
+        });
+        
+        if (startResult.success && startResult.sessionId) {
+          currentSessionId = startResult.sessionId;
+          this.setData({ sessionId: currentSessionId });
+        } else {
+          throw new Error(startResult.error || '开始编辑会话失败');
         }
+      }
+      
+      this.updateAIMessage(aiMessageId, {
+        content: '🔄 AI正在修改游戏代码，请稍候...\n（这可能需要1-2分钟）'
       });
       
-      if (result.success) {
-        app.showToast('保存成功', 'success');
-        setTimeout(() => {
-          wx.navigateBack();
-        }, 1500);
+      // 发送编辑消息（后端是同步处理的，会等待LLM完成后返回）
+      const result = await app.request(`/api/games/${gameId}/edit`, {
+        method: 'POST',
+        data: {
+          action: 'message',
+          sessionId: currentSessionId,
+          message: instruction
+        }
+      });
+
+      if (result.success && result.code) {
+        // 编辑成功，自动保存
+        this.updateAIMessage(aiMessageId, {
+          content: '✅ 代码修改完成，正在保存...'
+        });
+        
+        // 调用save保存更改
+        const saveResult = await app.request(`/api/games/${gameId}/edit`, {
+          method: 'POST',
+          data: {
+            action: 'save',
+            sessionId: currentSessionId,
+            saveAsNew: false
+          }
+        });
+        
+        if (saveResult.success) {
+          this.updateAIMessage(aiMessageId, {
+            content: `✅ 编辑完成！游戏已更新。\n\n${result.message || ''}\n\n你可以点击右上角的预览按钮查看效果，或继续告诉我其他修改需求~`,
+            status: 'success'
+          });
+          
+          // 重置会话ID，下次编辑会开始新会话
+          this.setData({ sessionId: null });
+          
+          // 刷新游戏详情
+          this.loadGameDetail(this.data.gameId);
+          
+          // 刷新用户积分
+          app.loadUserInfo && app.loadUserInfo();
+        } else {
+          throw new Error(saveResult.error || '保存失败');
+        }
       } else {
-        app.showToast(result.error || '保存失败');
+        throw new Error(result.error || 'AI编辑失败');
       }
     } catch (err) {
-      console.error('保存游戏失败:', err);
-      app.showToast('网络错误，请重试');
-    } finally {
-      this.setData({ saving: false });
+      throw err;
     }
+  },
+
+  // 更新AI消息
+  updateAIMessage(messageId, updates) {
+    const messages = this.data.messages.map(msg => {
+      if (msg.id === messageId) {
+        return { ...msg, ...updates };
+      }
+      return msg;
+    });
+    this.setData({ messages });
+  },
+
+  // 重试消息
+  retryMessage(e) {
+    const { index } = e.currentTarget.dataset;
+    const messages = [...this.data.messages];
+    
+    // 找到对应的用户消息
+    const userMessageIndex = index - 1;
+    if (userMessageIndex >= 0 && messages[userMessageIndex].role === 'user') {
+      const instruction = messages[userMessageIndex].content;
+      
+      // 移除失败的AI消息
+      messages.splice(index, 1);
+      this.setData({ messages });
+      
+      // 重新发送
+      this.setData({ inputText: instruction });
+      this.sendMessage();
+    }
+  },
+
+  // 查看游戏
+  viewGame() {
+    wx.navigateTo({
+      url: `/pages/game-detail/game-detail?id=${this.data.gameId}`
+    });
   },
 
   // 删除游戏
@@ -152,7 +297,6 @@ Page({
       if (result.success) {
         app.showToast('删除成功', 'success');
         setTimeout(() => {
-          // 返回两级（跳过详情页）
           wx.navigateBack({ delta: 2 });
         }, 1500);
       } else {
@@ -162,121 +306,5 @@ Page({
       console.error('删除游戏失败:', err);
       app.showToast('网络错误，请重试');
     }
-  },
-
-  // 获取可见性文本
-  getVisibilityText() {
-    const map = {
-      'public': '所有人可见',
-      'followers': '仅粉丝可见',
-      'private': '仅自己可见'
-    };
-    return map[this.data.visibility] || '所有人可见';
-  },
-
-  // AI编辑指令输入
-  onEditInstructionInput(e) {
-    this.setData({ editInstruction: e.detail.value });
-  },
-
-  // 开始AI编辑
-  async startAIEdit() {
-    const { editInstruction, gameId } = this.data;
-    
-    if (!editInstruction.trim()) {
-      app.showToast('请输入编辑指令');
-      return;
-    }
-
-    if (this.data.aiEditing) return;
-
-    // 确认对话框
-    wx.showModal({
-      title: '✨ AI编辑游戏',
-      content: `AI将根据您的指令修改游戏：\n"${editInstruction.substring(0, 50)}${editInstruction.length > 50 ? '...' : ''}"`,
-      confirmText: '开始编辑',
-      success: async (res) => {
-        if (res.confirm) {
-          await this.executeAIEdit();
-        }
-      }
-    });
-  },
-
-  // 执行AI编辑
-  async executeAIEdit() {
-    const { editInstruction, gameId, game } = this.data;
-    
-    this.setData({ aiEditing: true });
-    app.showToast('AI编辑中，请稍候...', 'loading');
-
-    try {
-      const result = await app.request(`/api/games/${gameId}/edit`, {
-        method: 'POST',
-        data: {
-          instruction: editInstruction.trim(),
-          originalPrompt: game.prompt || ''
-        }
-      });
-
-      if (result.success) {
-        // 开始轮询编辑状态
-        this.pollEditStatus();
-      } else {
-        app.showToast(result.error || 'AI编辑失败');
-        this.setData({ aiEditing: false });
-      }
-    } catch (err) {
-      console.error('AI编辑请求失败:', err);
-      app.showToast('网络错误，请重试');
-      this.setData({ aiEditing: false });
-    }
-  },
-
-  // 轮询编辑状态
-  async pollEditStatus() {
-    const maxAttempts = 90; // 最多轮询90次（约3分钟）
-    let attempts = 0;
-
-    const poll = async () => {
-      if (attempts >= maxAttempts) {
-        app.showToast('编辑超时，请稍后查看');
-        this.setData({ aiEditing: false });
-        return;
-      }
-
-      try {
-        const result = await app.request(`/api/games/${this.data.gameId}/edit-status`);
-        
-        if (result.status === 'completed') {
-          wx.hideLoading();
-          app.showToast('✨ AI编辑完成！', 'success');
-          this.setData({ 
-            aiEditing: false,
-            editInstruction: '' 
-          });
-          // 刷新游戏详情
-          this.loadGameDetail(this.data.gameId);
-          // 刷新用户积分
-          app.loadUserInfo && app.loadUserInfo();
-          return;
-        } else if (result.status === 'failed') {
-          wx.hideLoading();
-          app.showToast(result.error || 'AI编辑失败');
-          this.setData({ aiEditing: false });
-          return;
-        }
-
-        // 继续轮询
-        attempts++;
-        setTimeout(poll, 2000);
-      } catch (err) {
-        console.error('轮询编辑状态失败:', err);
-        attempts++;
-        setTimeout(poll, 2000);
-      }
-    };
-
-    poll();
   }
 });

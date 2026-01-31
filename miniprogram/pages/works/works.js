@@ -5,6 +5,7 @@ const app = getApp();
 
 Page({
   data: {
+    appName: 'AI游戏工坊', // 从全局配置获取
     // 各分类数据
     sections: [
       { id: 'recent', title: '🆕 最新', games: [], loading: true },
@@ -26,6 +27,8 @@ Page({
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 1 });
     }
+    // 更新应用名称
+    this.setData({ appName: app.getAppName() });
   },
 
   // 加载所有分类数据
@@ -129,8 +132,9 @@ Page({
 
   // 分享
   onShareAppMessage() {
+    const appName = app.getAppName();
     return {
-      title: 'AI游戏工坊 - 发现有趣的AI游戏',
+      title: `${appName} - 发现有趣的AI游戏`,
       path: '/pages/works/works'
     };
   }

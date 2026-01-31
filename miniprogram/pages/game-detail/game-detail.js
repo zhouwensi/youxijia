@@ -45,6 +45,15 @@ Page({
     }
   },
 
+  // 下拉刷新
+  async onPullDownRefresh() {
+    const { gameId } = this.data;
+    if (gameId) {
+      await this.loadGameDetail(gameId);
+    }
+    wx.stopPullDownRefresh();
+  },
+
   // 加载游戏详情
   async loadGameDetail(id) {
     this.setData({ loading: true });
@@ -148,11 +157,16 @@ Page({
     
     try {
       const result = await app.request(`/api/games/${id}/comments`, {
-        data: { limit: 10 }
+        data: { limit: 50 }
       });
       
       if (result.success) {
-        this.setData({ comments: result.comments || [] });
+        const comments = result.comments || [];
+        // 同步更新评论数
+        this.setData({ 
+          comments: comments,
+          commentCount: comments.length
+        });
       }
     } catch (err) {
       console.error('加载评论失败:', err);
@@ -304,8 +318,9 @@ Page({
   // 分享
   onShareAppMessage() {
     const game = this.data.game;
+    const appName = app.getAppName();
     return {
-      title: game ? `来玩这个AI生成的游戏: ${game.title}` : 'AI游戏工坊',
+      title: game ? `来玩这个AI生成的游戏: ${game.title}` : appName,
       path: `/pages/game-detail/game-detail?id=${this.data.gameId}`,
       imageUrl: '' // 可以添加游戏截图
     };
@@ -474,7 +489,11 @@ Page({
         };
         
         const comments = [newComment, ...this.data.comments];
-        this.setData({ comments });
+        // 同步更新评论数
+        this.setData({ 
+          comments,
+          commentCount: comments.length
+        });
         
         app.showToast('评论成功', 'success');
         

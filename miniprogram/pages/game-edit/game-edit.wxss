@@ -1,12 +1,21 @@
 /**
- * 游戏编辑页面样式
+ * 游戏编辑页面样式 - 对话式界面
  */
 
-.page-container {
-  min-height: 100vh;
+/* 容器 */
+.chat-container {
+  height: 100vh;
   background: linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%);
-  padding: 32rpx;
-  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* 加载状态 */
@@ -15,7 +24,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 200rpx 0;
+  height: 100vh;
 }
 
 .loading-spinner {
@@ -33,193 +42,320 @@
   font-size: 28rpx;
 }
 
-/* 编辑表单 */
-.edit-form {
-  display: flex;
-  flex-direction: column;
-  gap: 32rpx;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-}
-
-.form-label {
-  font-size: 28rpx;
-  color: #fff;
-  font-weight: 500;
-}
-
-.form-input {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1rpx solid rgba(255, 255, 255, 0.1);
-  border-radius: 16rpx;
-  padding: 24rpx;
-  font-size: 28rpx;
-  color: #fff;
-}
-
-.form-input::placeholder {
-  color: #666;
-}
-
-.form-textarea {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1rpx solid rgba(255, 255, 255, 0.1);
-  border-radius: 16rpx;
-  padding: 24rpx;
-  font-size: 28rpx;
-  color: #fff;
-  min-height: 200rpx;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.form-picker {
+/* 顶部游戏信息栏 */
+.game-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 24rpx 32rpx;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.1);
+}
+
+.game-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  overflow: hidden;
+}
+
+.game-emoji-box {
+  width: 80rpx;
+  height: 80rpx;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(138, 43, 226, 0.2) 100%);
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+}
+
+.game-emoji {
+  font-size: 40rpx;
+}
+
+.game-meta {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+}
+
+.game-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320rpx;
+}
+
+.game-status {
+  font-size: 24rpx;
+  color: #8b8b8b;
+  margin-top: 6rpx;
+}
+
+.header-actions {
+  display: flex;
+  gap: 20rpx;
+  flex-shrink: 0;
+}
+
+/* 操作按钮 - 使用view替代button避免默认样式 */
+.action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100rpx;
+  height: 80rpx;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 16rpx;
+}
+
+.action-btn-hover {
+  opacity: 0.7;
+  transform: scale(0.95);
+}
+
+.action-btn-danger {
+  background: rgba(255, 68, 68, 0.15);
+}
+
+.action-icon {
+  font-size: 32rpx;
+  line-height: 1;
+}
+
+.action-text {
+  font-size: 20rpx;
+  color: #999;
+  margin-top: 4rpx;
+}
+
+.action-btn-danger .action-text {
+  color: #ff6b6b;
+}
+
+/* 对话消息区域 */
+.chat-messages {
+  flex: 1;
+  padding: 24rpx;
+  overflow-y: auto;
+}
+
+/* 消息样式 */
+.message {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 32rpx;
+}
+
+.message-avatar {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  flex-shrink: 0;
+}
+
+.message-content {
+  max-width: 75%;
+  display: flex;
+  flex-direction: column;
+}
+
+.message-bubble {
+  padding: 20rpx 28rpx;
+  border-radius: 24rpx;
+  font-size: 28rpx;
+  line-height: 1.6;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.message-time {
+  font-size: 20rpx;
+  color: #666;
+  margin-top: 8rpx;
+}
+
+/* 用户消息 - 右对齐蓝色 */
+.message-user {
+  flex-direction: row-reverse;
+}
+
+.message-user .message-avatar {
+  margin-left: 16rpx;
+}
+
+.message-user .message-content {
+  align-items: flex-end;
+}
+
+.message-user .message-bubble {
+  background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+  color: #fff;
+  border-bottom-right-radius: 8rpx;
+}
+
+/* AI消息 - 左对齐灰色 */
+.message-ai {
+  flex-direction: row;
+}
+
+.message-ai .message-avatar {
+  margin-right: 16rpx;
+  background: linear-gradient(135deg, #8a2be2 0%, #5c1a99 100%);
+}
+
+.message-ai .message-content {
+  align-items: flex-start;
+}
+
+.message-ai .message-bubble {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+  border-bottom-left-radius: 8rpx;
+}
+
+/* 加载中状态 */
+.message-bubble.loading {
+  background: rgba(138, 43, 226, 0.2);
+  border: 1rpx solid rgba(138, 43, 226, 0.3);
+}
+
+/* 错误状态 */
+.message-bubble.error {
+  background: rgba(255, 68, 68, 0.15);
+  border: 1rpx solid rgba(255, 68, 68, 0.3);
+  color: #ff6b6b;
+}
+
+/* 打字指示器 */
+.typing-indicator {
+  display: flex;
+  gap: 8rpx;
+  padding: 8rpx 0 0 0;
+}
+
+.typing-indicator .dot {
+  width: 12rpx;
+  height: 12rpx;
+  background: #8a2be2;
+  border-radius: 50%;
+  animation: typing 1.4s infinite ease-in-out both;
+}
+
+.typing-indicator .dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.typing-indicator .dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+.typing-indicator .dot:nth-child(3) {
+  animation-delay: 0s;
+}
+
+@keyframes typing {
+  0%, 80%, 100% {
+    transform: scale(0.6);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 消息操作 */
+.message-actions {
+  margin-top: 12rpx;
+}
+
+.btn-retry {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
+  border-radius: 24rpx;
+  padding: 12rpx 24rpx;
+  font-size: 24rpx;
+  color: #fff;
+}
+
+.btn-retry:active {
+  opacity: 0.7;
+}
+
+/* 底部占位 */
+.scroll-bottom {
+  height: 20rpx;
+}
+
+/* 底部输入区域 */
+.chat-input-area {
+  padding: 16rpx 24rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  background: rgba(15, 15, 26, 0.98);
+  border-top: 1rpx solid rgba(255, 255, 255, 0.1);
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: flex-end;
   background: rgba(255, 255, 255, 0.08);
   border: 1rpx solid rgba(255, 255, 255, 0.1);
-  border-radius: 16rpx;
-  padding: 24rpx;
+  border-radius: 32rpx;
+  padding: 8rpx 8rpx 8rpx 24rpx;
+}
+
+.chat-input {
+  flex: 1;
   font-size: 28rpx;
   color: #fff;
-}
-
-.picker-arrow {
-  color: #666;
-  font-size: 24rpx;
-}
-
-/* 提示卡片 */
-.tip-card {
-  display: flex;
-  align-items: center;
-  background: rgba(0, 212, 255, 0.1);
-  border-radius: 12rpx;
-  padding: 20rpx 24rpx;
-}
-
-.tip-icon {
-  font-size: 36rpx;
-  margin-right: 16rpx;
-}
-
-.tip-text {
-  flex: 1;
-  font-size: 24rpx;
-  color: #00d4ff;
+  min-height: 48rpx;
+  max-height: 160rpx;
   line-height: 1.5;
+  padding: 8rpx 0;
 }
 
-/* 操作按钮 */
-.action-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 24rpx;
-  margin-top: 32rpx;
+.input-placeholder {
+  color: #666;
 }
 
-.btn-save {
+.btn-send {
+  width: 72rpx;
+  height: 72rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  font-size: 36rpx;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.btn-send.active {
   background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
   color: #fff;
-  padding: 28rpx 40rpx;
-  border-radius: 50rpx;
-  font-size: 32rpx;
-  font-weight: 600;
-  border: none;
 }
 
-.btn-save.loading {
-  opacity: 0.7;
-}
-
-.btn-save:active {
-  opacity: 0.9;
-  transform: scale(0.98);
-}
-
-.btn-delete {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 68, 68, 0.15);
-  color: #ff4444;
-  padding: 28rpx 40rpx;
-  border-radius: 50rpx;
-  font-size: 28rpx;
-  border: none;
-}
-
-.btn-delete:active {
-  opacity: 0.8;
-}
-
-/* AI编辑区域 */
-.ai-edit-section {
-  background: rgba(138, 43, 226, 0.1);
-  border: 1rpx solid rgba(138, 43, 226, 0.3);
-  border-radius: 20rpx;
-  padding: 28rpx;
-  margin-top: 16rpx;
-}
-
-.section-header {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 20rpx;
-}
-
-.section-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #fff;
-  margin-bottom: 8rpx;
-}
-
-.section-desc {
-  font-size: 24rpx;
-  color: #999;
-}
-
-.ai-edit-input {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1rpx solid rgba(138, 43, 226, 0.3);
-  min-height: 160rpx;
-}
-
-.btn-ai-edit {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #8a2be2 0%, #00d4ff 100%);
-  color: #fff;
-  padding: 24rpx 32rpx;
-  border-radius: 40rpx;
-  font-size: 30rpx;
-  font-weight: 600;
-  border: none;
-  margin-top: 20rpx;
-}
-
-.btn-ai-edit.loading {
-  opacity: 0.7;
-}
-
-.btn-ai-edit[disabled] {
-  opacity: 0.5;
-  background: linear-gradient(135deg, #666 0%, #888 100%);
-}
-
-.btn-ai-edit:active:not([disabled]) {
-  opacity: 0.9;
-  transform: scale(0.98);
+.input-hint {
+  text-align: center;
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  color: #666;
 }
 
 @keyframes spin {

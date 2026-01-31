@@ -1,92 +1,133 @@
 <!--
-  游戏编辑页面
+  游戏编辑页面 - 对话式界面
 -->
-<view class="page-container">
+<view class="chat-container">
   <!-- 加载状态 -->
   <view class="loading-container" wx:if="{{loading}}">
     <view class="loading-spinner"></view>
     <text class="loading-text">加载中...</text>
   </view>
 
-  <!-- 编辑表单 -->
-  <view class="edit-form" wx:if="{{!loading && game}}">
-    <!-- 游戏标题 -->
-    <view class="form-group">
-      <label class="form-label">🏷️ 游戏标题</label>
-      <input 
-        class="form-input" 
-        type="text" 
-        value="{{title}}" 
-        bindinput="onTitleInput"
-        placeholder="输入游戏标题"
-        maxlength="50"
-      />
-    </view>
-
-    <!-- 游戏描述 -->
-    <view class="form-group">
-      <label class="form-label">📝 游戏描述</label>
-      <textarea 
-        class="form-textarea" 
-        value="{{prompt}}" 
-        bindinput="onPromptInput"
-        placeholder="描述你的游戏"
-        maxlength="500"
-      />
-    </view>
-
-    <!-- 可见性设置 -->
-    <view class="form-group">
-      <label class="form-label">👁️ 可见范围</label>
-      <picker 
-        mode="selector" 
-        range="{{['所有人可见', '仅粉丝可见', '仅自己可见']}}"
-        value="{{visibility === 'public' ? 0 : visibility === 'followers' ? 1 : 2}}"
-        bindchange="onVisibilityChange"
-      >
-        <view class="form-picker">
-          <text>{{visibility === 'public' ? '🌍 所有人可见' : visibility === 'followers' ? '👥 仅粉丝可见' : '🔒 仅自己可见'}}</text>
-          <text class="picker-arrow">▼</text>
+  <!-- 对话界面 -->
+  <view class="chat-wrapper" wx:if="{{!loading && game}}">
+    <!-- 顶部游戏信息栏 -->
+    <view class="game-header">
+      <view class="game-info" bindtap="viewGame">
+        <view class="game-emoji-box">
+          <text class="game-emoji">{{gameEmoji || '🎮'}}</text>
         </view>
-      </picker>
-    </view>
-
-    <!-- AI继续编辑区域 -->
-    <view class="ai-edit-section">
-      <view class="section-header">
-        <text class="section-title">✨ AI继续编辑</text>
-        <text class="section-desc">告诉AI你想如何修改游戏</text>
+        <view class="game-meta">
+          <text class="game-title">{{game.title || '未命名游戏'}}</text>
+          <text class="game-status">{{visibility === 'public' ? '🌍 公开' : visibility === 'followers' ? '👥 粉丝可见' : '🔒 私密'}}</text>
+        </view>
       </view>
-      <textarea 
-        class="form-textarea ai-edit-input" 
-        value="{{editInstruction}}" 
-        bindinput="onEditInstructionInput"
-        placeholder="例如：增加分数显示、修改游戏速度、添加音效、修复bug..."
-        maxlength="500"
-      />
-      <button 
-        class="btn-ai-edit {{aiEditing ? 'loading' : ''}}" 
-        bindtap="startAIEdit" 
-        disabled="{{aiEditing || !editInstruction}}"
-      >
-        <text>{{aiEditing ? '🔄 AI编辑中...' : '🤖 开始AI编辑'}}</text>
-      </button>
+      <view class="header-actions">
+        <view class="action-btn" bindtap="viewGame" hover-class="action-btn-hover">
+          <text class="action-icon">👁️</text>
+          <text class="action-text">预览</text>
+        </view>
+        <view class="action-btn action-btn-danger" bindtap="deleteGame" hover-class="action-btn-hover">
+          <text class="action-icon">🗑️</text>
+          <text class="action-text">删除</text>
+        </view>
+      </view>
     </view>
 
-    <!-- 提示信息 -->
-    <view class="tip-card">
-      <text class="tip-icon">💡</text>
-      <text class="tip-text">基础信息修改后点击保存。想要修改游戏玩法或代码，请使用上方的AI继续编辑功能。</text>
-    </view>
+    <!-- 对话消息列表 -->
+    <scroll-view 
+      class="chat-messages" 
+      scroll-y="{{true}}" 
+      scroll-into-view="{{scrollToMessage}}"
+      enhanced="{{true}}"
+      show-scrollbar="{{false}}"
+    >
+      <!-- 欢迎消息 -->
+      <view class="message message-ai" wx:if="{{messages.length === 0}}">
+        <view class="message-avatar">🤖</view>
+        <view class="message-content">
+          <view class="message-bubble">
+            <text>你好！我是AI编辑助手。
 
-    <!-- 操作按钮 -->
-    <view class="action-buttons">
-      <button class="btn-save {{saving ? 'loading' : ''}}" bindtap="saveGame" disabled="{{saving}}">
-        <text>{{saving ? '保存中...' : '💾 保存基础信息'}}</text>
-      </button>
-      <button class="btn-delete" bindtap="deleteGame">
-        <text>🗑️ 删除游戏</text>
-      </button>
+你可以告诉我想如何修改这个游戏，例如：
+• 增加分数显示
+• 修改游戏速度
+• 添加音效
+• 修复某个bug
+• 改变颜色风格
+
+请描述你的修改需求~</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 消息列表 -->
+      <block wx:for="{{messages}}" wx:key="id">
+        <!-- 用户消息 -->
+        <view class="message message-user" wx:if="{{item.role === 'user'}}" id="msg-{{item.id}}">
+          <view class="message-content">
+            <view class="message-bubble">
+              <text>{{item.content}}</text>
+            </view>
+            <view class="message-time">{{item.time}}</view>
+          </view>
+          <view class="message-avatar">😊</view>
+        </view>
+
+        <!-- AI消息 -->
+        <view class="message message-ai" wx:if="{{item.role === 'assistant'}}" id="msg-{{item.id}}">
+          <view class="message-avatar">🤖</view>
+          <view class="message-content">
+            <view class="message-bubble {{item.status === 'loading' ? 'loading' : ''}} {{item.status === 'error' ? 'error' : ''}}">
+              <text wx:if="{{item.status === 'loading'}}">{{item.content || '思考中...'}}</text>
+              <text wx:elif="{{item.status === 'error'}}">{{item.content}}</text>
+              <text wx:else>{{item.content}}</text>
+              <view class="typing-indicator" wx:if="{{item.status === 'loading'}}">
+                <view class="dot"></view>
+                <view class="dot"></view>
+                <view class="dot"></view>
+              </view>
+            </view>
+            <view class="message-time">{{item.time}}</view>
+            <!-- 错误重试按钮 -->
+            <view class="message-actions" wx:if="{{item.status === 'error'}}">
+              <view class="btn-retry" bindtap="retryMessage" data-index="{{index}}">
+                <text>🔄 重试</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </block>
+
+      <!-- 底部占位 -->
+      <view class="scroll-bottom" id="scroll-bottom"></view>
+    </scroll-view>
+
+    <!-- 底部输入区域 -->
+    <view class="chat-input-area">
+      <view class="input-wrapper">
+        <textarea 
+          class="chat-input" 
+          value="{{inputText}}" 
+          bindinput="onInputChange"
+          bindconfirm="sendMessage"
+          placeholder="描述你想如何修改游戏..."
+          placeholder-class="input-placeholder"
+          maxlength="500"
+          auto-height="{{true}}"
+          show-confirm-bar="{{false}}"
+          adjust-position="{{true}}"
+          cursor-spacing="20"
+          disabled="{{isEditing}}"
+        />
+        <view class="btn-send {{inputText && !isEditing ? 'active' : ''}}" bindtap="sendMessage">
+          <text wx:if="{{isEditing}}">⏳</text>
+          <text wx:else>➤</text>
+        </view>
+      </view>
+      <view class="input-hint">
+        <text wx:if="{{isEditing}}">🔄 AI正在编辑游戏中...</text>
+        <text wx:else>💡 提示：描述越具体，修改效果越好</text>
+      </view>
     </view>
   </view>
 </view>

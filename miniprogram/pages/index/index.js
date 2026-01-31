@@ -5,6 +5,7 @@ const app = getApp();
 
 Page({
   data: {
+    appName: 'AI游戏工坊', // 从全局配置获取
     // 轮播Tab
     currentTab: 0,
     tabs: [
@@ -29,6 +30,8 @@ Page({
   },
 
   onShow() {
+    // 更新应用名称
+    this.setData({ appName: app.getAppName() });
     // 页面显示时检查登录状态
     if (!app.globalData.isLoggedIn) {
       app.silentLogin();
@@ -141,8 +144,9 @@ Page({
 
   // 分享
   onShareAppMessage() {
+    const appName = app.getAppName();
     return {
-      title: 'AI游戏工坊 - 一句话生成游戏',
+      title: `${appName} - 一句话生成游戏`,
       path: '/pages/index/index',
       imageUrl: '' // 可以添加分享图片
     };

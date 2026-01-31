@@ -115,8 +115,10 @@ Page({
 
   // 分享
   onShareAppMessage() {
+    const app = getApp();
+    const appName = app.getAppName();
     return {
-      title: `${this.data.title} - AI游戏工坊`,
+      title: `${this.data.title} - ${appName}`,
       path: `/pages/works-list/works-list?type=${this.data.type}&title=${encodeURIComponent(this.data.title)}`
     };
   }

@@ -325,7 +325,7 @@ Page({
       // 延迟弹出，避免与登录成功提示冲突
       setTimeout(() => {
         wx.showModal({
-          title: '欢迎来到AI游戏工坊！',
+          title: `欢迎来到${app.getAppName()}！`,
           content: '设置一个昵称，让大家认识你吧～',
           confirmText: '去设置',
           cancelText: '稍后再说',
@@ -377,16 +377,18 @@ Page({
   // 分享
   onShareAppMessage() {
     const userInfo = this.data.userInfo;
+    const appName = app.getAppName();
     return {
-      title: userInfo ? `${userInfo.nickname || userInfo.account_id}邀请你来玩AI游戏` : 'AI游戏工坊 - 一句话生成游戏',
+      title: userInfo ? `${userInfo.nickname || userInfo.account_id}邀请你来玩AI游戏` : `${appName} - 一句话生成游戏`,
       path: '/pages/create/create'
     };
   },
 
   // 关于
   showAbout() {
+    const appName = app.getAppName();
     wx.showModal({
-      title: '关于AI游戏工坊',
+      title: `关于${appName}`,
       content: `版本: ${app.globalData.config.version}\n\n一句话生成游戏的神奇平台！\n\n更多功能请访问网页版`,
       showCancel: false,
       confirmText: '知道了'

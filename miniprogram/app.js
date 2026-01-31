@@ -10,7 +10,11 @@ const config = {
   // 网站地址（跳转用）
   webUrl: 'https://www.yijuhuayouxi.com',
   // 版本号
-  version: '1.0.0'
+  version: '1.0.0',
+  // 站点名称（从后台加载）
+  siteName: 'AI游戏工坊',
+  miniprogramName: 'AI游戏工坊',
+  siteSlogan: '一句话生成游戏'
 };
 
 App({
@@ -18,17 +22,48 @@ App({
     userInfo: null,
     token: null,
     isLoggedIn: false,
-    config: config
+    config: config,
+    // 站点配置是否已加载
+    siteConfigLoaded: false
   },
 
   onLaunch() {
-    console.log('AI游戏工坊小程序启动');
+    console.log('小程序启动');
     
     // 检查本地存储的登录状态
     this.checkLoginStatus();
     
     // 获取系统信息
     this.getSystemInfo();
+    
+    // 加载站点配置
+    this.loadSiteConfig();
+  },
+
+  // 加载站点配置
+  async loadSiteConfig() {
+    try {
+      const result = await this.request('/api/site-config');
+      if (result && result.success !== false) {
+        // 更新全局配置
+        this.globalData.config.siteName = result.siteName || config.siteName;
+        this.globalData.config.miniprogramName = result.miniprogramName || config.miniprogramName;
+        this.globalData.config.siteSlogan = result.siteSlogan || config.siteSlogan;
+        if (result.version) {
+          this.globalData.config.version = result.version;
+        }
+        this.globalData.siteConfigLoaded = true;
+        console.log('站点配置加载成功:', this.globalData.config.miniprogramName);
+      }
+    } catch (err) {
+      console.error('加载站点配置失败:', err);
+      // 使用默认配置，不影响使用
+    }
+  },
+
+  // 获取小程序名称（供各页面使用）
+  getAppName() {
+    return this.globalData.config.miniprogramName || 'AI游戏工坊';
   },
 
   // 检查登录状态
