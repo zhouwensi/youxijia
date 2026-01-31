@@ -7,11 +7,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#1a1a2e">
-  <meta name="description" content="射击游戏，你正在进行劫狱救援行动，监狱内含3道门，仅有一条出入口。敌人血条固定为2枪死亡，你的血条为13枪死亡，手枪子弹无限。3道门在一条直线上，两侧为牢房。每道门固定敌人数量为5，击败敌人后才可以进入下一道门。依次通过3道门自动闯关成功。操作:你通过手机屏幕上的摇杆移动人物，左侧摇杆为方向，右侧有射击按钮，点击进行射击。 - AI一句话生成的游戏">
-  <meta property="og:title" content="劫狱救援行动 - AI游戏">
+  <meta name="description" content="植物大战僵尸2.5d - AI一句话生成的游戏">
+  <meta property="og:title" content="植物大战僵尸 2.5D - AI游戏">
   <meta property="og:description" content="这个游戏由AI一句话生成！关注公众号「游戏开发技术教程」，你也可以免费生成游戏！">
   <meta property="og:type" content="website">
-  <title>劫狱救援行动 - AI游戏</title>
+  <title>植物大战僵尸 2.5D - AI游戏</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
   <!-- 引用主站CSS样式 -->
   <link rel="stylesheet" href="/css/style.css">
@@ -1051,141 +1051,213 @@ body {
     
     
     <style>
-        * {
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
+
+        :root {
+            --primary-color: #4CAF50;
+            --accent-color: #FFC107;
+            --danger-color: #F44336;
+            --ui-bg: rgba(0, 0, 0, 0.7);
+        }
+
+        body {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-            touch-action: none;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-        body {
-            width: 100vw;
-            height: 100vh;
+            background-color: #222;
             overflow: hidden;
-            background: #111;
-            font-family: Arial, sans-serif;
-            color: #fff;
+            font-family: 'Fredoka One', cursive, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
+            height: 100vh;
+            user-select: none;
+            -webkit-user-select: none;
         }
-        #gameCanvas {
+
+        #game-container {
+            position: relative;
+            width: 900px;
+            height: 600px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F7FA 100%);
+            overflow: hidden;
+            border-radius: 8px;
+        }
+
+        canvas {
             display: block;
-            background: #0a0a1a;
+            width: 100%;
+            height: 100%;
         }
-        .screen {
+
+        /* UI Overlays */
+        .overlay {
             position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: rgba(0, 0, 20, 0.9);
-            z-index: 10;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 100;
+            color: white;
             transition: opacity 0.3s;
         }
+
         .hidden {
-            display: none;
+            opacity: 0;
+            pointer-events: none;
+            display: none !important;
         }
+
         h1 {
-            font-size: min(8vw, 48px);
-            margin-bottom: 30px;
-            color: #4af;
-            text-shadow: 0 0 10px #4af;
-            text-align: center;
+            font-size: 4rem;
+            color: var(--primary-color);
+            text-shadow: 4px 4px 0px #1b5e20;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
         }
-        .btn {
-            background: linear-gradient(45deg, #2a5, #3c6);
+
+        p {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            color: #ddd;
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            font-family: inherit;
+            background: var(--primary-color);
             color: white;
             border: none;
-            padding: 15px 30px;
-            margin: 10px;
-            font-size: min(5vw, 24px);
             border-radius: 50px;
             cursor: pointer;
-            min-width: 200px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-            transition: transform 0.2s;
+            box-shadow: 0 6px 0 #2E7D32;
+            transition: transform 0.1s, box-shadow 0.1s;
         }
-        .btn:hover, .btn:active {
-            transform: scale(1.05);
+
+        button:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #2E7D32;
         }
-        .btn.secondary {
-            background: linear-gradient(45deg, #45a, #67c);
-        }
-        #helpText {
-            max-width: 90%;
-            background: rgba(0, 20, 40, 0.8);
-            padding: 20px;
-            border-radius: 15px;
-            margin-top: 20px;
-            line-height: 1.5;
-            font-size: min(4vw, 18px);
-            text-align: center;
-            display: none;
-        }
-        #helpBtn {
+
+        /* HUD */
+        #hud {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 50px;
-            height: 50px;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            height: 90px;
+            display: flex;
+            align-items: center;
+            pointer-events: none; /* Let clicks pass through to canvas where needed */
+            z-index: 10;
+        }
+
+        #sun-counter {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 20px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            margin-right: 20px;
+            border: 2px solid var(--accent-color);
+            pointer-events: auto;
+        }
+
+        .sun-icon {
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle, #FFF 20%, #FFC107 60%);
             border-radius: 50%;
-            background: rgba(0, 30, 60, 0.7);
-            color: #4af;
-            font-size: 28px;
-            border: 2px solid #4af;
-            z-index: 20;
+            margin-right: 10px;
+            box-shadow: 0 0 10px #FFC107;
+        }
+
+        #sun-text {
+            color: white;
+            font-size: 1.8rem;
+        }
+
+        #plant-bar {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+            pointer-events: auto;
+        }
+
+        .plant-card {
+            width: 70px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
             cursor: pointer;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #888;
+            transition: transform 0.1s;
         }
-        .joystick {
+
+        .plant-card.selected {
+            border-color: var(--primary-color);
+            background: #fff;
+            transform: scale(1.05);
+            box-shadow: 0 0 15px var(--primary-color);
+        }
+
+        .plant-card.disabled {
+            filter: grayscale(100%);
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .card-cost {
             position: absolute;
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.15);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            z-index: 5;
-            bottom: 40px;
+            bottom: 2px;
+            right: 5px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #333;
         }
-        #leftJoystick {
-            left: 40px;
+
+        .card-preview {
+            width: 40px;
+            height: 40px;
         }
-        #rightJoystick {
-            right: 40px;
-            background: rgba(255, 50, 50, 0.2);
-            border-color: rgba(255, 100, 100, 0.5);
-        }
-        .joystickHandle {
+
+        /* Message Toast */
+        #message-toast {
             position: absolute;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.4);
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 10px;
+            font-size: 2rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+            z-index: 50;
         }
-        #rightJoystick .joystickHandle {
-            background: rgba(255, 100, 100, 0.6);
-        }
-        #hud {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 5;
-            font-size: min(5vw, 22px);
-            color: #fff;
-            text-shadow: 2px 2px 4px #000;
-        }
-        #gameOverScreen {
-            text-align: center;
-        }
-        #resultText {
-            font-size: min(6vw, 32px);
-            margin-bottom: 20px;
+
+        /* Responsive */
+        @media (max-width: 920px) {
+            #game-container {
+                width: 100vw;
+                height: 66.6vw; /* 3:2 Aspect Ratio */
+                border-radius: 0;
+            }
+            h1 { font-size: 2.5rem; }
+            .plant-card { width: 60px; height: 70px; }
         }
     </style>
 
@@ -1193,411 +1265,809 @@ body {
 <body>
   <!-- 原游戏body内容 -->
   
+
+<div id="game-container">
     <canvas id="gameCanvas"></canvas>
-    
-    <div id="startScreen" class="screen">
-        <h1>劫狱救援行动</h1>
-        <button id="startBtn" class="btn">开始游戏</button>
-        <button id="helpToggleBtn" class="btn secondary">游戏说明</button>
-        <div id="helpText">
-            <p>操作说明：</p>
-            <p>• 左侧摇杆控制移动</p>
-            <p>• 右侧摇杆点击射击</p>
-            <p>• 键盘方向键/WASD移动</p>
-            <p>• 空格键射击</p>
-            <p>目标：击败每道门的5名敌人，通过3道门完成救援！</p>
-            <p>你：13枪死亡 | 敌人：2枪死亡</p>
+
+    <!-- HUD -->
+    <div id="hud" class="hidden">
+        <div id="sun-counter">
+            <div class="sun-icon"></div>
+            <span id="sun-text">150</span>
+        </div>
+        <div id="plant-bar">
+            <!-- Cards injected by JS -->
         </div>
     </div>
-    
-    <div id="gameOverScreen" class="screen hidden">
-        <h1 id="resultText">任务成功！</h1>
-        <button id="restartBtn" class="btn">重新开始</button>
-        <button id="backToMenuBtn" class="btn secondary">返回菜单</button>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="overlay">
+        <h1>植物大战僵尸 2.5D</h1>
+        <p>收集阳光，种植植物，抵御僵尸！</p>
+        <button id="start-btn">开始游戏</button>
     </div>
-    
-    <button id="helpBtn">?</button>
-    
-    <div id="leftJoystick" class="joystick">
-        <div class="joystickHandle"></div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="overlay hidden">
+        <h1 style="color: var(--danger-color);">僵尸吃掉了你的脑子!</h1>
+        <p>存活波数: <span id="wave-score">0</span></p>
+        <button id="restart-btn">重新开始</button>
     </div>
-    <div id="rightJoystick" class="joystick">
-        <div class="joystickHandle"></div>
-    </div>
+
+    <!-- Message -->
+    <div id="message-toast">一大波僵尸正在接近!</div>
+</div>
+
+<script>
+/**
+ * Game Configuration & Constants
+ */
+const CELL_SIZE = 100;
+const GRID_ROWS = 5;
+const GRID_COLS = 9;
+const TOP_OFFSET = 100; // Space for UI
+const GAME_WIDTH = 900;
+const GAME_HEIGHT = 600;
+
+const PLANTS_DATA = {
+    sunflower: {
+        name: '向日葵',
+        cost: 50,
+        hp: 300,
+        cooldown: 5000, // ms
+        color: '#FFD700',
+        type: 'producer'
+    },
+    peashooter: {
+        name: '豌豆射手',
+        cost: 100,
+        hp: 300,
+        cooldown: 5000,
+        color: '#4CAF50',
+        type: 'shooter'
+    },
+    wallnut: {
+        name: '坚果墙',
+        cost: 50,
+        hp: 2000,
+        cooldown: 20000,
+        color: '#795548',
+        type: 'blocker'
+    },
+    repeater: {
+        name: '双发射手',
+        cost: 200,
+        hp: 300,
+        cooldown: 5000,
+        color: '#2E7D32',
+        type: 'shooter_double'
+    }
+};
+
+const ZOMBIE_TYPES = [
+    { name: '普通僵尸', hp: 200, speed: 0.3, color: '#556B2F' },
+    { name: '路障僵尸', hp: 560, speed: 0.3, color: '#556B2F', hat: 'cone' },
+    { name: '铁桶僵尸', hp: 1300, speed: 0.25, color: '#556B2F', hat: 'bucket' }
+];
+
+/**
+ * Game Engine
+ */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const sunText = document.getElementById('sun-text');
+const plantBar = document.getElementById('plant-bar');
+const startScreen = document.getElementById('start-screen');
+const gameOverScreen = document.getElementById('game-over-screen');
+const hud = document.getElementById('hud');
+const waveScoreEl = document.getElementById('wave-score');
+const toast = document.getElementById('message-toast');
+
+// Scaling logic for responsiveness
+let scaleRatio = 1;
+function resize() {
+    const container = document.getElementById('game-container');
+    const targetWidth = container.clientWidth;
+    const targetHeight = container.clientHeight;
     
-    <div id="hud"></div>
+    canvas.width = GAME_WIDTH;
+    canvas.height = GAME_HEIGHT;
+    
+    // CSS handles the visual scaling, canvas logic remains 900x600
+    const scaleX = targetWidth / GAME_WIDTH;
+    const scaleY = targetHeight / GAME_HEIGHT;
+    scaleRatio = Math.min(scaleX, scaleY);
+}
+window.addEventListener('resize', resize);
+resize();
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const startScreen = document.getElementById('startScreen');
-        const gameOverScreen = document.getElementById('gameOverScreen');
-        const startBtn = document.getElementById('startBtn');
-        const restartBtn = document.getElementById('restartBtn');
-        const backToMenuBtn = document.getElementById('backToMenuBtn');
-        const helpToggleBtn = document.getElementById('helpToggleBtn');
-        const helpText = document.getElementById('helpText');
-        const helpBtn = document.getElementById('helpBtn');
-        const resultText = document.getElementById('resultText');
-        const hud = document.getElementById('hud');
-        const leftJoystick = document.getElementById('leftJoystick');
-        const rightJoystick = document.getElementById('rightJoystick');
+// Game State
+let game = {
+    running: false,
+    sun: 150,
+    frame: 0,
+    wave: 1,
+    grid: [],
+    plants: [],
+    zombies: [],
+    projectiles: [],
+    suns: [],
+    particles: [],
+    selectedPlant: null,
+    spawnTimer: 0,
+    waveTimer: 0
+};
 
-        let gameRunning = false;
-        let player, enemies = [], bullets = [], doors = [];
-        let currentDoor = 0;
-        const totalDoors = 3;
-        const enemiesPerDoor = 5;
-        let playerHealth = 13;
-        let score = 0;
-        let keys = {};
-        let touchControls = {
-            left: { x: 0, y: 0, active: false },
-            right: { active: false }
-        };
-        let leftJoystickBase = { x: 0, y: 0 };
+// Mouse/Touch Input
+const mouse = { x: 0, y: 0, clicked: false };
 
-        class Player {
-            constructor() {
-                this.x = canvas.width * 0.1;
-                this.y = canvas.height / 2;
-                this.radius = 20;
-                this.speed = 5;
-                this.color = '#4af';
-                this.aimAngle = 0;
+canvas.addEventListener('mousedown', handleInput);
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault(); // Prevent scrolling
+    const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    handleInput({
+        clientX: touch.clientX,
+        clientY: touch.clientY
+    });
+}, { passive: false });
+
+function handleInput(e) {
+    if (!game.running) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const rawX = (e.clientX - rect.left) * scaleX;
+    const rawY = (e.clientY - rect.top) * scaleY;
+
+    // Check Sun Collection
+    for (let i = game.suns.length - 1; i >= 0; i--) {
+        const s = game.suns[i];
+        const dx = rawX - s.x;
+        const dy = rawY - s.y;
+        if (Math.sqrt(dx*dx + dy*dy) < 40) {
+            collectSun(i);
+            return; // Clicked sun, don't place plant
+        }
+    }
+
+    // Place Plant
+    if (game.selectedPlant) {
+        const col = Math.floor(rawX / CELL_SIZE);
+        const row = Math.floor((rawY - TOP_OFFSET) / CELL_SIZE);
+
+        if (col >= 0 && col < GRID_COLS && row >= 0 && row < GRID_ROWS) {
+            placePlant(row, col);
+        }
+    }
+}
+
+function initUI() {
+    plantBar.innerHTML = '';
+    Object.keys(PLANTS_DATA).forEach(key => {
+        const data = PLANTS_DATA[key];
+        const card = document.createElement('div');
+        card.className = 'plant-card';
+        card.onclick = () => selectPlant(key, card);
+        
+        // Simple CSS drawing for card icon
+        const preview = document.createElement('div');
+        preview.className = 'card-preview';
+        preview.style.backgroundColor = data.color;
+        if(key === 'peashooter' || key === 'repeater') preview.style.borderRadius = '50%';
+        if(key === 'wallnut') preview.style.borderRadius = '40%';
+        if(key === 'sunflower') {
+            preview.style.borderRadius = '50%';
+            preview.style.border = '4px solid orange';
+        }
+
+        const cost = document.createElement('div');
+        cost.className = 'card-cost';
+        cost.innerText = data.cost;
+
+        card.appendChild(preview);
+        card.appendChild(cost);
+        plantBar.appendChild(card);
+    });
+}
+
+function selectPlant(type, cardElement) {
+    if (game.sun < PLANTS_DATA[type].cost) return;
+    
+    // Deselect previous
+    document.querySelectorAll('.plant-card').forEach(c => c.classList.remove('selected'));
+    
+    if (game.selectedPlant === type) {
+        game.selectedPlant = null; // Toggle off
+    } else {
+        game.selectedPlant = type;
+        cardElement.classList.add('selected');
+    }
+}
+
+function updateUI() {
+    sunText.innerText = game.sun;
+    
+    // Update card availability
+    const cards = document.querySelectorAll('.plant-card');
+    let index = 0;
+    for (let key in PLANTS_DATA) {
+        const data = PLANTS_DATA[key];
+        if (game.sun < data.cost) {
+            cards[index].classList.add('disabled');
+            if (game.selectedPlant === key) {
+                game.selectedPlant = null;
+                cards[index].classList.remove('selected');
             }
-            update() {
-                let moveX = 0, moveY = 0;
-                if (keys['ArrowLeft'] || keys['a']) moveX -= 1;
-                if (keys['ArrowRight'] || keys['d']) moveX += 1;
-                if (keys['ArrowUp'] || keys['w']) moveY -= 1;
-                if (keys['ArrowDown'] || keys['s']) moveY += 1;
-                if (touchControls.left.active) {
-                    moveX += touchControls.left.x;
-                    moveY += touchControls.left.y;
-                }
-                if (moveX !== 0 || moveY !== 0) {
-                    const len = Math.sqrt(moveX * moveX + moveY * moveY);
-                    moveX /= len;
-                    moveY /= len;
-                }
-                this.x += moveX * this.speed;
-                this.y += moveY * this.speed;
-                this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
-                this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
-                const dx = canvas.width * 0.9 - this.x;
-                const dy = canvas.height / 2 - this.y;
-                this.aimAngle = Math.atan2(dy, dx);
+        } else {
+            cards[index].classList.remove('disabled');
+        }
+        index++;
+    }
+}
+
+function showToast(msg) {
+    toast.innerText = msg;
+    toast.style.opacity = 1;
+    setTimeout(() => {
+        toast.style.opacity = 0;
+    }, 2000);
+}
+
+/**
+ * Game Logic Classes
+ */
+
+class Plant {
+    constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.type = type;
+        this.data = PLANTS_DATA[type];
+        this.hp = this.data.hp;
+        this.maxHp = this.data.hp;
+        this.timer = 0;
+        this.frame = 0;
+    }
+
+    update() {
+        this.timer++;
+        this.frame++;
+
+        if (this.data.type === 'producer') {
+            if (this.timer % 600 === 0) { // ~10 seconds
+                game.suns.push(new Sun(this.x, this.y, 25));
             }
-            draw() {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.aimAngle);
-                ctx.fillStyle = this.color;
+        } else if (this.data.type.startsWith('shooter')) {
+            // Check if zombie in lane
+            const zombieInLane = game.zombies.some(z => 
+                z.y === this.y && z.x > this.x && z.x < GAME_WIDTH
+            );
+
+            if (zombieInLane) {
+                if (this.data.type === 'shooter' && this.timer % 90 === 0) {
+                    game.projectiles.push(new Projectile(this.x + 40, this.y));
+                    this.recoil = 10;
+                } else if (this.data.type === 'shooter_double' && this.timer % 90 === 0) {
+                    game.projectiles.push(new Projectile(this.x + 40, this.y));
+                    setTimeout(() => game.projectiles.push(new Projectile(this.x + 40, this.y)), 150);
+                    this.recoil = 10;
+                }
+            }
+        }
+
+        if (this.recoil > 0) this.recoil--;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.beginPath();
+        ctx.ellipse(0, 20, 30, 10, 0, 0, Math.PI*2);
+        ctx.fill();
+
+        // Draw Plant Body
+        if (this.type === 'peashooter' || this.type === 'repeater') {
+            // Head
+            ctx.fillStyle = this.data.color;
+            ctx.beginPath();
+            ctx.arc(0, -20 - this.recoil, 25, 0, Math.PI * 2);
+            ctx.fill();
+            // Snout
+            ctx.fillRect(10, -30 - this.recoil, 30, 20);
+            // Leaves
+            ctx.fillStyle = '#2E7D32';
+            ctx.beginPath();
+            ctx.ellipse(-10, 10, 15, 30, 0.5, 0, Math.PI*2);
+            ctx.fill();
+        } else if (this.type === 'sunflower') {
+            // Petals
+            ctx.fillStyle = '#FFD700';
+            for(let i=0; i<8; i++) {
+                ctx.rotate(Math.PI/4);
                 ctx.beginPath();
-                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                ctx.ellipse(0, -35, 10, 20, 0, 0, Math.PI*2);
                 ctx.fill();
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(this.radius, -5, 15, 10);
-                ctx.restore();
             }
-            shoot() {
-                const bullet = {
-                    x: this.x + Math.cos(this.aimAngle) * (this.radius + 5),
-                    y: this.y + Math.sin(this.aimAngle) * (this.radius + 5),
-                    dx: Math.cos(this.aimAngle) * 10,
-                    dy: Math.sin(this.aimAngle) * 10,
-                    radius: 5,
-                    color: '#ff0'
-                };
-                bullets.push(bullet);
-            }
-        }
-
-        class Enemy {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.radius = 18;
-                this.speed = 1.5;
-                this.color = '#f44';
-                this.health = 2;
-                this.id = Math.random();
-            }
-            update() {
-                if (!player) return;
-                const dx = player.x - this.x;
-                const dy = player.y - this.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist > 0) {
-                    this.x += (dx / dist) * this.speed;
-                    this.y += (dy / dist) * this.speed;
-                }
-            }
-            draw() {
-                ctx.fillStyle = this.color;
+            // Face
+            ctx.fillStyle = '#795548';
+            ctx.beginPath();
+            ctx.arc(0, -20, 20, 0, Math.PI*2);
+            ctx.fill();
+            // Smile
+            ctx.strokeStyle = '#3E2723';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(0, -20, 12, 0.2, Math.PI-0.2);
+            ctx.stroke();
+        } else if (this.type === 'wallnut') {
+            ctx.fillStyle = this.data.color;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 30, 40, 0, 0, Math.PI*2);
+            ctx.fill();
+            // Cracks based on health
+            if (this.hp < this.maxHp * 0.6) {
+                ctx.strokeStyle = '#3E2723';
+                ctx.lineWidth = 2;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = '#fff';
-                ctx.font = '14px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(this.health, this.x, this.y + 5);
+                ctx.moveTo(-10, -20);
+                ctx.lineTo(5, 0);
+                ctx.lineTo(-5, 20);
+                ctx.stroke();
             }
         }
 
-        class Door {
-            constructor(x) {
-                this.x = x;
-                this.width = 40;
-                this.height = 200;
-                this.color = '#8b4513';
-                this.locked = true;
-            }
-            draw() {
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x - this.width/2, canvas.height/2 - this.height/2, this.width, this.height);
-                ctx.fillStyle = this.locked ? '#f00' : '#0f0';
-                ctx.beginPath();
-                ctx.arc(this.x, canvas.height/2, 15, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = '#fff';
-                ctx.font = '16px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(this.locked ? '锁定' : '开启', this.x, canvas.height/2 + 5);
-            }
+        // Health Bar (if damaged)
+        if (this.hp < this.maxHp) {
+            ctx.fillStyle = 'red';
+            ctx.fillRect(-20, -50, 40, 5);
+            ctx.fillStyle = '#0f0';
+            ctx.fillRect(-20, -50, 40 * (this.hp / this.maxHp), 5);
         }
 
-        function initGame() {
-            player = new Player();
-            enemies = [];
-            bullets = [];
-            doors = [];
-            currentDoor = 0;
-            playerHealth = 13;
-            score = 0;
-            for (let i = 0; i < totalDoors; i++) {
-                doors.push(new Door(canvas.width * (0.3 + i * 0.2)));
-            }
-            spawnEnemiesForDoor(currentDoor);
-            gameRunning = true;
-            startScreen.classList.add('hidden');
-            gameOverScreen.classList.add('hidden');
-        }
+        ctx.restore();
+    }
+}
 
-        function spawnEnemiesForDoor(doorIndex) {
-            enemies = [];
-            const doorX = doors[doorIndex].x;
-            const left = doorX - 200;
-            const right = doorX + 200;
-            const top = canvas.height * 0.3;
-            const bottom = canvas.height * 0.7;
-            for (let i = 0; i < enemiesPerDoor; i++) {
-                const x = left + Math.random() * (right - left);
-                const y = top + Math.random() * (bottom - top);
-                enemies.push(new Enemy(x, y));
-            }
-            doors[doorIndex].locked = true;
-        }
+class Zombie {
+    constructor(y, typeData) {
+        this.x = GAME_WIDTH + 50;
+        this.y = y;
+        this.hp = typeData.hp;
+        this.maxHp = typeData.hp;
+        this.speed = typeData.speed;
+        this.color = typeData.color;
+        this.hat = typeData.hat || null;
+        this.eating = false;
+        this.walkFrame = 0;
+        this.frozen = false;
+    }
 
-        function updateGame() {
-            if (!gameRunning) return;
-            if (player) player.update();
-            enemies.forEach(enemy => enemy.update());
-            bullets.forEach((bullet, idx) => {
-                bullet.x += bullet.dx;
-                bullet.y += bullet.dy;
-                if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) {
-                    bullets.splice(idx, 1);
+    update() {
+        this.walkFrame += 0.1;
+        
+        // Check for plant collision
+        this.eating = false;
+        for (let plant of game.plants) {
+            if (plant.y === this.y && Math.abs(plant.x - this.x) < 40) {
+                this.eating = true;
+                if (game.frame % 30 === 0) {
+                    plant.hp -= 20; // Damage plant
+                    // Visual bite effect
+                    createParticles(plant.x, plant.y - 20, '#4CAF50', 3);
                 }
-            });
-            checkCollisions();
-            checkDoorProgress();
-            updateHUD();
+                break;
+            }
         }
 
-        function checkCollisions() {
-            bullets.forEach((bullet, bIdx) => {
-                enemies.forEach((enemy, eIdx) => {
-                    const dx = bullet.x - enemy.x;
-                    const dy = bullet.y - enemy.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < bullet.radius + enemy.radius) {
-                        enemy.health--;
-                        bullets.splice(bIdx, 1);
-                        if (enemy.health <= 0) {
-                            enemies.splice(eIdx, 1);
-                            score += 100;
-                        }
+        if (!this.eating) {
+            this.x -= this.speed;
+        }
+
+        // Game Over Condition
+        if (this.x < 0) {
+            endGame();
+        }
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.beginPath();
+        ctx.ellipse(0, 30, 25, 8, 0, 0, Math.PI*2);
+        ctx.fill();
+
+        // Wobble animation
+        const wobble = Math.sin(this.walkFrame) * 5;
+
+        // Body
+        ctx.fillStyle = this.color;
+        ctx.fillRect(-15, -30 + wobble, 30, 60);
+        
+        // Suit
+        ctx.fillStyle = '#1a237e'; // Blue suit
+        ctx.fillRect(-15, 0 + wobble, 30, 30);
+
+        // Head
+        ctx.fillStyle = '#9E9E9E'; // Skin
+        ctx.beginPath();
+        ctx.arc(0, -45 + wobble, 20, 0, Math.PI*2);
+        ctx.fill();
+
+        // Eyes
+        ctx.fillStyle = 'white';
+        ctx.beginPath();
+        ctx.arc(-7, -48 + wobble, 6, 0, Math.PI*2);
+        ctx.arc(7, -48 + wobble, 6, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = 'black';
+        ctx.beginPath();
+        ctx.arc(-7, -48 + wobble, 2, 0, Math.PI*2);
+        ctx.arc(7, -48 + wobble, 2, 0, Math.PI*2);
+        ctx.fill();
+
+        // Hat
+        if (this.hat === 'cone') {
+            ctx.fillStyle = '#FF5722';
+            ctx.beginPath();
+            ctx.moveTo(-20, -55 + wobble);
+            ctx.lineTo(20, -55 + wobble);
+            ctx.lineTo(0, -95 + wobble);
+            ctx.fill();
+        } else if (this.hat === 'bucket') {
+            ctx.fillStyle = '#757575';
+            ctx.fillRect(-22, -75 + wobble, 44, 30);
+            ctx.fillStyle = '#616161';
+            ctx.fillRect(-24, -75 + wobble, 48, 5);
+        }
+
+        // Arms
+        ctx.fillStyle = this.color;
+        if (this.eating) {
+            // Eating animation
+            ctx.fillRect(15, -20 + wobble + Math.sin(game.frame*0.5)*5, 20, 10);
+        } else {
+            // Walking arms
+            ctx.fillRect(15, -20 + wobble + Math.sin(this.walkFrame)*10, 20, 10);
+        }
+
+        ctx.restore();
+    }
+}
+
+class Projectile {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.speed = 6;
+        this.markedForDeletion = false;
+        this.rotation = 0;
+    }
+
+    update() {
+        this.x += this.speed;
+        this.rotation += 0.2;
+        if (this.x > GAME_WIDTH) this.markedForDeletion = true;
+
+        // Hit detection
+        for (let i = 0; i < game.zombies.length; i++) {
+            const z = game.zombies[i];
+            if (z.y === this.y && Math.abs(z.x - this.x) < 30) {
+                z.hp -= 25;
+                this.markedForDeletion = true;
+                createParticles(this.x, this.y, '#4CAF50', 5);
+                if (z.hp <= 0) {
+                    game.zombies.splice(i, 1);
+                    // Chance to drop sun
+                    if (Math.random() < 0.1) {
+                        game.suns.push(new Sun(z.x, z.y, 25));
                     }
-                });
-            });
-            if (!player) return;
-            enemies.forEach(enemy => {
-                const dx = player.x - enemy.x;
-                const dy = player.y - enemy.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < player.radius + enemy.radius) {
-                    playerHealth--;
-                    if (playerHealth <= 0) {
-                        gameOver(false);
-                    }
                 }
-            });
-        }
-
-        function checkDoorProgress() {
-            if (enemies.length === 0 && currentDoor < totalDoors) {
-                doors[currentDoor].locked = false;
-                if (player && player.x > doors[currentDoor].x) {
-                    currentDoor++;
-                    if (currentDoor >= totalDoors) {
-                        gameOver(true);
-                    } else {
-                        spawnEnemiesForDoor(currentDoor);
-                    }
-                }
+                break;
             }
         }
+    }
 
-        function gameOver(success) {
-            gameRunning = false;
-            resultText.textContent = success ? '任务成功！' : '任务失败';
-            resultText.style.color = success ? '#2f5' : '#f44';
-            gameOverScreen.classList.remove('hidden');
+    draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        ctx.fillStyle = '#8BC34A';
+        ctx.beginPath();
+        ctx.arc(0, 0, 10, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = '#33691E';
+        ctx.beginPath();
+        ctx.arc(0, 0, 5, 0, Math.PI*2);
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+class Sun {
+    constructor(x, y, targetY) {
+        this.x = x;
+        this.y = y;
+        this.targetY = targetY;
+        this.size = 30;
+        this.markedForDeletion = false;
+        this.timer = 0;
+        this.lifeTime = 600; // 10 seconds to collect
+    }
+
+    update() {
+        if (this.y < this.targetY) {
+            this.y += 2;
+        }
+        this.timer++;
+        if (this.timer > this.lifeTime) {
+            this.markedForDeletion = true;
+        }
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        const opacity = Math.min(1, (this.lifeTime - this.timer) / 100);
+        ctx.globalAlpha = opacity;
+        
+        // Glow
+        ctx.shadowColor = '#FFEB3B';
+        ctx.shadowBlur = 20;
+
+        // Body
+        ctx.fillStyle = '#FFEB3B';
+        ctx.beginPath();
+        ctx.arc(0, 0, this.size, 0, Math.PI*2);
+        ctx.fill();
+
+        // Rays
+        ctx.strokeStyle = '#FBC02D';
+        ctx.lineWidth = 4;
+        for(let i=0; i<8; i++) {
+            ctx.rotate(Math.PI/4);
+            ctx.beginPath();
+            ctx.moveTo(this.size + 5, 0);
+            ctx.lineTo(this.size + 15, 0);
+            ctx.stroke();
         }
 
-        function updateHUD() {
-            hud.innerHTML = `生命: ${playerHealth} | 得分: ${score} | 门: ${currentDoor+1}/${totalDoors}`;
+        ctx.restore();
+    }
+}
+
+class Particle {
+    constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.size = Math.random() * 5 + 2;
+        this.speedX = Math.random() * 4 - 2;
+        this.speedY = Math.random() * 4 - 2;
+        this.life = 30;
+    }
+    update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.life--;
+    }
+    draw() {
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = this.life / 30;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+}
+
+function createParticles(x, y, color, count) {
+    for(let i=0; i<count; i++) {
+        game.particles.push(new Particle(x, y, color));
+    }
+}
+
+/**
+ * Core Game Functions
+ */
+
+function startGame() {
+    // Reset state
+    game = {
+        running: true,
+        sun: 150,
+        frame: 0,
+        wave: 1,
+        grid: [],
+        plants: [],
+        zombies: [],
+        projectiles: [],
+        suns: [],
+        particles: [],
+        selectedPlant: null,
+        spawnTimer: 0,
+        waveTimer: 0
+    };
+
+    startScreen.classList.add('hidden');
+    gameOverScreen.classList.add('hidden');
+    hud.classList.remove('hidden');
+    
+    initUI();
+    animate();
+}
+
+function endGame() {
+    game.running = false;
+    waveScoreEl.innerText = game.wave;
+    hud.classList.add('hidden');
+    gameOverScreen.classList.remove('hidden');
+}
+
+function placePlant(row, col) {
+    const x = col * CELL_SIZE + CELL_SIZE/2;
+    const y = row * CELL_SIZE + CELL_SIZE/2 + TOP_OFFSET;
+
+    // Check if cell occupied
+    for (let p of game.plants) {
+        if (p.x === x && p.y === y) return;
+    }
+
+    const cost = PLANTS_DATA[game.selectedPlant].cost;
+    if (game.sun >= cost) {
+        game.sun -= cost;
+        game.plants.push(new Plant(x, y, game.selectedPlant));
+        game.selectedPlant = null;
+        document.querySelectorAll('.plant-card').forEach(c => c.classList.remove('selected'));
+        updateUI();
+    }
+}
+
+function collectSun(index) {
+    game.suns.splice(index, 1);
+    game.sun += 25;
+    updateUI();
+    createParticles(mouse.x, mouse.y, '#FFD700', 5);
+}
+
+function spawnZombie() {
+    const row = Math.floor(Math.random() * GRID_ROWS);
+    const y = row * CELL_SIZE + CELL_SIZE/2 + TOP_OFFSET;
+    
+    // Select type based on wave
+    let typeIndex = 0;
+    if (game.wave > 3) typeIndex = Math.random() < 0.3 ? 1 : 0;
+    if (game.wave > 6) typeIndex = Math.random() < 0.2 ? 2 : (Math.random() < 0.5 ? 1 : 0);
+
+    game.zombies.push(new Zombie(y, ZOMBIE_TYPES[typeIndex]));
+}
+
+function drawBackground() {
+    // Draw Lawn
+    for (let r = 0; r < GRID_ROWS; r++) {
+        for (let c = 0; c < GRID_COLS; c++) {
+            const x = c * CELL_SIZE;
+            const y = r * CELL_SIZE + TOP_OFFSET;
+            
+            // Checkerboard pattern
+            ctx.fillStyle = (r + c) % 2 === 0 ? '#66BB6A' : '#81C784';
+            ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
         }
+    }
 
-        function drawGame() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#1a1a2e';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            doors.forEach(door => door.draw());
-            if (player) player.draw();
-            enemies.forEach(enemy => enemy.draw());
-            bullets.forEach(bullet => {
-                ctx.fillStyle = bullet.color;
-                ctx.beginPath();
-                ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
-                ctx.fill();
-            });
-            for (let i = 0; i < totalDoors; i++) {
-                ctx.fillStyle = i <= currentDoor ? '#4af' : '#555';
-                ctx.beginPath();
-                ctx.arc(30 + i * 40, 60, 10, 0, Math.PI * 2);
-                ctx.fill();
-            }
+    // Grid highlight for selection
+    if (game.selectedPlant) {
+        const col = Math.floor(mouse.x / CELL_SIZE);
+        const row = Math.floor((mouse.y - TOP_OFFSET) / CELL_SIZE);
+        
+        if (col >= 0 && col < GRID_COLS && row >= 0 && row < GRID_ROWS) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.fillRect(col * CELL_SIZE, row * CELL_SIZE + TOP_OFFSET, CELL_SIZE, CELL_SIZE);
+            
+            // Ghost plant
+            ctx.globalAlpha = 0.5;
+            const x = col * CELL_SIZE + CELL_SIZE/2;
+            const y = row * CELL_SIZE + CELL_SIZE/2 + TOP_OFFSET;
+            const previewPlant = new Plant(x, y, game.selectedPlant);
+            previewPlant.draw();
+            ctx.globalAlpha = 1.0;
         }
+    }
+}
 
-        function gameLoop() {
-            updateGame();
-            drawGame();
-            requestAnimationFrame(gameLoop);
-        }
+function animate() {
+    if (!game.running) return;
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            leftJoystickBase.x = leftJoystick.offsetLeft + leftJoystick.offsetWidth / 2;
-            leftJoystickBase.y = leftJoystick.offsetTop + leftJoystick.offsetHeight / 2;
-        }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        function handleTouchStart(e) {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            const x = touch.clientX - rect.left;
-            const y = touch.clientY - rect.top;
-            const leftRect = leftJoystick.getBoundingClientRect();
-            const rightRect = rightJoystick.getBoundingClientRect();
-            if (x >= leftRect.left && x <= leftRect.right && y >= leftRect.top && y <= leftRect.bottom) {
-                touchControls.left.active = true;
-                updateLeftJoystick(x, y);
-            }
-            if (x >= rightRect.left && x <= rightRect.right && y >= rightRect.top && y <= rightRect.bottom) {
-                touchControls.right.active = true;
-                if (player) player.shoot();
-            }
-        }
+    game.frame++;
+    game.spawnTimer++;
+    game.waveTimer++;
 
-        function handleTouchMove(e) {
-            e.preventDefault();
-            if (!touchControls.left.active) return;
-            const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            const x = touch.clientX - rect.left;
-            const y = touch.clientY - rect.top;
-            updateLeftJoystick(x, y);
-        }
+    // Spawning Logic
+    // Natural sun
+    if (game.spawnTimer % 400 === 0) {
+        const x = Math.random() * (GAME_WIDTH - 100) + 50;
+        game.suns.push(new Sun(x, 0, Math.random() * (GAME_HEIGHT - 200) + 150));
+    }
 
-        function handleTouchEnd(e) {
-            e.preventDefault();
-            touchControls.left.active = false;
-            touchControls.left.x = 0;
-            touchControls.left.y = 0;
-            touchControls.right.active = false;
-        }
+    // Zombies
+    let spawnRate = Math.max(100, 600 - game.wave * 20);
+    if (game.spawnTimer % spawnRate === 0) {
+        spawnZombie();
+    }
 
-        function updateLeftJoystick(x, y) {
-            const dx = x - leftJoystickBase.x;
-            const dy = y - leftJoystickBase.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            const maxDist = 50;
-            if (dist > maxDist) {
-                touchControls.left.x = dx / dist;
-                touchControls.left.y = dy / dist;
-            } else {
-                touchControls.left.x = dx / maxDist;
-                touchControls.left.y = dy / maxDist;
-            }
-        }
+    // Wave progression
+    if (game.waveTimer % 2000 === 0) {
+        game.wave++;
+        showToast(`第 ${game.wave} 波僵尸!`);
+    }
 
-        startBtn.addEventListener('click', initGame);
-        restartBtn.addEventListener('click', initGame);
-        backToMenuBtn.addEventListener('click', () => {
-            gameOverScreen.classList.add('hidden');
-            startScreen.classList.remove('hidden');
-            gameRunning = false;
-            player = null;
-        });
-        helpToggleBtn.addEventListener('click', () => {
-            helpText.style.display = helpText.style.display === 'block' ? 'none' : 'block';
-        });
-        helpBtn.addEventListener('click', () => {
-            helpText.style.display = helpText.style.display === 'block' ? 'none' : 'block';
-        });
+    // Update & Draw
+    drawBackground();
 
-        window.addEventListener('keydown', (e) => {
-            keys[e.key] = true;
-            if (e.key === ' ' && gameRunning && player) {
-                player.shoot();
-                e.preventDefault();
-            }
-        });
-        window.addEventListener('keyup', (e) => {
-            keys[e.key] = false;
-        });
+    // Sort entities by Y for pseudo-3D layering (2.5D effect)
+    const allEntities = [...game.plants, ...game.zombies, ...game.projectiles];
+    // Note: Projectiles are usually drawn on top, but for 2.5D feel, we sort strictly by Y
+    // However, projectiles usually fly "above" ground. Let's keep logic simple:
+    // Draw Ground -> Plants/Zombies sorted by Y -> Projectiles -> UI
+    
+    // Plants & Zombies
+    const movers = [...game.plants, ...game.zombies];
+    movers.sort((a, b) => a.y - b.y);
 
-        canvas.addEventListener('touchstart', handleTouchStart);
-        canvas.addEventListener('touchmove', handleTouchMove);
-        canvas.addEventListener('touchend', handleTouchEnd);
-        rightJoystick.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            touchControls.right.active = true;
-            if (player) player.shoot();
-        });
-        rightJoystick.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            touchControls.right.active = false;
-        });
+    movers.forEach(entity => {
+        entity.update();
+        entity.draw();
+    });
 
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-        gameLoop();
-    </script>
+    // Remove dead plants
+    game.plants = game.plants.filter(p => p.hp > 0);
+
+    // Projectiles
+    game.projectiles.forEach((p, index) => {
+        p.update();
+        p.draw();
+        if (p.markedForDeletion) game.projectiles.splice(index, 1);
+    });
+
+    // Suns
+    game.suns.forEach((s, index) => {
+        s.update();
+        s.draw();
+        if (s.markedForDeletion) game.suns.splice(index, 1);
+    });
+
+    // Particles
+    game.particles.forEach((p, index) => {
+        p.update();
+        p.draw();
+        if (p.life <= 0) game.particles.splice(index, 1);
+    });
+
+    requestAnimationFrame(animate);
+}
+
+// Event Listeners
+document.getElementById('start-btn').addEventListener('click', startGame);
+document.getElementById('restart-btn').addEventListener('click', startGame);
+
+// Initial render
+resize();
+ctx.fillStyle = '#222';
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+</script>
 
   <!-- YXJ-PLATFORM-UI-START -->
   
@@ -1612,12 +2082,12 @@ body {
     <div class="tiktok-author-avatar" id="author-avatar" onclick="openAuthorProfile()">👤</div>
     <div class="tiktok-author-details" style="display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;min-height:32px!important;gap:2px!important;">
       <div class="tiktok-author-name-row" style="display:flex!important;flex-direction:row!important;align-items:center!important;gap:10px!important;">
-        <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">player_via3fx</span>
-        <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="d9199a35-a32e-42d8-985b-93530788e569" onclick="toggleFollow()">
+        <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">游戏家用户</span>
+        <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="12351cd0-ac53-43bf-8e14-50913b352442" onclick="toggleFollow()">
           <span class="follow-icon">+</span> 关注
         </button>
       </div>
-      <span class="tiktok-publish-time" style="display:block!important;margin:0!important;padding:0!important;">发布于 2026年1月22日</span>
+      <span class="tiktok-publish-time" style="display:block!important;margin:0!important;padding:0!important;">发布于 2026年1月31日</span>
     </div>
   </div>
 </div>
@@ -1743,10 +2213,10 @@ body {
 
 <script>
 // 获取游戏ID和作者信息
-const gameId = '5980fa3d-9588-4a8f-b446-329bd4c92ebb';
-const gameTitle = '劫狱救援行动';
-const authorToken = 'd9199a35-a32e-42d8-985b-93530788e569';
-const authorName = 'player_via3fx';
+const gameId = '716bbe32-2367-4a71-9a16-83c41dcda8bc';
+const gameTitle = '植物大战僵尸 2.5D';
+const authorToken = '12351cd0-ac53-43bf-8e14-50913b352442';
+const authorName = '游戏家用户';
 const API_BASE = '/api/games';
 
 // 网站配置（禁用写操作检查）

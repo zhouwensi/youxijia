@@ -258,9 +258,19 @@
   margin-bottom: 8rpx;
 }
 
+.game-author {
+  margin-bottom: 8rpx;
+}
+
+.game-author .author-text {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.5);
+}
+
 .game-meta {
   display: flex;
-  gap: 16rpx;
+  gap: 12rpx;
+  flex-wrap: wrap;
   font-size: 22rpx;
   color: #666;
 }

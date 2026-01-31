@@ -263,9 +263,13 @@
           </view>
           <view class="my-game-info">
             <text class="my-game-title ellipsis">{{item.title || '未命名'}}</text>
+            <view class="my-game-author">
+              <text class="author-text">👤 {{item.author_name || '匿名'}}</text>
+            </view>
             <view class="my-game-stats">
               <text class="stat-item">❤️ {{item.likes || 0}}</text>
               <text class="stat-item">👁️ {{item.plays || 0}}</text>
+              <text class="stat-item">⭐ {{item.favorites || 0}}</text>
             </view>
           </view>
         </view>

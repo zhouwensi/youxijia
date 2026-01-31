@@ -75,6 +75,7 @@
         <view class="game-meta">
           <text class="meta-item">❤️ {{item.likes || 0}}</text>
           <text class="meta-item">👁️ {{item.plays || 0}}</text>
+          <text class="meta-item">⭐ {{item.favorites || 0}}</text>
         </view>
       </view>
       

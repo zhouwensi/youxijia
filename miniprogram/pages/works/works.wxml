@@ -52,6 +52,7 @@
             <view class="game-stats">
               <text class="stat-item">❤️ {{game.likes || 0}}</text>
               <text class="stat-item">👁️ {{game.plays || 0}}</text>
+              <text class="stat-item">⭐ {{game.favorites || 0}}</text>
             </view>
           </view>
         </view>

@@ -36,7 +36,7 @@
         </view>
       </view>
       
-      <!-- 关注/粉丝/积分统计 -->
+      <!-- 关注/粉丝统计 -->
       <view class="user-stats">
         <view class="stat-item" bindtap="showFollowing">
           <text class="stat-value">{{stats.following}}</text>
@@ -46,11 +46,6 @@
         <view class="stat-item" bindtap="showFollowers">
           <text class="stat-value">{{stats.followers}}</text>
           <text class="stat-label">粉丝</text>
-        </view>
-        <view class="stat-divider"></view>
-        <view class="stat-item" bindtap="showCreditsInfo">
-          <text class="stat-value">{{stats.credits}}</text>
-          <text class="stat-label">积分</text>
         </view>
       </view>
     </view>
@@ -92,9 +87,14 @@
         <view class="game-info">
           <view class="game-title ellipsis">{{item.title || '未命名游戏'}}</view>
           <view class="game-desc ellipsis">{{item.prompt || '暂无描述'}}</view>
+          <!-- 对于点赞/收藏的游戏显示作者 -->
+          <view class="game-author" wx:if="{{currentTab !== 'games' && item.author_name}}">
+            <text class="author-text">👤 {{item.author_name}}</text>
+          </view>
           <view class="game-meta">
             <text class="meta-item">❤️ {{item.likes || 0}}</text>
             <text class="meta-item">👁️ {{item.plays || 0}}</text>
+            <text class="meta-item">⭐ {{item.favorites || 0}}</text>
           </view>
         </view>
         <view class="game-arrow">›</view>

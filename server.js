@@ -13,6 +13,13 @@ const security = require('./security');
 // ==================== 微信小程序工具模块 ====================
 const wechatUtils = require('./api/_lib/wechat');
 
+// ==================== 平台检测工具 ====================
+// 判断请求是否来自小程序（小程序请求不消耗积分）
+function isMiniProgramRequest(req) {
+  const platform = req.headers['x-platform'];
+  return platform === 'miniprogram';
+}
+
 // ==================== 静态游戏文件系统 ====================
 
 // 静态游戏存储目录
@@ -1371,7 +1378,7 @@ const API_BASE = '/api/games';
 // 网站配置（禁用写操作检查）
 let siteConfig = {
   webWriteDisabled: true,  // 默认禁用，等待API返回
-  miniprogram: { appId: '', defaultPath: '/pages/create/create' }
+  miniprogram: { name: 'AI游戏工坊', appId: '', defaultPath: '/pages/create/create' }
 };
 
 // 加载网站配置
@@ -1393,21 +1400,36 @@ function isWebWriteDisabled() {
   return siteConfig.webWriteDisabled;
 }
 
+// 获取页面最高的 z-index 值
+function getMaxZIndex() {
+  return Math.max(
+    ...Array.from(document.querySelectorAll('body *'))
+      .map(el => parseFloat(window.getComputedStyle(el).zIndex))
+      .filter(zIndex => !isNaN(zIndex)),
+    999999 // 最低保底值
+  );
+}
+
 // 显示小程序引导弹窗
 function showMiniprogramGuide(actionName, targetPath) {
+  const mpName = siteConfig.miniprogram?.name || 'AI游戏工坊';
   const appId = siteConfig.miniprogram?.appId || '';
   const path = targetPath || siteConfig.miniprogram?.defaultPath || '/pages/create/create';
   const fullPath = gameId ? path + '?id=' + gameId : path;
-  const qrcodeUrl = '/api/miniprogram-qrcode?path=' + encodeURIComponent(fullPath);
+  const qrcodeUrl = '/images/miniprogram.png';
   
   // 移除旧的弹窗
   const oldModal = document.getElementById('miniprogram-guide-modal');
   if (oldModal) oldModal.remove();
   
+  // 动态计算z-index，确保在最上层
+  const maxZIndex = getMaxZIndex();
+  const modalZIndex = maxZIndex + 10;
+  
   const modal = document.createElement('div');
   modal.className = 'modal active';
   modal.id = 'miniprogram-guide-modal';
-  modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10000;';
+  modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:' + modalZIndex + ';';
   modal.onclick = function(e) { if (e.target === modal) closeMiniprogramGuide(); };
   
   modal.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:380px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,0.3);">' +
@@ -1422,8 +1444,8 @@ function showMiniprogramGuide(actionName, targetPath) {
       '<div id="miniprogram-qrcode-container" style="width:180px;height:180px;margin:0 auto 1rem;background:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid #eee;">' +
         '<img id="miniprogram-qrcode" src="' + qrcodeUrl + '" style="width:100%;height:100%;object-fit:contain;" onerror="showQrcodeError()" alt="小程序二维码">' +
       '</div>' +
-      '<p style="color:#07c160;font-weight:600;">AI游戏工坊 小程序</p>' +
-      '<p style="color:#999;font-size:0.75rem;margin-top:0.5rem;">微信搜索「AI游戏工坊」即可找到</p>' +
+      '<p style="color:#07c160;font-weight:600;">' + mpName + ' 小程序</p>' +
+      '<p style="color:#999;font-size:0.75rem;margin-top:0.5rem;">微信搜索「' + mpName + '」即可找到</p>' +
     '</div>' +
     '<div style="padding:1rem 1.5rem;text-align:center;border-top:1px solid #eee;">' +
       '<button onclick="closeMiniprogramGuide()" style="background:#07c160;color:#fff;border:none;padding:0.75rem 2rem;border-radius:8px;font-size:1rem;cursor:pointer;">我知道了</button>' +
@@ -1434,9 +1456,10 @@ function showMiniprogramGuide(actionName, targetPath) {
 }
 
 function showQrcodeError() {
+  const mpName = siteConfig.miniprogram?.name || 'AI游戏工坊';
   const container = document.getElementById('miniprogram-qrcode-container');
   if (container) {
-    container.innerHTML = '<div style="text-align:center;padding:1rem;color:#666;"><div style="font-size:2rem;margin-bottom:0.5rem;">🔍</div><p style="font-size:0.75rem;">微信搜索</p><p style="font-size:0.875rem;font-weight:600;color:#333;">AI游戏工坊</p></div>';
+    container.innerHTML = '<div style="text-align:center;padding:1rem;color:#666;"><div style="font-size:2rem;margin-bottom:0.5rem;">🔍</div><p style="font-size:0.75rem;">微信搜索</p><p style="font-size:0.875rem;font-weight:600;color:#333;">' + mpName + '</p></div>';
   }
 }
 
@@ -5224,6 +5247,7 @@ app.get('/api/site-config', (req, res) => {
     const webWriteDisabled = getConfig('web_write_disabled', 'true') === 'true';
     
     // 小程序相关配置
+    const miniprogramName = getConfig('miniprogram_name', 'AI游戏工坊');
     const miniprogramAppId = getConfig('miniprogram_appid', '');
     const miniprogramPath = getConfig('miniprogram_default_path', '/pages/create/create');
     
@@ -5234,6 +5258,7 @@ app.get('/api/site-config', (req, res) => {
         webWriteDisabled: webWriteDisabled,
         // 小程序配置
         miniprogram: {
+          name: miniprogramName,
           appId: miniprogramAppId,
           defaultPath: miniprogramPath
         }
@@ -5419,6 +5444,12 @@ app.get('/api/credits', (req, res) => {
 // 消耗积分（生成游戏时调用）
 app.post('/api/credits/use', (req, res) => {
   try {
+    // 小程序请求跳过积分扣除
+    if (isMiniProgramRequest(req)) {
+      console.log('[Credits] 小程序请求，跳过积分扣除API');
+      return res.json({ success: true, credits: 999, skipped: true });
+    }
+    
     const userToken = req.headers['x-user-token'];
     if (!userToken) {
       return res.status(400).json({ success: false, error: '缺少用户标识' });
@@ -7090,7 +7121,8 @@ app.post('/api/generate', async (req, res) => {
       // 从配置读取积分消耗（优先数据库配置，否则使用默认值）
       turboCreditCost = getModelCreditCost(turboModel);
       
-      if (turboCreditCost > 0 && userToken) {
+      // 小程序请求跳过积分扣除
+      if (turboCreditCost > 0 && userToken && !isMiniProgramRequest(req)) {
         // 检查用户积分
         const userCredits = ensureUserCredits(userToken);
         if (userCredits.credits < turboCreditCost) {
@@ -7117,6 +7149,8 @@ app.post('/api/generate', async (req, res) => {
         `).run(userToken, -turboCreditCost, `加速生成：使用 ${turboModelConfig.name}`);
         
         console.log(`[Credits] 用户 ${userToken.substring(0, 8)}... 消耗 ${turboCreditCost} 积分用于加速生成`);
+      } else if (isMiniProgramRequest(req)) {
+        console.log('[Credits] 小程序请求，跳过加速生成积分扣除');
       }
     }
 
@@ -7332,8 +7366,10 @@ app.post('/api/generate', async (req, res) => {
     
     // ========== 积分扣除逻辑（非Turbo模式）==========
     // 规则：用户有自己的Key = 免费，使用后台Key = 扣积分
+    // 注意：小程序请求跳过积分扣除
     let actualCreditCost = 0;
-    if (!turboModelConfig && keySource !== 'user' && userToken && selectedModelId) {
+    const isFromMiniProgram = isMiniProgramRequest(req);
+    if (!turboModelConfig && keySource !== 'user' && userToken && selectedModelId && !isFromMiniProgram) {
       // 使用后台Key，需要扣积分
       actualCreditCost = modelCreditCost;
       
@@ -7368,6 +7404,8 @@ app.post('/api/generate', async (req, res) => {
       }
     } else if (keySource === 'user') {
       console.log('[INFO] 用户使用自己的API Key，免费生成');
+    } else if (isFromMiniProgram) {
+      console.log('[INFO] 小程序请求，跳过积分扣除');
     }
 
     // Key验证：如果不是积分付费模式，必须有Key
@@ -8577,15 +8615,20 @@ app.post('/api/games/:id/repair', async (req, res) => {
       return res.status(403).json({ success: false, error: '只能修复自己的游戏' });
     }
     
-    // 检查并扣除积分
-    const userCredits = ensureUserCredits(userToken);
-    if (userCredits.credits < creditCost) {
-      return res.status(400).json({ 
-        success: false, 
-        error: `积分不足，需要 ${creditCost} 积分`,
-        creditsNeeded: creditCost,
-        creditsHave: userCredits.credits
-      });
+    // 检查并扣除积分（小程序请求跳过积分检查）
+    const isFromMiniProgram = isMiniProgramRequest(req);
+    if (!isFromMiniProgram) {
+      const userCredits = ensureUserCredits(userToken);
+      if (userCredits.credits < creditCost) {
+        return res.status(400).json({ 
+          success: false, 
+          error: `积分不足，需要 ${creditCost} 积分`,
+          creditsNeeded: creditCost,
+          creditsHave: userCredits.credits
+        });
+      }
+    } else {
+      console.log('[修复API] 小程序请求，跳过积分检查');
     }
     
     // 获取当前游戏代码
@@ -8755,18 +8798,20 @@ app.post('/api/games/:id/repair', async (req, res) => {
       return res.status(500).json({ success: false, error: '修复后的代码格式无效' });
     }
     
-    // 扣除积分
-    db.prepare(`
-      UPDATE user_credits 
-      SET credits = credits - ?, total_used = total_used + ?, updated_at = CURRENT_TIMESTAMP 
-      WHERE user_token = ?
-    `).run(creditCost, creditCost, userToken);
-    
-    // 记录积分消耗
-    db.prepare(`
-      INSERT INTO credit_logs (user_token, amount, type, description) 
-      VALUES (?, ?, 'repair_game', ?)
-    `).run(userToken, -creditCost, `AI修复游戏：${game.title}`);
+    // 扣除积分（小程序请求跳过）
+    if (!isFromMiniProgram) {
+      db.prepare(`
+        UPDATE user_credits 
+        SET credits = credits - ?, total_used = total_used + ?, updated_at = CURRENT_TIMESTAMP 
+        WHERE user_token = ?
+      `).run(creditCost, creditCost, userToken);
+      
+      // 记录积分消耗
+      db.prepare(`
+        INSERT INTO credit_logs (user_token, amount, type, description) 
+        VALUES (?, ?, 'repair_game', ?)
+      `).run(userToken, -creditCost, `AI修复游戏：${game.title}`);
+    }
     
     // 更新游戏代码
     db.prepare('UPDATE games SET code = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(repairedCode, gameId);

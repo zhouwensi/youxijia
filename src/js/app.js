@@ -292,6 +292,7 @@ const state = {
   siteConfig: {
     webWriteDisabled: true,  // 默认禁用写操作
     miniprogram: {
+      name: 'AI游戏工坊',
       appId: '',
       defaultPath: '/pages/create/create'
     },
@@ -340,6 +341,7 @@ function showMiniprogramGuide(actionName = '此操作', targetPath = '', gameId 
   const oldModal = document.getElementById('miniprogram-guide-modal');
   if (oldModal) oldModal.remove();
   
+  const mpName = state.siteConfig.miniprogram?.name || 'AI游戏工坊';
   const appId = state.siteConfig.miniprogram?.appId || '';
   const defaultPath = state.siteConfig.miniprogram?.defaultPath || '/pages/create/create';
   const path = targetPath || defaultPath;
@@ -347,9 +349,8 @@ function showMiniprogramGuide(actionName = '此操作', targetPath = '', gameId 
   // 构建路径（如果有gameId）
   const fullPath = gameId ? `${path}?id=${gameId}` : path;
   
-  // 尝试生成小程序码URL（需要后端支持，这里先用占位图）
-  // 实际项目中应该调用微信API生成小程序码
-  const qrcodeUrl = `/api/miniprogram-qrcode?path=${encodeURIComponent(fullPath)}`;
+  // 使用静态的小程序二维码图片
+  const qrcodeUrl = '/images/miniprogram.png';
   
   const modal = document.createElement('div');
   modal.className = 'modal active';
@@ -391,10 +392,10 @@ function showMiniprogramGuide(actionName = '此操作', targetPath = '', gameId 
         </div>
         
         <p style="color: var(--accent-primary); font-size: 0.875rem; font-weight: 600;">
-          AI游戏工坊 小程序
+          ${mpName} 小程序
         </p>
         <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.5rem;">
-          微信搜索「AI游戏工坊」即可找到
+          微信搜索「${mpName}」即可找到
         </p>
       </div>
       <div class="modal-footer" style="justify-content: center;">
@@ -411,13 +412,14 @@ function showMiniprogramGuide(actionName = '此操作', targetPath = '', gameId 
  * 二维码加载失败时显示替代内容
  */
 function showQrcodeError() {
+  const mpName = state.siteConfig.miniprogram?.name || 'AI游戏工坊';
   const container = document.getElementById('miniprogram-qrcode-container');
   if (container) {
     container.innerHTML = `
       <div style="text-align: center; padding: 1rem; color: #666;">
         <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔍</div>
         <p style="font-size: 0.75rem;">微信搜索</p>
-        <p style="font-size: 0.875rem; font-weight: 600; color: #333;">AI游戏工坊</p>
+        <p style="font-size: 0.875rem; font-weight: 600; color: #333;">${mpName}</p>
       </div>
     `;
   }

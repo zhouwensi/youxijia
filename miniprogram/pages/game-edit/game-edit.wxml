@@ -51,16 +51,38 @@
       </picker>
     </view>
 
+    <!-- AI继续编辑区域 -->
+    <view class="ai-edit-section">
+      <view class="section-header">
+        <text class="section-title">✨ AI继续编辑</text>
+        <text class="section-desc">告诉AI你想如何修改游戏</text>
+      </view>
+      <textarea 
+        class="form-textarea ai-edit-input" 
+        value="{{editInstruction}}" 
+        bindinput="onEditInstructionInput"
+        placeholder="例如：增加分数显示、修改游戏速度、添加音效、修复bug..."
+        maxlength="500"
+      />
+      <button 
+        class="btn-ai-edit {{aiEditing ? 'loading' : ''}}" 
+        bindtap="startAIEdit" 
+        disabled="{{aiEditing || !editInstruction}}"
+      >
+        <text>{{aiEditing ? '🔄 AI编辑中...' : '🤖 开始AI编辑'}}</text>
+      </button>
+    </view>
+
     <!-- 提示信息 -->
     <view class="tip-card">
       <text class="tip-icon">💡</text>
-      <text class="tip-text">编辑游戏信息后点击保存。如需修改代码，请使用AI修复功能。</text>
+      <text class="tip-text">基础信息修改后点击保存。想要修改游戏玩法或代码，请使用上方的AI继续编辑功能。</text>
     </view>
 
     <!-- 操作按钮 -->
     <view class="action-buttons">
       <button class="btn-save {{saving ? 'loading' : ''}}" bindtap="saveGame" disabled="{{saving}}">
-        <text>{{saving ? '保存中...' : '💾 保存修改'}}</text>
+        <text>{{saving ? '保存中...' : '💾 保存基础信息'}}</text>
       </button>
       <button class="btn-delete" bindtap="deleteGame">
         <text>🗑️ 删除游戏</text>

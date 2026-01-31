@@ -13,7 +13,11 @@ Page({
     // 编辑表单
     title: '',
     prompt: '',
-    visibility: 'public'
+    visibility: 'public',
+    
+    // AI编辑功能
+    editInstruction: '',
+    aiEditing: false
   },
 
   onLoad(options) {
@@ -37,7 +41,7 @@ Page({
       
       if (result.success && result.game) {
         // 检查是否是作者
-        const userToken = app.globalData.userToken;
+        const userToken = app.globalData.token;
         if (!userToken || result.game.author_token !== userToken) {
           app.showToast('只能编辑自己的游戏');
           setTimeout(() => {
@@ -168,5 +172,111 @@ Page({
       'private': '仅自己可见'
     };
     return map[this.data.visibility] || '所有人可见';
+  },
+
+  // AI编辑指令输入
+  onEditInstructionInput(e) {
+    this.setData({ editInstruction: e.detail.value });
+  },
+
+  // 开始AI编辑
+  async startAIEdit() {
+    const { editInstruction, gameId } = this.data;
+    
+    if (!editInstruction.trim()) {
+      app.showToast('请输入编辑指令');
+      return;
+    }
+
+    if (this.data.aiEditing) return;
+
+    // 确认对话框
+    wx.showModal({
+      title: '✨ AI编辑游戏',
+      content: `AI将根据您的指令修改游戏：\n"${editInstruction.substring(0, 50)}${editInstruction.length > 50 ? '...' : ''}"`,
+      confirmText: '开始编辑',
+      success: async (res) => {
+        if (res.confirm) {
+          await this.executeAIEdit();
+        }
+      }
+    });
+  },
+
+  // 执行AI编辑
+  async executeAIEdit() {
+    const { editInstruction, gameId, game } = this.data;
+    
+    this.setData({ aiEditing: true });
+    app.showToast('AI编辑中，请稍候...', 'loading');
+
+    try {
+      const result = await app.request(`/api/games/${gameId}/edit`, {
+        method: 'POST',
+        data: {
+          instruction: editInstruction.trim(),
+          originalPrompt: game.prompt || ''
+        }
+      });
+
+      if (result.success) {
+        // 开始轮询编辑状态
+        this.pollEditStatus();
+      } else {
+        app.showToast(result.error || 'AI编辑失败');
+        this.setData({ aiEditing: false });
+      }
+    } catch (err) {
+      console.error('AI编辑请求失败:', err);
+      app.showToast('网络错误，请重试');
+      this.setData({ aiEditing: false });
+    }
+  },
+
+  // 轮询编辑状态
+  async pollEditStatus() {
+    const maxAttempts = 90; // 最多轮询90次（约3分钟）
+    let attempts = 0;
+
+    const poll = async () => {
+      if (attempts >= maxAttempts) {
+        app.showToast('编辑超时，请稍后查看');
+        this.setData({ aiEditing: false });
+        return;
+      }
+
+      try {
+        const result = await app.request(`/api/games/${this.data.gameId}/edit-status`);
+        
+        if (result.status === 'completed') {
+          wx.hideLoading();
+          app.showToast('✨ AI编辑完成！', 'success');
+          this.setData({ 
+            aiEditing: false,
+            editInstruction: '' 
+          });
+          // 刷新游戏详情
+          this.loadGameDetail(this.data.gameId);
+          // 刷新用户积分
+          app.loadUserInfo && app.loadUserInfo();
+          return;
+        } else if (result.status === 'failed') {
+          wx.hideLoading();
+          app.showToast(result.error || 'AI编辑失败');
+          this.setData({ aiEditing: false });
+          return;
+        }
+
+        // 继续轮询
+        attempts++;
+        setTimeout(poll, 2000);
+      } catch (err) {
+        console.error('轮询编辑状态失败:', err);
+        attempts++;
+        setTimeout(poll, 2000);
+      }
+    };
+
+    poll();
   }
 });

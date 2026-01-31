@@ -662,12 +662,22 @@
   font-weight: 500;
   color: #fff;
   display: block;
-  margin-bottom: 8rpx;
+  margin-bottom: 4rpx;
+}
+
+.my-game-author {
+  margin-bottom: 4rpx;
+}
+
+.my-game-author .author-text {
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .my-game-stats {
   display: flex;
-  gap: 16rpx;
+  gap: 12rpx;
+  flex-wrap: wrap;
 }
 
 .stat-item {

@@ -7,11 +7,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#1a1a2e">
-  <meta name="description" content="射击游戏，你正在进行劫狱救援行动，监狱内含3道门，仅有一条出入口。敌人血条固定为2枪死亡，你的血条为13枪死亡，手枪子弹无限。3道门在一条直线上，两侧为牢房。每道门固定敌人数量为5，击败敌人后才可以进入下一道门。依次通过3道门自动闯关成功。操作:你通过手机屏幕上的摇杆移动人物，左侧摇杆为方向，右侧有射击按钮，点击进行射击。 - AI一句话生成的游戏">
-  <meta property="og:title" content="劫狱救援行动 - AI游戏">
+  <meta name="description" content="记忆翻牌 - AI一句话生成的游戏">
+  <meta property="og:title" content="记忆翻牌游戏 - AI游戏">
   <meta property="og:description" content="这个游戏由AI一句话生成！关注公众号「游戏开发技术教程」，你也可以免费生成游戏！">
   <meta property="og:type" content="website">
-  <title>劫狱救援行动 - AI游戏</title>
+  <title>记忆翻牌游戏 - AI游戏</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
   <!-- 引用主站CSS样式 -->
   <link rel="stylesheet" href="/css/style.css">
@@ -1055,137 +1055,266 @@ body {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            touch-action: none;
-            -webkit-user-select: none;
             user-select: none;
         }
+        
         body {
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-            background: #111;
-            font-family: Arial, sans-serif;
-            color: #fff;
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            min-height: 100vh;
             display: flex;
+            flex-direction: column;
+            align-items: center;
             justify-content: center;
+            padding: 20px;
+            color: white;
+        }
+        
+        .game-container {
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.2);
+            color: #FFD700;
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 15px 25px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
             align-items: center;
         }
-        #gameCanvas {
-            display: block;
-            background: #0a0a1a;
+        
+        .info-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 5px;
         }
-        .screen {
+        
+        .info-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #FFD700;
+        }
+        
+        .game-board {
+            display: grid;
+            grid-gap: 15px;
+            justify-content: center;
+            margin: 0 auto 30px;
+            perspective: 1000px;
+        }
+        
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+        
+        .card.matched {
+            transform: rotateY(180deg);
+            cursor: default;
+        }
+        
+        .card-front, .card-back {
             position: absolute;
             width: 100%;
             height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
             display: flex;
-            flex-direction: column;
-            justify-content: center;
             align-items: center;
-            background: rgba(0, 0, 20, 0.9);
-            z-index: 10;
-            transition: opacity 0.3s;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: bold;
         }
-        .hidden {
-            display: none;
+        
+        .card-front {
+            background: linear-gradient(145deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: white;
+            transform: rotateY(180deg);
         }
-        h1 {
-            font-size: min(8vw, 48px);
-            margin-bottom: 30px;
-            color: #4af;
-            text-shadow: 0 0 10px #4af;
-            text-align: center;
+        
+        .card-back {
+            background: linear-gradient(145deg, #2c3e50, #4a6491);
+            color: rgba(255, 255, 255, 0.1);
         }
-        .btn {
-            background: linear-gradient(45deg, #2a5, #3c6);
+        
+        .card-back::after {
+            content: "?";
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 2.5rem;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: linear-gradient(to right, #FF416C, #FF4B2B);
             color: white;
             border: none;
             padding: 15px 30px;
-            margin: 10px;
-            font-size: min(5vw, 24px);
+            font-size: 1.1rem;
             border-radius: 50px;
             cursor: pointer;
-            min-width: 200px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-            transition: transform 0.2s;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            min-width: 160px;
         }
-        .btn:hover, .btn:active {
-            transform: scale(1.05);
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
         }
-        .btn.secondary {
-            background: linear-gradient(45deg, #45a, #67c);
+        
+        button:active {
+            transform: translateY(1px);
         }
-        #helpText {
-            max-width: 90%;
-            background: rgba(0, 20, 40, 0.8);
-            padding: 20px;
-            border-radius: 15px;
-            margin-top: 20px;
-            line-height: 1.5;
-            font-size: min(4vw, 18px);
-            text-align: center;
-            display: none;
+        
+        button#restart {
+            background: linear-gradient(to right, #2193b0, #6dd5ed);
         }
-        #helpBtn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: rgba(0, 30, 60, 0.7);
-            color: #4af;
-            font-size: 28px;
-            border: 2px solid #4af;
-            z-index: 20;
-            cursor: pointer;
+        
+        .difficulty {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
         }
-        .joystick {
-            position: absolute;
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.15);
+        
+        .difficulty button {
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            min-width: 100px;
+            background: rgba(255, 255, 255, 0.1);
             border: 2px solid rgba(255, 255, 255, 0.3);
-            z-index: 5;
-            bottom: 40px;
         }
-        #leftJoystick {
-            left: 40px;
+        
+        .difficulty button.active {
+            background: rgba(255, 215, 0, 0.3);
+            border-color: #FFD700;
         }
-        #rightJoystick {
-            right: 40px;
-            background: rgba(255, 50, 50, 0.2);
-            border-color: rgba(255, 100, 100, 0.5);
+        
+        .message {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.5s ease;
         }
-        .joystickHandle {
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.4);
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+        
+        .message.show {
+            opacity: 1;
+            visibility: visible;
         }
-        #rightJoystick .joystickHandle {
-            background: rgba(255, 100, 100, 0.6);
-        }
-        #hud {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 5;
-            font-size: min(5vw, 22px);
-            color: #fff;
-            text-shadow: 2px 2px 4px #000;
-        }
-        #gameOverScreen {
+        
+        .message-content {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            padding: 40px;
+            border-radius: 20px;
             text-align: center;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            transform: scale(0.8);
+            transition: transform 0.5s ease;
         }
-        #resultText {
-            font-size: min(6vw, 32px);
+        
+        .message.show .message-content {
+            transform: scale(1);
+        }
+        
+        .message h2 {
+            font-size: 2.5rem;
             margin-bottom: 20px;
+            color: #FFD700;
+        }
+        
+        .message p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+        
+        @media (max-width: 768px) {
+            .game-board {
+                grid-gap: 10px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .card-front, .card-back {
+                font-size: 1.8rem;
+            }
+            
+            .card-back::after {
+                font-size: 1.8rem;
+            }
+            
+            button {
+                padding: 12px 24px;
+                font-size: 1rem;
+                min-width: 140px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .game-info {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            button {
+                width: 100%;
+                max-width: 300px;
+            }
         }
     </style>
 
@@ -1193,410 +1322,314 @@ body {
 <body>
   <!-- 原游戏body内容 -->
   
-    <canvas id="gameCanvas"></canvas>
-    
-    <div id="startScreen" class="screen">
-        <h1>劫狱救援行动</h1>
-        <button id="startBtn" class="btn">开始游戏</button>
-        <button id="helpToggleBtn" class="btn secondary">游戏说明</button>
-        <div id="helpText">
-            <p>操作说明：</p>
-            <p>• 左侧摇杆控制移动</p>
-            <p>• 右侧摇杆点击射击</p>
-            <p>• 键盘方向键/WASD移动</p>
-            <p>• 空格键射击</p>
-            <p>目标：击败每道门的5名敌人，通过3道门完成救援！</p>
-            <p>你：13枪死亡 | 敌人：2枪死亡</p>
+    <div class="game-container">
+        <h1>记忆翻牌游戏</h1>
+        
+        <div class="game-info">
+            <div class="info-item">
+                <div class="info-label">时间</div>
+                <div class="info-value" id="timer">00:00</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">翻牌次数</div>
+                <div class="info-value" id="moves">0</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">剩余配对</div>
+                <div class="info-value" id="pairs-left">8</div>
+            </div>
+        </div>
+        
+        <div class="game-board" id="game-board"></div>
+        
+        <div class="controls">
+            <button id="start">开始游戏</button>
+            <button id="restart">重新开始</button>
+        </div>
+        
+        <div class="difficulty">
+            <button data-level="easy" class="active">简单 (4×4)</button>
+            <button data-level="medium">中等 (4×5)</button>
+            <button data-level="hard">困难 (5×6)</button>
         </div>
     </div>
     
-    <div id="gameOverScreen" class="screen hidden">
-        <h1 id="resultText">任务成功！</h1>
-        <button id="restartBtn" class="btn">重新开始</button>
-        <button id="backToMenuBtn" class="btn secondary">返回菜单</button>
+    <div class="message" id="message">
+        <div class="message-content">
+            <h2 id="message-title">恭喜！</h2>
+            <p id="message-text">你成功完成了游戏！</p>
+            <button id="message-button">再玩一次</button>
+        </div>
     </div>
-    
-    <button id="helpBtn">?</button>
-    
-    <div id="leftJoystick" class="joystick">
-        <div class="joystickHandle"></div>
-    </div>
-    <div id="rightJoystick" class="joystick">
-        <div class="joystickHandle"></div>
-    </div>
-    
-    <div id="hud"></div>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const startScreen = document.getElementById('startScreen');
-        const gameOverScreen = document.getElementById('gameOverScreen');
-        const startBtn = document.getElementById('startBtn');
-        const restartBtn = document.getElementById('restartBtn');
-        const backToMenuBtn = document.getElementById('backToMenuBtn');
-        const helpToggleBtn = document.getElementById('helpToggleBtn');
-        const helpText = document.getElementById('helpText');
-        const helpBtn = document.getElementById('helpBtn');
-        const resultText = document.getElementById('resultText');
-        const hud = document.getElementById('hud');
-        const leftJoystick = document.getElementById('leftJoystick');
-        const rightJoystick = document.getElementById('rightJoystick');
-
-        let gameRunning = false;
-        let player, enemies = [], bullets = [], doors = [];
-        let currentDoor = 0;
-        const totalDoors = 3;
-        const enemiesPerDoor = 5;
-        let playerHealth = 13;
-        let score = 0;
-        let keys = {};
-        let touchControls = {
-            left: { x: 0, y: 0, active: false },
-            right: { active: false }
-        };
-        let leftJoystickBase = { x: 0, y: 0 };
-
-        class Player {
-            constructor() {
-                this.x = canvas.width * 0.1;
-                this.y = canvas.height / 2;
-                this.radius = 20;
-                this.speed = 5;
-                this.color = '#4af';
-                this.aimAngle = 0;
-            }
-            update() {
-                let moveX = 0, moveY = 0;
-                if (keys['ArrowLeft'] || keys['a']) moveX -= 1;
-                if (keys['ArrowRight'] || keys['d']) moveX += 1;
-                if (keys['ArrowUp'] || keys['w']) moveY -= 1;
-                if (keys['ArrowDown'] || keys['s']) moveY += 1;
-                if (touchControls.left.active) {
-                    moveX += touchControls.left.x;
-                    moveY += touchControls.left.y;
+        document.addEventListener('DOMContentLoaded', () => {
+            // 游戏配置
+            const config = {
+                easy: { rows: 4, cols: 4, pairs: 8 },
+                medium: { rows: 4, cols: 5, pairs: 10 },
+                hard: { rows: 5, cols: 6, pairs: 15 }
+            };
+            
+            // 游戏状态
+            let gameState = {
+                cards: [],
+                flippedCards: [],
+                matchedPairs: 0,
+                moves: 0,
+                timer: 0,
+                timerInterval: null,
+                isPlaying: false,
+                canFlip: true,
+                difficulty: 'easy'
+            };
+            
+            // DOM元素
+            const gameBoard = document.getElementById('game-board');
+            const timerElement = document.getElementById('timer');
+            const movesElement = document.getElementById('moves');
+            const pairsLeftElement = document.getElementById('pairs-left');
+            const startButton = document.getElementById('start');
+            const restartButton = document.getElementById('restart');
+            const difficultyButtons = document.querySelectorAll('.difficulty button');
+            const messageElement = document.getElementById('message');
+            const messageTitle = document.getElementById('message-title');
+            const messageText = document.getElementById('message-text');
+            const messageButton = document.getElementById('message-button');
+            
+            // 符号库
+            const symbols = [
+                '🌟', '🎮', '🎯', '🎨', '🎭', '🎪', '🎫', '🎬',
+                '🎲', '🎳', '🎸', '🎺', '🎻', '🥁', '🎤', '🎧',
+                '🎼', '🎹', '🚀', '🛸', '🛰️', '💫', '⭐', '☄️',
+                '🌙', '☀️', '🌈', '🌊', '🔥', '❄️', '🌪️', '🌀'
+            ];
+            
+            // 初始化游戏
+            function initGame() {
+                const configLevel = config[gameState.difficulty];
+                gameBoard.innerHTML = '';
+                gameBoard.style.gridTemplateColumns = `repeat(${configLevel.cols}, 1fr)`;
+                gameBoard.style.gridTemplateRows = `repeat(${configLevel.rows}, 1fr)`;
+                
+                // 创建卡片数组
+                let cardSymbols = [];
+                for (let i = 0; i < configLevel.pairs; i++) {
+                    cardSymbols.push(symbols[i], symbols[i]);
                 }
-                if (moveX !== 0 || moveY !== 0) {
-                    const len = Math.sqrt(moveX * moveX + moveY * moveY);
-                    moveX /= len;
-                    moveY /= len;
-                }
-                this.x += moveX * this.speed;
-                this.y += moveY * this.speed;
-                this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
-                this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
-                const dx = canvas.width * 0.9 - this.x;
-                const dy = canvas.height / 2 - this.y;
-                this.aimAngle = Math.atan2(dy, dx);
-            }
-            draw() {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.aimAngle);
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(this.radius, -5, 15, 10);
-                ctx.restore();
-            }
-            shoot() {
-                const bullet = {
-                    x: this.x + Math.cos(this.aimAngle) * (this.radius + 5),
-                    y: this.y + Math.sin(this.aimAngle) * (this.radius + 5),
-                    dx: Math.cos(this.aimAngle) * 10,
-                    dy: Math.sin(this.aimAngle) * 10,
-                    radius: 5,
-                    color: '#ff0'
-                };
-                bullets.push(bullet);
-            }
-        }
-
-        class Enemy {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.radius = 18;
-                this.speed = 1.5;
-                this.color = '#f44';
-                this.health = 2;
-                this.id = Math.random();
-            }
-            update() {
-                if (!player) return;
-                const dx = player.x - this.x;
-                const dy = player.y - this.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist > 0) {
-                    this.x += (dx / dist) * this.speed;
-                    this.y += (dy / dist) * this.speed;
-                }
-            }
-            draw() {
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = '#fff';
-                ctx.font = '14px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(this.health, this.x, this.y + 5);
-            }
-        }
-
-        class Door {
-            constructor(x) {
-                this.x = x;
-                this.width = 40;
-                this.height = 200;
-                this.color = '#8b4513';
-                this.locked = true;
-            }
-            draw() {
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x - this.width/2, canvas.height/2 - this.height/2, this.width, this.height);
-                ctx.fillStyle = this.locked ? '#f00' : '#0f0';
-                ctx.beginPath();
-                ctx.arc(this.x, canvas.height/2, 15, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = '#fff';
-                ctx.font = '16px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(this.locked ? '锁定' : '开启', this.x, canvas.height/2 + 5);
-            }
-        }
-
-        function initGame() {
-            player = new Player();
-            enemies = [];
-            bullets = [];
-            doors = [];
-            currentDoor = 0;
-            playerHealth = 13;
-            score = 0;
-            for (let i = 0; i < totalDoors; i++) {
-                doors.push(new Door(canvas.width * (0.3 + i * 0.2)));
-            }
-            spawnEnemiesForDoor(currentDoor);
-            gameRunning = true;
-            startScreen.classList.add('hidden');
-            gameOverScreen.classList.add('hidden');
-        }
-
-        function spawnEnemiesForDoor(doorIndex) {
-            enemies = [];
-            const doorX = doors[doorIndex].x;
-            const left = doorX - 200;
-            const right = doorX + 200;
-            const top = canvas.height * 0.3;
-            const bottom = canvas.height * 0.7;
-            for (let i = 0; i < enemiesPerDoor; i++) {
-                const x = left + Math.random() * (right - left);
-                const y = top + Math.random() * (bottom - top);
-                enemies.push(new Enemy(x, y));
-            }
-            doors[doorIndex].locked = true;
-        }
-
-        function updateGame() {
-            if (!gameRunning) return;
-            if (player) player.update();
-            enemies.forEach(enemy => enemy.update());
-            bullets.forEach((bullet, idx) => {
-                bullet.x += bullet.dx;
-                bullet.y += bullet.dy;
-                if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) {
-                    bullets.splice(idx, 1);
-                }
-            });
-            checkCollisions();
-            checkDoorProgress();
-            updateHUD();
-        }
-
-        function checkCollisions() {
-            bullets.forEach((bullet, bIdx) => {
-                enemies.forEach((enemy, eIdx) => {
-                    const dx = bullet.x - enemy.x;
-                    const dy = bullet.y - enemy.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < bullet.radius + enemy.radius) {
-                        enemy.health--;
-                        bullets.splice(bIdx, 1);
-                        if (enemy.health <= 0) {
-                            enemies.splice(eIdx, 1);
-                            score += 100;
+                
+                // 随机排序
+                cardSymbols = cardSymbols.sort(() => Math.random() - 0.5);
+                
+                // 创建卡片元素
+                gameState.cards = [];
+                cardSymbols.forEach((symbol, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.dataset.index = index;
+                    card.dataset.symbol = symbol;
+                    
+                    const cardFront = document.createElement('div');
+                    cardFront.className = 'card-front';
+                    cardFront.textContent = symbol;
+                    
+                    const cardBack = document.createElement('div');
+                    cardBack.className = 'card-back';
+                    
+                    card.appendChild(cardFront);
+                    card.appendChild(cardBack);
+                    
+                    card.addEventListener('click', () => flipCard(card));
+                    card.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        if (!card.classList.contains('flipped') && !card.classList.contains('matched')) {
+                            flipCard(card);
                         }
+                    });
+                    
+                    gameBoard.appendChild(card);
+                    gameState.cards.push(card);
+                });
+                
+                // 重置游戏状态
+                gameState.flippedCards = [];
+                gameState.matchedPairs = 0;
+                gameState.moves = 0;
+                gameState.timer = 0;
+                gameState.isPlaying = false;
+                gameState.canFlip = true;
+                
+                // 更新UI
+                updateUI();
+                
+                // 停止计时器
+                if (gameState.timerInterval) {
+                    clearInterval(gameState.timerInterval);
+                    gameState.timerInterval = null;
+                }
+                
+                // 隐藏消息
+                messageElement.classList.remove('show');
+            }
+            
+            // 开始游戏
+            function startGame() {
+                if (gameState.isPlaying) return;
+                
+                gameState.isPlaying = true;
+                gameState.canFlip = true;
+                
+                // 启动计时器
+                gameState.timerInterval = setInterval(() => {
+                    gameState.timer++;
+                    updateTimer();
+                }, 1000);
+                
+                startButton.textContent = '游戏中...';
+                startButton.disabled = true;
+            }
+            
+            // 翻牌
+            function flipCard(card) {
+                if (!gameState.isPlaying || !gameState.canFlip) return;
+                if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+                if (gameState.flippedCards.length >= 2) return;
+                
+                card.classList.add('flipped');
+                gameState.flippedCards.push(card);
+                
+                if (gameState.flippedCards.length === 2) {
+                    gameState.moves++;
+                    updateUI();
+                    
+                    gameState.canFlip = false;
+                    setTimeout(checkMatch, 800);
+                }
+            }
+            
+            // 检查是否匹配
+            function checkMatch() {
+                const [card1, card2] = gameState.flippedCards;
+                
+                if (card1.dataset.symbol === card2.dataset.symbol) {
+                    // 匹配成功
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    gameState.matchedPairs++;
+                    
+                    // 检查游戏是否结束
+                    const configLevel = config[gameState.difficulty];
+                    if (gameState.matchedPairs === configLevel.pairs) {
+                        endGame(true);
+                    }
+                } else {
+                    // 匹配失败，翻回去
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                }
+                
+                gameState.flippedCards = [];
+                gameState.canFlip = true;
+                updateUI();
+            }
+            
+            // 更新UI
+            function updateUI() {
+                movesElement.textContent = gameState.moves;
+                
+                const configLevel = config[gameState.difficulty];
+                pairsLeftElement.textContent = configLevel.pairs - gameState.matchedPairs;
+            }
+            
+            // 更新计时器显示
+            function updateTimer() {
+                const minutes = Math.floor(gameState.timer / 60).toString().padStart(2, '0');
+                const seconds = (gameState.timer % 60).toString().padStart(2, '0');
+                timerElement.textContent = `${minutes}:${seconds}`;
+            }
+            
+            // 结束游戏
+            function endGame(isWin) {
+                gameState.isPlaying = false;
+                gameState.canFlip = false;
+                
+                if (gameState.timerInterval) {
+                    clearInterval(gameState.timerInterval);
+                    gameState.timerInterval = null;
+                }
+                
+                startButton.textContent = '开始游戏';
+                startButton.disabled = false;
+                
+                // 显示消息
+                if (isWin) {
+                    messageTitle.textContent = '恭喜！';
+                    messageText.textContent = `你用了 ${gameState.moves} 步，${gameState.timer} 秒完成了游戏！`;
+                } else {
+                    messageTitle.textContent = '游戏结束';
+                    messageText.textContent = '再接再厉！';
+                }
+                
+                setTimeout(() => {
+                    messageElement.classList.add('show');
+                }, 500);
+            }
+            
+            // 设置难度
+            function setDifficulty(level) {
+                gameState.difficulty = level;
+                
+                // 更新按钮状态
+                difficultyButtons.forEach(btn => {
+                    if (btn.dataset.level === level) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
                     }
                 });
+                
+                initGame();
+            }
+            
+            // 事件监听
+            startButton.addEventListener('click', startGame);
+            
+            restartButton.addEventListener('click', () => {
+                initGame();
             });
-            if (!player) return;
-            enemies.forEach(enemy => {
-                const dx = player.x - enemy.x;
-                const dy = player.y - enemy.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < player.radius + enemy.radius) {
-                    playerHealth--;
-                    if (playerHealth <= 0) {
-                        gameOver(false);
+            
+            difficultyButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    setDifficulty(button.dataset.level);
+                });
+            });
+            
+            messageButton.addEventListener('click', () => {
+                messageElement.classList.remove('show');
+                initGame();
+            });
+            
+            // 键盘控制
+            document.addEventListener('keydown', (e) => {
+                if (e.key === ' ' || e.key === 'Spacebar') {
+                    if (!gameState.isPlaying) {
+                        startGame();
                     }
                 }
-            });
-        }
-
-        function checkDoorProgress() {
-            if (enemies.length === 0 && currentDoor < totalDoors) {
-                doors[currentDoor].locked = false;
-                if (player && player.x > doors[currentDoor].x) {
-                    currentDoor++;
-                    if (currentDoor >= totalDoors) {
-                        gameOver(true);
-                    } else {
-                        spawnEnemiesForDoor(currentDoor);
-                    }
+                
+                if (e.key === 'r' || e.key === 'R') {
+                    initGame();
                 }
-            }
-        }
-
-        function gameOver(success) {
-            gameRunning = false;
-            resultText.textContent = success ? '任务成功！' : '任务失败';
-            resultText.style.color = success ? '#2f5' : '#f44';
-            gameOverScreen.classList.remove('hidden');
-        }
-
-        function updateHUD() {
-            hud.innerHTML = `生命: ${playerHealth} | 得分: ${score} | 门: ${currentDoor+1}/${totalDoors}`;
-        }
-
-        function drawGame() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#1a1a2e';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            doors.forEach(door => door.draw());
-            if (player) player.draw();
-            enemies.forEach(enemy => enemy.draw());
-            bullets.forEach(bullet => {
-                ctx.fillStyle = bullet.color;
-                ctx.beginPath();
-                ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
-                ctx.fill();
+                
+                // 数字键选择难度
+                if (e.key === '1') setDifficulty('easy');
+                if (e.key === '2') setDifficulty('medium');
+                if (e.key === '3') setDifficulty('hard');
             });
-            for (let i = 0; i < totalDoors; i++) {
-                ctx.fillStyle = i <= currentDoor ? '#4af' : '#555';
-                ctx.beginPath();
-                ctx.arc(30 + i * 40, 60, 10, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        function gameLoop() {
-            updateGame();
-            drawGame();
-            requestAnimationFrame(gameLoop);
-        }
-
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            leftJoystickBase.x = leftJoystick.offsetLeft + leftJoystick.offsetWidth / 2;
-            leftJoystickBase.y = leftJoystick.offsetTop + leftJoystick.offsetHeight / 2;
-        }
-
-        function handleTouchStart(e) {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            const x = touch.clientX - rect.left;
-            const y = touch.clientY - rect.top;
-            const leftRect = leftJoystick.getBoundingClientRect();
-            const rightRect = rightJoystick.getBoundingClientRect();
-            if (x >= leftRect.left && x <= leftRect.right && y >= leftRect.top && y <= leftRect.bottom) {
-                touchControls.left.active = true;
-                updateLeftJoystick(x, y);
-            }
-            if (x >= rightRect.left && x <= rightRect.right && y >= rightRect.top && y <= rightRect.bottom) {
-                touchControls.right.active = true;
-                if (player) player.shoot();
-            }
-        }
-
-        function handleTouchMove(e) {
-            e.preventDefault();
-            if (!touchControls.left.active) return;
-            const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            const x = touch.clientX - rect.left;
-            const y = touch.clientY - rect.top;
-            updateLeftJoystick(x, y);
-        }
-
-        function handleTouchEnd(e) {
-            e.preventDefault();
-            touchControls.left.active = false;
-            touchControls.left.x = 0;
-            touchControls.left.y = 0;
-            touchControls.right.active = false;
-        }
-
-        function updateLeftJoystick(x, y) {
-            const dx = x - leftJoystickBase.x;
-            const dy = y - leftJoystickBase.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            const maxDist = 50;
-            if (dist > maxDist) {
-                touchControls.left.x = dx / dist;
-                touchControls.left.y = dy / dist;
-            } else {
-                touchControls.left.x = dx / maxDist;
-                touchControls.left.y = dy / maxDist;
-            }
-        }
-
-        startBtn.addEventListener('click', initGame);
-        restartBtn.addEventListener('click', initGame);
-        backToMenuBtn.addEventListener('click', () => {
-            gameOverScreen.classList.add('hidden');
-            startScreen.classList.remove('hidden');
-            gameRunning = false;
-            player = null;
+            
+            // 初始化游戏
+            initGame();
         });
-        helpToggleBtn.addEventListener('click', () => {
-            helpText.style.display = helpText.style.display === 'block' ? 'none' : 'block';
-        });
-        helpBtn.addEventListener('click', () => {
-            helpText.style.display = helpText.style.display === 'block' ? 'none' : 'block';
-        });
-
-        window.addEventListener('keydown', (e) => {
-            keys[e.key] = true;
-            if (e.key === ' ' && gameRunning && player) {
-                player.shoot();
-                e.preventDefault();
-            }
-        });
-        window.addEventListener('keyup', (e) => {
-            keys[e.key] = false;
-        });
-
-        canvas.addEventListener('touchstart', handleTouchStart);
-        canvas.addEventListener('touchmove', handleTouchMove);
-        canvas.addEventListener('touchend', handleTouchEnd);
-        rightJoystick.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            touchControls.right.active = true;
-            if (player) player.shoot();
-        });
-        rightJoystick.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            touchControls.right.active = false;
-        });
-
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-        gameLoop();
     </script>
 
   <!-- YXJ-PLATFORM-UI-START -->
@@ -1612,12 +1645,12 @@ body {
     <div class="tiktok-author-avatar" id="author-avatar" onclick="openAuthorProfile()">👤</div>
     <div class="tiktok-author-details" style="display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;min-height:32px!important;gap:2px!important;">
       <div class="tiktok-author-name-row" style="display:flex!important;flex-direction:row!important;align-items:center!important;gap:10px!important;">
-        <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">player_via3fx</span>
-        <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="d9199a35-a32e-42d8-985b-93530788e569" onclick="toggleFollow()">
+        <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">游戏家用户</span>
+        <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="12351cd0-ac53-43bf-8e14-50913b352442" onclick="toggleFollow()">
           <span class="follow-icon">+</span> 关注
         </button>
       </div>
-      <span class="tiktok-publish-time" style="display:block!important;margin:0!important;padding:0!important;">发布于 2026年1月22日</span>
+      <span class="tiktok-publish-time" style="display:block!important;margin:0!important;padding:0!important;">发布于 2026年1月31日</span>
     </div>
   </div>
 </div>
@@ -1743,10 +1776,10 @@ body {
 
 <script>
 // 获取游戏ID和作者信息
-const gameId = '5980fa3d-9588-4a8f-b446-329bd4c92ebb';
-const gameTitle = '劫狱救援行动';
-const authorToken = 'd9199a35-a32e-42d8-985b-93530788e569';
-const authorName = 'player_via3fx';
+const gameId = 'efe3dc17-cfd5-42c3-9f25-73b9f0ed6206';
+const gameTitle = '记忆翻牌游戏';
+const authorToken = '12351cd0-ac53-43bf-8e14-50913b352442';
+const authorName = '游戏家用户';
 const API_BASE = '/api/games';
 
 // 网站配置（禁用写操作检查）

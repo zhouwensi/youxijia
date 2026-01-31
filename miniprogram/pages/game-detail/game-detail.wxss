@@ -141,6 +141,16 @@
   opacity: 0.6;
 }
 
+/* 作者标识 */
+.owner-badge {
+  padding: 16rpx 24rpx;
+  background: rgba(99, 102, 241, 0.15);
+  border-radius: 32rpx;
+  font-size: 24rpx;
+  color: #6366f1;
+  font-weight: 500;
+}
+
 /* 统计数据 */
 .game-stats {
   display: flex;

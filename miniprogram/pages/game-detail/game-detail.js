@@ -13,6 +13,8 @@ Page({
     liked: false,
     favorited: false,
     likeCount: 0,
+    viewCount: 0,
+    commentCount: 0,
     
     // 作者关注状态
     authorFollowed: false,
@@ -26,6 +28,7 @@ Page({
     
     // 作者操作状态
     isOwner: false,
+    isSelfGame: false,  // 是否是自己的游戏
     repairing: false,
     repairCost: 0.5
   },
@@ -50,14 +53,32 @@ Page({
       const result = await app.request(`/api/games/${id}`);
       
       if (result.success && result.game) {
-        // 判断是否是作者
-        const userToken = app.globalData.userToken;
+        // 判断是否是作者（使用正确的token字段）
+        const userToken = app.globalData.token || app.globalData.userToken;
         const isOwner = userToken && result.game.author_token === userToken;
+        
+        console.log('[游戏详情] 作者判断:', { 
+          userToken: userToken ? userToken.substring(0, 8) + '...' : null, 
+          authorToken: result.game.author_token ? result.game.author_token.substring(0, 8) + '...' : null,
+          isOwner: isOwner 
+        });
+        
+        // 获取统计数据，兼容多种字段名
+        const gameData = result.game;
+        const viewCount = gameData.play_count || gameData.plays || gameData.view_count || gameData.views || 0;
+        const likeCount = gameData.like_count || gameData.likes || 0;
+        const commentCount = gameData.comment_count || gameData.comments_count || 0;
+        
+        console.log('[游戏详情] 统计数据:', { viewCount, likeCount, commentCount, raw: gameData });
         
         this.setData({
           game: result.game,
-          likeCount: result.game.likes || 0,
-          isOwner: isOwner
+          viewCount: viewCount,
+          likeCount: likeCount,
+          commentCount: commentCount,
+          isOwner: isOwner,
+          // 如果是自己的游戏，关注按钮状态应该隐藏
+          isSelfGame: isOwner
         });
         
         // 设置页面标题
@@ -246,6 +267,12 @@ Page({
       return;
     }
 
+    // 不能关注自己
+    if (this.data.isSelfGame) {
+      app.showToast('不能关注自己哦');
+      return;
+    }
+
     // 防止重复点击
     if (this.data.followingAuthor) return;
     this.setData({ followingAuthor: true });
@@ -309,27 +336,10 @@ Page({
       return;
     }
 
-    const repairCost = this.data.repairCost;
-    const credits = app.globalData.userInfo?.credits || 0;
-
-    if (credits < repairCost) {
-      wx.showModal({
-        title: '积分不足',
-        content: `AI修复需要 ${repairCost} 积分，当前积分：${credits.toFixed(1)}`,
-        confirmText: '获取积分',
-        success: (res) => {
-          if (res.confirm) {
-            wx.switchTab({ url: '/pages/mine/mine' });
-          }
-        }
-      });
-      return;
-    }
-
-    // 确认对话框
+    // 确认对话框（小程序端无需积分）
     wx.showModal({
       title: '🔧 AI修复游戏',
-      content: `AI将自动分析并修复游戏代码中的错误\n\n消耗：${repairCost} 积分\n当前积分：${credits.toFixed(1)}`,
+      content: 'AI将自动分析并修复游戏代码中的错误',
       success: async (res) => {
         if (res.confirm) {
           await this.executeRepair();

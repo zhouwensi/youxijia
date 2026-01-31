@@ -438,20 +438,7 @@ Page({
       
       // 显示错误信息
       let errorMsg = err.message || '生成失败，请重试';
-      if (errorMsg.includes('积分')) {
-        wx.showModal({
-          title: '积分不足',
-          content: '您的积分不足，需要获取更多积分才能继续创作',
-          confirmText: '去获取',
-          success: (res) => {
-            if (res.confirm) {
-              wx.switchTab({ url: '/pages/mine/mine' });
-            }
-          }
-        });
-      } else {
-        app.showToast(errorMsg);
-      }
+      app.showToast(errorMsg);
     } finally {
       this.setData({ generating: false });
     }
