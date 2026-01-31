@@ -4,6 +4,7 @@
     "pages/works/works",
     "pages/mine/mine",
     "pages/game-detail/game-detail",
+    "pages/game-edit/game-edit",
     "pages/index/index",
     "pages/user/user",
     "pages/search/search",

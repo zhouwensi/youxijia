@@ -287,8 +287,173 @@ const state = {
     llmBaseUrl: '',
     llmModel: '',
     authorName: ''
+  },
+  // 网站功能配置（从后台获取）
+  siteConfig: {
+    webWriteDisabled: true,  // 默认禁用写操作
+    miniprogram: {
+      appId: '',
+      defaultPath: '/pages/create/create'
+    },
+    loaded: false
   }
 };
+
+// ==================== 网站写操作禁用功能 ====================
+
+/**
+ * 加载网站配置
+ */
+async function loadSiteConfig() {
+  try {
+    const response = await fetch('/api/site-config');
+    const data = await response.json();
+    if (data.success && data.config) {
+      state.siteConfig = {
+        ...data.config,
+        loaded: true
+      };
+      console.log('[SiteConfig] 配置已加载:', state.siteConfig);
+    }
+  } catch (error) {
+    console.error('[SiteConfig] 加载配置失败:', error);
+    state.siteConfig.loaded = true; // 标记为已加载，使用默认值
+  }
+}
+
+/**
+ * 检查是否禁用写操作
+ * @returns {boolean}
+ */
+function isWebWriteDisabled() {
+  return state.siteConfig.webWriteDisabled;
+}
+
+/**
+ * 显示小程序引导弹窗
+ * @param {string} actionName - 操作名称（如：创作、编辑、评论等）
+ * @param {string} targetPath - 小程序目标路径（可选）
+ * @param {string} gameId - 游戏ID（可选，用于跳转到具体游戏）
+ */
+function showMiniprogramGuide(actionName = '此操作', targetPath = '', gameId = '') {
+  // 移除旧的弹窗
+  const oldModal = document.getElementById('miniprogram-guide-modal');
+  if (oldModal) oldModal.remove();
+  
+  const appId = state.siteConfig.miniprogram?.appId || '';
+  const defaultPath = state.siteConfig.miniprogram?.defaultPath || '/pages/create/create';
+  const path = targetPath || defaultPath;
+  
+  // 构建路径（如果有gameId）
+  const fullPath = gameId ? `${path}?id=${gameId}` : path;
+  
+  // 尝试生成小程序码URL（需要后端支持，这里先用占位图）
+  // 实际项目中应该调用微信API生成小程序码
+  const qrcodeUrl = `/api/miniprogram-qrcode?path=${encodeURIComponent(fullPath)}`;
+  
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.id = 'miniprogram-guide-modal';
+  modal.onclick = (e) => { if (e.target === modal) closeMiniprogramGuide(); };
+  
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 380px;">
+      <div class="modal-header">
+        <h3>📱 请使用小程序</h3>
+        <button class="btn btn-icon btn-close" onclick="closeMiniprogramGuide()">×</button>
+      </div>
+      <div class="modal-body" style="text-align: center; padding: 1.5rem;">
+        <div style="margin-bottom: 1rem;">
+          <span style="font-size: 3rem;">📱</span>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.9375rem; margin-bottom: 1rem;">
+          <strong>${actionName}</strong>功能已迁移到小程序
+        </p>
+        <p style="color: var(--text-muted); font-size: 0.8125rem; margin-bottom: 1.5rem;">
+          请使用微信扫描下方二维码，或在微信中搜索小程序
+        </p>
+        
+        <div id="miniprogram-qrcode-container" style="
+          width: 180px;
+          height: 180px;
+          margin: 0 auto 1rem;
+          background: #fff;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+        ">
+          <img id="miniprogram-qrcode" src="${qrcodeUrl}" 
+            style="width: 100%; height: 100%; object-fit: contain;"
+            onerror="showQrcodeError()"
+            alt="小程序二维码">
+        </div>
+        
+        <p style="color: var(--accent-primary); font-size: 0.875rem; font-weight: 600;">
+          AI游戏工坊 小程序
+        </p>
+        <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.5rem;">
+          微信搜索「AI游戏工坊」即可找到
+        </p>
+      </div>
+      <div class="modal-footer" style="justify-content: center;">
+        <button class="btn btn-primary" onclick="closeMiniprogramGuide()">我知道了</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  document.body.classList.add('modal-open');
+}
+
+/**
+ * 二维码加载失败时显示替代内容
+ */
+function showQrcodeError() {
+  const container = document.getElementById('miniprogram-qrcode-container');
+  if (container) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 1rem; color: #666;">
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔍</div>
+        <p style="font-size: 0.75rem;">微信搜索</p>
+        <p style="font-size: 0.875rem; font-weight: 600; color: #333;">AI游戏工坊</p>
+      </div>
+    `;
+  }
+}
+
+/**
+ * 关闭小程序引导弹窗
+ */
+function closeMiniprogramGuide() {
+  const modal = document.getElementById('miniprogram-guide-modal');
+  if (modal) {
+    modal.remove();
+    document.body.classList.remove('modal-open');
+  }
+}
+
+/**
+ * 拦截写操作，如果禁用则显示小程序引导
+ * @param {string} actionName - 操作名称
+ * @param {Function} originalAction - 原始操作函数
+ * @param {string} targetPath - 小程序目标路径
+ * @param {string} gameId - 游戏ID
+ * @returns {boolean} - 是否被拦截
+ */
+function interceptWriteAction(actionName, originalAction = null, targetPath = '', gameId = '') {
+  if (isWebWriteDisabled()) {
+    showMiniprogramGuide(actionName, targetPath, gameId);
+    return true; // 已拦截
+  }
+  
+  // 未拦截，执行原始操作
+  if (originalAction && typeof originalAction === 'function') {
+    originalAction();
+  }
+  return false;
+}
 
 /**
  * 格式化积分显示，保留最多1位小数，避免浮点数精度问题
@@ -943,6 +1108,9 @@ function log(message, type = 'info') {
 document.addEventListener('DOMContentLoaded', async () => {
   log('页面加载完成，初始化应用...', 'info');
   loadSettings();
+  
+  // 加载网站配置（包括写操作禁用状态）
+  await loadSiteConfig();
   
   // 初始化账号（等待完成，支持设备指纹自动恢复）
   await initAccount();
@@ -2093,6 +2261,18 @@ function initPullToRefresh(pageId, indicatorId, refreshCallback) {
 // ==================== 底部导航切换 ====================
 
 function switchBottomNav(navName) {
+  // 检查是否禁用网站写操作：创作和我的页面需要拦截
+  if (isWebWriteDisabled()) {
+    if (navName === 'create') {
+      showMiniprogramGuide('游戏创作', '/pages/create/create');
+      return;
+    }
+    if (navName === 'profile') {
+      showMiniprogramGuide('我的主页', '/pages/mine/mine');
+      return;
+    }
+  }
+  
   // 先关闭所有弹窗
   closeAllModals();
   
@@ -4996,6 +5176,12 @@ function viewGeneratedGame() {
 
 // 生成游戏
 async function generateGame(advancedSettings = null) {
+  // 检查是否禁用网站写操作
+  if (isWebWriteDisabled()) {
+    showMiniprogramGuide('游戏创作', '/pages/create/create');
+    return;
+  }
+  
   const prompt = document.getElementById('prompt-input').value.trim();
   
   if (!prompt) {
@@ -6363,6 +6549,12 @@ async function checkIsAuthor(gameId) {
 
 // AI修复游戏代码
 async function repairGame() {
+  // 检查是否禁用网站写操作
+  if (isWebWriteDisabled()) {
+    showMiniprogramGuide('游戏修复', '/pages/game-detail/game-detail', state.currentGameId);
+    return;
+  }
+  
   if (!state.currentGameId) {
     showToast('请先打开一个游戏', 'warning');
     return;
@@ -6517,6 +6709,12 @@ function getGameAuthorToken(gameId) {
 
 // 点赞游戏
 async function likeGame() {
+  // 检查是否禁用网站写操作
+  if (isWebWriteDisabled()) {
+    showMiniprogramGuide('点赞', '/pages/game-detail/game-detail', state.currentGameId);
+    return;
+  }
+  
   if (!state.currentGameId) return;
   
   try {
@@ -6658,6 +6856,12 @@ function shareToWeibo() {
 
 // 编辑游戏
 function editGame() {
+  // 检查是否禁用网站写操作
+  if (isWebWriteDisabled()) {
+    showMiniprogramGuide('游戏编辑', '/pages/game-edit/game-edit', state.currentGameId);
+    return;
+  }
+  
   if (!state.currentGame || !state.currentGameId) return;
   
   // 将游戏内容填入输入框
@@ -8126,6 +8330,12 @@ async function loadMyFavorites() {
 
 // 取消点赞
 async function unlikeGame(gameId) {
+  // 检查是否禁用网站写操作
+  if (isWebWriteDisabled()) {
+    showMiniprogramGuide('取消点赞', '/pages/game-detail/game-detail', gameId);
+    return;
+  }
+  
   try {
     const response = await fetch(`/api/games/${gameId}/like`, {
       method: 'POST',
@@ -8144,6 +8354,12 @@ async function unlikeGame(gameId) {
 
 // 取消收藏
 async function unfavoriteGame(gameId) {
+  // 检查是否禁用网站写操作
+  if (isWebWriteDisabled()) {
+    showMiniprogramGuide('取消收藏', '/pages/game-detail/game-detail', gameId);
+    return;
+  }
+  
   try {
     const response = await fetch(`/api/games/${gameId}/favorite`, {
       method: 'POST',
@@ -8162,6 +8378,12 @@ async function unfavoriteGame(gameId) {
 
 // 切换收藏状态
 async function toggleFavorite() {
+  // 检查是否禁用网站写操作
+  if (isWebWriteDisabled()) {
+    showMiniprogramGuide('收藏', '/pages/game-detail/game-detail', state.currentGameId);
+    return;
+  }
+  
   if (!state.currentGameId) {
     showToast('请先打开一个游戏', 'warning');
     return;
@@ -8526,6 +8748,12 @@ function closeGameActionMenu() {
 
 // 删除我的游戏
 async function deleteMyGame(gameId, title) {
+  // 检查是否禁用网站写操作
+  if (isWebWriteDisabled()) {
+    showMiniprogramGuide('删除游戏', '/pages/game-detail/game-detail', gameId);
+    return;
+  }
+  
   // 使用自定义确认弹窗
   showConfirmDialog(
     '删除游戏',
@@ -8561,6 +8789,12 @@ async function deleteMyGame(gameId, title) {
 
 // 切换游戏可见性
 async function toggleGameVisibility(gameId, currentVisibility) {
+  // 检查是否禁用网站写操作
+  if (isWebWriteDisabled()) {
+    showMiniprogramGuide('设置可见性', '/pages/game-detail/game-detail', gameId);
+    return;
+  }
+  
   const newVisibility = currentVisibility === 'public' ? 'private' : 'public';
   const actionText = newVisibility === 'private' ? '设为仅自己可见' : '设为公开';
   const confirmText = newVisibility === 'private' 
@@ -9800,6 +10034,12 @@ function getAvatarEmoji(token) {
 
 // 切换关注状态
 async function toggleFollowUser(targetToken, buttonElement) {
+  // 检查是否禁用网站写操作
+  if (isWebWriteDisabled()) {
+    showMiniprogramGuide('关注用户', '/pages/user/user', targetToken);
+    return;
+  }
+  
   if (targetToken === getUserToken()) {
     showToast('不能关注自己哦', 'warning');
     return;
@@ -10332,6 +10572,12 @@ function saveEditorSettings() {
 
 // 打开游戏编辑器
 async function openGameEditor(gameId) {
+  // 检查是否禁用网站写操作
+  if (isWebWriteDisabled()) {
+    showMiniprogramGuide('高级编辑', '/pages/game-edit/game-edit', gameId);
+    return;
+  }
+  
   showToast('正在准备编辑器...', 'info');
   
   // 如果有正在进行的生成任务，自动最小化
@@ -11753,6 +11999,12 @@ function formatCommentTime(dateStr) {
 
 // 发布留言
 async function submitComment() {
+  // 检查是否禁用网站写操作
+  if (isWebWriteDisabled()) {
+    showMiniprogramGuide('评论', '/pages/game-detail/game-detail', commentsState?.gameId);
+    return;
+  }
+  
   const inputEl = document.getElementById('comment-input');
   const submitBtn = document.getElementById('comment-submit-btn');
   

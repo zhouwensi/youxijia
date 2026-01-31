@@ -160,6 +160,23 @@
             </picker>
           </view>
 
+          <!-- 游戏类型 -->
+          <view class="setting-item">
+            <text class="setting-label">🎲 游戏类型</text>
+            <picker 
+              mode="selector" 
+              range="{{gameTypeOptions}}" 
+              range-key="label"
+              data-field="gameType"
+              bindchange="onPickerChange"
+            >
+              <view class="setting-picker">
+                <text>{{advancedSettings.gameType === 'auto' ? '自动选择' : advancedSettings.gameType === '2d' ? '2D平面' : advancedSettings.gameType === '2.5d' ? '2.5D等距' : '3D立体'}}</text>
+                <text class="picker-arrow">›</text>
+              </view>
+            </picker>
+          </view>
+
           <!-- LLM设置 - 跳转链接 -->
           <view class="setting-item llm-link" bindtap="goToLLMSettings">
             <text class="setting-label">🤖 LLM 设置</text>
@@ -219,24 +236,24 @@
       </view>
     </view>
 
-    <!-- 我的创作记录 -->
+    <!-- 全站最新作品 -->
     <view class="my-works-section">
       <view class="section-header">
         <view class="section-title">
-          <text class="title-icon">�</text>
-          <text>我的创作记录</text>
+          <text class="title-icon">🆕</text>
+          <text>最新作品</text>
         </view>
-        <view class="section-more" bindtap="goToMyWorks" wx:if="{{myGames.length > 0}}">
-          <text>全部</text>
+        <view class="section-more" bindtap="goToWorksPage" wx:if="{{latestGames.length > 0}}">
+          <text>更多</text>
           <text class="arrow">→</text>
         </view>
       </view>
 
-      <!-- 我的游戏列表 - 最多显示3个 -->
-      <view class="my-games-grid" wx:if="{{myGames.length > 0}}">
+      <!-- 最新游戏列表 - 最多显示6个 -->
+      <view class="my-games-grid" wx:if="{{latestGames.length > 0}}">
         <view 
           class="my-game-card" 
-          wx:for="{{myGames}}" 
+          wx:for="{{latestGames}}" 
           wx:key="id"
           data-game="{{item}}"
           bindtap="goToGameDetail"
@@ -255,15 +272,15 @@
       </view>
 
       <!-- 加载状态 -->
-      <view class="loading-more" wx:if="{{loadingMyGames}}">
+      <view class="loading-more" wx:if="{{loadingLatestGames}}">
         <view class="loading-spinner"></view>
         <text class="loading-text">加载中...</text>
       </view>
 
       <!-- 空状态 -->
-      <view class="empty-state" wx:if="{{!loadingMyGames && myGames.length === 0}}">
+      <view class="empty-state" wx:if="{{!loadingLatestGames && latestGames.length === 0}}">
         <text class="empty-icon">🎮</text>
-        <text class="empty-text">还没有创作过游戏，快来试试吧！</text>
+        <text class="empty-text">暂无作品，快来创作第一个吧！</text>
       </view>
     </view>
 

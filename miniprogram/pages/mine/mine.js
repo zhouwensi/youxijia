@@ -95,7 +95,9 @@ Page({
       const updates = {};
 
       if (creditsResult && creditsResult.success !== false) {
-        updates['stats.credits'] = creditsResult.credits || 0;
+        // 格式化积分，保留1位小数
+        const credits = creditsResult.credits || 0;
+        updates['stats.credits'] = Number.isInteger(credits) ? credits : parseFloat(credits.toFixed(1));
       }
 
       if (accountResult && accountResult.success !== false) {

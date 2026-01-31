@@ -679,6 +679,35 @@
       </div>
 
       <div class="config-section">
+        <h2>🔒 功能开关配置</h2>
+        <div class="config-grid">
+          <div class="config-item" style="grid-column: 1 / -1;">
+            <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+              <input type="checkbox" id="config-web_write_disabled" checked
+                style="width: 20px; height: 20px; cursor: pointer;">
+              <span>禁用网站写操作（创作、编辑、修复、评论、点赞、收藏等）</span>
+            </label>
+            <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.5rem; margin-left: 2rem;">
+              启用后，网站上的所有写操作将被禁用，用户点击时会引导到小程序。适合将用户引流到小程序。
+            </p>
+          </div>
+        </div>
+        <div class="config-grid" style="margin-top: 1rem;">
+          <div class="config-item">
+            <label>小程序 AppID</label>
+            <input type="text" id="config-miniprogram_appid" placeholder="如：wx1234567890abcdef">
+          </div>
+          <div class="config-item">
+            <label>小程序默认跳转路径</label>
+            <input type="text" id="config-miniprogram_default_path" placeholder="/pages/create/create">
+          </div>
+        </div>
+        <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.75rem;">
+          💡 配置小程序信息后，网站禁用写操作时会尝试跳转小程序，无法跳转则显示小程序二维码。
+        </p>
+      </div>
+
+      <div class="config-section">
         <h2>💡 提示语配置 (Tips)</h2>
         <div class="config-grid" style="grid-template-columns: 1fr;">
           <div class="config-item" style="grid-column: 1 / -1;">
@@ -1806,7 +1835,12 @@
           data.configs.forEach(config => {
             const input = document.getElementById('config-' + config.key);
             if (input) {
-              input.value = config.value;
+              // 处理复选框类型
+              if (input.type === 'checkbox') {
+                input.checked = config.value === 'true';
+              } else {
+                input.value = config.value;
+              }
             }
           });
         }
@@ -1829,13 +1863,32 @@
         // Tips提示配置
         'tips_create',
         // 分享文案配置
-        'share_text_template'
+        'share_text_template',
+        // 小程序配置
+        'miniprogram_appid',
+        'miniprogram_default_path'
+      ];
+      
+      // 复选框类型的配置项
+      const checkboxKeys = [
+        'web_write_disabled'
       ];
       
       const configs = configKeys.map(key => ({
         key,
         value: document.getElementById('config-' + key)?.value || ''
       }));
+      
+      // 处理复选框配置
+      checkboxKeys.forEach(key => {
+        const checkbox = document.getElementById('config-' + key);
+        if (checkbox) {
+          configs.push({
+            key,
+            value: checkbox.checked ? 'true' : 'false'
+          });
+        }
+      });
       
       try {
         const response = await fetch('/api/admin/config', {

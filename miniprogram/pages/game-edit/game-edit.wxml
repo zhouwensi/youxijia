@@ -1,0 +1,70 @@
+<!--
+  游戏编辑页面
+-->
+<view class="page-container">
+  <!-- 加载状态 -->
+  <view class="loading-container" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 编辑表单 -->
+  <view class="edit-form" wx:if="{{!loading && game}}">
+    <!-- 游戏标题 -->
+    <view class="form-group">
+      <label class="form-label">🏷️ 游戏标题</label>
+      <input 
+        class="form-input" 
+        type="text" 
+        value="{{title}}" 
+        bindinput="onTitleInput"
+        placeholder="输入游戏标题"
+        maxlength="50"
+      />
+    </view>
+
+    <!-- 游戏描述 -->
+    <view class="form-group">
+      <label class="form-label">📝 游戏描述</label>
+      <textarea 
+        class="form-textarea" 
+        value="{{prompt}}" 
+        bindinput="onPromptInput"
+        placeholder="描述你的游戏"
+        maxlength="500"
+      />
+    </view>
+
+    <!-- 可见性设置 -->
+    <view class="form-group">
+      <label class="form-label">👁️ 可见范围</label>
+      <picker 
+        mode="selector" 
+        range="{{['所有人可见', '仅粉丝可见', '仅自己可见']}}"
+        value="{{visibility === 'public' ? 0 : visibility === 'followers' ? 1 : 2}}"
+        bindchange="onVisibilityChange"
+      >
+        <view class="form-picker">
+          <text>{{visibility === 'public' ? '🌍 所有人可见' : visibility === 'followers' ? '👥 仅粉丝可见' : '🔒 仅自己可见'}}</text>
+          <text class="picker-arrow">▼</text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 提示信息 -->
+    <view class="tip-card">
+      <text class="tip-icon">💡</text>
+      <text class="tip-text">编辑游戏信息后点击保存。如需修改代码，请使用AI修复功能。</text>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-buttons">
+      <button class="btn-save {{saving ? 'loading' : ''}}" bindtap="saveGame" disabled="{{saving}}">
+        <text>{{saving ? '保存中...' : '💾 保存修改'}}</text>
+      </button>
+      <button class="btn-delete" bindtap="deleteGame">
+        <text>🗑️ 删除游戏</text>
+      </button>
+    </view>
+  </view>
+</view>

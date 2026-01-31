@@ -20,7 +20,14 @@ Page({
     
     // 评论
     comments: [],
-    loadingComments: false
+    loadingComments: false,
+    commentText: '',
+    submittingComment: false,
+    
+    // 作者操作状态
+    isOwner: false,
+    repairing: false,
+    repairCost: 0.5
   },
 
   onLoad(options) {
@@ -43,9 +50,14 @@ Page({
       const result = await app.request(`/api/games/${id}`);
       
       if (result.success && result.game) {
+        // 判断是否是作者
+        const userToken = app.globalData.userToken;
+        const isOwner = userToken && result.game.author_token === userToken;
+        
         this.setData({
           game: result.game,
-          likeCount: result.game.likes || 0
+          likeCount: result.game.likes || 0,
+          isOwner: isOwner
         });
         
         // 设置页面标题
@@ -169,7 +181,12 @@ Page({
         method: 'POST'
       });
       
-      if (!result.success) {
+      if (result.success) {
+        // 刷新积分（点赞可能有积分变化）
+        if (result.creditChange) {
+          this.refreshUserCredits();
+        }
+      } else {
         // 回滚
         this.setData({
           liked: currentLiked,
@@ -278,6 +295,207 @@ Page({
     wx.navigateTo({
       url: `/pages/user/user?token=${game.author_token}`
     });
+  },
+
+  // AI修复游戏
+  async handleRepair() {
+    if (!app.globalData.isLoggedIn) {
+      app.showToast('请先登录');
+      return;
+    }
+
+    if (this.data.repairing) {
+      app.showToast('正在修复中，请稍候...');
+      return;
+    }
+
+    const repairCost = this.data.repairCost;
+    const credits = app.globalData.userInfo?.credits || 0;
+
+    if (credits < repairCost) {
+      wx.showModal({
+        title: '积分不足',
+        content: `AI修复需要 ${repairCost} 积分，当前积分：${credits.toFixed(1)}`,
+        confirmText: '获取积分',
+        success: (res) => {
+          if (res.confirm) {
+            wx.switchTab({ url: '/pages/mine/mine' });
+          }
+        }
+      });
+      return;
+    }
+
+    // 确认对话框
+    wx.showModal({
+      title: '🔧 AI修复游戏',
+      content: `AI将自动分析并修复游戏代码中的错误\n\n消耗：${repairCost} 积分\n当前积分：${credits.toFixed(1)}`,
+      success: async (res) => {
+        if (res.confirm) {
+          await this.executeRepair();
+        }
+      }
+    });
+  },
+
+  // 执行修复
+  async executeRepair() {
+    this.setData({ repairing: true });
+    app.showToast('开始修复游戏...', 'loading');
+
+    try {
+      const result = await app.request(`/api/games/${this.data.gameId}/repair`, {
+        method: 'POST',
+        data: { creditCost: this.data.repairCost }
+      });
+
+      if (result.success) {
+        // 开始轮询修复状态
+        this.pollRepairStatus();
+      } else {
+        app.showToast(result.error || '修复失败');
+        this.setData({ repairing: false });
+      }
+    } catch (err) {
+      console.error('修复请求失败:', err);
+      app.showToast('网络错误，请重试');
+      this.setData({ repairing: false });
+    }
+  },
+
+  // 轮询修复状态
+  async pollRepairStatus() {
+    const maxAttempts = 60; // 最多轮询60次（约2分钟）
+    let attempts = 0;
+
+    const poll = async () => {
+      if (attempts >= maxAttempts) {
+        app.showToast('修复超时，请稍后查看');
+        this.setData({ repairing: false });
+        return;
+      }
+
+      try {
+        const result = await app.request(`/api/games/${this.data.gameId}/repair-status`);
+        
+        if (result.status === 'completed') {
+          app.showToast('修复成功！', 'success');
+          this.setData({ repairing: false });
+          // 刷新游戏详情
+          this.loadGameDetail(this.data.gameId);
+          // 刷新积分
+          app.loadUserInfo();
+          return;
+        } else if (result.status === 'failed') {
+          app.showToast(result.error || '修复失败');
+          this.setData({ repairing: false });
+          return;
+        }
+
+        // 继续轮询
+        attempts++;
+        setTimeout(poll, 2000);
+      } catch (err) {
+        console.error('轮询修复状态失败:', err);
+        attempts++;
+        setTimeout(poll, 2000);
+      }
+    };
+
+    poll();
+  },
+
+  // 编辑游戏
+  handleEdit() {
+    if (!app.globalData.isLoggedIn) {
+      app.showToast('请先登录');
+      return;
+    }
+
+    // 跳转到编辑页面
+    wx.navigateTo({
+      url: `/pages/game-edit/game-edit?id=${this.data.gameId}`
+    });
+  },
+
+  // 评论输入
+  onCommentInput(e) {
+    this.setData({ commentText: e.detail.value });
+  },
+
+  // 提交评论
+  async submitComment() {
+    if (!app.globalData.isLoggedIn) {
+      app.showToast('请先登录');
+      return;
+    }
+
+    const content = this.data.commentText.trim();
+    if (!content) {
+      app.showToast('请输入评论内容');
+      return;
+    }
+
+    if (content.length > 500) {
+      app.showToast('评论内容不能超过500字');
+      return;
+    }
+
+    if (this.data.submittingComment) return;
+    this.setData({ submittingComment: true });
+
+    try {
+      const result = await app.request(`/api/games/${this.data.gameId}/comments`, {
+        method: 'POST',
+        data: { content }
+      });
+
+      if (result.success) {
+        // 清空输入框
+        this.setData({ commentText: '' });
+        
+        // 添加新评论到列表顶部
+        const newComment = result.comment || {
+          id: Date.now(),
+          content: content,
+          user_name: app.globalData.userInfo?.name || '我',
+          user_avatar: app.globalData.userInfo?.avatar || '👤',
+          created_at: '刚刚'
+        };
+        
+        const comments = [newComment, ...this.data.comments];
+        this.setData({ comments });
+        
+        app.showToast('评论成功', 'success');
+        
+        // 刷新积分（评论可能有积分奖励）
+        if (result.creditAwarded) {
+          app.loadUserInfo();
+        }
+      } else {
+        app.showToast(result.error || '评论失败');
+      }
+    } catch (err) {
+      console.error('提交评论失败:', err);
+      app.showToast('网络错误，请重试');
+    } finally {
+      this.setData({ submittingComment: false });
+    }
+  },
+
+  // 刷新用户积分
+  async refreshUserCredits() {
+    try {
+      const result = await app.request('/api/credits');
+      if (result && result.success !== false) {
+        // 更新全局积分信息
+        if (app.globalData.userInfo) {
+          app.globalData.userInfo.credits = result.credits || 0;
+        }
+      }
+    } catch (err) {
+      console.error('刷新积分失败:', err);
+    }
   },
 
   // 格式化时间

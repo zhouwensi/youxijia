@@ -1368,6 +1368,83 @@ const authorToken = '${authorToken}';
 const authorName = '${safeAuthor}';
 const API_BASE = '/api/games';
 
+// 网站配置（禁用写操作检查）
+let siteConfig = {
+  webWriteDisabled: true,  // 默认禁用，等待API返回
+  miniprogram: { appId: '', defaultPath: '/pages/create/create' }
+};
+
+// 加载网站配置
+function loadSiteConfig() {
+  fetch('/api/site-config')
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        siteConfig = data.config || siteConfig;
+        console.log('[配置] 网站配置已加载:', siteConfig);
+      }
+    })
+    .catch(err => console.error('[配置] 加载失败:', err));
+}
+loadSiteConfig();
+
+// 检查是否禁用写操作
+function isWebWriteDisabled() {
+  return siteConfig.webWriteDisabled;
+}
+
+// 显示小程序引导弹窗
+function showMiniprogramGuide(actionName, targetPath) {
+  const appId = siteConfig.miniprogram?.appId || '';
+  const path = targetPath || siteConfig.miniprogram?.defaultPath || '/pages/create/create';
+  const fullPath = gameId ? path + '?id=' + gameId : path;
+  const qrcodeUrl = '/api/miniprogram-qrcode?path=' + encodeURIComponent(fullPath);
+  
+  // 移除旧的弹窗
+  const oldModal = document.getElementById('miniprogram-guide-modal');
+  if (oldModal) oldModal.remove();
+  
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.id = 'miniprogram-guide-modal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10000;';
+  modal.onclick = function(e) { if (e.target === modal) closeMiniprogramGuide(); };
+  
+  modal.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:380px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,0.3);">' +
+    '<div style="padding:1rem 1.5rem;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">' +
+      '<h3 style="margin:0;font-size:1.1rem;">📱 请使用小程序</h3>' +
+      '<button onclick="closeMiniprogramGuide()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#999;">×</button>' +
+    '</div>' +
+    '<div style="text-align:center;padding:1.5rem;">' +
+      '<div style="font-size:3rem;margin-bottom:1rem;">📱</div>' +
+      '<p style="color:#666;margin-bottom:1rem;"><strong>' + actionName + '</strong>功能已迁移到小程序</p>' +
+      '<p style="color:#999;font-size:0.8rem;margin-bottom:1.5rem;">请使用微信扫描下方二维码，或在微信中搜索小程序</p>' +
+      '<div id="miniprogram-qrcode-container" style="width:180px;height:180px;margin:0 auto 1rem;background:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid #eee;">' +
+        '<img id="miniprogram-qrcode" src="' + qrcodeUrl + '" style="width:100%;height:100%;object-fit:contain;" onerror="showQrcodeError()" alt="小程序二维码">' +
+      '</div>' +
+      '<p style="color:#07c160;font-weight:600;">AI游戏工坊 小程序</p>' +
+      '<p style="color:#999;font-size:0.75rem;margin-top:0.5rem;">微信搜索「AI游戏工坊」即可找到</p>' +
+    '</div>' +
+    '<div style="padding:1rem 1.5rem;text-align:center;border-top:1px solid #eee;">' +
+      '<button onclick="closeMiniprogramGuide()" style="background:#07c160;color:#fff;border:none;padding:0.75rem 2rem;border-radius:8px;font-size:1rem;cursor:pointer;">我知道了</button>' +
+    '</div>' +
+  '</div>';
+  
+  document.body.appendChild(modal);
+}
+
+function showQrcodeError() {
+  const container = document.getElementById('miniprogram-qrcode-container');
+  if (container) {
+    container.innerHTML = '<div style="text-align:center;padding:1rem;color:#666;"><div style="font-size:2rem;margin-bottom:0.5rem;">🔍</div><p style="font-size:0.75rem;">微信搜索</p><p style="font-size:0.875rem;font-weight:600;color:#333;">AI游戏工坊</p></div>';
+  }
+}
+
+function closeMiniprogramGuide() {
+  const modal = document.getElementById('miniprogram-guide-modal');
+  if (modal) modal.remove();
+}
+
 // 调试日志
 console.log('[DEBUG] 游戏页面初始化');
 console.log('[DEBUG] gameId:', gameId);
@@ -1613,6 +1690,12 @@ function checkIsAuthorAndShowEditBtn() {
 
 // AI修复游戏（异步后台任务）
 function repairGame() {
+  // 检查是否禁用网站写操作
+  if (isWebWriteDisabled()) {
+    showMiniprogramGuide('游戏修复', '/pages/game-detail/game-detail');
+    return;
+  }
+  
   const REPAIR_CREDIT_COST = 0.5;
   const userToken = getUserToken();
   
@@ -1663,12 +1746,24 @@ function repairGame() {
 
 // 打开游戏编辑页面
 function openGameEditorPage() {
+  // 检查是否禁用网站写操作
+  if (isWebWriteDisabled()) {
+    showMiniprogramGuide('游戏编辑', '/pages/game-edit/game-edit');
+    return;
+  }
+  
   // 跳转到主站的编辑页面
   window.location.href = '/?edit=' + gameId;
 }
 
 // 点赞（支持取消）
 function likeGame() {
+  // 检查是否禁用网站写操作
+  if (isWebWriteDisabled()) {
+    showMiniprogramGuide('点赞', '/pages/game-detail/game-detail');
+    return;
+  }
+  
   const btn = document.getElementById('stat-like-btn');
   const isLiked = btn.classList.contains('liked');
   const countEl = document.getElementById('stat-likes');
@@ -1720,6 +1815,12 @@ function likeGame() {
 
 // 收藏
 function toggleFavorite() {
+  // 检查是否禁用网站写操作
+  if (isWebWriteDisabled()) {
+    showMiniprogramGuide('收藏', '/pages/game-detail/game-detail');
+    return;
+  }
+  
   const btn = document.getElementById('stat-fav-btn');
   const countEl = document.getElementById('stat-favs');
   const isFav = btn.classList.contains('favorited');
@@ -2138,6 +2239,12 @@ function toggleFollowCommentAuthor(targetToken) {
 
 // 兼容旧版API
 function toggleFollowCommentAuthorLegacy(targetToken) {
+  // 检查是否禁用网站写操作
+  if (isWebWriteDisabled()) {
+    showMiniprogramGuide('关注用户', '/pages/user/user');
+    return;
+  }
+  
   const userToken = getUserToken();
   if (!userToken) {
     alert('请先登录后再关注');
@@ -2378,6 +2485,12 @@ async function loadFollowListGame(type) {
 
 // 在列表中切换关注状态
 async function toggleFollowUserGame(targetToken, btn) {
+  // 检查是否禁用网站写操作
+  if (isWebWriteDisabled()) {
+    showMiniprogramGuide('关注用户', '/pages/user/user');
+    return;
+  }
+  
   const userToken = getUserToken();
   if (!userToken) {
     alert('请先登录');
@@ -2414,6 +2527,12 @@ async function toggleFollowUserGame(targetToken, btn) {
 
 // 切换关注状态
 function toggleFollow() {
+  // 检查是否禁用网站写操作
+  if (isWebWriteDisabled()) {
+    showMiniprogramGuide('关注用户', '/pages/user/user');
+    return;
+  }
+  
   console.log('[DEBUG] toggleFollow 被调用, authorToken:', authorToken);
   if (!authorToken) {
     console.log('[DEBUG] authorToken为空，显示推广弹窗');
@@ -2477,6 +2596,12 @@ function toggleFollow() {
 
 // 从主页弹窗切换关注
 function toggleFollowFromProfile(targetToken) {
+  // 检查是否禁用网站写操作
+  if (isWebWriteDisabled()) {
+    showMiniprogramGuide('关注用户', '/pages/user/user');
+    return;
+  }
+  
   const targetUser = targetToken || authorToken;
   if (!targetUser) return;
   
@@ -2678,6 +2803,12 @@ function escapeHtml(str) {
 
 // 发布留言
 function submitGameComment() {
+  // 检查是否禁用网站写操作
+  if (isWebWriteDisabled()) {
+    showMiniprogramGuide('评论留言', '/pages/game-detail/game-detail');
+    return;
+  }
+  
   const inputEl = document.getElementById('game-comment-input');
   const submitBtn = document.getElementById('game-comment-submit');
   
@@ -5084,6 +5215,36 @@ app.post('/api/account/secure-recover', (req, res) => {
 
 // ==================== 积分系统 API ====================
 
+// ==================== 网站功能配置 API ====================
+
+// 获取网站公开配置（用于前端判断功能是否禁用）
+app.get('/api/site-config', (req, res) => {
+  try {
+    // 获取网站写操作禁用配置（默认为禁用，即 'true'）
+    const webWriteDisabled = getConfig('web_write_disabled', 'true') === 'true';
+    
+    // 小程序相关配置
+    const miniprogramAppId = getConfig('miniprogram_appid', '');
+    const miniprogramPath = getConfig('miniprogram_default_path', '/pages/create/create');
+    
+    res.json({
+      success: true,
+      config: {
+        // 网站写操作是否禁用（创作、编辑、修复、评论、点赞、收藏等）
+        webWriteDisabled: webWriteDisabled,
+        // 小程序配置
+        miniprogram: {
+          appId: miniprogramAppId,
+          defaultPath: miniprogramPath
+        }
+      }
+    });
+  } catch (error) {
+    console.error('获取网站配置失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // 获取可用的加速模型列表
 app.get('/api/turbo-models', (req, res) => {
   try {
@@ -7309,6 +7470,16 @@ app.post('/api/generate', async (req, res) => {
         }
       }
       
+      // 游戏类型（2D/2.5D/3D）
+      if (advancedSettings.gameType && advancedSettings.gameType !== 'auto') {
+        const gameTypeMap = {
+          '2d': '2D游戏: 使用Canvas 2D API或简单的CSS/DOM实现，纯平面视角',
+          '2.5d': '2.5D游戏: 使用等距视角(Isometric)或伪3D效果，有纵深感但不是真3D',
+          '3d': '3D游戏: 使用Three.js或WebGL实现真正的3D场景和视角'
+        };
+        hints.push(gameTypeMap[advancedSettings.gameType] || advancedSettings.gameType);
+      }
+      
       if (hints.length > 0) {
         advancedHint = `\n【用户高级设置】：\n${hints.map(h => `- ${h}`).join('\n')}\n请在生成游戏时参考以上设置。`;
       }
@@ -7340,12 +7511,11 @@ app.post('/api/generate', async (req, res) => {
 
 【游戏界面要求 - 非常重要】：
 1. 只有3种界面状态：开始界面、游戏进行中、结束界面
-2. 开始界面：显示游戏标题、"开始游戏"按钮、以及"游戏说明"按钮（点击显示操作方法）
+2. 开始界面：显示游戏标题、"开始游戏"按钮、简洁的操作说明（直接展示，不需要额外按钮）
 3. 游戏进行中：必须隐藏所有遮罩层，只显示Canvas游戏画面。得分、生命值等HUD信息直接用Canvas绑制在画面上，不要用HTML覆盖层
 4. 结束界面：游戏结束时才显示结果，可以用半透明遮罩层
 5. 点击"开始游戏"后，必须立即隐藏开始界面的遮罩，让玩家看到游戏画面
 6. 不要在游戏进行中显示任何全屏或半透明的HTML遮罩层
-7. 游戏界面右上角保留一个小的"?"按钮，点击可随时查看游戏说明
 
 【内容合规要求】：
 1. 游戏内容必须健康积极，适合所有年龄段

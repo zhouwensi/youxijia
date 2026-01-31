@@ -26,9 +26,9 @@ Page({
       { text: '弹球', icon: '⚪' }
     ],
     
-    // 我的创作记录
-    myGames: [],
-    loadingMyGames: false,
+    // 全站最新作品
+    latestGames: [],
+    loadingLatestGames: false,
     
     // 高级设置（默认折叠）
     showAdvanced: false,
@@ -38,7 +38,8 @@ Page({
       orientation: 'auto',
       platform: 'all',
       soundEffect: 'none',
-      visibility: 'public'
+      visibility: 'public',
+      gameType: 'auto'
     },
     
     // LLM设置
@@ -75,6 +76,12 @@ Page({
       { value: 'public', label: '公开' },
       { value: 'private', label: '私密' }
     ],
+    gameTypeOptions: [
+      { value: 'auto', label: '自动选择' },
+      { value: '2d', label: '2D平面' },
+      { value: '2.5d', label: '2.5D等距' },
+      { value: '3d', label: '3D立体' }
+    ],
     
     // 订阅消息
     subscribed: false,
@@ -84,7 +91,7 @@ Page({
   },
 
   onLoad() {
-    this.loadMyGames();
+    this.loadLatestGames();
   },
 
   onShow() {
@@ -99,38 +106,35 @@ Page({
     }
   },
 
-  // 加载我的创作记录
-  async loadMyGames() {
-    if (this.data.loadingMyGames) return;
+  // 加载全站最新作品
+  async loadLatestGames() {
+    if (this.data.loadingLatestGames) return;
     
-    // 需要登录才能加载
-    if (!app.globalData.isLoggedIn || !app.globalData.accountId) {
-      this.setData({ myGames: [], loadingMyGames: false });
-      return;
-    }
-    
-    this.setData({ loadingMyGames: true });
+    this.setData({ loadingLatestGames: true });
     
     try {
-      const result = await app.request('/api/my-games', {
-        data: { limit: 3 }
+      const result = await app.request('/api/games', {
+        data: { 
+          limit: 6,
+          sort: 'newest'
+        }
       });
       
       if (result.success) {
         this.setData({
-          myGames: result.data || result.games || []
+          latestGames: result.data || result.games || []
         });
       }
     } catch (err) {
-      console.error('加载我的创作失败:', err);
+      console.error('加载最新作品失败:', err);
     } finally {
-      this.setData({ loadingMyGames: false });
+      this.setData({ loadingLatestGames: false });
     }
   },
 
   // 下拉刷新
   onPullDownRefresh() {
-    this.loadMyGames().then(() => {
+    this.loadLatestGames().then(() => {
       wx.stopPullDownRefresh();
     });
   },
@@ -169,6 +173,13 @@ Page({
   goToMyWorks() {
     wx.switchTab({
       url: '/pages/mine/mine'
+    });
+  },
+
+  // 跳转到作品广场页面
+  goToWorksPage() {
+    wx.switchTab({
+      url: '/pages/works/works'
     });
   },
 
@@ -217,7 +228,8 @@ Page({
         orientation: 'auto',
         platform: 'all',
         soundEffect: 'none',
-        visibility: 'public'
+        visibility: 'public',
+        gameType: 'auto'
       },
       llmSettings: {
         model: '',
@@ -343,7 +355,8 @@ Page({
           orientation: advancedSettings.orientation,
           platform: advancedSettings.platform,
           soundEffect: advancedSettings.soundEffect,
-          visibility: advancedSettings.visibility
+          visibility: advancedSettings.visibility,
+          gameType: advancedSettings.gameType
         };
 
         // 添加LLM设置（兼容旧的页面内 LLM 设置）
@@ -383,19 +396,34 @@ Page({
       if (result.success && result.result && result.result.game) {
         // 生成成功
         const game = result.result.game;
-        const gameUrl = `${app.globalData.config.webUrl}/g/${game.id.substring(0, 2)}/${game.id}.html`;
         
         this.setData({
           progress: 100,
           progressText: '生成完成！',
-          generatedGame: game,
-          gameUrl: gameUrl
+          generating: false
         });
 
         app.showToast('游戏生成成功！', 'success');
         
-        // 刷新我的创作列表
-        this.loadMyGames();
+        // 重置表单状态，准备下次创作
+        setTimeout(() => {
+          this.setData({
+            prompt: '',
+            progress: 0,
+            progressText: '',
+            generatedGame: null,
+            gameUrl: ''
+          });
+        }, 500);
+        
+        // 直接跳转到游戏详情页
+        setTimeout(() => {
+          wx.navigateTo({
+            url: `/pages/game-detail/game-detail?id=${game.id}`
+          });
+        }, 800);
+        
+        return; // 提前返回，避免执行 finally 中的 generating: false
       } else {
         throw new Error(result.error || '生成失败');
       }
