@@ -2,7 +2,7 @@
  * 创作页面 - 首页样式
  */
 
-.page-container {
+ .page-container {
   min-height: 100vh;
   background: linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%);
   display: flex;
@@ -273,7 +273,9 @@
 .generate-btn {
   width: 100%;
   height: 96rpx;
-  line-height: 96rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   font-size: 32rpx;
   font-weight: bold;
   color: #fff;
@@ -281,6 +283,8 @@
   border-radius: 48rpx;
   border: none;
   margin-top: 24rpx;
+  padding: 0;
+  text-align: center;
 }
 
 .generate-btn.disabled {
