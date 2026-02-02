@@ -1770,6 +1770,9 @@
         case 'config':
           loadConfig();
           break;
+        case 'miniprogram':
+          loadConfig(); // 小程序配置也需要加载（复用 loadConfig，因为 checkbox 会自动匹配 id）
+          break;
         case 'promo':
           loadActionCreditsConfig();
           loadExtraCreditsConfig();
