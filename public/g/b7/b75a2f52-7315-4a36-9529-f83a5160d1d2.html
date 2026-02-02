@@ -7,11 +7,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#1a1a2e">
-  <meta name="description" content="俄罗斯方块 - AI一句话生成的游戏">
-  <meta property="og:title" content="俄罗斯方块 - HTML5版 - AI游戏">
+  <meta name="description" content="王者荣耀 Kimi2.5版 - AI一句话生成的游戏">
+  <meta property="og:title" content="王者荣耀 Kimi2.5版 - AI游戏">
   <meta property="og:description" content="这个游戏由AI一句话生成！关注公众号「游戏开发技术教程」，你也可以免费生成游戏！">
   <meta property="og:type" content="website">
-  <title>俄罗斯方块 - HTML5版 - AI游戏</title>
+  <title>王者荣耀 Kimi2.5版 - AI游戏</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
   <!-- 引用主站CSS样式 -->
   <link rel="stylesheet" href="/css/style.css">
@@ -1051,213 +1051,198 @@ body {
     
     
     <style>
-        :root {
-            --bg-color: #202028;
-            --panel-bg: #33333a;
-            --text-color: #fff;
-            --accent-color: #4facfe;
-            --button-bg: #444;
-            --button-active: #666;
-        }
-
         * {
-            box-sizing: border-box;
-            touch-action: manipulation; /* 禁止双击缩放 */
-        }
-
-        body {
             margin: 0;
             padding: 0;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
-        }
-
-        .game-container {
-            display: flex;
-            gap: 20px;
-            padding: 20px;
-            background: var(--panel-bg);
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            position: relative;
-        }
-
-        canvas {
-            background-color: #000;
-            border: 2px solid #555;
-            display: block;
-            border-radius: 4px;
-        }
-
-        .sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            min-width: 120px;
-        }
-
-        .info-box {
-            background: rgba(0,0,0,0.3);
-            padding: 10px;
-            border-radius: 5px;
-            text-align: center;
-        }
-
-        .info-label {
-            font-size: 14px;
-            color: #aaa;
-            margin-bottom: 5px;
-        }
-
-        .info-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: var(--accent-color);
-        }
-
-        #next-piece {
-            width: 100px;
-            height: 100px;
-            margin: 0 auto;
-            background: #000;
-            border: 1px solid #555;
-        }
-
-        /* 移动端控制按钮 */
-        .controls {
-            display: none; /* 默认隐藏，在小屏幕显示 */
-            margin-top: 20px;
-            width: 100%;
-            max-width: 300px;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-        }
-
-        .btn {
-            background: var(--button-bg);
-            border: none;
-            color: white;
-            padding: 15px 0;
-            border-radius: 8px;
-            font-size: 24px;
-            cursor: pointer;
-            user-select: none;
-            transition: background 0.1s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 0 #222;
-        }
-
-        .btn:active {
-            background: var(--button-active);
-            box-shadow: 0 0 0 #222;
-            transform: translateY(4px);
-        }
-
-        .btn-large {
-            grid-column: span 3;
-            background: var(--accent-color);
-            box-shadow: 0 4px 0 #2b8cdb;
+            box-sizing: border-box;
+            touch-action: none;
         }
         
-        .btn-large:active {
-            background: #2b8cdb;
+        body {
+            overflow: hidden;
+            background: #1a1a2e;
+            font-family: 'Microsoft YaHei', sans-serif;
+            user-select: none;
         }
-
-        /* 覆盖层 */
-        .overlay {
+        
+        #gameCanvas {
+            display: block;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
+        }
+        
+        #ui {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.85);
+            pointer-events: none;
+        }
+        
+        .health-bar {
+            position: absolute;
+            width: 60px;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            overflow: hidden;
+            border: 1px solid #000;
+        }
+        
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4444, #ff6666);
+            transition: width 0.2s;
+        }
+        
+        .health-fill.player {
+            background: linear-gradient(90deg, #4444ff, #6666ff);
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            height: 150px;
+            pointer-events: auto;
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
+            padding: 0 20px;
+        }
+        
+        #joystick {
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            position: relative;
+            touch-action: none;
+        }
+        
+        #joystick-knob {
+            width: 50px;
+            height: 50px;
+            background: rgba(100,150,255,0.6);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 20px rgba(100,150,255,0.5);
+        }
+        
+        .skill-btn {
+            width: 70px;
+            height: 70px;
+            background: rgba(0,0,0,0.6);
+            border: 2px solid #gold;
+            border-radius: 50%;
+            margin-left: 10px;
+            display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 10;
-            border-radius: 10px;
-        }
-
-        .overlay h1 {
-            margin: 0 0 20px 0;
-            font-size: 32px;
-            text-shadow: 0 0 10px var(--accent-color);
-        }
-
-        .overlay p {
-            font-size: 18px;
-            margin-bottom: 30px;
-        }
-
-        .start-btn {
-            background: var(--accent-color);
-            border: none;
             color: white;
-            padding: 12px 30px;
-            font-size: 20px;
-            border-radius: 50px;
+            font-weight: bold;
+            font-size: 14px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(255,215,0,0.3);
+        }
+        
+        .skill-btn.cooldown {
+            opacity: 0.5;
+        }
+        
+        .skill-btn.cooldown::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #skills {
+            display: flex;
+            align-items: flex-end;
+        }
+        
+        #score-board {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            padding: 10px 30px;
+            border-radius: 25px;
+            color: white;
+            font-size: 18px;
+            border: 2px solid #gold;
+        }
+        
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            color: white;
+            display: none;
+            pointer-events: auto;
+            border: 3px solid #gold;
+            box-shadow: 0 0 30px rgba(255,215,0,0.5);
+        }
+        
+        button {
+            margin-top: 20px;
+            padding: 15px 40px;
+            font-size: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
             cursor: pointer;
             font-weight: bold;
-            box-shadow: 0 0 15px rgba(79, 172, 254, 0.5);
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s;
         }
-
-        .start-btn:hover {
+        
+        button:hover {
             transform: scale(1.05);
-            box-shadow: 0 0 25px rgba(79, 172, 254, 0.8);
         }
-
-        .hidden {
-            display: none !important;
+        
+        #minimap {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 150px;
+            height: 150px;
+            background: rgba(0,0,0,0.7);
+            border: 2px solid #gold;
+            border-radius: 10px;
         }
-
-        /* 响应式设计 */
-        @media (max-width: 600px) {
-            .game-container {
-                flex-direction: column;
-                padding: 10px;
-                align-items: center;
-            }
-            
-            .sidebar {
-                flex-direction: row;
-                width: 100%;
-                justify-content: space-around;
-                min-width: auto;
-            }
-
-            canvas#tetris {
-                height: 50vh; /* 适配高度 */
-                width: auto;
-            }
-
-            .controls {
-                display: grid;
-            }
-            
-            .info-box {
-                padding: 5px;
-                min-width: 60px;
-            }
-            
-            .info-value {
-                font-size: 18px;
-            }
-            
-            #next-piece {
-                width: 50px;
-                height: 50px;
-            }
+        
+        .floating-text {
+            position: absolute;
+            color: #ffdd00;
+            font-weight: bold;
+            font-size: 20px;
+            pointer-events: none;
+            animation: float 1s ease-out forwards;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
         }
     </style>
 
@@ -1265,387 +1250,757 @@ body {
 <body>
   <!-- 原游戏body内容 -->
   
-
-    <div class="game-container">
-        <canvas id="tetris" width="240" height="400"></canvas>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="ui">
+        <div id="score-board">
+            <span style="color: #4488ff">我方: <span id="blueScore">0</span></span> | 
+            <span style="color: #ff4444">敌方: <span id="redScore">0</span></span>
+        </div>
         
-        <div class="sidebar">
-            <div class="info-box">
-                <div class="info-label">分数</div>
-                <div id="score" class="info-value">0</div>
+        <canvas id="minimap"></canvas>
+        
+        <div id="controls">
+            <div id="joystick">
+                <div id="joystick-knob"></div>
             </div>
-            <div class="info-box">
-                <div class="info-label">等级</div>
-                <div id="level" class="info-value">1</div>
-            </div>
-            <div class="info-box">
-                <div class="info-label">下一个</div>
-                <canvas id="next-piece" width="80" height="80"></canvas>
+            <div id="skills">
+                <div class="skill-btn" id="skill1" onclick="game.useSkill(1)">技能1</div>
+                <div class="skill-btn" id="skill2" onclick="game.useSkill(2)">技能2</div>
+                <div class="skill-btn" id="attack" onclick="game.normalAttack()" style="background: rgba(255,100,100,0.6)">普攻</div>
             </div>
         </div>
-
-        <!-- 游戏开始/结束 覆盖层 -->
-        <div id="overlay" class="overlay">
-            <h1 id="overlay-title">俄罗斯方块</h1>
-            <p id="overlay-msg">按方向键移动，上键旋转</p>
-            <button class="start-btn" onclick="startGame()">开始游戏</button>
+        
+        <div id="game-over">
+            <h2 id="result-text">胜利!</h2>
+            <p id="result-detail">摧毁敌方水晶</p>
+            <button onclick="game.restart()">再来一局</button>
         </div>
-    </div>
-
-    <!-- 移动端控制区 -->
-    <div class="controls">
-        <button class="btn" ontouchstart="playerMove(-1); event.preventDefault()">◀</button>
-        <button class="btn" ontouchstart="playerRotate(1); event.preventDefault()">↻</button>
-        <button class="btn" ontouchstart="playerMove(1); event.preventDefault()">▶</button>
-        <button class="btn btn-large" ontouchstart="playerDrop(); event.preventDefault()">▼</button>
     </div>
 
     <script>
-        const canvas = document.getElementById('tetris');
-        const context = canvas.getContext('2d');
-        const nextCanvas = document.getElementById('next-piece');
-        const nextContext = nextCanvas.getContext('2d');
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const minimap = document.getElementById('minimap');
+        const miniCtx = minimap.getContext('2d');
         
-        // 放大倍数，每个方块20px
-        context.scale(20, 20);
-        nextContext.scale(20, 20);
-
-        // 方块形状定义
-        function createPiece(type) {
-            if (type === 'I') {
-                return [
-                    [0, 1, 0, 0],
-                    [0, 1, 0, 0],
-                    [0, 1, 0, 0],
-                    [0, 1, 0, 0],
-                ];
-            } else if (type === 'L') {
-                return [
-                    [0, 2, 0],
-                    [0, 2, 0],
-                    [0, 2, 2],
-                ];
-            } else if (type === 'J') {
-                return [
-                    [0, 3, 0],
-                    [0, 3, 0],
-                    [3, 3, 0],
-                ];
-            } else if (type === 'O') {
-                return [
-                    [4, 4],
-                    [4, 4],
-                ];
-            } else if (type === 'Z') {
-                return [
-                    [5, 5, 0],
-                    [0, 5, 5],
-                    [0, 0, 0],
-                ];
-            } else if (type === 'S') {
-                return [
-                    [0, 6, 6],
-                    [6, 6, 0],
-                    [0, 0, 0],
-                ];
-            } else if (type === 'T') {
-                return [
-                    [0, 7, 0],
-                    [7, 7, 7],
-                    [0, 0, 0],
-                ];
-            }
-        }
-
-        // 颜色定义
-        const colors = [
-            null,
-            '#FF0D72', // I
-            '#0DC2FF', // L
-            '#0DFF72', // J
-            '#F538FF', // O
-            '#FF8E0D', // Z
-            '#FFE138', // S
-            '#3877FF', // T
-        ];
-
+        // 游戏配置
+        const GAME_WIDTH = 3000;
+        const GAME_HEIGHT = 3000;
+        const VIEWPORT_WIDTH = window.innerWidth;
+        const VIEWPORT_HEIGHT = window.innerHeight;
+        
+        canvas.width = VIEWPORT_WIDTH;
+        canvas.height = VIEWPORT_HEIGHT;
+        minimap.width = 150;
+        minimap.height = 150;
+        
         // 游戏状态
-        const arena = createMatrix(12, 20);
-        
-        const player = {
-            pos: {x: 0, y: 0},
-            matrix: null,
-            score: 0,
-            level: 1,
-            next: null
-        };
-
-        let dropCounter = 0;
-        let dropInterval = 1000;
-        let lastTime = 0;
-        let isPaused = true;
-        let isGameOver = false;
-        let animationId = null;
-
-        // 创建矩阵
-        function createMatrix(w, h) {
-            const matrix = [];
-            while (h--) {
-                matrix.push(new Array(w).fill(0));
-            }
-            return matrix;
-        }
-
-        // 碰撞检测
-        function collide(arena, player) {
-            const [m, o] = [player.matrix, player.pos];
-            for (let y = 0; y < m.length; ++y) {
-                for (let x = 0; x < m[y].length; ++x) {
-                    if (m[y][x] !== 0 &&
-                       (arena[y + o.y] && arena[y + o.y][x + o.x]) !== 0) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-
-        // 绘制函数
-        function draw() {
-            // 清空主画布
-            context.fillStyle = '#000';
-            context.fillRect(0, 0, canvas.width, canvas.height);
-
-            drawMatrix(arena, {x: 0, y: 0}, context);
-            drawMatrix(player.matrix, player.pos, context);
-        }
-
-        // 绘制矩阵
-        function drawMatrix(matrix, offset, ctx) {
-            matrix.forEach((row, y) => {
-                row.forEach((value, x) => {
-                    if (value !== 0) {
-                        // 绘制方块主体
-                        ctx.fillStyle = colors[value];
-                        ctx.fillRect(x + offset.x, y + offset.y, 1, 1);
-                        
-                        // 绘制高光和阴影效果，增加立体感
-                        ctx.lineWidth = 0.05;
-                        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-                        ctx.strokeRect(x + offset.x, y + offset.y, 1, 1);
-                        
-                        ctx.fillStyle = 'rgba(0,0,0,0.2)';
-                        ctx.fillRect(x + offset.x + 0.1, y + offset.y + 0.8, 0.8, 0.1);
-                        ctx.fillRect(x + offset.x + 0.8, y + offset.y + 0.1, 0.1, 0.8);
-                    }
-                });
-            });
-        }
-
-        // 绘制下一个方块预览
-        function drawNext() {
-            nextContext.fillStyle = '#000';
-            nextContext.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
-            
-            // 计算居中偏移
-            const xOffset = (4 - player.next[0].length) / 2;
-            const yOffset = (4 - player.next.length) / 2;
-            
-            drawMatrix(player.next, {x: xOffset, y: yOffset}, nextContext);
-        }
-
-        // 消除行
-        function arenaSweep() {
-            let rowCount = 1;
-            outer: for (let y = arena.length - 1; y > 0; --y) {
-                for (let x = 0; x < arena[y].length; ++x) {
-                    if (arena[y][x] === 0) {
-                        continue outer;
-                    }
-                }
-
-                const row = arena.splice(y, 1)[0].fill(0);
-                arena.unshift(row);
-                ++y;
-
-                player.score += rowCount * 10;
-                rowCount *= 2;
+        class Game {
+            constructor() {
+                this.entities = [];
+                this.particles = [];
+                this.camera = { x: 0, y: 0 };
+                this.player = null;
+                this.gameOver = false;
+                this.blueScore = 0;
+                this.redScore = 0;
+                this.keys = {};
+                this.joystick = { x: 0, y: 0, active: false };
+                this.lastTime = 0;
+                this.spawnTimer = 0;
                 
-                // 升级逻辑
-                if (player.score > player.level * 100) {
-                    player.level++;
-                    dropInterval = Math.max(100, 1000 - (player.level - 1) * 100); 
+                this.init();
+            }
+            
+            init() {
+                // 创建玩家
+                this.player = new Hero(GAME_WIDTH/2, GAME_HEIGHT - 200, 'blue');
+                this.entities.push(this.player);
+                
+                // 创建敌方英雄
+                this.entities.push(new Hero(GAME_WIDTH/2, 200, 'red'));
+                
+                // 创建防御塔
+                this.createTowers();
+                
+                // 创建水晶
+                this.blueNexus = new Nexus(GAME_WIDTH/2, GAME_HEIGHT - 100, 'blue');
+                this.redNexus = new Nexus(GAME_WIDTH/2, 100, 'red');
+                this.entities.push(this.blueNexus, this.redNexus);
+                
+                // 输入处理
+                this.setupInputs();
+                
+                // 开始游戏循环
+                this.loop();
+            }
+            
+            createTowers() {
+                // 蓝方防御塔
+                for (let i = 0; i < 3; i++) {
+                    this.entities.push(new Tower(GAME_WIDTH/2 - 300 + i*300, GAME_HEIGHT - 400 - i*400, 'blue'));
+                }
+                // 红方防御塔
+                for (let i = 0; i < 3; i++) {
+                    this.entities.push(new Tower(GAME_WIDTH/2 - 300 + i*300, 400 + i*400, 'red'));
                 }
             }
-            updateScore();
-        }
-
-        // 合并方块到场地
-        function merge(arena, player) {
-            player.matrix.forEach((row, y) => {
-                row.forEach((value, x) => {
-                    if (value !== 0) {
-                        arena[y + player.pos.y][x + player.pos.x] = value;
+            
+            setupInputs() {
+                // 键盘
+                window.addEventListener('keydown', (e) => {
+                    this.keys[e.key.toLowerCase()] = true;
+                    if (e.key === 'q' || e.key === 'Q') this.useSkill(1);
+                    if (e.key === 'w' || e.key === 'W') this.useSkill(2);
+                    if (e.key === ' ') this.normalAttack();
+                });
+                
+                window.addEventListener('keyup', (e) => {
+                    this.keys[e.key.toLowerCase()] = false;
+                });
+                
+                // 鼠标/触摸攻击
+                canvas.addEventListener('mousedown', (e) => {
+                    if (!this.gameOver) this.normalAttack();
+                });
+                
+                // 虚拟摇杆
+                const joystick = document.getElementById('joystick');
+                const knob = document.getElementById('joystick-knob');
+                let startPos = { x: 0, y: 0 };
+                
+                joystick.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const rect = joystick.getBoundingClientRect();
+                    startPos = {
+                        x: rect.left + rect.width/2,
+                        y: rect.top + rect.height/2
+                    };
+                    this.joystick.active = true;
+                    this.updateJoystick(touch.clientX, touch.clientY, knob);
+                });
+                
+                joystick.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    if (this.joystick.active) {
+                        this.updateJoystick(e.touches[0].clientX, e.touches[0].clientY, knob);
                     }
                 });
-            });
-        }
-
-        // 旋转矩阵
-        function rotate(matrix, dir) {
-            for (let y = 0; y < matrix.length; ++y) {
-                for (let x = 0; x < y; ++x) {
-                    [
-                        matrix[x][y],
-                        matrix[y][x],
-                    ] = [
-                        matrix[y][x],
-                        matrix[x][y],
-                    ];
+                
+                const endJoystick = (e) => {
+                    e.preventDefault();
+                    this.joystick.active = false;
+                    this.joystick.x = 0;
+                    this.joystick.y = 0;
+                    knob.style.transform = 'translate(-50%, -50%)';
+                };
+                
+                joystick.addEventListener('touchend', endJoystick);
+                joystick.addEventListener('touchcancel', endJoystick);
+            }
+            
+            updateJoystick(clientX, clientY, knob) {
+                const maxDist = 35;
+                let dx = clientX - startPos.x;
+                let dy = clientY - startPos.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if (dist > maxDist) {
+                    dx = (dx/dist) * maxDist;
+                    dy = (dy/dist) * maxDist;
+                }
+                
+                knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+                this.joystick.x = dx / maxDist;
+                this.joystick.y = dy / maxDist;
+            }
+            
+            useSkill(num) {
+                if (this.gameOver || !this.player) return;
+                this.player.useSkill(num);
+            }
+            
+            normalAttack() {
+                if (this.gameOver || !this.player) return;
+                this.player.attack();
+            }
+            
+            spawnMinions() {
+                if (this.spawnTimer++ > 180) { // 每3秒
+                    this.spawnTimer = 0;
+                    // 蓝方小兵
+                    for (let i = -1; i <= 1; i++) {
+                        this.entities.push(new Minion(GAME_WIDTH/2 + i*50, GAME_HEIGHT - 150, 'blue'));
+                    }
+                    // 红方小兵
+                    for (let i = -1; i <= 1; i++) {
+                        this.entities.push(new Minion(GAME_WIDTH/2 + i*50, 150, 'red'));
+                    }
                 }
             }
-            if (dir > 0) {
-                matrix.forEach(row => row.reverse());
-            } else {
-                matrix.reverse();
-            }
-        }
-
-        // 玩家下落
-        function playerDrop() {
-            if (isPaused || isGameOver) return;
-            player.pos.y++;
-            if (collide(arena, player)) {
-                player.pos.y--;
-                merge(arena, player);
-                playerReset();
-                arenaSweep();
-                updateScore();
-            }
-            dropCounter = 0;
-        }
-
-        // 玩家移动
-        function playerMove(dir) {
-            if (isPaused || isGameOver) return;
-            player.pos.x += dir;
-            if (collide(arena, player)) {
-                player.pos.x -= dir;
-            }
-        }
-
-        // 玩家重置（生成新方块）
-        function playerReset() {
-            const pieces = 'ILJOTSZ';
             
-            if (player.next === null) {
-                player.next = createPiece(pieces[pieces.length * Math.random() | 0]);
+            update() {
+                if (this.gameOver) return;
+                
+                // 玩家移动
+                if (this.player) {
+                    let dx = 0, dy = 0;
+                    if (this.keys['w'] || this.keys['arrowup']) dy = -1;
+                    if (this.keys['s'] || this.keys['arrowdown']) dy = 1;
+                    if (this.keys['a'] || this.keys['arrowleft']) dx = -1;
+                    if (this.keys['d'] || this.keys['arrowright']) dx = 1;
+                    
+                    if (this.joystick.active) {
+                        dx = this.joystick.x;
+                        dy = this.joystick.y;
+                    }
+                    
+                    if (dx !== 0 || dy !== 0) {
+                        const len = Math.sqrt(dx*dx + dy*dy);
+                        this.player.vx = (dx/len) * this.player.speed;
+                        this.player.vy = (dy/len) * this.player.speed;
+                    } else {
+                        this.player.vx *= 0.8;
+                        this.player.vy *= 0.8;
+                    }
+                }
+                
+                // 更新实体
+                this.entities = this.entities.filter(e => e.hp > 0);
+                this.entities.forEach(e => e.update());
+                
+                // 生成小兵
+                this.spawnMinions();
+                
+                // 更新粒子
+                this.particles = this.particles.filter(p => p.life > 0);
+                this.particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life--;
+                    p.alpha = p.life / p.maxLife;
+                });
+                
+                // 相机跟随
+                if (this.player) {
+                    this.camera.x = this.player.x - VIEWPORT_WIDTH/2;
+                    this.camera.y = this.player.y - VIEWPORT_HEIGHT/2;
+                    this.camera.x = Math.max(0, Math.min(this.camera.x, GAME_WIDTH - VIEWPORT_WIDTH));
+                    this.camera.y = Math.max(0, Math.min(this.camera.y, GAME_HEIGHT - VIEWPORT_HEIGHT));
+                }
+                
+                // 检查游戏结束
+                if (this.blueNexus.hp <= 0) this.endGame(false);
+                if (this.redNexus.hp <= 0) this.endGame(true);
             }
             
-            player.matrix = player.next;
-            player.next = createPiece(pieces[pieces.length * Math.random() | 0]);
-            drawNext();
-
-            player.pos.y = 0;
-            player.pos.x = (arena[0].length / 2 | 0) -
-                           (player.matrix[0].length / 2 | 0);
-
-            if (collide(arena, player)) {
-                gameOver();
+            draw() {
+                // 清空画布
+                ctx.fillStyle = '#1a1a3e';
+                ctx.fillRect(0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+                
+                ctx.save();
+                ctx.translate(-this.camera.x, -this.camera.y);
+                
+                // 绘制地图网格
+                ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+                ctx.lineWidth = 1;
+                for (let x = 0; x <= GAME_WIDTH; x += 100) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, GAME_HEIGHT);
+                    ctx.stroke();
+                }
+                for (let y = 0; y <= GAME_HEIGHT; y += 100) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(GAME_WIDTH, y);
+                    ctx.stroke();
+                }
+                
+                // 绘制道路
+                ctx.fillStyle = 'rgba(100,100,150,0.2)';
+                ctx.fillRect(GAME_WIDTH/2 - 100, 0, 200, GAME_HEIGHT);
+                
+                // 绘制实体（按y排序）
+                [...this.entities].sort((a, b) => a.y - b.y).forEach(e => e.draw());
+                
+                // 绘制粒子
+                this.particles.forEach(p => {
+                    ctx.globalAlpha = p.alpha;
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+                    ctx.fill();
+                });
+                ctx.globalAlpha = 1;
+                
+                ctx.restore();
+                
+                // 绘制小地图
+                this.drawMinimap();
+            }
+            
+            drawMinimap() {
+                miniCtx.fillStyle = '#000';
+                miniCtx.fillRect(0, 0, 150, 150);
+                
+                const scale = 150 / GAME_WIDTH;
+                
+                // 道路
+                miniCtx.fillStyle = 'rgba(100,100,150,0.3)';
+                miniCtx.fillRect(75 - 5, 0, 10, 150);
+                
+                // 实体
+                this.entities.forEach(e => {
+                    miniCtx.fillStyle = e.team === 'blue' ? '#4488ff' : '#ff4444';
+                    if (e instanceof Hero) miniCtx.fillStyle = e.team === 'blue' ? '#88ccff' : '#ff8888';
+                    const size = e instanceof Nexus ? 8 : (e instanceof Tower ? 6 : 3);
+                    miniCtx.fillRect(e.x * scale - size/2, e.y * scale - size/2, size, size);
+                });
+                
+                // 视窗框
+                miniCtx.strokeStyle = '#fff';
+                miniCtx.strokeRect(
+                    this.camera.x * scale,
+                    this.camera.y * scale,
+                    VIEWPORT_WIDTH * scale,
+                    VIEWPORT_HEIGHT * scale
+                );
+            }
+            
+            endGame(victory) {
+                this.gameOver = true;
+                document.getElementById('game-over').style.display = 'block';
+                document.getElementById('result-text').textContent = victory ? '胜利!' : '失败!';
+                document.getElementById('result-text').style.color = victory ? '#44ff44' : '#ff4444';
+                document.getElementById('result-detail').textContent = victory ? '摧毁敌方水晶' : '我方水晶被摧毁';
+            }
+            
+            restart() {
+                this.entities = [];
+                this.particles = [];
+                this.gameOver = false;
+                this.blueScore = 0;
+                this.redScore = 0;
+                this.spawnTimer = 0;
+                document.getElementById('game-over').style.display = 'none';
+                document.getElementById('blueScore').textContent = '0';
+                document.getElementById('redScore').textContent = '0';
+                this.init();
+            }
+            
+            loop() {
+                this.update();
+                this.draw();
+                requestAnimationFrame(() => this.loop());
+            }
+            
+            addParticle(x, y, color, speed = 5, size = 3) {
+                for (let i = 0; i < 8; i++) {
+                    const angle = (Math.PI * 2 * i) / 8;
+                    this.particles.push({
+                        x, y,
+                        vx: Math.cos(angle) * speed * Math.random(),
+                        vy: Math.sin(angle) * speed * Math.random(),
+                        life: 30,
+                        maxLife: 30,
+                        color,
+                        size,
+                        alpha: 1
+                    });
+                }
+            }
+            
+            showFloatingText(x, y, text) {
+                const el = document.createElement('div');
+                el.className = 'floating-text';
+                el.textContent = text;
+                el.style.left = (x - this.camera.x) + 'px';
+                el.style.top = (y - this.camera.y) + 'px';
+                document.getElementById('ui').appendChild(el);
+                setTimeout(() => el.remove(), 1000);
             }
         }
-
-        // 玩家旋转
-        function playerRotate(dir) {
-            if (isPaused || isGameOver) return;
-            const pos = player.pos.x;
-            let offset = 1;
-            rotate(player.matrix, dir);
-            while (collide(arena, player)) {
-                player.pos.x += offset;
-                offset = -(offset + (offset > 0 ? 1 : -1));
-                if (offset > player.matrix[0].length) {
-                    rotate(player.matrix, -dir);
-                    player.pos.x = pos;
+        
+        // 基础实体类
+        class Entity {
+            constructor(x, y, team) {
+                this.x = x;
+                this.y = y;
+                this.team = team;
+                this.vx = 0;
+                this.vy = 0;
+                this.hp = 100;
+                this.maxHp = 100;
+                this.radius = 20;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // 边界检查
+                this.x = Math.max(this.radius, Math.min(GAME_WIDTH - this.radius, this.x));
+                this.y = Math.max(this.radius, Math.min(GAME_HEIGHT - this.radius, this.y));
+            }
+            
+            draw() {
+                // 血条
+                const barWidth = 40;
+                const barHeight = 4;
+                ctx.fillStyle = '#000';
+                ctx.fillRect(this.x - barWidth/2, this.y - this.radius - 10, barWidth, barHeight);
+                
+                ctx.fillStyle = this.team === 'blue' ? '#4488ff' : '#ff4444';
+                ctx.fillRect(this.x - barWidth/2, this.y - this.radius - 10, barWidth * (this.hp/this.maxHp), barHeight);
+            }
+            
+            takeDamage(dmg, attacker) {
+                this.hp -= dmg;
+                game.addParticle(this.x, this.y, '#ff0000', 3, 2);
+                if (this.hp <= 0 && attacker === game.player) {
+                    const points = this instanceof Hero ? 300 : (this instanceof Tower ? 100 : 20);
+                    game.blueScore += points;
+                    document.getElementById('blueScore').textContent = game.blueScore;
+                    game.showFloatingText(this.x, this.y, '+' + points);
+                }
+            }
+        }
+        
+        // 英雄类
+        class Hero extends Entity {
+            constructor(x, y, team) {
+                super(x, y, team);
+                this.hp = 1000;
+                this.maxHp = 1000;
+                this.speed = team === 'blue' ? 5 : 3;
+                this.radius = 25;
+                this.attackRange = 150;
+                this.damage = 100;
+                this.cooldowns = [0, 0];
+                this.maxCooldowns = [120, 300]; // 2秒, 5秒
+                this.angle = 0;
+            }
+            
+            update() {
+                super.update();
+                
+                // 技能冷却
+                this.cooldowns = this.cooldowns.map(c => Math.max(0, c - 1));
+                
+                // AI控制
+                if (this.team === 'red' && !game.gameOver) {
+                    this.aiUpdate();
+                }
+                
+                // 更新技能按钮状态
+                if (this === game.player) {
+                    document.getElementById('skill1').classList.toggle('cooldown', this.cooldowns[0] > 0);
+                    document.getElementById('skill2').classList.toggle('cooldown', this.cooldowns[1] > 0);
+                }
+            }
+            
+            aiUpdate() {
+                // 简单的AI：向玩家移动并攻击
+                const target = game.player;
+                if (!target || target.hp <= 0) return;
+                
+                const dx = target.x - this.x;
+                const dy = target.y - this.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                this.angle = Math.atan2(dy, dx);
+                
+                if (dist > this.attackRange) {
+                    this.vx = (dx/dist) * this.speed * 0.5;
+                    this.vy = (dy/dist) * this.speed * 0.5;
+                } else {
+                    this.vx *= 0.8;
+                    this.vy *= 0.8;
+                    if (Math.random() < 0.05) this.attack();
+                    if (Math.random() < 0.02 && this.cooldowns[0] === 0) this.useSkill(1);
+                }
+            }
+            
+            attack() {
+                // 寻找最近敌人
+                let nearest = null;
+                let minDist = this.attackRange;
+                
+                game.entities.forEach(e => {
+                    if (e !== this && e.team !== this.team && e.hp > 0) {
+                        const dist = Math.hypot(e.x - this.x, e.y - this.y);
+                        if (dist < minDist) {
+                            minDist = dist;
+                            nearest = e;
+                        }
+                    }
+                });
+                
+                if (nearest) {
+                    this.angle = Math.atan2(nearest.y - this.y, nearest.x - this.x);
+                    game.entities.push(new Projectile(
+                        this.x, this.y, 
+                        Math.cos(this.angle) * 10, 
+                        Math.sin(this.angle) * 10,
+                        this.damage,
+                        this.team
+                    ));
+                }
+            }
+            
+            useSkill(num) {
+                if (this.cooldowns[num-1] > 0) return;
+                
+                this.cooldowns[num-1] = this.maxCooldowns[num-1];
+                
+                if (num === 1) {
+                    // 技能1：范围伤害
+                    game.addParticle(this.x, this.y, '#ffff00', 8, 5);
+                    game.entities.forEach(e => {
+                        if (e.team !== this.team && Math.hypot(e.x - this.x, e.y - this.y) < 200) {
+                            e.takeDamage(this.damage * 1.5, this);
+                        }
+                    });
+                } else if (num === 2) {
+                    // 技能2：冲刺
+                    this.vx = Math.cos(this.angle) * 20;
+                    this.vy = Math.sin(this.angle) * 20;
+                    this.invulnerable = 30;
+                }
+            }
+            
+            draw() {
+                // 身体
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                
+                // 选中圈
+                if (this === game.player) {
+                    ctx.strokeStyle = '#ffff00';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.radius + 5, 0, Math.PI*2);
+                    ctx.stroke();
+                }
+                
+                // 方向指示器
+                if (this.team === 'blue') {
+                    ctx.rotate(this.angle);
+                }
+                
+                // 英雄身体
+                ctx.fillStyle = this.team === 'blue' ? '#4488ff' : '#ff4444';
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI*2);
+                ctx.fill();
+                
+                // 装饰
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(this.radius/2, 0, 5, 0, Math.PI*2);
+                ctx.fill();
+                
+                ctx.restore();
+                
+                super.draw();
+            }
+        }
+        
+        // 小兵类
+        class Minion extends Entity {
+            constructor(x, y, team) {
+                super(x, y, team);
+                this.hp = 200;
+                this.maxHp = 200;
+                this.speed = 2;
+                this.damage = 30;
+                this.radius = 15;
+                this.targetY = team === 'blue' ? 0 : GAME_HEIGHT;
+            }
+            
+            update() {
+                super.update();
+                
+                // 向敌方移动
+                const dy = this.targetY - this.y;
+                const dir = dy > 0 ? 1 : -1;
+                this.vy = dir * this.speed;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                
+                // 自动攻击
+                if (Math.random() < 0.02) {
+                    let target = null;
+                    let minDist = 100;
+                    
+                    game.entities.forEach(e => {
+                        if (e.team !== this.team && (e instanceof Minion || e instanceof Hero)) {
+                            const dist = Math.hypot(e.x - this.x, e.y - this.y);
+                            if (dist < minDist) {
+                                minDist = dist;
+                                target = e;
+                            }
+                        }
+                    });
+                    
+                    if (target) {
+                        target.takeDamage(this.damage, this);
+                    }
+                }
+            }
+            
+            draw() {
+                ctx.fillStyle = this.team === 'blue' ? '#6666ff' : '#ff6666';
+                ctx.fillRect(this.x - 10, this.y - 10, 20, 20);
+                super.draw();
+            }
+        }
+        
+        // 防御塔类
+        class Tower extends Entity {
+            constructor(x, y, team) {
+                super(x, y, team);
+                this.hp = 2000;
+                this.maxHp = 2000;
+                this.radius = 40;
+                this.damage = 150;
+                this.attackRange = 250;
+                this.cooldown = 0;
+            }
+            
+            update() {
+                if (this.cooldown > 0) this.cooldown--;
+                
+                // 自动攻击敌人
+                if (this.cooldown === 0) {
+                    let target = null;
+                    let minDist = this.attackRange;
+                    
+                    game.entities.forEach(e => {
+                        if (e.team !== this.team && (e instanceof Hero || e instanceof Minion)) {
+                            const dist = Math.hypot(e.x - this.x, e.y - this.y);
+                            if (dist < minDist) {
+                                minDist = dist;
+                                target = e;
+                            }
+                        }
+                    });
+                    
+                    if (target) {
+                        game.entities.push(new Projectile(
+                            this.x, this.y,
+                            (target.x - this.x) / minDist * 8,
+                            (target.y - this.y) / minDist * 8,
+                            this.damage,
+                            this.team
+                        ));
+                        this.cooldown = 60;
+                    }
+                }
+            }
+            
+            draw() {
+                ctx.fillStyle = this.team === 'blue' ? '#4444aa' : '#aa4444';
+                ctx.fillRect(this.x - 30, this.y - 30, 60, 60);
+                
+                // 塔顶
+                ctx.fillStyle = '#gold';
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y - 40);
+                ctx.lineTo(this.x + 20, this.y - 20);
+                ctx.lineTo(this.x - 20, this.y - 20);
+                ctx.fill();
+                
+                super.draw();
+            }
+        }
+        
+        // 水晶类
+        class Nexus extends Entity {
+            constructor(x, y, team) {
+                super(x, y, team);
+                this.hp = 5000;
+                this.maxHp = 5000;
+                this.radius = 50;
+            }
+            
+            draw() {
+                // 底座
+                ctx.fillStyle = this.team === 'blue' ? '#000088' : '#880000';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+                ctx.fill();
+                
+                // 水晶效果
+                const time = Date.now() / 1000;
+                ctx.fillStyle = this.team === 'blue' ? `rgba(100,150,255,${0.5 + Math.sin(time*3)*0.3})` : 
+                                                      `rgba(255,100,100,${0.5 + Math.sin(time*3)*0.3})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius * 0.7, 0, Math.PI*2);
+                ctx.fill();
+                
+                super.draw();
+            }
+        }
+        
+        // 子弹类
+        class Projectile extends Entity {
+            constructor(x, y, vx, vy, damage, team) {
+                super(x, y, team);
+                this.vx = vx;
+                this.vy = vy;
+                this.damage = damage;
+                this.life = 60;
+                this.radius = 5;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life--;
+                
+                if (this.life <= 0) {
+                    this.hp = 0;
                     return;
                 }
+                
+                // 碰撞检测
+                game.entities.forEach(e => {
+                    if (e.team !== this.team && !(e instanceof Projectile)) {
+                        const dist = Math.hypot(e.x - this.x, e.y - this.y);
+                        if (dist < e.radius + this.radius) {
+                            e.takeDamage(this.damage, game.player);
+                            this.hp = 0;
+                            game.addParticle(this.x, this.y, '#ffff00', 4, 3);
+                        }
+                    }
+                });
+            }
+            
+            draw() {
+                ctx.fillStyle = this.team === 'blue' ? '#88ccff' : '#ff8888';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+                ctx.fill();
+                
+                // 尾迹
+                ctx.strokeStyle = this.team === 'blue' ? 'rgba(136,204,255,0.3)' : 'rgba(255,136,136,0.3)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x - this.vx*3, this.y - this.vy*3);
+                ctx.stroke();
             }
         }
-
-        // 更新分数UI
-        function updateScore() {
-            document.getElementById('score').innerText = player.score;
-            document.getElementById('level').innerText = player.level;
-        }
-
-        // 游戏结束
-        function gameOver() {
-            isGameOver = true;
-            isPaused = true;
-            cancelAnimationFrame(animationId);
-            
-            const overlay = document.getElementById('overlay');
-            const title = document.getElementById('overlay-title');
-            const msg = document.getElementById('overlay-msg');
-            const btn = document.querySelector('.start-btn');
-            
-            title.innerText = "游戏结束";
-            msg.innerText = `最终得分: ${player.score}`;
-            btn.innerText = "重新开始";
-            
-            overlay.classList.remove('hidden');
-        }
-
-        // 开始游戏
-        function startGame() {
-            // 重置所有状态
-            arena.forEach(row => row.fill(0));
-            player.score = 0;
-            player.level = 1;
-            player.next = null;
-            dropInterval = 1000;
-            updateScore();
-            
-            isGameOver = false;
-            isPaused = false;
-            
-            document.getElementById('overlay').classList.add('hidden');
-            
-            playerReset();
-            update();
-        }
-
-        // 游戏主循环
-        function update(time = 0) {
-            if (isPaused) return;
-
-            const deltaTime = time - lastTime;
-            lastTime = time;
-
-            dropCounter += deltaTime;
-            if (dropCounter > dropInterval) {
-                playerDrop();
-            }
-
-            draw();
-            animationId = requestAnimationFrame(update);
-        }
-
-        // 键盘控制
-        document.addEventListener('keydown', event => {
-            if (isGameOver) return;
-            
-            if (event.keyCode === 37) { // Left
-                playerMove(-1);
-            } else if (event.keyCode === 39) { // Right
-                playerMove(1);
-            } else if (event.keyCode === 40) { // Down
-                playerDrop();
-            } else if (event.keyCode === 38) { // Up
-                playerRotate(1);
-            }
-        });
-
+        
+        // 启动游戏
+        const game = new Game();
+        
+        // 防止页面滚动
+        document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
     </script>
 
   <!-- YXJ-PLATFORM-UI-START -->
@@ -1662,11 +2017,11 @@ body {
     <div class="tiktok-author-details" style="display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;min-height:32px!important;gap:2px!important;">
       <div class="tiktok-author-name-row" style="display:flex!important;flex-direction:row!important;align-items:center!important;gap:10px!important;">
         <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">游戏家用户</span>
-        <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="12351cd0-ac53-43bf-8e14-50913b352442" onclick="toggleFollow()">
+        <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="6d5b65b2-c76d-4c94-8598-a5b1d4fd3570" onclick="toggleFollow()">
           <span class="follow-icon">+</span> 关注
         </button>
       </div>
-      <span class="tiktok-publish-time" style="display:block!important;margin:0!important;padding:0!important;">发布于 2026年2月2日</span>
+      
     </div>
   </div>
 </div>
@@ -1792,9 +2147,9 @@ body {
 
 <script>
 // 获取游戏ID和作者信息
-const gameId = 'ac740812-2832-4b21-aeb1-dfdd52ed4bfc';
-const gameTitle = '俄罗斯方块 - HTML5版';
-const authorToken = '12351cd0-ac53-43bf-8e14-50913b352442';
+const gameId = 'b75a2f52-7315-4a36-9529-f83a5160d1d2';
+const gameTitle = '王者荣耀 Kimi2.5版';
+const authorToken = '6d5b65b2-c76d-4c94-8598-a5b1d4fd3570';
 const authorName = '游戏家用户';
 const API_BASE = '/api/games';
 
