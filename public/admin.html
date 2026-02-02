@@ -567,6 +567,7 @@
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('dashboard')">📊 仪表盘</button>
       <button class="tab-btn" onclick="switchTab('config')">⚙️ 系统配置</button>
+      <button class="tab-btn" onclick="switchTab('miniprogram')">📱 小程序</button>
       <button class="tab-btn" onclick="switchTab('promo')">🎁 积分管理</button>
       <button class="tab-btn" onclick="switchTab('models')">🤖 大模型</button>
       <button class="tab-btn" onclick="switchTab('games')">🎮 游戏管理</button>
@@ -738,6 +739,50 @@
       </div>
 
       <button class="btn-save" onclick="saveConfig()">💾 保存配置</button>
+    </div>
+
+    <!-- 小程序配置 -->
+    <div class="tab-content" id="tab-miniprogram">
+      <div class="config-section">
+        <h2>📱 小程序功能开关</h2>
+        <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1rem;">
+          以下设置仅影响微信小程序端，不会影响网页版的功能。
+        </p>
+        <div class="config-grid">
+          <div class="config-item" style="grid-column: 1 / -1;">
+            <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+              <input type="checkbox" id="config-miniprogram_comment_disabled"
+                style="width: 20px; height: 20px; cursor: pointer;">
+              <span>禁用小程序评论功能</span>
+            </label>
+            <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.5rem; margin-left: 2rem;">
+              启用后，小程序中将隐藏所有评论相关的UI（评论区、评论输入框、评论数统计），用户无法在小程序中发表或查看评论。
+            </p>
+          </div>
+          <div class="config-item" style="grid-column: 1 / -1; margin-top: 1rem;">
+            <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+              <input type="checkbox" id="config-miniprogram_llm_disabled"
+                style="width: 20px; height: 20px; cursor: pointer;">
+              <span>禁用小程序LLM设置功能</span>
+            </label>
+            <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.5rem; margin-left: 2rem;">
+              启用后，小程序中将隐藏LLM设置入口，用户无法在小程序中配置自定义LLM模型和API Key。
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h2>💡 配置说明</h2>
+        <div style="color: #94a3b8; font-size: 0.875rem; line-height: 1.8;">
+          <p>• <strong>评论功能</strong>：关闭后，游戏详情页不显示评论区，也不显示评论数统计</p>
+          <p>• <strong>LLM设置</strong>：关闭后，"我的"页面不显示LLM设置入口</p>
+          <p>• 以上设置<span style="color: #fbbf24;">仅对小程序有效</span>，网页版功能不受影响</p>
+          <p>• 修改后需要用户重新打开小程序才能生效</p>
+        </div>
+      </div>
+
+      <button class="btn-save" onclick="saveMiniprogramConfig()">💾 保存小程序配置</button>
     </div>
 
     <!-- 积分管理 -->
@@ -1908,6 +1953,48 @@
         const data = await response.json();
         if (data.success) {
           showToast('配置已保存', 'success');
+        } else {
+          showToast(data.error || '保存失败', 'error');
+        }
+      } catch (error) {
+        showToast('保存失败', 'error');
+      }
+    }
+
+    // 保存小程序配置
+    async function saveMiniprogramConfig() {
+      // 小程序专属配置项（复选框类型）
+      const miniprogramCheckboxKeys = [
+        'miniprogram_comment_disabled',
+        'miniprogram_llm_disabled'
+      ];
+      
+      const configs = [];
+      
+      // 处理复选框配置
+      miniprogramCheckboxKeys.forEach(key => {
+        const checkbox = document.getElementById('config-' + key);
+        if (checkbox) {
+          configs.push({
+            key,
+            value: checkbox.checked ? 'true' : 'false'
+          });
+        }
+      });
+      
+      try {
+        const response = await fetch('/api/admin/config', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ configs })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast('小程序配置已保存', 'success');
         } else {
           showToast(data.error || '保存失败', 'error');
         }

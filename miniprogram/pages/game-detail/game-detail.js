@@ -30,10 +30,18 @@ Page({
     isOwner: false,
     isSelfGame: false,  // 是否是自己的游戏
     repairing: false,
-    repairCost: 0.5
+    repairCost: 0.5,
+    
+    // 功能开关（从全局配置读取）
+    commentDisabled: false
   },
 
   onLoad(options) {
+    // 从全局配置读取评论禁用状态
+    this.setData({
+      commentDisabled: app.globalData.miniprogramCommentDisabled === true
+    });
+    
     if (options.id) {
       this.setData({ gameId: options.id });
       this.loadGameDetail(options.id);

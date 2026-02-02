@@ -35,7 +35,8 @@
           <text class="stat-value">{{likeCount}}</text>
           <text class="stat-label">点赞</text>
         </view>
-        <view class="stat-item">
+        <!-- 评论统计：评论功能禁用时隐藏 -->
+        <view class="stat-item" wx:if="{{!commentDisabled}}">
           <text class="stat-icon">💬</text>
           <text class="stat-value">{{commentCount}}</text>
           <text class="stat-label">评论</text>
@@ -97,8 +98,8 @@
       </view>
     </view>
 
-    <!-- 评论区 -->
-    <view class="comments-section">
+    <!-- 评论区：评论功能禁用时完全隐藏 -->
+    <view class="comments-section" wx:if="{{!commentDisabled}}">
       <view class="section-header">
         <text class="section-title">💬 评论</text>
         <text class="section-count">{{comments.length}}条</text>

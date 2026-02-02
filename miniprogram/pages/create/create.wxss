@@ -2,7 +2,7 @@
  * 创作页面 - 首页样式
  */
 
- .page-container {
+.page-container {
   min-height: 100vh;
   background: linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%);
   display: flex;

@@ -27,6 +27,15 @@ Page({
   },
 
   onLoad() {
+    // 检查LLM功能是否被禁用
+    if (app.globalData.miniprogramLLMDisabled === true) {
+      app.showToast('该功能暂未开放');
+      setTimeout(() => {
+        wx.navigateBack();
+      }, 1500);
+      return;
+    }
+    
     this.loadSettings();
   },
 

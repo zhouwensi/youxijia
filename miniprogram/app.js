@@ -24,7 +24,10 @@ App({
     isLoggedIn: false,
     config: config,
     // 站点配置是否已加载
-    siteConfigLoaded: false
+    siteConfigLoaded: false,
+    // 小程序功能开关（默认都开启）
+    miniprogramCommentDisabled: false,
+    miniprogramLLMDisabled: false
   },
 
   onLaunch() {
@@ -52,8 +55,17 @@ App({
         if (result.version) {
           this.globalData.config.version = result.version;
         }
+        
+        // 小程序功能开关配置
+        this.globalData.miniprogramCommentDisabled = result.miniprogramCommentDisabled === true;
+        this.globalData.miniprogramLLMDisabled = result.miniprogramLLMDisabled === true;
+        
         this.globalData.siteConfigLoaded = true;
         console.log('站点配置加载成功:', this.globalData.config.miniprogramName);
+        console.log('小程序功能开关:', { 
+          commentDisabled: this.globalData.miniprogramCommentDisabled,
+          llmDisabled: this.globalData.miniprogramLLMDisabled 
+        });
       }
     } catch (err) {
       console.error('加载站点配置失败:', err);

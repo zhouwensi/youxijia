@@ -5276,6 +5276,10 @@ app.get('/api/site-config', (req, res) => {
     const miniprogramAppId = getConfig('miniprogram_appid', '');
     const miniprogramPath = getConfig('miniprogram_default_path', '/pages/create/create');
     
+    // 小程序功能开关配置（仅影响小程序，不影响网站）
+    const miniprogramCommentDisabled = getConfig('miniprogram_comment_disabled', 'false') === 'true';
+    const miniprogramLLMDisabled = getConfig('miniprogram_llm_disabled', 'false') === 'true';
+    
     res.json({
       success: true,
       // 直接返回字段（供前端页面使用）
@@ -5283,13 +5287,18 @@ app.get('/api/site-config', (req, res) => {
       siteSlogan: siteSlogan,
       miniprogramName: miniprogramName,
       webWriteDisabled: webWriteDisabled,
+      // 小程序功能开关（仅小程序使用）
+      miniprogramCommentDisabled: miniprogramCommentDisabled,
+      miniprogramLLMDisabled: miniprogramLLMDisabled,
       // 同时返回 config 对象（兼容旧版）
       config: {
         webWriteDisabled: webWriteDisabled,
         miniprogram: {
           name: miniprogramName,
           appId: miniprogramAppId,
-          defaultPath: miniprogramPath
+          defaultPath: miniprogramPath,
+          commentDisabled: miniprogramCommentDisabled,
+          llmDisabled: miniprogramLLMDisabled
         }
       }
     });

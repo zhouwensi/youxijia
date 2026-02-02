@@ -41,10 +41,18 @@ Page({
     
     // 昵称编辑弹窗
     showNicknameModal: false,
-    nicknameInput: ''
+    nicknameInput: '',
+    
+    // 功能开关（从全局配置读取）
+    llmDisabled: false
   },
 
   onLoad() {
+    // 从全局配置读取LLM禁用状态
+    this.setData({
+      llmDisabled: app.globalData.miniprogramLLMDisabled === true
+    });
+    
     this.checkLoginStatus();
   },
 
@@ -53,6 +61,11 @@ Page({
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 2 });
     }
+    
+    // 刷新LLM禁用状态（配置可能在运行时更新）
+    this.setData({
+      llmDisabled: app.globalData.miniprogramLLMDisabled === true
+    });
     
     this.checkLoginStatus();
     if (app.globalData.isLoggedIn) {

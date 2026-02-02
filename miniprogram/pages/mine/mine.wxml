@@ -128,7 +128,8 @@
 
   <!-- 更多功能菜单 -->
   <view class="menu-card" wx:if="{{isLoggedIn}}">
-    <view class="menu-item" bindtap="goToLLMSettings">
+    <!-- LLM设置入口：LLM功能禁用时隐藏 -->
+    <view class="menu-item" bindtap="goToLLMSettings" wx:if="{{!llmDisabled}}">
       <view class="menu-left">
         <text class="menu-icon">🤖</text>
         <text class="menu-name">LLM 设置</text>
