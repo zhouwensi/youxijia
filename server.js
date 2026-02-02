@@ -4961,18 +4961,34 @@ app.post('/api/wechat/login', async (req, res) => {
           let account = db.prepare('SELECT * FROM user_accounts WHERE wechat_openid = ?').get(openid);
           
           if (!account) {
-            // 创建新用户
-            const userToken = uuidv4();
-            const accountId = 'WX' + Math.random().toString(36).substr(2, 6).toUpperCase();
+            // 未找到账户，检查是否有 mock openId 需要升级
+            // 通过小程序端传来的 token 查找现有账户
+            const existingToken = req.body.token || req.headers['x-user-token'];
+            if (existingToken) {
+              const existingAccount = db.prepare('SELECT * FROM user_accounts WHERE user_token = ?').get(existingToken);
+              if (existingAccount && existingAccount.wechat_openid && existingAccount.wechat_openid.startsWith('mock_')) {
+                // 将 mock openId 升级为真实 openId
+                db.prepare('UPDATE user_accounts SET wechat_openid = ? WHERE user_token = ?').run(openid, existingToken);
+                account = db.prepare('SELECT * FROM user_accounts WHERE user_token = ?').get(existingToken);
+                console.log('[WECHAT] 升级 mock openId 为真实 openId:', account.account_id);
+              }
+            }
             
-            db.prepare(`
-              INSERT INTO user_accounts (user_token, account_id, nickname, wechat_openid, created_at)
-              VALUES (?, ?, ?, ?, datetime('now'))
-            `).run(userToken, accountId, '微信用户', openid);
-            
-            account = db.prepare('SELECT * FROM user_accounts WHERE user_token = ?').get(userToken);
-            console.log('[WECHAT] 创建新用户:', accountId);
+            // 如果仍然没有账户，创建新用户
+            if (!account) {
+              const userToken = uuidv4();
+              const accountId = 'WX' + Math.random().toString(36).substr(2, 6).toUpperCase();
+              
+              db.prepare(`
+                INSERT INTO user_accounts (user_token, account_id, nickname, wechat_openid, created_at)
+                VALUES (?, ?, ?, ?, datetime('now'))
+              `).run(userToken, accountId, '微信用户', openid);
+              
+              account = db.prepare('SELECT * FROM user_accounts WHERE user_token = ?').get(userToken);
+              console.log('[WECHAT] 创建新用户:', accountId);
+            }
           } else {
+            // 用户已存在且 openId 匹配
             console.log('[WECHAT] 用户已存在:', account.account_id);
           }
           
@@ -11008,8 +11024,8 @@ function getRepairApiConfig() {
   const modelApiKey = getConfig(`llm_apikey_${defaultModelId}`, '');
   
   if (modelApiKey) {
-    // 从 AVAILABLE_MODELS 获取模型配置信息
-    const modelConfig = AVAILABLE_MODELS[defaultModelId];
+    // 从 LLM_MODELS 获取模型配置信息
+    const modelConfig = LLM_MODELS[defaultModelId];
     const provider = modelConfig?.provider || 'deepseek';
     const actualModelName = modelConfig?.model || defaultModelId;
     const baseUrl = modelConfig?.baseUrl || 'https://api.deepseek.com';
@@ -11085,7 +11101,9 @@ ${game.code}
 
     // 获取模型的 temperature 配置（某些模型有特殊要求，如 kimi-k2.5 只支持 temperature=1）
     const aiRepairTemperature = apiConfig.modelId ? getModelTemperature(apiConfig.modelId, 0.3) : 0.3;
-    console.log(`[AI-REPAIR] 使用模型: ${apiConfig.model}, Temperature: ${aiRepairTemperature}`);
+    // 获取模型的 max_tokens 配置（不同模型有不同的最大 token 限制，如 DeepSeek 最大 8192）
+    const aiRepairMaxTokens = apiConfig.modelId ? getModelMaxTokens(apiConfig.modelId) : 8192;
+    console.log(`[AI-REPAIR] 使用模型: ${apiConfig.model}, Temperature: ${aiRepairTemperature}, MaxTokens: ${aiRepairMaxTokens}`);
 
     // 调用LLM API
     // 智谱AI使用 /v4/chat/completions 端点
@@ -11103,7 +11121,7 @@ ${game.code}
           { role: 'user', content: repairPrompt }
         ],
         temperature: aiRepairTemperature,
-        max_tokens: 16000
+        max_tokens: aiRepairMaxTokens
       })
     });
     

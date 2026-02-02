@@ -66,6 +66,16 @@ async function sendSubscribeMessage({ openId, templateId, data, page }) {
     throw new Error('发送订阅消息失败：缺少 openId');
   }
   
+  // 检测是否为 mock openId（开发测试模式生成的模拟 ID）
+  if (openId.startsWith('mock_')) {
+    console.warn('[WeChat] 检测到 mock openId，跳过发送订阅消息。用户需重新登录以获取真实 openId');
+    return { 
+      errcode: 0, 
+      errmsg: 'skipped: mock openId detected',
+      skipped: true 
+    };
+  }
+  
   if (!templateId) {
     throw new Error('发送订阅消息失败：缺少 templateId');
   }
