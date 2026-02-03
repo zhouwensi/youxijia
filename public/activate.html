@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>账号激活 - AI游戏工坊</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .activate-container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 420px;
+      width: 100%;
+      overflow: hidden;
+    }
+    
+    .activate-header {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    
+    .activate-header h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+    
+    .activate-header p {
+      opacity: 0.9;
+      font-size: 14px;
+    }
+    
+    .activate-content {
+      padding: 30px;
+    }
+    
+    .user-info {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    
+    .user-avatar {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+      font-size: 28px;
+      color: white;
+    }
+    
+    .user-nickname {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 4px;
+    }
+    
+    .user-account {
+      font-size: 14px;
+      color: #64748b;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+    
+    .form-group input:focus {
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+    
+    .form-group .hint {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 6px;
+    }
+    
+    .btn-primary {
+      width: 100%;
+      padding: 14px 24px;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    }
+    
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .message {
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+    
+    .message.error {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+    }
+    
+    .message.success {
+      background: #f0fdf4;
+      color: #16a34a;
+      border: 1px solid #bbf7d0;
+    }
+    
+    .loading-state, .error-state, .success-state {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    
+    .loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #e5e7eb;
+      border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .error-icon, .success-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 32px;
+    }
+    
+    .error-icon {
+      background: #fef2f2;
+      color: #dc2626;
+    }
+    
+    .success-icon {
+      background: #f0fdf4;
+      color: #16a34a;
+    }
+    
+    .error-state h2, .success-state h2 {
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+    
+    .error-state p, .success-state p {
+      color: #64748b;
+      margin-bottom: 20px;
+    }
+    
+    .btn-secondary {
+      display: inline-block;
+      padding: 10px 20px;
+      background: #f1f5f9;
+      color: #475569;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    
+    .btn-secondary:hover {
+      background: #e2e8f0;
+    }
+    
+    .password-toggle {
+      position: relative;
+    }
+    
+    .password-toggle input {
+      padding-right: 48px;
+    }
+    
+    .password-toggle button {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #9ca3af;
+      cursor: pointer;
+      font-size: 18px;
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="activate-container">
+    <div class="activate-header">
+      <h1 id="page-title">账号激活</h1>
+      <p id="page-subtitle">设置密码后即可在网站登录</p>
+    </div>
+    
+    <div class="activate-content">
+      <!-- 加载状态 -->
+      <div id="loading-state" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>正在验证激活链接...</p>
+      </div>
+      
+      <!-- 错误状态 -->
+      <div id="error-state" class="error-state hidden">
+        <div class="error-icon">✕</div>
+        <h2>激活失败</h2>
+        <p id="error-message">链接无效或已过期</p>
+        <a href="/" class="btn-secondary">返回首页</a>
+      </div>
+      
+      <!-- 成功状态 -->
+      <div id="success-state" class="success-state hidden">
+        <div class="success-icon">✓</div>
+        <h2 id="success-title">激活成功</h2>
+        <p>您现在可以使用账号密码登录网站了</p>
+        <a href="/" class="btn-secondary">返回首页</a>
+      </div>
+      
+      <!-- 表单 -->
+      <div id="form-state" class="hidden">
+        <div class="user-info">
+          <div class="user-avatar" id="user-avatar">🎮</div>
+          <div class="user-nickname" id="user-nickname">用户昵称</div>
+          <div class="user-account" id="user-account">账号ID</div>
+        </div>
+        
+        <div id="form-message" class="message hidden"></div>
+        
+        <form id="activate-form">
+          <div class="form-group">
+            <label for="password">设置密码</label>
+            <div class="password-toggle">
+              <input type="password" id="password" name="password" placeholder="请输入密码" minlength="6" required>
+              <button type="button" id="toggle-password" tabindex="-1">👁</button>
+            </div>
+            <div class="hint">密码长度至少6位</div>
+          </div>
+          
+          <div class="form-group">
+            <label for="confirm-password">确认密码</label>
+            <div class="password-toggle">
+              <input type="password" id="confirm-password" name="confirm-password" placeholder="请再次输入密码" minlength="6" required>
+              <button type="button" id="toggle-confirm" tabindex="-1">👁</button>
+            </div>
+          </div>
+          
+          <button type="submit" class="btn-primary" id="submit-btn">确认激活</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // 获取URL参数
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    
+    // DOM元素
+    const loadingState = document.getElementById('loading-state');
+    const errorState = document.getElementById('error-state');
+    const successState = document.getElementById('success-state');
+    const formState = document.getElementById('form-state');
+    const errorMessage = document.getElementById('error-message');
+    const successTitle = document.getElementById('success-title');
+    const pageTitle = document.getElementById('page-title');
+    const pageSubtitle = document.getElementById('page-subtitle');
+    const userNickname = document.getElementById('user-nickname');
+    const userAccount = document.getElementById('user-account');
+    const userAvatar = document.getElementById('user-avatar');
+    const form = document.getElementById('activate-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const formMessage = document.getElementById('form-message');
+    
+    // 密码显示切换
+    document.getElementById('toggle-password').addEventListener('click', () => {
+      const input = document.getElementById('password');
+      input.type = input.type === 'password' ? 'text' : 'password';
+    });
+    
+    document.getElementById('toggle-confirm').addEventListener('click', () => {
+      const input = document.getElementById('confirm-password');
+      input.type = input.type === 'password' ? 'text' : 'password';
+    });
+    
+    // 显示状态
+    function showState(state) {
+      loadingState.classList.add('hidden');
+      errorState.classList.add('hidden');
+      successState.classList.add('hidden');
+      formState.classList.add('hidden');
+      
+      if (state === 'loading') loadingState.classList.remove('hidden');
+      if (state === 'error') errorState.classList.remove('hidden');
+      if (state === 'success') successState.classList.remove('hidden');
+      if (state === 'form') formState.classList.remove('hidden');
+    }
+    
+    // 显示表单消息
+    function showFormMessage(message, type = 'error') {
+      formMessage.textContent = message;
+      formMessage.className = `message ${type}`;
+      formMessage.classList.remove('hidden');
+    }
+    
+    // 验证Token
+    async function verifyToken() {
+      if (!token) {
+        errorMessage.textContent = '缺少激活Token，请从小程序重新获取链接';
+        showState('error');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/user/verify-activate-token?token=${encodeURIComponent(token)}`);
+        const data = await response.json();
+        
+        if (!data.success) {
+          errorMessage.textContent = data.error || '链接无效或已过期';
+          showState('error');
+          return;
+        }
+        
+        // 更新页面信息
+        if (data.type === 'reset') {
+          pageTitle.textContent = '密码重置';
+          pageSubtitle.textContent = '设置新密码';
+          submitBtn.textContent = '确认重置';
+        }
+        
+        userNickname.textContent = data.user.nickname || '用户';
+        userAccount.textContent = data.user.accountId;
+        userAvatar.textContent = (data.user.nickname || '用')[0];
+        
+        showState('form');
+      } catch (error) {
+        console.error('验证失败:', error);
+        errorMessage.textContent = '网络错误，请稍后重试';
+        showState('error');
+      }
+    }
+    
+    // 提交表单
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirm-password').value;
+      
+      // 验证
+      if (password.length < 6) {
+        showFormMessage('密码长度至少6位');
+        return;
+      }
+      
+      if (password !== confirmPassword) {
+        showFormMessage('两次输入的密码不一致');
+        return;
+      }
+      
+      // 禁用按钮
+      submitBtn.disabled = true;
+      submitBtn.textContent = '处理中...';
+      
+      try {
+        const response = await fetch('/api/user/set-password', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ token, password })
+        });
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+          showFormMessage(data.error || '设置失败');
+          submitBtn.disabled = false;
+          submitBtn.textContent = '确认激活';
+          return;
+        }
+        
+        // 保存JWT到本地存储
+        if (data.jwt) {
+          localStorage.setItem('web_jwt', data.jwt);
+          localStorage.setItem('web_user', JSON.stringify(data.user));
+        }
+        
+        // 显示成功
+        successTitle.textContent = data.message || '激活成功';
+        showState('success');
+        
+      } catch (error) {
+        console.error('提交失败:', error);
+        showFormMessage('网络错误，请稍后重试');
+        submitBtn.disabled = false;
+        submitBtn.textContent = '确认激活';
+      }
+    });
+    
+    // 初始化
+    verifyToken();
+  </script>
+</body>
+</html>

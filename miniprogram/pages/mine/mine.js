@@ -44,7 +44,10 @@ Page({
     nicknameInput: '',
     
     // 功能开关（从全局配置读取）
-    llmDisabled: false
+    llmDisabled: false,
+    
+    // 网站激活状态
+    webActivated: false
   },
 
   onLoad() {
@@ -132,6 +135,9 @@ Page({
       }
 
       this.setData(updates);
+      
+      // 检查网站激活状态（异步，不阻塞主流程）
+      this.checkWebActivateStatus();
 
     } catch (err) {
       console.error('加载用户数据失败:', err);
@@ -516,5 +522,91 @@ Page({
         app.showToast('复制失败，请重试');
       }
     });
+  },
+
+  // 检查网站激活状态
+  async checkWebActivateStatus() {
+    try {
+      const result = await app.request('/api/user/web-status');
+      if (result && result.success) {
+        this.setData({
+          webActivated: result.activated === true
+        });
+      }
+    } catch (err) {
+      console.error('检查网站激活状态失败:', err);
+    }
+  },
+
+  // 生成网站激活链接
+  async generateWebActivateLink() {
+    const isReset = this.data.webActivated;
+    
+    // 确认操作
+    const confirmResult = await new Promise(resolve => {
+      wx.showModal({
+        title: isReset ? '重置网站密码' : '绑定网站账号',
+        content: isReset 
+          ? '将生成一个重置链接，复制后在浏览器打开即可重新设置密码' 
+          : '将生成一个激活链接，复制后在浏览器打开设置密码，即可用账号密码登录网站',
+        confirmText: '生成链接',
+        cancelText: '取消',
+        success: resolve
+      });
+    });
+
+    if (!confirmResult.confirm) return;
+
+    wx.showLoading({ title: '生成中...' });
+
+    try {
+      const result = await app.request('/api/user/generate-activate-token', {
+        method: 'POST',
+        data: { type: isReset ? 'reset' : 'activate' }
+      });
+
+      wx.hideLoading();
+
+      if (!result || !result.success) {
+        // 显示详细错误信息
+        wx.showModal({
+          title: '生成失败',
+          content: result?.error || '未知错误，请稍后重试',
+          showCancel: false,
+          confirmText: '知道了'
+        });
+        return;
+      }
+
+      // 复制链接到剪贴板
+      const url = result.activateUrl;
+      const expiresIn = result.expiresInMinutes || 10;
+
+      wx.setClipboardData({
+        data: url,
+        success: () => {
+          wx.showModal({
+            title: '链接已复制 ✓',
+            content: `请在浏览器中打开此链接完成${isReset ? '密码重置' : '账号激活'}\n\n⏰ 链接${expiresIn}分钟内有效\n🔒 链接仅可使用一次`,
+            confirmText: '知道了',
+            showCancel: false
+          });
+        },
+        fail: () => {
+          // 复制失败，显示链接让用户手动复制
+          wx.showModal({
+            title: '请手动复制链接',
+            content: url,
+            confirmText: '好的',
+            showCancel: false
+          });
+        }
+      });
+
+    } catch (err) {
+      wx.hideLoading();
+      console.error('生成激活链接失败:', err);
+      app.showToast('生成失败，请重试');
+    }
   }
 });

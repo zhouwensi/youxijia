@@ -1421,6 +1421,93 @@ function isWebWriteDisabled() {
   return siteConfig.webWriteDisabled;
 }
 
+// ==================== 网站登录检测 ====================
+
+// 检查网站登录状态
+function isWebLoggedIn() {
+  const jwt = localStorage.getItem('aigame-jwt');
+  return jwt && jwt.length > 0;
+}
+
+// 获取网站登录用户信息
+function getWebUser() {
+  if (!isWebLoggedIn()) return null;
+  return {
+    accountId: localStorage.getItem('aigame-account-id'),
+    nickname: localStorage.getItem('aigame-author-name'),
+    userToken: localStorage.getItem('aigame-user-token')
+  };
+}
+
+// 跳转到网站登录页
+function goToWebLogin() {
+  const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+  window.location.href = '/login.html?return=' + returnUrl;
+}
+
+// 登录提示 Toast 相关
+let loginToastTimer = null;
+let loginToastEl = null;
+
+function ensureLoginToast() {
+  if (loginToastEl) return loginToastEl;
+  loginToastEl = document.getElementById('login-toast');
+  if (loginToastEl) return loginToastEl;
+  
+  // 创建Toast元素和样式
+  if (!document.getElementById('login-toast-style')) {
+    const style = document.createElement('style');
+    style.id = 'login-toast-style';
+    style.textContent = '.login-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(100px);background:rgba(20,20,30,0.95);border:1px solid rgba(99,102,241,0.3);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:10000;opacity:0;transition:all 0.3s ease;box-shadow:0 10px 40px rgba(0,0,0,0.5);}.login-toast.show{transform:translateX(-50%) translateY(0);opacity:1;}.login-toast-text{color:rgba(255,255,255,0.9);font-size:14px;}.login-toast-btn{background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);border:none;color:#fff;padding:6px 14px;border-radius:16px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;}.login-toast-btn:hover{filter:brightness(1.1);}';
+    document.head.appendChild(style);
+  }
+  
+  const toast = document.createElement('div');
+  toast.id = 'login-toast';
+  toast.className = 'login-toast';
+  toast.innerHTML = '<span class="login-toast-text" id="login-toast-text">🔐 登录后可进行此操作</span><button class="login-toast-btn" onclick="goToWebLogin()">去登录</button>';
+  document.body.appendChild(toast);
+  loginToastEl = toast;
+  return toast;
+}
+
+function showLoginToast(message) {
+  const toast = ensureLoginToast();
+  const textEl = document.getElementById('login-toast-text');
+  if (!toast) return;
+  if (textEl) textEl.textContent = message || '🔐 登录后可进行此操作';
+  toast.classList.add('show');
+  if (loginToastTimer) clearTimeout(loginToastTimer);
+  loginToastTimer = setTimeout(() => { toast.classList.remove('show'); }, 3000);
+}
+
+function hideLoginToast() {
+  if (loginToastEl) loginToastEl.classList.remove('show');
+  if (loginToastTimer) clearTimeout(loginToastTimer);
+}
+
+// 检查是否需要网站登录才能互动
+function isWebInteractDisabled() {
+  return siteConfig.webInteractDisabled;
+}
+
+// 要求登录的操作包装器
+function requireWebLogin(actionName, callback) {
+  // 如果全局禁用了网站互动，引导去小程序
+  if (isWebInteractDisabled()) {
+    showMiniprogramGuide(actionName, '/pages/game-detail/game-detail');
+    return false;
+  }
+  // 检查是否已登录
+  if (isWebLoggedIn()) {
+    if (callback && typeof callback === 'function') callback();
+    return true;
+  } else {
+    showLoginToast('🔐 登录后可' + actionName);
+    return false;
+  }
+}
+
 // 获取页面最高的 z-index 值
 function getMaxZIndex() {
   return Math.max(
@@ -1802,11 +1889,8 @@ function openGameEditorPage() {
 
 // 点赞（支持取消）
 function likeGame() {
-  // 检查是否禁用网站写操作
-  if (isWebWriteDisabled()) {
-    showMiniprogramGuide('点赞', '/pages/game-detail/game-detail');
-    return;
-  }
+  // 检查登录状态（requireWebLogin 会处理未登录提示和禁用检测）
+  if (!requireWebLogin('点赞')) return;
   
   const btn = document.getElementById('stat-like-btn');
   const isLiked = btn.classList.contains('liked');
@@ -1859,11 +1943,8 @@ function likeGame() {
 
 // 收藏
 function toggleFavorite() {
-  // 检查是否禁用网站写操作
-  if (isWebWriteDisabled()) {
-    showMiniprogramGuide('收藏', '/pages/game-detail/game-detail');
-    return;
-  }
+  // 检查登录状态（requireWebLogin 会处理未登录提示和禁用检测）
+  if (!requireWebLogin('收藏')) return;
   
   const btn = document.getElementById('stat-fav-btn');
   const countEl = document.getElementById('stat-favs');
@@ -2529,11 +2610,8 @@ async function loadFollowListGame(type) {
 
 // 在列表中切换关注状态
 async function toggleFollowUserGame(targetToken, btn) {
-  // 检查是否禁用网站写操作
-  if (isWebWriteDisabled()) {
-    showMiniprogramGuide('关注用户', '/pages/user/user');
-    return;
-  }
+  // 检查登录状态（requireWebLogin 会处理未登录提示和禁用检测）
+  if (!requireWebLogin('关注')) return;
   
   const userToken = getUserToken();
   if (!userToken) {
@@ -2571,11 +2649,8 @@ async function toggleFollowUserGame(targetToken, btn) {
 
 // 切换关注状态
 function toggleFollow() {
-  // 检查是否禁用网站写操作
-  if (isWebWriteDisabled()) {
-    showMiniprogramGuide('关注用户', '/pages/user/user');
-    return;
-  }
+  // 检查登录状态（requireWebLogin 会处理未登录提示和禁用检测）
+  if (!requireWebLogin('关注')) return;
   
   console.log('[DEBUG] toggleFollow 被调用, authorToken:', authorToken);
   if (!authorToken) {
@@ -2640,11 +2715,8 @@ function toggleFollow() {
 
 // 从主页弹窗切换关注
 function toggleFollowFromProfile(targetToken) {
-  // 检查是否禁用网站写操作
-  if (isWebWriteDisabled()) {
-    showMiniprogramGuide('关注用户', '/pages/user/user');
-    return;
-  }
+  // 检查登录状态（requireWebLogin 会处理未登录提示和禁用检测）
+  if (!requireWebLogin('关注')) return;
   
   const targetUser = targetToken || authorToken;
   if (!targetUser) return;
@@ -2847,11 +2919,8 @@ function escapeHtml(str) {
 
 // 发布留言
 function submitGameComment() {
-  // 检查是否禁用网站写操作
-  if (isWebWriteDisabled()) {
-    showMiniprogramGuide('评论留言', '/pages/game-detail/game-detail');
-    return;
-  }
+  // 检查登录状态（requireWebLogin 会处理未登录提示和禁用检测）
+  if (!requireWebLogin('评论留言')) return;
   
   const inputEl = document.getElementById('game-comment-input');
   const submitBtn = document.getElementById('game-comment-submit');
@@ -2912,6 +2981,9 @@ function submitGameComment() {
 
 // 删除留言
 function deleteGameComment(commentId) {
+  // 检查登录状态
+  if (!requireWebLogin('删除留言')) return;
+  
   if (!confirm('确定要删除这条留言吗？')) return;
   
   fetch('/api/games/' + gameId + '/comments/' + commentId, {
@@ -3878,12 +3950,45 @@ try {
   // 字段已存在，忽略
 }
 
+// 添加网站激活相关字段（如果不存在）
+try {
+  db.exec(`ALTER TABLE user_accounts ADD COLUMN web_activated INTEGER DEFAULT 0`);
+  console.log('[DB] 添加 web_activated 字段成功');
+} catch (e) {
+  // 字段已存在，忽略
+}
+try {
+  db.exec(`ALTER TABLE user_accounts ADD COLUMN activated_at DATETIME`);
+  console.log('[DB] 添加 activated_at 字段成功');
+} catch (e) {
+  // 字段已存在，忽略
+}
+
 // 创建账号索引
 db.exec(`
   CREATE INDEX IF NOT EXISTS idx_user_accounts_account_id ON user_accounts(account_id);
   CREATE INDEX IF NOT EXISTS idx_user_accounts_user_token ON user_accounts(user_token);
   CREATE INDEX IF NOT EXISTS idx_user_accounts_device_fingerprint ON user_accounts(device_fingerprint);
 `);
+
+// ==================== 登录日志表 ====================
+db.exec(`
+  CREATE TABLE IF NOT EXISTS login_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_token TEXT NOT NULL,
+    account_id TEXT,
+    login_type TEXT DEFAULT 'web',
+    ip_address TEXT,
+    user_agent TEXT,
+    device_info TEXT,
+    success INTEGER DEFAULT 1,
+    fail_reason TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_login_logs_user_token ON login_logs(user_token)`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_login_logs_created_at ON login_logs(created_at)`);
+console.log('[DB] 登录日志表初始化完成');
 
 // ==================== 数据迁移：修复默认作者名 ====================
 // 将所有使用默认名称"游戏玩家"的游戏更新为使用账号ID
@@ -4044,6 +4149,9 @@ const defaultConfigs = [
   { key: 'share_text_template', value: '我用一句话做了个游戏《{title}》，快来玩！', description: '分享文案模板，支持{title}变量' },
   { key: 'share_text_weibo', value: '我用一句话做了个游戏：{title} 快来玩！#AI游戏# #一句话生成游戏#', description: '微博分享文案' },
   { key: 'share_text_qq', value: '一句话生成的AI游戏，快来玩！', description: 'QQ分享描述' },
+  // 网站激活配置
+  { key: 'site_url', value: '', description: '网站域名（用于生成激活链接，如 https://youxijia.fun）' },
+  { key: 'activate_token_expire_minutes', value: '10', description: '激活Token有效期（分钟）' },
 ];
 
 const insertConfig = db.prepare(`
@@ -4199,6 +4307,25 @@ db.exec(`
     UNIQUE(follower_token, following_token)
   )
 `);
+
+// ==================== 网站账号激活系统 ====================
+// 创建激活Token表
+db.exec(`
+  CREATE TABLE IF NOT EXISTS web_activate_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    token TEXT UNIQUE NOT NULL,
+    user_token TEXT NOT NULL,
+    type TEXT DEFAULT 'activate',
+    used INTEGER DEFAULT 0,
+    expires_at DATETIME NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_web_activate_tokens_token ON web_activate_tokens(token);
+  CREATE INDEX IF NOT EXISTS idx_web_activate_tokens_user ON web_activate_tokens(user_token);
+`);
+console.log('[DB] 网站激活Token表初始化完成');
 
 // 将积分字段改为支持小数（REAL类型）
 try {
@@ -5280,8 +5407,17 @@ app.post('/api/account/secure-recover', (req, res) => {
 // 获取网站公开配置（用于前端判断功能是否禁用）
 app.get('/api/site-config', (req, res) => {
   try {
-    // 获取网站写操作禁用配置（默认为禁用，即 'true'）
-    const webWriteDisabled = getConfig('web_write_disabled', 'true') === 'true';
+    // 网站功能细粒度权限控制
+    // web_write_disabled: 旧配置，用于兼容（如果为true，则创作和编辑都禁用）
+    const webWriteDisabledLegacy = getConfig('web_write_disabled', 'true') === 'true';
+    
+    // 新的细粒度配置（如果旧配置为true，则这些也为true）
+    const webCreateDisabled = webWriteDisabledLegacy || getConfig('web_create_disabled', 'true') === 'true';  // 创作游戏禁用（默认禁用）
+    const webEditDisabled = webWriteDisabledLegacy || getConfig('web_edit_disabled', 'true') === 'true';      // 编辑/修复游戏禁用（默认禁用）
+    const webInteractDisabled = getConfig('web_interact_disabled', 'false') === 'true';  // 互动功能禁用（点赞/收藏/评论/关注，默认开放）
+    
+    // 兼容旧版：只有当创作和编辑都禁用且互动开放时，才算完全禁用写操作
+    const webWriteDisabled = webCreateDisabled && webEditDisabled;
     
     // 站点名称和标语
     const siteName = getConfig('site_name', 'AI游戏工坊');
@@ -5302,13 +5438,20 @@ app.get('/api/site-config', (req, res) => {
       siteName: siteName,
       siteSlogan: siteSlogan,
       miniprogramName: miniprogramName,
-      webWriteDisabled: webWriteDisabled,
+      // 细粒度权限控制
+      webCreateDisabled: webCreateDisabled,    // 创作游戏禁用
+      webEditDisabled: webEditDisabled,        // 编辑/修复游戏禁用
+      webInteractDisabled: webInteractDisabled, // 互动功能禁用（点赞/收藏/评论/关注）
+      webWriteDisabled: webWriteDisabled,      // 兼容旧版
       // 小程序功能开关（仅小程序使用）
       miniprogramCommentDisabled: miniprogramCommentDisabled,
       miniprogramLLMDisabled: miniprogramLLMDisabled,
       // 同时返回 config 对象（兼容旧版）
       config: {
         webWriteDisabled: webWriteDisabled,
+        webCreateDisabled: webCreateDisabled,
+        webEditDisabled: webEditDisabled,
+        webInteractDisabled: webInteractDisabled,
         miniprogram: {
           name: miniprogramName,
           appId: miniprogramAppId,
@@ -6504,6 +6647,521 @@ app.get('/api/user/is-admin', (req, res) => {
     const isAdmin = isUserAdmin(userToken);
     res.json({ success: true, isAdmin });
   } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==================== 网站账号激活 API ====================
+
+/**
+ * 生成激活Token（小程序调用）
+ * POST /api/user/generate-activate-token
+ * Headers: x-user-token
+ * Body: { type: 'activate' | 'reset' }
+ * Response: { success, activateUrl, expiresAt }
+ */
+app.post('/api/user/generate-activate-token', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '未登录' });
+    }
+    
+    // 获取用户信息
+    const user = db.prepare('SELECT * FROM user_accounts WHERE user_token = ?').get(userToken);
+    if (!user) {
+      return res.status(404).json({ success: false, error: '用户不存在' });
+    }
+    
+    const type = req.body.type || 'activate';
+    
+    // 如果是激活类型，检查是否已经激活
+    if (type === 'activate' && user.web_activated === 1) {
+      return res.status(400).json({ success: false, error: '账号已激活，如需重置密码请选择密码重置' });
+    }
+    
+    // 生成随机Token
+    const crypto = require('crypto');
+    const token = crypto.randomBytes(32).toString('hex');
+    
+    // 计算过期时间
+    const expireMinutes = parseInt(getConfig('activate_token_expire_minutes')) || 10;
+    const expiresAt = new Date(Date.now() + expireMinutes * 60 * 1000);
+    
+    // 删除该用户之前的同类型Token（确保只有一个有效）
+    db.prepare('DELETE FROM web_activate_tokens WHERE user_token = ? AND type = ?').run(userToken, type);
+    
+    // 存储新Token
+    db.prepare(`
+      INSERT INTO web_activate_tokens (token, user_token, type, expires_at)
+      VALUES (?, ?, ?, ?)
+    `).run(token, userToken, type, expiresAt.toISOString());
+    
+    // 生成完整URL
+    const siteUrl = getConfig('site_url') || '';
+    
+    // 检查是否配置了网站域名
+    if (!siteUrl) {
+      // 删除刚创建的Token
+      db.prepare('DELETE FROM web_activate_tokens WHERE token = ?').run(token);
+      return res.status(400).json({ 
+        success: false, 
+        error: '网站域名未配置，请联系管理员在后台设置 site_url' 
+      });
+    }
+    
+    const activateUrl = `${siteUrl}/activate.html?token=${token}`;
+    
+    res.json({
+      success: true,
+      activateUrl,
+      token,
+      type,
+      expiresAt: expiresAt.toISOString(),
+      expiresInMinutes: expireMinutes
+    });
+    
+    console.log(`[激活Token] 用户 ${user.account_id} 生成${type === 'reset' ? '重置' : '激活'}Token，${expireMinutes}分钟后过期`);
+  } catch (error) {
+    console.error('[激活Token] 生成失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * 验证激活Token（网站调用）
+ * GET /api/user/verify-activate-token?token=xxx
+ * Response: { success, user: { accountId, nickname }, type }
+ */
+app.get('/api/user/verify-activate-token', (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) {
+      return res.status(400).json({ success: false, error: '缺少Token参数' });
+    }
+    
+    // 查找Token
+    const tokenRecord = db.prepare(`
+      SELECT * FROM web_activate_tokens WHERE token = ? AND used = 0
+    `).get(token);
+    
+    if (!tokenRecord) {
+      return res.status(404).json({ success: false, error: '无效的激活链接' });
+    }
+    
+    // 检查是否过期
+    if (new Date(tokenRecord.expires_at) < new Date()) {
+      return res.status(400).json({ success: false, error: '激活链接已过期，请重新生成' });
+    }
+    
+    // 获取用户信息
+    const user = db.prepare('SELECT account_id, nickname FROM user_accounts WHERE user_token = ?').get(tokenRecord.user_token);
+    if (!user) {
+      return res.status(404).json({ success: false, error: '用户不存在' });
+    }
+    
+    res.json({
+      success: true,
+      user: {
+        accountId: user.account_id,
+        nickname: user.nickname
+      },
+      type: tokenRecord.type
+    });
+  } catch (error) {
+    console.error('[激活Token] 验证失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * 设置/重置密码（网站调用）
+ * POST /api/user/set-password
+ * Body: { token, password }
+ * Response: { success, jwt }
+ */
+app.post('/api/user/set-password', async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    
+    if (!token || !password) {
+      return res.status(400).json({ success: false, error: '缺少必要参数' });
+    }
+    
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, error: '密码长度至少6位' });
+    }
+    
+    // 查找并验证Token
+    const tokenRecord = db.prepare(`
+      SELECT * FROM web_activate_tokens WHERE token = ? AND used = 0
+    `).get(token);
+    
+    if (!tokenRecord) {
+      return res.status(404).json({ success: false, error: '无效的激活链接' });
+    }
+    
+    if (new Date(tokenRecord.expires_at) < new Date()) {
+      return res.status(400).json({ success: false, error: '激活链接已过期' });
+    }
+    
+    // 加密密码
+    const bcrypt = require('bcrypt');
+    const passwordHash = await bcrypt.hash(password, 10);
+    
+    // 更新用户密码
+    db.prepare(`
+      UPDATE user_accounts 
+      SET password_hash = ?, has_password = 1, web_activated = 1, activated_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      WHERE user_token = ?
+    `).run(passwordHash, tokenRecord.user_token);
+    
+    // 标记Token已使用
+    db.prepare('UPDATE web_activate_tokens SET used = 1 WHERE id = ?').run(tokenRecord.id);
+    
+    // 获取用户信息用于生成JWT
+    const user = db.prepare('SELECT * FROM user_accounts WHERE user_token = ?').get(tokenRecord.user_token);
+    
+    // 生成JWT
+    const jwt = require('jsonwebtoken');
+    const jwtSecret = process.env.JWT_SECRET || 'youxijia-web-secret-2026';
+    const jwtToken = jwt.sign(
+      { 
+        userToken: user.user_token, 
+        accountId: user.account_id,
+        nickname: user.nickname 
+      },
+      jwtSecret,
+      { expiresIn: '30d' }
+    );
+    
+    res.json({
+      success: true,
+      message: tokenRecord.type === 'reset' ? '密码重置成功' : '账号激活成功',
+      jwt: jwtToken,
+      user: {
+        accountId: user.account_id,
+        nickname: user.nickname,
+        userToken: user.user_token
+      }
+    });
+    
+    console.log(`[激活] 用户 ${user.account_id} ${tokenRecord.type === 'reset' ? '重置密码' : '激活账号'}成功`);
+  } catch (error) {
+    console.error('[激活] 设置密码失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * 网站登录（账号+密码）
+ * POST /api/user/web-login
+ * Body: { accountId, password }
+ * Response: { success, jwt, user }
+ */
+app.post('/api/user/web-login', async (req, res) => {
+  const clientIP = req.headers['x-forwarded-for']?.split(',')[0] || req.connection.remoteAddress;
+  const userAgent = req.headers['user-agent'] || '';
+  
+  // 记录登录日志的辅助函数
+  const logLogin = (userToken, accountId, success, failReason = null) => {
+    try {
+      db.prepare(`
+        INSERT INTO login_logs (user_token, account_id, login_type, ip_address, user_agent, success, fail_reason)
+        VALUES (?, ?, 'web', ?, ?, ?, ?)
+      `).run(userToken || '', accountId || '', clientIP, userAgent, success ? 1 : 0, failReason);
+    } catch (e) {
+      console.error('[登录日志] 记录失败:', e);
+    }
+  };
+  
+  try {
+    const { accountId, account, password } = req.body;
+    const loginId = accountId || account; // 兼容两种字段名
+    
+    if (!loginId || !password) {
+      logLogin('', loginId, false, '缺少账号或密码');
+      return res.status(400).json({ success: false, error: '请输入账号和密码' });
+    }
+    
+    // 查找用户（支持账号ID或昵称登录）
+    const user = db.prepare(`
+      SELECT * FROM user_accounts WHERE account_id = ? OR nickname = ?
+    `).get(loginId, loginId);
+    
+    if (!user) {
+      logLogin('', loginId, false, '账号不存在');
+      return res.status(401).json({ success: false, error: '账号不存在' });
+    }
+    
+    if (!user.has_password || !user.password_hash) {
+      logLogin(user.user_token, user.account_id, false, '未设置密码');
+      return res.status(401).json({ success: false, error: '该账号未设置密码，请先在小程序中激活' });
+    }
+    
+    // 验证密码
+    const bcrypt = require('bcrypt');
+    const isValid = await bcrypt.compare(password, user.password_hash);
+    
+    if (!isValid) {
+      logLogin(user.user_token, user.account_id, false, '密码错误');
+      return res.status(401).json({ success: false, error: '密码错误' });
+    }
+    
+    // 生成JWT
+    const jwt = require('jsonwebtoken');
+    const jwtSecret = process.env.JWT_SECRET || 'youxijia-web-secret-2026';
+    const jwtToken = jwt.sign(
+      { 
+        userToken: user.user_token, 
+        accountId: user.account_id,
+        nickname: user.nickname 
+      },
+      jwtSecret,
+      { expiresIn: '30d' }
+    );
+    
+    // 更新最后登录信息
+    db.prepare(`
+      UPDATE user_accounts SET last_ip = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+    `).run(clientIP, user.id);
+    
+    // 记录成功登录日志
+    logLogin(user.user_token, user.account_id, true);
+    
+    res.json({
+      success: true,
+      jwt: jwtToken,
+      user: {
+        accountId: user.account_id,
+        nickname: user.nickname,
+        userToken: user.user_token
+      }
+    });
+    
+    console.log(`[登录] 用户 ${user.account_id} 网站登录成功`);
+  } catch (error) {
+    console.error('[登录] 失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * 验证JWT（网站调用）
+ * GET /api/user/verify-jwt
+ * Headers: Authorization: Bearer xxx
+ * Response: { success, user }
+ */
+app.get('/api/user/verify-jwt', (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ success: false, error: '未登录' });
+    }
+    
+    const token = authHeader.substring(7);
+    const jwt = require('jsonwebtoken');
+    const jwtSecret = process.env.JWT_SECRET || 'youxijia-web-secret-2026';
+    
+    try {
+      const decoded = jwt.verify(token, jwtSecret);
+      
+      // 获取最新用户信息
+      const user = db.prepare('SELECT account_id, nickname, user_token FROM user_accounts WHERE user_token = ?').get(decoded.userToken);
+      
+      if (!user) {
+        return res.status(401).json({ success: false, error: '用户不存在' });
+      }
+      
+      res.json({
+        success: true,
+        user: {
+          accountId: user.account_id,
+          nickname: user.nickname,
+          userToken: user.user_token
+        }
+      });
+    } catch (jwtError) {
+      return res.status(401).json({ success: false, error: 'Token无效或已过期' });
+    }
+  } catch (error) {
+    console.error('[JWT验证] 失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * 获取登录统计（管理员用）
+ * GET /api/admin/login-stats
+ * Response: { success, stats }
+ */
+app.get('/api/admin/login-stats', (req, res) => {
+  try {
+    // 验证管理员权限（通过 admin-token 或 JWT 中的 is_admin）
+    const adminToken = req.headers['x-admin-token'];
+    const configuredAdminToken = process.env.ADMIN_TOKEN || 'your-admin-token';
+    
+    if (adminToken !== configuredAdminToken) {
+      return res.status(403).json({ success: false, error: '无权限' });
+    }
+    
+    // 今日登录次数
+    const todayLogins = db.prepare(`
+      SELECT COUNT(*) as count FROM login_logs 
+      WHERE success = 1 AND date(created_at) = date('now', 'localtime')
+    `).get().count;
+    
+    // 今日独立登录用户数
+    const todayUniqueUsers = db.prepare(`
+      SELECT COUNT(DISTINCT user_token) as count FROM login_logs 
+      WHERE success = 1 AND date(created_at) = date('now', 'localtime') AND user_token != ''
+    `).get().count;
+    
+    // 本周登录次数
+    const weekLogins = db.prepare(`
+      SELECT COUNT(*) as count FROM login_logs 
+      WHERE success = 1 AND created_at >= datetime('now', '-7 days')
+    `).get().count;
+    
+    // 本周独立用户数
+    const weekUniqueUsers = db.prepare(`
+      SELECT COUNT(DISTINCT user_token) as count FROM login_logs 
+      WHERE success = 1 AND created_at >= datetime('now', '-7 days') AND user_token != ''
+    `).get().count;
+    
+    // 总登录次数
+    const totalLogins = db.prepare(`
+      SELECT COUNT(*) as count FROM login_logs WHERE success = 1
+    `).get().count;
+    
+    // 登录失败次数（最近24小时）
+    const failedLogins24h = db.prepare(`
+      SELECT COUNT(*) as count FROM login_logs 
+      WHERE success = 0 AND created_at >= datetime('now', '-1 day')
+    `).get().count;
+    
+    // 最近10条登录记录
+    const recentLogins = db.prepare(`
+      SELECT l.*, u.nickname 
+      FROM login_logs l
+      LEFT JOIN user_accounts u ON l.user_token = u.user_token
+      ORDER BY l.created_at DESC
+      LIMIT 10
+    `).all();
+    
+    // 每日登录趋势（最近7天）
+    const dailyTrend = db.prepare(`
+      SELECT date(created_at) as date, COUNT(*) as count
+      FROM login_logs
+      WHERE success = 1 AND created_at >= datetime('now', '-7 days')
+      GROUP BY date(created_at)
+      ORDER BY date ASC
+    `).all();
+    
+    res.json({
+      success: true,
+      stats: {
+        today: { logins: todayLogins, uniqueUsers: todayUniqueUsers },
+        week: { logins: weekLogins, uniqueUsers: weekUniqueUsers },
+        total: { logins: totalLogins },
+        failed24h: failedLogins24h,
+        recentLogins: recentLogins.map(l => ({
+          id: l.id,
+          accountId: l.account_id,
+          nickname: l.nickname,
+          loginType: l.login_type,
+          ip: l.ip_address,
+          success: l.success === 1,
+          failReason: l.fail_reason,
+          createdAt: l.created_at
+        })),
+        dailyTrend
+      }
+    });
+  } catch (error) {
+    console.error('[登录统计] 获取失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * 获取用户自己的登录历史
+ * GET /api/user/login-history
+ * Headers: Authorization: Bearer xxx
+ * Response: { success, logs }
+ */
+app.get('/api/user/login-history', (req, res) => {
+  try {
+    // 验证JWT
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ success: false, error: '未登录' });
+    }
+    
+    const token = authHeader.substring(7);
+    const jwt = require('jsonwebtoken');
+    const jwtSecret = process.env.JWT_SECRET || 'youxijia-web-secret-2026';
+    
+    let decoded;
+    try {
+      decoded = jwt.verify(token, jwtSecret);
+    } catch (e) {
+      return res.status(401).json({ success: false, error: 'Token无效' });
+    }
+    
+    // 获取用户最近20条登录记录
+    const logs = db.prepare(`
+      SELECT id, login_type, ip_address, success, fail_reason, created_at
+      FROM login_logs
+      WHERE user_token = ?
+      ORDER BY created_at DESC
+      LIMIT 20
+    `).all(decoded.userToken);
+    
+    res.json({
+      success: true,
+      logs: logs.map(l => ({
+        id: l.id,
+        loginType: l.login_type,
+        ip: l.ip_address,
+        success: l.success === 1,
+        failReason: l.fail_reason,
+        createdAt: l.created_at
+      }))
+    });
+  } catch (error) {
+    console.error('[登录历史] 获取失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * 获取用户网站激活状态
+ * GET /api/user/web-status
+ * Headers: x-user-token
+ * Response: { success, activated, activatedAt }
+ */
+app.get('/api/user/web-status', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '未登录' });
+    }
+    
+    const user = db.prepare('SELECT web_activated, activated_at, account_id, nickname FROM user_accounts WHERE user_token = ?').get(userToken);
+    if (!user) {
+      return res.status(404).json({ success: false, error: '用户不存在' });
+    }
+    
+    res.json({
+      success: true,
+      activated: user.web_activated === 1,
+      activatedAt: user.activated_at,
+      accountId: user.account_id,
+      nickname: user.nickname
+    });
+  } catch (error) {
+    console.error('[网站状态] 查询失败:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

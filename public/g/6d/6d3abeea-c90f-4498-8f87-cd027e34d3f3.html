@@ -2236,6 +2236,93 @@ function isWebWriteDisabled() {
   return siteConfig.webWriteDisabled;
 }
 
+// ==================== 网站登录检测 ====================
+
+// 检查网站登录状态
+function isWebLoggedIn() {
+  const jwt = localStorage.getItem('aigame-jwt');
+  return jwt && jwt.length > 0;
+}
+
+// 获取网站登录用户信息
+function getWebUser() {
+  if (!isWebLoggedIn()) return null;
+  return {
+    accountId: localStorage.getItem('aigame-account-id'),
+    nickname: localStorage.getItem('aigame-author-name'),
+    userToken: localStorage.getItem('aigame-user-token')
+  };
+}
+
+// 跳转到网站登录页
+function goToWebLogin() {
+  const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+  window.location.href = '/login.html?return=' + returnUrl;
+}
+
+// 登录提示 Toast 相关
+let loginToastTimer = null;
+let loginToastEl = null;
+
+function ensureLoginToast() {
+  if (loginToastEl) return loginToastEl;
+  loginToastEl = document.getElementById('login-toast');
+  if (loginToastEl) return loginToastEl;
+  
+  // 创建Toast元素和样式
+  if (!document.getElementById('login-toast-style')) {
+    const style = document.createElement('style');
+    style.id = 'login-toast-style';
+    style.textContent = '.login-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(100px);background:rgba(20,20,30,0.95);border:1px solid rgba(99,102,241,0.3);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:10000;opacity:0;transition:all 0.3s ease;box-shadow:0 10px 40px rgba(0,0,0,0.5);}.login-toast.show{transform:translateX(-50%) translateY(0);opacity:1;}.login-toast-text{color:rgba(255,255,255,0.9);font-size:14px;}.login-toast-btn{background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);border:none;color:#fff;padding:6px 14px;border-radius:16px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;}.login-toast-btn:hover{filter:brightness(1.1);}';
+    document.head.appendChild(style);
+  }
+  
+  const toast = document.createElement('div');
+  toast.id = 'login-toast';
+  toast.className = 'login-toast';
+  toast.innerHTML = '<span class="login-toast-text" id="login-toast-text">🔐 登录后可进行此操作</span><button class="login-toast-btn" onclick="goToWebLogin()">去登录</button>';
+  document.body.appendChild(toast);
+  loginToastEl = toast;
+  return toast;
+}
+
+function showLoginToast(message) {
+  const toast = ensureLoginToast();
+  const textEl = document.getElementById('login-toast-text');
+  if (!toast) return;
+  if (textEl) textEl.textContent = message || '🔐 登录后可进行此操作';
+  toast.classList.add('show');
+  if (loginToastTimer) clearTimeout(loginToastTimer);
+  loginToastTimer = setTimeout(() => { toast.classList.remove('show'); }, 3000);
+}
+
+function hideLoginToast() {
+  if (loginToastEl) loginToastEl.classList.remove('show');
+  if (loginToastTimer) clearTimeout(loginToastTimer);
+}
+
+// 检查是否需要网站登录才能互动
+function isWebInteractDisabled() {
+  return siteConfig.webInteractDisabled;
+}
+
+// 要求登录的操作包装器
+function requireWebLogin(actionName, callback) {
+  // 如果全局禁用了网站互动，引导去小程序
+  if (isWebInteractDisabled()) {
+    showMiniprogramGuide(actionName, '/pages/game-detail/game-detail');
+    return false;
+  }
+  // 检查是否已登录
+  if (isWebLoggedIn()) {
+    if (callback && typeof callback === 'function') callback();
+    return true;
+  } else {
+    showLoginToast('🔐 登录后可' + actionName);
+    return false;
+  }
+}
+
 // 获取页面最高的 z-index 值
 function getMaxZIndex() {
   return Math.max(
@@ -2617,11 +2704,8 @@ function openGameEditorPage() {
 
 // 点赞（支持取消）
 function likeGame() {
-  // 检查是否禁用网站写操作
-  if (isWebWriteDisabled()) {
-    showMiniprogramGuide('点赞', '/pages/game-detail/game-detail');
-    return;
-  }
+  // 检查登录状态（requireWebLogin 会处理未登录提示和禁用检测）
+  if (!requireWebLogin('点赞')) return;
   
   const btn = document.getElementById('stat-like-btn');
   const isLiked = btn.classList.contains('liked');
@@ -2674,11 +2758,8 @@ function likeGame() {
 
 // 收藏
 function toggleFavorite() {
-  // 检查是否禁用网站写操作
-  if (isWebWriteDisabled()) {
-    showMiniprogramGuide('收藏', '/pages/game-detail/game-detail');
-    return;
-  }
+  // 检查登录状态（requireWebLogin 会处理未登录提示和禁用检测）
+  if (!requireWebLogin('收藏')) return;
   
   const btn = document.getElementById('stat-fav-btn');
   const countEl = document.getElementById('stat-favs');
@@ -3344,11 +3425,8 @@ async function loadFollowListGame(type) {
 
 // 在列表中切换关注状态
 async function toggleFollowUserGame(targetToken, btn) {
-  // 检查是否禁用网站写操作
-  if (isWebWriteDisabled()) {
-    showMiniprogramGuide('关注用户', '/pages/user/user');
-    return;
-  }
+  // 检查登录状态（requireWebLogin 会处理未登录提示和禁用检测）
+  if (!requireWebLogin('关注')) return;
   
   const userToken = getUserToken();
   if (!userToken) {
@@ -3386,11 +3464,8 @@ async function toggleFollowUserGame(targetToken, btn) {
 
 // 切换关注状态
 function toggleFollow() {
-  // 检查是否禁用网站写操作
-  if (isWebWriteDisabled()) {
-    showMiniprogramGuide('关注用户', '/pages/user/user');
-    return;
-  }
+  // 检查登录状态（requireWebLogin 会处理未登录提示和禁用检测）
+  if (!requireWebLogin('关注')) return;
   
   console.log('[DEBUG] toggleFollow 被调用, authorToken:', authorToken);
   if (!authorToken) {
@@ -3455,11 +3530,8 @@ function toggleFollow() {
 
 // 从主页弹窗切换关注
 function toggleFollowFromProfile(targetToken) {
-  // 检查是否禁用网站写操作
-  if (isWebWriteDisabled()) {
-    showMiniprogramGuide('关注用户', '/pages/user/user');
-    return;
-  }
+  // 检查登录状态（requireWebLogin 会处理未登录提示和禁用检测）
+  if (!requireWebLogin('关注')) return;
   
   const targetUser = targetToken || authorToken;
   if (!targetUser) return;
@@ -3662,11 +3734,8 @@ function escapeHtml(str) {
 
 // 发布留言
 function submitGameComment() {
-  // 检查是否禁用网站写操作
-  if (isWebWriteDisabled()) {
-    showMiniprogramGuide('评论留言', '/pages/game-detail/game-detail');
-    return;
-  }
+  // 检查登录状态（requireWebLogin 会处理未登录提示和禁用检测）
+  if (!requireWebLogin('评论留言')) return;
   
   const inputEl = document.getElementById('game-comment-input');
   const submitBtn = document.getElementById('game-comment-submit');
@@ -3727,6 +3796,9 @@ function submitGameComment() {
 
 // 删除留言
 function deleteGameComment(commentId) {
+  // 检查登录状态
+  if (!requireWebLogin('删除留言')) return;
+  
   if (!confirm('确定要删除这条留言吗？')) return;
   
   fetch('/api/games/' + gameId + '/comments/' + commentId, {

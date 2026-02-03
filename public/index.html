@@ -97,6 +97,110 @@
     .search-trigger-btn svg {
       color: rgba(255, 255, 255, 0.8);
     }
+    
+    /* 顶部栏右侧区域 */
+    .top-bar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    /* 登录按钮 */
+    .login-btn {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      border: none;
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .login-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+    }
+    
+    /* 用户状态按钮 */
+    .user-btn {
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 120px;
+    }
+    .user-btn:hover {
+      background: rgba(99, 102, 241, 0.25);
+      border-color: rgba(99, 102, 241, 0.5);
+    }
+    .user-btn .user-avatar {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+    .user-btn .user-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 70px;
+    }
+    
+    /* 登录提示 Toast */
+    .login-toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(20, 20, 30, 0.95);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 10000;
+      opacity: 0;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+    .login-toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    .login-toast-text {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 14px;
+    }
+    .login-toast-btn {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      border: none;
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 16px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .login-toast-btn:hover {
+      filter: brightness(1.1);
+    }
 
     /* 搜索面板 - 全屏覆盖 */
     .search-panel {
@@ -863,12 +967,24 @@
           <span class="brand-logo">🤖</span>
           <span class="brand-name">AI游戏工坊</span>
         </div>
-        <button class="search-trigger-btn" onclick="openSearchPanel()">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"></circle>
-            <path d="M21 21l-4.35-4.35"></path>
-          </svg>
-        </button>
+        <div class="top-bar-actions">
+          <button class="search-trigger-btn" onclick="openSearchPanel()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="M21 21l-4.35-4.35"></path>
+            </svg>
+          </button>
+          <!-- 登录/用户状态 -->
+          <div id="login-entry">
+            <button class="login-btn" onclick="goToLogin()">登录</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 登录提示 Toast -->
+      <div id="login-toast" class="login-toast">
+        <span class="login-toast-text" id="login-toast-text">🔐 登录后可进行此操作</span>
+        <button class="login-toast-btn" onclick="goToLogin()">去登录</button>
       </div>
       
       <!-- 下拉刷新指示器 -->
@@ -2285,6 +2401,7 @@
 
   <script src="/js/app.js"></script>
   <script src="/js/security.js"></script>
+  <script src="/js/auth.js"></script>
   
   <!-- 搜索功能脚本 -->
   <script>
@@ -2915,6 +3032,8 @@
       return div.innerHTML;
     }
   }
+  
+  // 登录功能已移至 /js/auth.js
   </script>
 </body>
 </html>
