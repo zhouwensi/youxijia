@@ -241,14 +241,51 @@ function escapeHtmlSafe(text) {
   return div.innerHTML;
 }
 
-// 显示用户菜单
+// 显示用户菜单 - 点击头部用户名跳转到个人主页
 function showUserMenu() {
-  const user = getWebUser();
-  const displayName = user.nickname || user.accountId || '用户';
-  
-  // 简单的确认退出
-  if (confirm('当前账号: ' + displayName + '\n\n是否退出登录？')) {
-    webLogout();
+  // 直接跳转到个人主页
+  goToProfile();
+}
+
+// 跳转到个人主页
+function goToProfile() {
+  // 如果是首页 index.html，直接切换到 profile 页面
+  if (window.location.pathname === '/' || window.location.pathname.endsWith('index.html')) {
+    // 调用 app.js 中的 switchBottomNav 或直接操作页面
+    if (typeof directSwitchToProfile === 'function') {
+      directSwitchToProfile();
+    } else if (typeof switchBottomNav === 'function') {
+      // 临时覆盖 webWriteDisabled 检测，因为用户已登录
+      const wasDisabled = window._forceAllowProfile;
+      window._forceAllowProfile = true;
+      
+      // 手动切换到 profile 页面
+      document.querySelectorAll('.bottom-nav .nav-item').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.nav === 'profile');
+      });
+      document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+      });
+      const profilePage = document.getElementById('profile-page');
+      if (profilePage) {
+        profilePage.classList.add('active');
+      }
+      const settingsBtn = document.getElementById('profile-settings-btn');
+      if (settingsBtn) {
+        settingsBtn.classList.add('visible');
+      }
+      document.getElementById('bottom-nav').style.display = 'flex';
+      
+      // 加载个人主页数据
+      if (typeof loadProfilePageData === 'function') {
+        loadProfilePageData();
+      }
+      
+      window._forceAllowProfile = wasDisabled;
+    }
+  } else {
+    // 在其他页面，跳转到首页的个人主页
+    window.location.href = '/?tab=profile';
   }
 }
 

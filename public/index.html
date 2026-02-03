@@ -1416,7 +1416,7 @@
         <span class="nav-icon-create">✨</span>
         <span class="nav-label">创作</span>
       </button>
-      <button class="nav-item" data-nav="profile" onclick="switchBottomNav('profile')">
+      <button class="nav-item" data-nav="profile" onclick="handleProfileNavClick()">
         <span class="nav-icon">👤</span>
         <span class="nav-label">我的</span>
         <span class="nav-badge" id="nav-credits-count">0</span>
@@ -2402,6 +2402,74 @@
   <script src="/js/app.js"></script>
   <script src="/js/security.js"></script>
   <script src="/js/auth.js"></script>
+  
+  <!-- 个人主页导航处理 -->
+  <script>
+  // 处理底部导航"我的"按钮点击
+  function handleProfileNavClick() {
+    // 如果用户已登录，直接进入个人主页
+    if (typeof isWebLoggedIn === 'function' && isWebLoggedIn()) {
+      // 已登录用户直接进入个人主页，绕过 webWriteDisabled 检测
+      goToProfile();
+    } else {
+      // 未登录用户使用原来的逻辑
+      if (typeof switchBottomNav === 'function') {
+        switchBottomNav('profile');
+      }
+    }
+  }
+  
+  // 直接切换到个人主页（供已登录用户使用）
+  function directSwitchToProfile() {
+    // 关闭所有弹窗
+    if (typeof closeAllModals === 'function') {
+      closeAllModals();
+    }
+    
+    // 更新导航栏状态
+    document.querySelectorAll('.bottom-nav .nav-item').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.nav === 'profile');
+    });
+    
+    // 隐藏所有页面，显示个人主页
+    document.querySelectorAll('.page').forEach(page => {
+      page.classList.remove('active');
+    });
+    
+    const profilePage = document.getElementById('profile-page');
+    if (profilePage) {
+      profilePage.classList.add('active');
+    }
+    
+    // 显示设置按钮
+    const settingsBtn = document.getElementById('profile-settings-btn');
+    if (settingsBtn) {
+      settingsBtn.classList.add('visible');
+    }
+    
+    // 显示底部导航
+    document.getElementById('bottom-nav').style.display = 'flex';
+    
+    // 加载个人主页数据
+    if (typeof loadProfilePageData === 'function') {
+      loadProfilePageData();
+    }
+    
+    // 初始化下拉刷新（如果需要）
+    if (!window._profilePullRefreshInited && typeof initPullToRefresh === 'function') {
+      initPullToRefresh('profile-page', 'profile-pull-refresh-indicator', async () => {
+        if (typeof loadProfilePageData === 'function') {
+          await loadProfilePageData();
+        }
+      });
+      window._profilePullRefreshInited = true;
+    }
+  }
+  
+  // 导出全局函数
+  window.handleProfileNavClick = handleProfileNavClick;
+  window.directSwitchToProfile = directSwitchToProfile;
+  </script>
   
   <!-- 搜索功能脚本 -->
   <script>

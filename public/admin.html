@@ -693,15 +693,51 @@
 
       <div class="config-section">
         <h2>🔒 功能开关配置</h2>
-        <div class="config-grid">
-          <div class="config-item" style="grid-column: 1 / -1;">
+        <div class="config-grid" style="grid-template-columns: 1fr;">
+          <!-- 创作游戏开关 -->
+          <div class="config-item" style="grid-column: 1 / -1; padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.2);">
             <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
-              <input type="checkbox" id="config-web_write_disabled" checked
-                style="width: 20px; height: 20px; cursor: pointer;">
-              <span>禁用网站写操作（创作、编辑、修复、评论、点赞、收藏等）</span>
+              <input type="checkbox" id="config-web_create_disabled" checked
+                style="width: 20px; height: 20px; cursor: pointer; accent-color: #6366f1;">
+              <span style="font-weight: 600;">🎨 禁用网站创作功能</span>
             </label>
             <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.5rem; margin-left: 2rem;">
-              启用后，网站上的所有写操作将被禁用，用户点击时会引导到小程序。适合将用户引流到小程序。
+              启用后，用户无法在网站上创作新游戏，点击"创作"按钮会引导到小程序。
+            </p>
+          </div>
+          
+          <!-- 编辑/修复游戏开关 -->
+          <div class="config-item" style="grid-column: 1 / -1; padding: 1rem; background: rgba(245, 158, 11, 0.1); border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.2);">
+            <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+              <input type="checkbox" id="config-web_edit_disabled" checked
+                style="width: 20px; height: 20px; cursor: pointer; accent-color: #f59e0b;">
+              <span style="font-weight: 600;">✏️ 禁用网站编辑/修复功能</span>
+            </label>
+            <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.5rem; margin-left: 2rem;">
+              启用后，用户无法在网站上编辑或修复游戏，相关按钮会引导到小程序。
+            </p>
+          </div>
+          
+          <!-- 互动功能开关 -->
+          <div class="config-item" style="grid-column: 1 / -1; padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2);">
+            <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+              <input type="checkbox" id="config-web_interact_disabled"
+                style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+              <span style="font-weight: 600;">💬 禁用网站互动功能</span>
+            </label>
+            <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.5rem; margin-left: 2rem;">
+              启用后，用户无法在网站上点赞、收藏、评论、关注等，相关操作会引导到小程序。
+              <span style="color: #10b981; font-weight: 500;">（默认关闭，允许网站用户互动）</span>
+            </p>
+          </div>
+          
+          <!-- 兼容性说明 -->
+          <div style="grid-column: 1 / -1; padding: 0.75rem 1rem; background: rgba(30, 41, 59, 0.5); border-radius: 8px; border: 1px dashed rgba(148, 163, 184, 0.3);">
+            <p style="color: #94a3b8; font-size: 0.8rem; margin: 0;">
+              💡 <strong>配置说明：</strong><br>
+              • 创作 + 编辑都禁用 = 旧版"禁用网站写操作"的效果<br>
+              • 可单独开放互动功能，让用户在网站上也能点赞、收藏、评论<br>
+              • 已登录用户始终可以查看自己的个人主页（点赞/收藏/作品列表）
             </p>
           </div>
         </div>
@@ -2080,7 +2116,9 @@
       
       // 复选框类型的配置项
       const checkboxKeys = [
-        'web_write_disabled'
+        'web_create_disabled',
+        'web_edit_disabled',
+        'web_interact_disabled'
       ];
       
       const configs = configKeys.map(key => ({

@@ -4793,6 +4793,14 @@ app.put('/api/account/nickname', (req, res) => {
     
     const trimmedNickname = nickname.trim();
     
+    // 检查昵称是否与其他用户重复
+    const existingUser = db.prepare('SELECT user_token FROM user_accounts WHERE nickname = ? AND user_token != ?')
+      .get(trimmedNickname, userToken);
+    
+    if (existingUser) {
+      return res.status(400).json({ success: false, error: '该昵称已被其他用户使用' });
+    }
+    
     // 更新用户账号表中的昵称
     db.prepare('UPDATE user_accounts SET nickname = ?, updated_at = CURRENT_TIMESTAMP WHERE user_token = ?')
       .run(trimmedNickname, userToken);
