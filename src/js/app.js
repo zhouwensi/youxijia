@@ -611,16 +611,38 @@ function saveUserToken(token) {
 // 初始化账号（支持设备指纹自动恢复）
 async function initAccount() {
   try {
-    // 检查用户是否主动退出过，如果是则清除标记并创建新账号
+    // 检查用户是否主动退出过，如果是则清除标记
     const loggedOut = localStorage.getItem('aigame-logged-out');
     if (loggedOut === 'true') {
       localStorage.removeItem('aigame-logged-out');
-      // 不传设备指纹，创建全新账号
+      // 用户主动退出，设置未登录状态
+      state.account = {
+        accountId: null,
+        nickname: '',
+        hasPassword: false,
+        loaded: true,
+        loggedIn: false
+      };
+      return null;
     }
 
     const currentToken = getUserToken();
+    
+    // 如果没有 token，设置未登录状态
+    if (!currentToken) {
+      console.log('🔐 没有用户Token，设置未登录状态');
+      state.account = {
+        accountId: null,
+        nickname: '',
+        hasPassword: false,
+        loaded: true,
+        loggedIn: false
+      };
+      return null;
+    }
+    
     // 如果用户主动退出过，不使用设备指纹恢复
-    const deviceFingerprint = loggedOut === 'true' ? null : getDeviceFingerprint();
+    const deviceFingerprint = getDeviceFingerprint();
 
     const response = await fetch('/api/account/init', {
       method: 'POST',
@@ -634,6 +656,19 @@ async function initAccount() {
     if (response.ok) {
       const data = await response.json();
 
+      // 检查是否返回了有效账号（未登录时返回 success: false）
+      if (!data.success || !data.account) {
+        console.log('🔐 用户未登录，需要手动登录');
+        state.account = {
+          accountId: null,
+          nickname: '',
+          hasPassword: false,
+          loaded: true,
+          loggedIn: false
+        };
+        return null;
+      }
+
       // 保存服务器返回的 token
       saveUserToken(data.userToken);
 
@@ -642,7 +677,8 @@ async function initAccount() {
         accountId: data.account.accountId,
         nickname: data.account.nickname || '',
         hasPassword: data.account.hasPassword,
-        loaded: true
+        loaded: true,
+        loggedIn: true
       };
 
       // 如果是恢复的账号，提示用户
@@ -2639,11 +2675,27 @@ function switchProfilePageTab(tabName) {
 
 // 加载我的页面数据
 async function loadProfilePageData() {
+  // 检查用户是否已登录
+  const userToken = getUserToken();
+  if (!userToken || !state.account.loggedIn) {
+    console.log('🔐 用户未登录，无法加载个人主页数据');
+    // 显示未登录提示
+    const usernameEl = document.getElementById('profile-page-username');
+    if (usernameEl) usernameEl.textContent = '未登录';
+    return;
+  }
+
   // 优先从服务器获取最新账号信息
   try {
     const accountResponse = await fetch('/api/account', {
-      headers: { 'X-User-Token': getUserToken() }
+      headers: { 'X-User-Token': userToken }
     });
+    
+    if (!accountResponse.ok) {
+      console.error('获取账号信息失败:', accountResponse.status);
+      return;
+    }
+    
     const accountData = await accountResponse.json();
     if (accountData.success && accountData.account) {
       // 更新本地状态
@@ -6748,6 +6800,12 @@ function getGameAuthorToken(gameId) {
 
 // 点赞游戏
 async function likeGame() {
+  // 检查用户是否已登录
+  if (!state.account.loggedIn) {
+    showWriteDisabledTip('like');
+    return;
+  }
+
   // 检查是否禁用网站写操作
   if (isWebWriteDisabled()) {
     showMiniprogramGuide('点赞', '/pages/game-detail/game-detail', state.currentGameId);
@@ -8417,6 +8475,12 @@ async function unfavoriteGame(gameId) {
 
 // 切换收藏状态
 async function toggleFavorite() {
+  // 检查用户是否已登录
+  if (!state.account.loggedIn) {
+    showWriteDisabledTip('favorite');
+    return;
+  }
+
   // 检查是否禁用网站写操作
   if (isWebWriteDisabled()) {
     showMiniprogramGuide('收藏', '/pages/game-detail/game-detail', state.currentGameId);

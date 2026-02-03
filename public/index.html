@@ -974,10 +974,7 @@
               <path d="M21 21l-4.35-4.35"></path>
             </svg>
           </button>
-          <!-- 登录/用户状态 -->
-          <div id="login-entry">
-            <button class="login-btn" onclick="goToLogin()">登录</button>
-          </div>
+          <!-- 用户入口已移至底部"我的"按钮 -->
         </div>
       </div>
       
@@ -2405,17 +2402,41 @@
   
   <!-- 个人主页导航处理 -->
   <script>
+  // 检查用户是否真正登录（同时检查本地jwt和服务端状态）
+  function isReallyLoggedIn() {
+    // 检查本地 jwt
+    const jwt = localStorage.getItem('aigame-jwt');
+    if (!jwt) return false;
+    
+    // 检查 app.js 中的登录状态
+    if (typeof state !== 'undefined' && state.account) {
+      return state.account.loggedIn === true;
+    }
+    
+    // 如果 state 不可用，只依赖 jwt
+    return true;
+  }
+  
+  // 显示登录提示弹窗
+  function showLoginPrompt() {
+    if (typeof showWriteDisabledTip === 'function') {
+      showWriteDisabledTip('profile');  // 显示小程序引导弹窗
+    } else if (typeof goToLogin === 'function') {
+      goToLogin();  // 或者跳转到登录页
+    } else {
+      alert('请先登录');
+    }
+  }
+
   // 处理底部导航"我的"按钮点击
   function handleProfileNavClick() {
-    // 如果用户已登录，直接进入个人主页
-    if (typeof isWebLoggedIn === 'function' && isWebLoggedIn()) {
-      // 已登录用户直接进入个人主页，绕过 webWriteDisabled 检测
+    // 检查用户是否真正登录
+    if (isReallyLoggedIn()) {
+      // 已登录用户直接进入个人主页
       goToProfile();
     } else {
-      // 未登录用户使用原来的逻辑
-      if (typeof switchBottomNav === 'function') {
-        switchBottomNav('profile');
-      }
+      // 未登录用户：显示登录引导弹窗
+      showLoginPrompt();
     }
   }
   

@@ -4612,38 +4612,32 @@ app.post('/api/account/init', (req, res) => {
       }
     }
     
-    // 2. 如果 token 无效，尝试用设备指纹恢复
+    // 2. 禁用设备指纹自动恢复账号（用户退出后需重新登录）
+    // 旧逻辑：if (!account && deviceFingerprint) { 通过设备指纹恢复 }
+    // 现在不再自动恢复，用户必须手动登录
     if (!account && deviceFingerprint) {
-      account = db.prepare('SELECT * FROM user_accounts WHERE device_fingerprint = ?').get(deviceFingerprint);
-      if (account) {
-        console.log('[DEBUG] 通过设备指纹恢复账号:', account.account_id);
-        isRecovered = true;
-        newToken = account.user_token;
+      // 仅记录日志，不再自动恢复
+      const existingByFingerprint = db.prepare('SELECT account_id FROM user_accounts WHERE device_fingerprint = ?').get(deviceFingerprint);
+      if (existingByFingerprint) {
+        console.log('[DEBUG] 设备指纹关联账号存在，但不自动恢复:', existingByFingerprint.account_id);
       }
     }
     
     // 注意：不再使用IP恢复账号，因为IP会变化导致频繁创建新账号
     // 账号识别优先级：token > 设备指纹
     
-    // 3. 都没有，创建新账号
+    // 3. 如果没有有效账号，返回未登录状态（不再自动创建新账号）
     if (!account) {
-      const accountId = getUniqueAccountId();
-      newToken = userToken || require('crypto').randomUUID();
-      
-      db.prepare(`
-        INSERT INTO user_accounts (account_id, nickname, user_token, device_fingerprint, last_ip)
-        VALUES (?, ?, ?, ?, ?)
-      `).run(accountId, '游戏玩家', newToken, deviceFingerprint, clientIP);
-      
-      account = db.prepare('SELECT * FROM user_accounts WHERE user_token = ?').get(newToken);
-      console.log('[DEBUG] 创建新账号:', account.account_id);
-      
-      // 给新用户初始积分
-      const initialCredits = parseInt(db.prepare("SELECT value FROM system_config WHERE key = 'credits_initial'").get()?.value || '3');
-      db.prepare(`
-        INSERT OR IGNORE INTO user_credits (user_token, credits)
-        VALUES (?, ?)
-      `).run(newToken, initialCredits);
+      console.log('[DEBUG] 没有有效账号，返回未登录状态');
+      return res.json({
+        success: false,
+        loggedIn: false,
+        error: 'not_logged_in',
+        message: '请登录',
+        // 提供空的账号对象，防止前端报错
+        userToken: null,
+        account: null
+      });
     } else {
       // 更新设备指纹和IP（如果有变化）
       if (deviceFingerprint || clientIP) {

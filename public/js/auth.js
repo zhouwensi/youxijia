@@ -32,6 +32,24 @@ function goToLogin() {
 let loginToastTimer = null;
 let loginToastElement = null;
 
+// 获取页面中最高的 z-index 值
+function getMaxZIndex() {
+  let maxZ = 0;
+  const elements = document.querySelectorAll('body *');
+  elements.forEach(el => {
+    const style = window.getComputedStyle(el);
+    const position = style.position;
+    // 只检查定位元素（fixed, absolute, relative, sticky）
+    if (position !== 'static') {
+      const zIndex = parseInt(style.zIndex, 10);
+      if (!isNaN(zIndex) && zIndex > maxZ) {
+        maxZ = zIndex;
+      }
+    }
+  });
+  return maxZ;
+}
+
 // 确保Toast元素存在
 function ensureLoginToast() {
   if (loginToastElement) return loginToastElement;
@@ -49,7 +67,7 @@ function ensureLoginToast() {
     <button class="login-toast-btn" onclick="goToLogin()">去登录</button>
   `;
   
-  // 添加样式（如果不存在）
+  // 添加样式（如果不存在）- z-index 会在显示时动态设置
   if (!document.getElementById('login-toast-style')) {
     const style = document.createElement('style');
     style.id = 'login-toast-style';
@@ -66,7 +84,6 @@ function ensureLoginToast() {
         display: flex;
         align-items: center;
         gap: 12px;
-        z-index: 10000;
         opacity: 0;
         transition: all 0.3s ease;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
@@ -111,6 +128,11 @@ function showLoginToast(message) {
   if (textEl) {
     textEl.textContent = message || '🔐 登录后可进行此操作';
   }
+  
+  // 动态计算并设置 z-index，确保始终在最顶层
+  const maxZ = getMaxZIndex();
+  toast.style.zIndex = Math.max(maxZ + 10, 10000);
+  
   toast.classList.add('show');
   
   // 清除之前的定时器
@@ -291,12 +313,15 @@ function goToProfile() {
 
 // 退出登录
 function webLogout() {
+  // 清除所有登录相关的本地存储
   localStorage.removeItem('aigame-jwt');
   localStorage.removeItem('aigame-user-token');
   localStorage.removeItem('aigame-author-token');
   localStorage.removeItem('aigame-account-id');
   localStorage.removeItem('aigame-author-name');
-  updateLoginEntry();
+  
+  // 设置标记，阻止自动初始化创建新账号
+  localStorage.setItem('aigame-logged-out', 'true');
   
   // 尝试调用全局 showToast
   if (typeof showToast === 'function') {
@@ -304,6 +329,11 @@ function webLogout() {
   } else {
     alert('已退出登录');
   }
+  
+  // 刷新页面，确保状态完全清除
+  setTimeout(() => {
+    window.location.reload();
+  }, 500);
 }
 
 // ==================== 初始化 ====================

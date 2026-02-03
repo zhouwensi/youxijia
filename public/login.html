@@ -259,7 +259,7 @@
     
     <div class="tips">
       <div class="tips-title">💡 如何获取账号？</div>
-      <div>在小程序「我的」页面点击「绑定网站账号」，设置密码后即可使用账号ID或昵称登录。</div>
+      <div>在小程序「我的」→「设置」→「绑定网站账号」，设置密码后即可使用账号ID或昵称登录。</div>
     </div>
     
     <form id="loginForm" onsubmit="handleLogin(event)">
@@ -297,15 +297,26 @@
         fetch('/api/user/verify-jwt', {
           headers: { 'Authorization': 'Bearer ' + jwt }
         })
-        .then(r => r.json())
+        .then(r => {
+          // 检查HTTP状态码
+          if (!r.ok) {
+            // JWT无效，清除并保持在登录页面
+            localStorage.removeItem('aigame-jwt');
+            localStorage.removeItem('aigame-user-token');
+            localStorage.removeItem('aigame-account-id');
+            return { success: false };
+          }
+          return r.json();
+        })
         .then(data => {
-          if (data.success) {
-            // 已登录，跳转到首页
-            window.location.href = '/';
+          if (data && data.success) {
+            // 已登录，跳转到返回URL或首页
+            const returnUrl = new URLSearchParams(window.location.search).get('return');
+            window.location.href = returnUrl || '/';
           }
         })
         .catch(() => {
-          // JWT无效，清除
+          // 网络错误，清除JWT
           localStorage.removeItem('aigame-jwt');
         });
       }
@@ -374,6 +385,9 @@
             localStorage.setItem('aigame-author-name', data.user.nickname);
           }
           
+          // 清除退出标记
+          localStorage.removeItem('aigame-logged-out');
+          
           showMessage('登录成功，正在同步数据...', 'success');
           
           // 同步用户数据
@@ -403,7 +417,7 @@
     }
     
     function showActivateTips() {
-      showMessage('请在小程序「我的」页面点击「绑定网站账号」，复制链接到浏览器打开并设置密码。', 'success');
+      showMessage('请在小程序「我的」→「设置」→「绑定网站账号」，复制链接到浏览器打开并设置密码。', 'success');
     }
     
     // 同步用户数据（点赞、收藏列表）

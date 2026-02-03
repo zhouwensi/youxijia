@@ -131,49 +131,7 @@
     </view>
   </scroll-view>
 
-  <!-- 更多功能菜单 -->
-  <view class="menu-card" wx:if="{{isLoggedIn}}">
-    <!-- LLM设置入口：LLM功能禁用时隐藏 -->
-    <view class="menu-item" bindtap="goToLLMSettings" wx:if="{{!llmDisabled}}">
-      <view class="menu-left">
-        <text class="menu-icon">🤖</text>
-        <text class="menu-name">LLM 设置</text>
-      </view>
-      <view class="menu-right">
-        <text class="menu-tip">模型与API Key</text>
-        <text class="menu-arrow">›</text>
-      </view>
-    </view>
-    <view class="menu-item" bindtap="goToWeb">
-      <view class="menu-left">
-        <text class="menu-icon">🌐</text>
-        <text class="menu-name">访问网页版</text>
-      </view>
-      <view class="menu-right">
-        <text class="menu-tip">完整功能</text>
-        <text class="menu-arrow">›</text>
-      </view>
-    </view>
-    <view class="menu-item" bindtap="generateWebActivateLink">
-      <view class="menu-left">
-        <text class="menu-icon">🔗</text>
-        <text class="menu-name">{{webActivated ? '重置网站密码' : '绑定网站账号'}}</text>
-      </view>
-      <view class="menu-right">
-        <text class="menu-tip">{{webActivated ? '已绑定' : '一键激活'}}</text>
-        <text class="menu-arrow">›</text>
-      </view>
-    </view>
-    <view class="menu-item" bindtap="showAbout">
-      <view class="menu-left">
-        <text class="menu-icon">ℹ️</text>
-        <text class="menu-name">关于我们</text>
-      </view>
-      <view class="menu-right">
-        <text class="menu-arrow">›</text>
-      </view>
-    </view>
-  </view>
+  <!-- 设置菜单已移至右上角设置图标⚙️ -->
 
   <!-- 底部安全区 -->
   <view class="safe-area-bottom"></view>

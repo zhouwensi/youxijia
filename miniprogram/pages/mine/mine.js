@@ -358,10 +358,53 @@ Page({
     }
   },
 
-  // 去设置页（目前跳转到LLM设置）
+  // 去设置页 - 弹出设置菜单
   goToSettings() {
-    wx.navigateTo({
-      url: '/pages/llm-settings/llm-settings'
+    const that = this;
+    const llmDisabled = this.data.llmDisabled;
+    const webActivated = this.data.webActivated;
+    
+    // 构建菜单项
+    const menuItems = [];
+    const menuActions = [];
+    
+    // LLM设置（如果未禁用）
+    if (!llmDisabled) {
+      menuItems.push('🤖 LLM 设置');
+      menuActions.push('llm');
+    }
+    
+    // 访问网页版
+    menuItems.push('🌐 访问网页版');
+    menuActions.push('web');
+    
+    // 绑定网站/重置密码
+    menuItems.push(webActivated ? '🔑 重置网站密码' : '🔗 绑定网站账号');
+    menuActions.push('activate');
+    
+    // 关于我们
+    menuItems.push('ℹ️ 关于我们');
+    menuActions.push('about');
+    
+    wx.showActionSheet({
+      itemList: menuItems,
+      success(res) {
+        const action = menuActions[res.tapIndex];
+        switch (action) {
+          case 'llm':
+            that.goToLLMSettings();
+            break;
+          case 'web':
+            that.goToWeb();
+            break;
+          case 'activate':
+            that.generateWebActivateLink();
+            break;
+          case 'about':
+            that.showAbout();
+            break;
+        }
+      }
     });
   },
 
