@@ -496,5 +496,25 @@ Page({
     } finally {
       wx.hideLoading();
     }
+  },
+
+  // 复制账号ID
+  copyAccountId(e) {
+    const accountId = e.currentTarget.dataset.id;
+    
+    if (!accountId) {
+      app.showToast('账号ID不存在');
+      return;
+    }
+
+    wx.setClipboardData({
+      data: accountId,
+      success: () => {
+        app.showToast('账号ID已复制', 'success');
+      },
+      fail: () => {
+        app.showToast('复制失败，请重试');
+      }
+    });
   }
 });

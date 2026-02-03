@@ -2,7 +2,7 @@
  * 我的页面样式 - 增强版
  */
 
-.page-container {
+ .page-container {
   min-height: 100vh;
   background: linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%);
   padding-bottom: env(safe-area-inset-bottom);
@@ -117,9 +117,35 @@
   opacity: 0.6;
 }
 
+.account-id-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
 .account-id {
   font-size: 24rpx;
   color: #8b8b8b;
+}
+
+.copy-btn {
+  padding: 8rpx 12rpx;
+  background: rgba(0, 212, 255, 0.2);
+  border-radius: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.copy-btn:active {
+  background: rgba(0, 212, 255, 0.3);
+  transform: scale(0.95);
+}
+
+.copy-icon {
+  font-size: 20rpx;
+  color: #00d4ff;
 }
 
 .settings-btn {
@@ -529,6 +555,8 @@
 /* 昵称编辑弹窗 */
 .nickname-modal {
   max-height: 50vh;
+  /* 添加底部内边距，避免被 tab bar 遮挡 */
+  padding-bottom: calc(env(safe-area-inset-bottom) + 120rpx);
 }
 
 .nickname-modal .modal-header {
