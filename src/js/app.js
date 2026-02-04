@@ -292,7 +292,7 @@ const state = {
   siteConfig: {
     webWriteDisabled: true,  // 默认禁用写操作
     miniprogram: {
-      name: 'AI游戏工坊',
+      name: 'JustOneWord',
       appId: '',
       defaultPath: '/pages/create/create'
     },
@@ -317,7 +317,7 @@ async function loadSiteConfig() {
         siteSlogan: data.siteSlogan,
         webWriteDisabled: data.webWriteDisabled ?? state.siteConfig.webWriteDisabled,
         miniprogram: {
-          name: data.miniprogramName || data.siteName || 'AI游戏工坊',
+          name: data.miniprogramName || data.siteName || 'JustOneWord',
           appId: data.miniprogramAppId || '',
           defaultPath: data.miniprogramPath || '/pages/create/create'
         },
@@ -338,7 +338,7 @@ async function loadSiteConfig() {
  * 动态更新页面标题和品牌名称
  */
 function updatePageBranding() {
-  const siteName = state.siteConfig.siteName || state.siteConfig.miniprogram?.name || 'AI游戏工坊';
+  const siteName = state.siteConfig.siteName || state.siteConfig.miniprogram?.name || 'JustOneWord';
   const siteSlogan = state.siteConfig.siteSlogan || '一句话生成游戏';
   
   // 更新页面标题
@@ -378,7 +378,7 @@ function showMiniprogramGuide(actionName = '此操作', targetPath = '', gameId 
   const oldModal = document.getElementById('miniprogram-guide-modal');
   if (oldModal) oldModal.remove();
   
-  const mpName = state.siteConfig.miniprogram?.name || 'AI游戏工坊';
+  const mpName = state.siteConfig.miniprogram?.name || 'JustOneWord';
   const appId = state.siteConfig.miniprogram?.appId || '';
   const defaultPath = state.siteConfig.miniprogram?.defaultPath || '/pages/create/create';
   const path = targetPath || defaultPath;
@@ -449,7 +449,7 @@ function showMiniprogramGuide(actionName = '此操作', targetPath = '', gameId 
  * 二维码加载失败时显示替代内容
  */
 function showQrcodeError() {
-  const mpName = state.siteConfig.miniprogram?.name || 'AI游戏工坊';
+  const mpName = state.siteConfig.miniprogram?.name || 'JustOneWord';
   const container = document.getElementById('miniprogram-qrcode-container');
   if (container) {
     container.innerHTML = `

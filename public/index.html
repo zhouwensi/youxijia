@@ -20,7 +20,7 @@
         .then(r => r.json())
         .then(data => {
           if (data.success) {
-            const siteName = data.siteName || 'AI游戏工坊';
+            const siteName = data.siteName || 'JustOneWord';
             const siteSlogan = data.siteSlogan || '一句话生成游戏';
             const fullTitle = siteName + ' - ' + siteSlogan;
             document.title = fullTitle;
@@ -35,7 +35,7 @@
           }
         })
         .catch(function() {
-          document.title = 'AI游戏工坊 - 一句话生成游戏';
+          document.title = 'JustOneWord - 一句话生成游戏';
         });
     })();
   </script>
@@ -965,7 +965,7 @@
       <div class="home-top-bar">
         <div class="top-bar-brand">
           <span class="brand-logo">🤖</span>
-          <span class="brand-name">AI游戏工坊</span>
+          <span class="brand-name">JustOneWord</span>
         </div>
         <div class="top-bar-actions">
           <button class="search-trigger-btn" onclick="openSearchPanel()">

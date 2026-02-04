@@ -1,12 +1,12 @@
 @echo off
 chcp 65001 >nul 2>&1
-title AI游戏工坊 - 停止服务
+title JustOneWord - 停止服务
 color 0C
 
 echo.
 echo ╔══════════════════════════════════════════════════════════════╗
 echo ║                                                              ║
-echo ║              🎮  AI游戏工坊 - 停止服务  🎮                  ║
+echo ║              🎮  JustOneWord - 停止服务  🎮                  ║
 echo ║                                                              ║
 echo ╚══════════════════════════════════════════════════════════════╝
 echo.

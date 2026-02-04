@@ -1677,7 +1677,7 @@ const API_BASE = '/api/games';
 // 网站配置（禁用写操作检查）
 let siteConfig = {
   webWriteDisabled: true,  // 默认禁用，等待API返回
-  miniprogram: { name: 'AI游戏工坊', appId: '', defaultPath: '/pages/create/create' }
+  miniprogram: { name: 'JustOneWord', appId: '', defaultPath: '/pages/create/create' }
 };
 
 // 加载网站配置
@@ -1798,7 +1798,7 @@ function getMaxZIndex() {
 
 // 显示小程序引导弹窗
 function showMiniprogramGuide(actionName, targetPath) {
-  const mpName = siteConfig.miniprogram?.name || 'AI游戏工坊';
+  const mpName = siteConfig.miniprogram?.name || 'JustOneWord';
   const appId = siteConfig.miniprogram?.appId || '';
   const path = targetPath || siteConfig.miniprogram?.defaultPath || '/pages/create/create';
   const fullPath = gameId ? path + '?id=' + gameId : path;
@@ -1842,7 +1842,7 @@ function showMiniprogramGuide(actionName, targetPath) {
 }
 
 function showQrcodeError() {
-  const mpName = siteConfig.miniprogram?.name || 'AI游戏工坊';
+  const mpName = siteConfig.miniprogram?.name || 'JustOneWord';
   const container = document.getElementById('miniprogram-qrcode-container');
   if (container) {
     container.innerHTML = '<div style="text-align:center;padding:1rem;color:#666;"><div style="font-size:2rem;margin-bottom:0.5rem;">🔍</div><p style="font-size:0.75rem;">微信搜索</p><p style="font-size:0.875rem;font-weight:600;color:#333;">' + mpName + '</p></div>';

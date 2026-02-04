@@ -1399,7 +1399,7 @@ const API_BASE = '/api/games';
 // 网站配置（禁用写操作检查）
 let siteConfig = {
   webWriteDisabled: true,  // 默认禁用，等待API返回
-  miniprogram: { name: 'AI游戏工坊', appId: '', defaultPath: '/pages/create/create' }
+  miniprogram: { name: 'JustOneWord', appId: '', defaultPath: '/pages/create/create' }
 };
 
 // 加载网站配置
@@ -1520,7 +1520,7 @@ function getMaxZIndex() {
 
 // 显示小程序引导弹窗
 function showMiniprogramGuide(actionName, targetPath) {
-  const mpName = siteConfig.miniprogram?.name || 'AI游戏工坊';
+  const mpName = siteConfig.miniprogram?.name || 'JustOneWord';
   const appId = siteConfig.miniprogram?.appId || '';
   const path = targetPath || siteConfig.miniprogram?.defaultPath || '/pages/create/create';
   const fullPath = gameId ? path + '?id=' + gameId : path;
@@ -1564,7 +1564,7 @@ function showMiniprogramGuide(actionName, targetPath) {
 }
 
 function showQrcodeError() {
-  const mpName = siteConfig.miniprogram?.name || 'AI游戏工坊';
+  const mpName = siteConfig.miniprogram?.name || 'JustOneWord';
   const container = document.getElementById('miniprogram-qrcode-container');
   if (container) {
     container.innerHTML = '<div style="text-align:center;padding:1rem;color:#666;"><div style="font-size:2rem;margin-bottom:0.5rem;">🔍</div><p style="font-size:0.75rem;">微信搜索</p><p style="font-size:0.875rem;font-weight:600;color:#333;">' + mpName + '</p></div>';
@@ -4138,7 +4138,7 @@ const defaultConfigs = [
   { key: 'credits_action_comment', value: '0.5', description: '评论作品奖励积分' },
   { key: 'credits_action_comment_daily_limit', value: '2', description: '每日评论获取积分上限次数' },
   { key: 'credits_comment_min_length', value: '10', description: '评论获得积分的最低字数' },
-  { key: 'site_name', value: 'AI游戏工坊', description: '网站名称' },
+  { key: 'site_name', value: 'JustOneWord', description: '网站名称' },
   { key: 'site_announcement', value: '', description: '网站公告' },
   // LLM 默认配置
   { key: 'llm_default_model', value: 'deepseek-chat', description: '默认LLM模型' },
@@ -5422,11 +5422,11 @@ app.get('/api/site-config', (req, res) => {
     const webWriteDisabled = webCreateDisabled && webEditDisabled;
     
     // 站点名称和标语
-    const siteName = getConfig('site_name', 'AI游戏工坊');
+    const siteName = getConfig('site_name', 'JustOneWord');
     const siteSlogan = getConfig('site_slogan', '一句话生成游戏');
     
     // 小程序相关配置
-    const miniprogramName = getConfig('miniprogram_name', 'AI游戏工坊');
+    const miniprogramName = getConfig('miniprogram_name', 'JustOneWord');
     const miniprogramAppId = getConfig('miniprogram_appid', '');
     const miniprogramPath = getConfig('miniprogram_default_path', '/pages/create/create');
     
@@ -14355,7 +14355,7 @@ app.post('/api/admin/regenerate-static', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`\n========================================`);
-  console.log(`🎮 AI游戏工坊服务器启动成功！`);
+  console.log(`🎮 JustOneWord服务器启动成功！`);
   console.log(`========================================`);
   console.log(`📍 地址: http://localhost:${PORT}`);
   console.log(`🔒 环境: ${process.env.NODE_ENV || 'development'}`);
