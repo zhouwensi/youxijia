@@ -290,9 +290,12 @@ const state = {
   },
   // 网站功能配置（从后台获取）
   siteConfig: {
-    webWriteDisabled: true,  // 默认禁用写操作
+    webWriteDisabled: false,  // 默认开放写操作（由后台配置控制）
+    webCreateDisabled: false, // 创作功能禁用（细粒度控制）
+    webEditDisabled: false,   // 编辑功能禁用（细粒度控制）
+    webInteractDisabled: false, // 互动功能禁用（细粒度控制）
     miniprogram: {
-      name: 'JustOneWord',
+      name: '一句话游戏',
       appId: '',
       defaultPath: '/pages/create/create'
     },
@@ -315,9 +318,13 @@ async function loadSiteConfig() {
         siteName: data.siteName,
         miniprogramName: data.miniprogramName,
         siteSlogan: data.siteSlogan,
-        webWriteDisabled: data.webWriteDisabled ?? state.siteConfig.webWriteDisabled,
+        // 细粒度权限控制
+        webCreateDisabled: data.webCreateDisabled ?? false,   // 创作功能禁用
+        webEditDisabled: data.webEditDisabled ?? false,       // 编辑功能禁用
+        webInteractDisabled: data.webInteractDisabled ?? false, // 互动功能禁用
+        webWriteDisabled: data.webWriteDisabled ?? false,     // 兼容旧版
         miniprogram: {
-          name: data.miniprogramName || data.siteName || 'JustOneWord',
+          name: data.miniprogramName || data.siteName || '一句话游戏',
           appId: data.miniprogramAppId || '',
           defaultPath: data.miniprogramPath || '/pages/create/create'
         },
@@ -338,7 +345,7 @@ async function loadSiteConfig() {
  * 动态更新页面标题和品牌名称
  */
 function updatePageBranding() {
-  const siteName = state.siteConfig.siteName || state.siteConfig.miniprogram?.name || 'JustOneWord';
+  const siteName = state.siteConfig.siteName || state.siteConfig.miniprogram?.name || '一句话游戏';
   const siteSlogan = state.siteConfig.siteSlogan || '一句话生成游戏';
   
   // 更新页面标题
@@ -360,11 +367,41 @@ function updatePageBranding() {
 }
 
 /**
- * 检查是否禁用写操作
+ * 检查是否禁用写操作（兼容旧版）
  * @returns {boolean}
  */
 function isWebWriteDisabled() {
   return state.siteConfig.webWriteDisabled;
+}
+
+/**
+ * 检查是否禁用创作功能
+ * @returns {boolean}
+ */
+function isWebCreateDisabled() {
+  const result = state.siteConfig.webCreateDisabled;
+  console.log('[DEBUG] isWebCreateDisabled() 检查:', {
+    webCreateDisabled: state.siteConfig.webCreateDisabled,
+    siteConfig: state.siteConfig,
+    result: result
+  });
+  return result;
+}
+
+/**
+ * 检查是否禁用编辑功能
+ * @returns {boolean}
+ */
+function isWebEditDisabled() {
+  return state.siteConfig.webEditDisabled;
+}
+
+/**
+ * 检查是否禁用互动功能
+ * @returns {boolean}
+ */
+function isWebInteractDisabled() {
+  return state.siteConfig.webInteractDisabled;
 }
 
 /**
@@ -378,7 +415,7 @@ function showMiniprogramGuide(actionName = '此操作', targetPath = '', gameId 
   const oldModal = document.getElementById('miniprogram-guide-modal');
   if (oldModal) oldModal.remove();
   
-  const mpName = state.siteConfig.miniprogram?.name || 'JustOneWord';
+  const mpName = state.siteConfig.miniprogram?.name || '一句话游戏';
   const appId = state.siteConfig.miniprogram?.appId || '';
   const defaultPath = state.siteConfig.miniprogram?.defaultPath || '/pages/create/create';
   const path = targetPath || defaultPath;
@@ -449,7 +486,7 @@ function showMiniprogramGuide(actionName = '此操作', targetPath = '', gameId 
  * 二维码加载失败时显示替代内容
  */
 function showQrcodeError() {
-  const mpName = state.siteConfig.miniprogram?.name || 'JustOneWord';
+  const mpName = state.siteConfig.miniprogram?.name || '一句话游戏';
   const container = document.getElementById('miniprogram-qrcode-container');
   if (container) {
     container.innerHTML = `
@@ -1920,11 +1957,736 @@ function checkCreditsForGeneration() {
   return { canGenerate: false, isFree: false, message: '积分不足' };
 }
 
-// 打开无积分提示弹窗
+// 打开无积分提示弹窗（增强版 - 引导至小程序）
 function openNoCreditsModal() {
-  showToast('积分不足，请获取更多积分', 'error');
-  openCreditsModal();
+  showInsufficientCreditsModal();
 }
+
+// 展示积分弹窗（支持"查看积分"和"积分不足"两种模式）
+// mode: 'view' = 查看积分模式, 'insufficient' = 积分不足模式
+async function showInsufficientCreditsModal(requiredCredits = 1, mode = 'insufficient') {
+  // 移除已存在的弹窗
+  const existingModal = document.getElementById('insufficient-credits-modal');
+  if (existingModal) existingModal.remove();
+  
+  const miniprogramName = state.siteConfig?.miniprogram?.name || '游戏家';
+  const qrcodeUrl = '/images/miniprogram.png';
+  
+  // 根据模式设置不同的标题和顶部内容
+  const isViewMode = mode === 'view';
+  const headerTitle = isViewMode ? '💎 我的积分' : '💎 积分不足';
+  const topEmoji = isViewMode ? '💎' : '😢';
+  const topTextColor = isViewMode ? '#10b981' : '#f87171';
+  const topContent = isViewMode 
+    ? `当前积分: <strong>${formatCredits(state.credits)}</strong>`
+    : `当前积分: <strong>${formatCredits(state.credits)}</strong> &nbsp;&nbsp; 需要: <strong>${requiredCredits}</strong> 积分`;
+  
+  // 创建弹窗
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.id = 'insufficient-credits-modal';
+  modal.onclick = (e) => { if (e.target === modal) closeInsufficientCreditsModal(); };
+  
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 480px; max-height: 90vh; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <h3>${headerTitle}</h3>
+        <button class="btn btn-icon btn-close" onclick="closeInsufficientCreditsModal()">×</button>
+      </div>
+      <div class="modal-body" style="padding: 1rem 1.25rem; overflow-y: auto; flex: 1;">
+        <!-- 顶部：积分状态 -->
+        <div style="text-align: center; margin-bottom: 1rem;">
+          <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">${topEmoji}</div>
+          <p style="color: ${topTextColor}; font-size: 0.9375rem; margin-bottom: 0.25rem;">
+            ${topContent}
+          </p>
+        </div>
+        
+        <!-- 小程序二维码区域 -->
+        <div style="background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1)); 
+                    border: 1px solid rgba(99,102,241,0.3); border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
+          <div style="text-align: center; font-size: 0.875rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.75rem;">
+            📱 扫码打开小程序领取积分
+          </div>
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="background: #fff; border-radius: 8px; padding: 8px; flex-shrink: 0;">
+              <img src="${qrcodeUrl}" alt="小程序码" 
+                   style="width: 90px; height: 90px; display: block;"
+                   onerror="this.parentNode.innerHTML='<div style=\\'text-align:center;padding:1rem;font-size:0.75rem;color:#666\\'>扫码失败<br>请搜索「${miniprogramName}」</div>'">
+            </div>
+            <div style="flex: 1; min-width: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+              <div style="font-size: 0.75rem; color: var(--text-muted);">📅 签到 <strong style="color: #10b981;">+1</strong></div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">🏆 领成就 <strong style="color: #10b981;">+N</strong></div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">👥 邀请 <strong style="color: #10b981;">+5</strong></div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">🎬 广告 <span style="color: #94a3b8;">即将开放</span></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 可领取奖励区域（分类显示） -->
+        <div id="credits-modal-claimable" style="margin-bottom: 1rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 1rem;">🎁</span>
+              <span style="font-size: 0.875rem; font-weight: 600; color: var(--text-primary);">可领取奖励</span>
+              <span id="claimable-total-credits" style="font-size: 0.75rem; color: #10b981;">(共 0 积分)</span>
+            </div>
+            <a href="javascript:void(0)" onclick="showMiniprogramClaimTip()" style="font-size: 0.75rem; color: #6366f1; text-decoration: none;">
+              去小程序领取 →
+            </a>
+          </div>
+          <div id="claimable-achievements-list" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+            <div style="text-align: center; padding: 1rem; color: var(--text-muted); font-size: 0.8125rem;">
+              <div class="loading-spinner-small" style="margin: 0 auto 0.5rem;"></div>
+              加载中...
+            </div>
+          </div>
+        </div>
+        
+        <!-- 进行中区域（带进度条） -->
+        <div id="credits-modal-inprogress" style="margin-bottom: 1rem; display: none;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+            <span style="font-size: 1rem;">📈</span>
+            <span style="font-size: 0.875rem; font-weight: 600; color: var(--text-primary);">进行中</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">(继续努力即可领取)</span>
+          </div>
+          <div id="inprogress-achievements-list" style="max-height: 180px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+          </div>
+        </div>
+        
+        <!-- 底部智能贴士 -->
+        <div id="credits-tips-container">
+          <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); 
+                      border-radius: 8px; padding: 0.75rem; text-align: center;">
+            <p style="color: #10b981; font-size: 0.8125rem; margin: 0;">
+              💡 在小程序中点赞、收藏、评论都可以获得积分奖励
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: center; gap: 0.75rem;">
+        <button class="btn btn-secondary" onclick="closeInsufficientCreditsModal()">稍后再说</button>
+        <button class="btn btn-primary" onclick="copyMiniprogramSearchText()">📋 复制小程序名</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  document.body.classList.add('modal-open');
+  
+  // 异步加载可领取成就（按分类显示）
+  loadClaimableAchievementsByCategory();
+}
+
+// 点击可领取条目时显示去小程序领取的提示
+function showMiniprogramClaimTip() {
+  const miniprogramName = state.siteConfig?.miniprogram?.name || '游戏家';
+  showToast(`请打开微信搜索「${miniprogramName}」小程序领取积分奖励`, 'info', 4000);
+}
+
+// 点击单个可领取条目
+function onClaimItemClick(itemName) {
+  const miniprogramName = state.siteConfig?.miniprogram?.name || '游戏家';
+  showToast(`【${itemName}】奖励需在小程序中领取，请搜索「${miniprogramName}」`, 'info', 4000);
+}
+
+// 加载可领取的成就信息（按分类显示，严格按文档设计）
+async function loadClaimableAchievementsByCategory() {
+  const claimableContainer = document.getElementById('claimable-achievements-list');
+  const inprogressContainer = document.getElementById('inprogress-achievements-list');
+  const inprogressSection = document.getElementById('credits-modal-inprogress');
+  const totalCreditsEl = document.getElementById('claimable-total-credits');
+  const tipsContainer = document.getElementById('credits-tips-container');
+  
+  if (!claimableContainer) return;
+  
+  try {
+    const userToken = getUserToken();
+    if (!userToken) {
+      claimableContainer.innerHTML = `
+        <div style="text-align: center; padding: 1rem; color: var(--text-muted); font-size: 0.8125rem;">
+          📱 请先登录，然后去小程序获取积分
+        </div>
+      `;
+      return;
+    }
+    
+    const response = await fetch('/api/user/credits-progress', {
+      headers: { 'X-User-Token': userToken }
+    });
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      claimableContainer.innerHTML = `
+        <div style="text-align: center; padding: 1rem; color: var(--text-muted); font-size: 0.8125rem;">
+          去小程序查看更多成就任务
+        </div>
+      `;
+      return;
+    }
+    
+    const { checkin, action_progress, claimable_achievements, in_progress_achievements, summary, tips } = data.data;
+    
+    // 更新总可领取积分
+    if (totalCreditsEl) {
+      totalCreditsEl.textContent = `(共 ${summary.total_claimable || 0} 积分)`;
+    }
+    
+    // ========== 可领取区域（分类显示） ==========
+    let claimableHtml = '';
+    
+    // 📅 签到分类
+    let checkinItems = '';
+    if (!checkin.checked_in_today) {
+      checkinItems += renderClaimableItem('今日签到', '+1', '未签到', 'pending');
+    }
+    // 连续签到奖励（如果有）
+    if (checkin.streak_days >= 3 && checkin.streak_days < 7) {
+      checkinItems += renderClaimableItem('连续签到3天奖励', '+1', '已达成', 'claimable');
+    }
+    if (checkin.streak_days >= 7) {
+      checkinItems += renderClaimableItem('连续签到7天奖励', '+2', '已达成', 'claimable');
+    }
+    if (checkinItems) {
+      claimableHtml += renderCategory('📅', '签到', checkinItems);
+    }
+    
+    // ❤️ 互动积分分类
+    let actionItems = '';
+    action_progress.forEach(action => {
+      if (action.can_claim_count > 0) {
+        // 已完成可领取的
+        for (let i = 0; i < action.can_claim_count; i++) {
+          actionItems += renderClaimableItem(
+            `${action.name}奖励 (${action.target}/${action.target})`, 
+            `+${action.reward}`, 
+            '可领取', 
+            'claimable'
+          );
+        }
+      }
+    });
+    if (actionItems) {
+      claimableHtml += renderCategory('❤️', '互动积分', actionItems);
+    }
+    
+    // 按成就分类显示
+    const achievementsByCategory = {
+      daily: { icon: '🏆', name: '每日成就', items: [] },
+      weekly: { icon: '📅', name: '每周成就', items: [] },
+      monthly: { icon: '📆', name: '每月成就', items: [] },
+      permanent: { icon: '🎖️', name: '永久成就', items: [] }
+    };
+    
+    claimable_achievements.forEach(ach => {
+      const cat = achievementsByCategory[ach.category] || achievementsByCategory.permanent;
+      cat.items.push(ach);
+    });
+    
+    Object.values(achievementsByCategory).forEach(cat => {
+      if (cat.items.length > 0) {
+        let items = '';
+        cat.items.forEach(ach => {
+          const progressText = ach.current !== undefined ? ` (${ach.current}/${ach.target})` : '';
+          items += renderClaimableItem(
+            escapeHtml(ach.name) + progressText,
+            `+${ach.reward}`,
+            '可领取',
+            'claimable'
+          );
+        });
+        claimableHtml += renderCategory(cat.icon, cat.name, items);
+      }
+    });
+    
+    if (claimableHtml) {
+      claimableContainer.innerHTML = claimableHtml;
+    } else {
+      claimableContainer.innerHTML = `
+        <div style="text-align: center; padding: 1rem; color: var(--text-muted); font-size: 0.8125rem;">
+          暂无可领取奖励，去小程序签到、互动即可获得
+        </div>
+      `;
+    }
+    
+    // ========== 进行中区域（带进度条） ==========
+    let inprogressHtml = '';
+    
+    // 互动进度（显示所有未完成的互动类型，包括 current=0 的情况）
+    let actionProgressItems = '';
+    action_progress.filter(a => a.can_claim_count === 0).forEach(action => {
+      // 按文档设计格式：点赞 28/30 93% +1
+      actionProgressItems += renderProgressItem(
+        action.name,
+        action.current,
+        action.target,
+        action.progress,
+        action.reward
+      );
+    });
+    if (actionProgressItems) {
+      inprogressHtml += renderCategory('❤️', '互动进度', actionProgressItems);
+    }
+    
+    // 进行中的成就按分类
+    const inProgressByCategory = {
+      daily: { icon: '🏆', name: '每日成就', items: [] },
+      weekly: { icon: '📅', name: '每周成就', items: [] },
+      monthly: { icon: '📆', name: '每月成就', items: [] },
+      permanent: { icon: '🎖️', name: '永久成就', items: [] }
+    };
+    
+    in_progress_achievements.filter(a => a.progress > 0).forEach(ach => {
+      const cat = inProgressByCategory[ach.category] || inProgressByCategory.permanent;
+      cat.items.push(ach);
+    });
+    
+    Object.values(inProgressByCategory).forEach(cat => {
+      if (cat.items.length > 0) {
+        let items = '';
+        cat.items.forEach(ach => {
+          items += renderProgressItem(
+            escapeHtml(ach.name),
+            ach.current,
+            ach.target,
+            ach.progress,
+            ach.reward
+          );
+        });
+        inprogressHtml += renderCategory(cat.icon, cat.name, items);
+      }
+    });
+    
+    if (inprogressHtml && inprogressContainer && inprogressSection) {
+      inprogressContainer.innerHTML = inprogressHtml;
+      inprogressSection.style.display = 'block';
+    }
+    
+    // 更新智能提示
+    if (tipsContainer && tips && tips.length > 0) {
+      tipsContainer.innerHTML = `
+        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); 
+                    border-radius: 8px; padding: 0.75rem; text-align: center;">
+          <p style="color: #10b981; font-size: 0.8125rem; margin: 0;">
+            💡 ${tips[0]}
+          </p>
+        </div>
+      `;
+    }
+    
+  } catch (error) {
+    console.error('加载积分进度失败:', error);
+    claimableContainer.innerHTML = `
+      <div style="text-align: center; padding: 1rem; color: var(--text-muted); font-size: 0.8125rem;">
+        📱 去小程序查看更多获取积分的方式
+      </div>
+    `;
+  }
+}
+
+// 渲染分类标题和内容
+function renderCategory(icon, name, itemsHtml) {
+  return `
+    <div style="border-bottom: 1px solid var(--border-color);">
+      <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: rgba(99, 102, 241, 0.05);">
+        <span>${icon}</span>
+        <span style="font-size: 0.8125rem; font-weight: 600; color: var(--text-primary);">${name}</span>
+      </div>
+      ${itemsHtml}
+    </div>
+  `;
+}
+
+// 渲染可领取条目（点击提示去小程序）
+function renderClaimableItem(name, credits, status, statusType) {
+  const statusColors = {
+    'pending': { bg: 'rgba(148, 163, 184, 0.2)', text: '#94a3b8' },  // 未签到
+    'claimable': { bg: 'rgba(16, 185, 129, 0.2)', text: '#10b981' }, // 可领取
+    'claimed': { bg: 'rgba(99, 102, 241, 0.2)', text: '#6366f1' }    // 已达成
+  };
+  const colors = statusColors[statusType] || statusColors.claimable;
+  
+  return `
+    <div onclick="onClaimItemClick('${escapeHtml(name)}')" 
+         style="display: flex; align-items: center; padding: 0.5rem 0.75rem; cursor: pointer; transition: background 0.2s;"
+         onmouseover="this.style.background='rgba(99,102,241,0.1)'" 
+         onmouseout="this.style.background='transparent'">
+      <div style="flex: 1; font-size: 0.8125rem; color: var(--text-primary);">• ${name}</div>
+      <div style="font-size: 0.8125rem; color: #10b981; margin-right: 0.75rem;">${credits}</div>
+      <div style="font-size: 0.6875rem; padding: 2px 8px; border-radius: 4px; background: ${colors.bg}; color: ${colors.text};">
+        ${status}
+      </div>
+    </div>
+  `;
+}
+
+// 渲染进度条条目
+function renderProgressItem(name, current, target, progress, reward) {
+  return `
+    <div style="padding: 0.5rem 0.75rem;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+        <span style="font-size: 0.8125rem; color: var(--text-primary);">• ${name}</span>
+        <span style="font-size: 0.75rem; color: #6366f1;">+${reward}</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <div style="flex: 1; display: flex; align-items: center; gap: 0.25rem;">
+          ${renderProgressBar(progress)}
+        </div>
+        <span style="font-size: 0.6875rem; color: var(--text-muted); min-width: 50px; text-align: right;">${current}/${target}</span>
+      </div>
+    </div>
+  `;
+}
+
+// 渲染进度条（文本样式，类似文档设计）
+function renderProgressBar(percent) {
+  const filled = Math.round(percent / 10);
+  const empty = 10 - filled;
+  return `
+    <div style="flex: 1; height: 6px; background: rgba(99, 102, 241, 0.15); border-radius: 3px; overflow: hidden;">
+      <div style="height: 100%; width: ${percent}%; background: linear-gradient(90deg, #6366f1, #8b5cf6); border-radius: 3px;"></div>
+    </div>
+    <span style="font-size: 0.625rem; color: var(--text-muted);">${percent}%</span>
+  `;
+}
+
+// 复制小程序名称到剪贴板
+function copyMiniprogramSearchText() {
+  const miniprogramName = state.siteConfig?.miniprogram?.name || '游戏家';
+  
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(miniprogramName)
+      .then(() => {
+        showToast(`已复制「${miniprogramName}」，去微信搜索即可`, 'success');
+      })
+      .catch(() => {
+        fallbackCopyMiniprogramName(miniprogramName);
+      });
+  } else {
+    fallbackCopyMiniprogramName(miniprogramName);
+  }
+}
+
+// 备用复制方法
+function fallbackCopyMiniprogramName(text) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  try {
+    document.execCommand('copy');
+    showToast(`已复制「${text}」，去微信搜索即可`, 'success');
+  } catch (err) {
+    showToast(`请手动搜索：${text}`, 'info');
+  }
+  document.body.removeChild(textarea);
+}
+
+// 关闭积分不足弹窗
+function closeInsufficientCreditsModal() {
+  const modal = document.getElementById('insufficient-credits-modal');
+  if (modal) {
+    modal.remove();
+    const hasOpenModals = document.querySelector('.modal.active');
+    if (!hasOpenModals) {
+      document.body.classList.remove('modal-open');
+    }
+  }
+}
+
+// ==================== 互动提示条功能 ====================
+
+// 互动提示条状态
+let interactionTipState = {
+  lastShowTime: 0,
+  showCount: 0,  // 本次会话显示次数
+  maxShowPerSession: 10  // 每次会话最多显示10次，让用户能看到更多积分引导
+};
+
+// 显示互动提示条（引导用户去小程序领取积分，增强版显示进度）
+async function showInteractionCreditTip(actionType, progressData = null) {
+  // 检查是否超过显示次数限制
+  if (interactionTipState.showCount >= interactionTipState.maxShowPerSession) {
+    console.log('互动提示条: 已达到会话显示上限');
+    return;
+  }
+  
+  // 检查距离上次显示时间是否超过5秒（降低限制，确保用户能及时看到积分进度）
+  const now = Date.now();
+  if (now - interactionTipState.lastShowTime < 5000) {
+    console.log('互动提示条: 距上次显示时间过短');
+    return;
+  }
+  
+  // 移除已存在的提示条
+  const existingTip = document.getElementById('interaction-credit-tip');
+  if (existingTip) existingTip.remove();
+  
+  // 如果没有传入进度数据，尝试从API获取
+  let actionProgress = progressData;
+  if (!actionProgress) {
+    try {
+      const userToken = getUserToken();
+      if (userToken) {
+        const response = await fetch('/api/user/credits-progress', {
+          headers: { 'X-User-Token': userToken }
+        });
+        const data = await response.json();
+        if (data.success) {
+          const ap = data.data.action_progress.find(a => a.type === actionType);
+          if (ap) {
+            actionProgress = ap;
+          }
+        }
+      }
+    } catch (e) {
+      console.log('获取互动进度失败', e);
+    }
+  }
+  
+  // 根据操作类型和进度设置文案
+  let tipText;
+  const actionIcons = {
+    'like': '❤️', 'favorite': '⭐', 'comment': '💬', 'follow': '➕', 'share': '🔗',
+    'generate': '🎮', 'edit': '✏️'
+  };
+  const actionNames = {
+    'like': '点赞', 'favorite': '收藏', 'comment': '评论', 'follow': '关注', 'share': '分享',
+    'generate': '创作游戏', 'edit': '编辑游戏'
+  };
+  
+  const icon = actionIcons[actionType] || '💎';
+  const actionName = actionNames[actionType] || '互动';
+  
+  if (actionProgress) {
+    if (actionProgress.can_claim_count > 0) {
+      // 已完成一轮，可以领取
+      tipText = `🎉 ${actionName}满${actionProgress.target}次！去小程序领取${actionProgress.reward}积分`;
+    } else if (actionProgress.remaining <= 3) {
+      // 接近完成
+      tipText = `${icon} 再${actionName}${actionProgress.remaining}次即可领取${actionProgress.reward}积分！`;
+    } else {
+      // 正常进度
+      tipText = `${icon} ${actionName}成功！累计${actionProgress.current}/${actionProgress.target}次，完成后去小程序领${actionProgress.reward}积分`;
+    }
+  } else {
+    // 备用文案
+    const tipTexts = {
+      'like': '❤️ 感谢点赞！去小程序签到还可领取更多积分~',
+      'favorite': '⭐ 已收藏！去小程序完成成就可获得积分奖励~',
+      'comment': '💬 评论成功！在小程序互动可解锁更多成就~',
+      'follow': '➕ 关注成功！去小程序查看可领取的积分奖励~',
+      'share': '🔗 分享成功！去小程序领取分享奖励积分~',
+      'generate': '🎮 游戏创作成功！去小程序领取创作奖励积分~',
+      'edit': '✏️ 保存成功！去小程序领取编辑奖励积分~',
+      'default': '💎 互动成功！去小程序签到可领取积分~'
+    };
+    tipText = tipTexts[actionType] || tipTexts['default'];
+  }
+  const miniprogramName = state.siteConfig?.miniprogram?.name || '游戏家';
+  
+  // 动态获取当前最高的z-index（优先使用弹窗管理器的层级）
+  function getMaxZIndex() {
+    // 优先使用弹窗管理器的层级
+    if (typeof modalZIndexManager !== 'undefined' && modalZIndexManager.currentZIndex) {
+      return modalZIndexManager.currentZIndex + 100;
+    }
+    // 否则扫描所有元素
+    let maxZ = 9998;
+    document.querySelectorAll('*').forEach(el => {
+      const z = parseInt(window.getComputedStyle(el).zIndex);
+      if (!isNaN(z) && z > maxZ && z < 2147483647) maxZ = z;
+    });
+    return maxZ + 10;
+  }
+  const tipZIndex = getMaxZIndex();
+  
+  // 创建提示条
+  const tipBar = document.createElement('div');
+  tipBar.id = 'interaction-credit-tip';
+  tipBar.className = 'interaction-credit-tip';
+  tipBar.style.zIndex = tipZIndex; // 动态设置层级
+  tipBar.innerHTML = `
+    <div class="tip-content">
+      <span class="tip-text">${tipText}</span>
+      <button class="tip-action" onclick="showMiniprogramQRCode()">去领取</button>
+      <button class="tip-close" onclick="closeInteractionCreditTip()">×</button>
+    </div>
+  `;
+  
+  // 添加样式（如果还没有）
+  if (!document.getElementById('interaction-tip-styles')) {
+    const style = document.createElement('style');
+    style.id = 'interaction-tip-styles';
+    style.textContent = `
+      .interaction-credit-tip {
+        position: fixed;
+        bottom: 70px;
+        left: 50%;
+        transform: translateX(-50%);
+        /* z-index 通过内联样式动态设置 */
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white;
+        padding: 0;
+        border-radius: 25px;
+        box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+        animation: tipSlideUp 0.3s ease-out;
+        max-width: calc(100% - 32px);
+        width: auto;
+      }
+      
+      @keyframes tipSlideUp {
+        from {
+          opacity: 0;
+          transform: translateX(-50%) translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+      }
+      
+      .interaction-credit-tip .tip-content {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px 10px 16px;
+      }
+      
+      .interaction-credit-tip .tip-text {
+        font-size: 0.8125rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      .interaction-credit-tip .tip-action {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.2s;
+      }
+      
+      .interaction-credit-tip .tip-action:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+      
+      .interaction-credit-tip .tip-close {
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1.25rem;
+        cursor: pointer;
+        padding: 0 4px;
+        line-height: 1;
+      }
+      
+      .interaction-credit-tip .tip-close:hover {
+        color: white;
+      }
+      
+      @media (max-width: 480px) {
+        .interaction-credit-tip .tip-text {
+          font-size: 0.75rem;
+          max-width: 180px;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  
+  document.body.appendChild(tipBar);
+  
+  // 更新状态
+  interactionTipState.lastShowTime = now;
+  interactionTipState.showCount++;
+  
+  // 5秒后自动关闭
+  setTimeout(() => {
+    closeInteractionCreditTip();
+  }, 5000);
+}
+
+// 关闭互动提示条
+function closeInteractionCreditTip() {
+  const tip = document.getElementById('interaction-credit-tip');
+  if (tip) {
+    tip.style.animation = 'tipSlideUp 0.2s ease-out reverse';
+    setTimeout(() => tip.remove(), 200);
+  }
+}
+
+// 显示小程序二维码弹窗
+function showMiniprogramQRCode() {
+  closeInteractionCreditTip();
+  
+  const miniprogramName = state.siteConfig?.miniprogram?.name || '游戏家';
+  const qrcodeUrl = '/images/miniprogram.png';
+  
+  // 移除已存在的弹窗
+  const existingModal = document.getElementById('miniprogram-qr-modal');
+  if (existingModal) existingModal.remove();
+  
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.id = 'miniprogram-qr-modal';
+  modal.onclick = (e) => { if (e.target === modal) closeMiniprogramQRModal(); };
+  
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 320px; text-align: center;">
+      <div class="modal-header">
+        <h3>📱 扫码领积分</h3>
+        <button class="btn btn-icon btn-close" onclick="closeMiniprogramQRModal()">×</button>
+      </div>
+      <div class="modal-body" style="padding: 1.5rem;">
+        <div style="background: #fff; border-radius: 12px; padding: 16px; display: inline-block; margin-bottom: 1rem;">
+          <img src="${qrcodeUrl}" alt="小程序码" 
+               style="width: 160px; height: 160px; display: block;"
+               onerror="this.parentNode.innerHTML='<div style=\\'text-align:center;padding:2rem;color:#666\\'>图片加载失败</div>'">
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.5rem;">
+          微信扫一扫，进入「${miniprogramName}」小程序
+        </p>
+        <div style="background: rgba(99, 102, 241, 0.1); border-radius: 8px; padding: 0.75rem; margin-top: 1rem;">
+          <p style="font-size: 0.8125rem; color: var(--text-primary); margin: 0;">
+            🎁 每日签到可得 <strong style="color: #10b981;">2-5</strong> 积分<br>
+            🏆 完成成就最高得 <strong style="color: #10b981;">20</strong> 积分
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: center;">
+        <button class="btn btn-primary" onclick="copyMiniprogramSearchText(); closeMiniprogramQRModal();">
+          📋 复制小程序名搜索
+        </button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  document.body.classList.add('modal-open');
+}
+
+// 关闭小程序二维码弹窗
+function closeMiniprogramQRModal() {
+  const modal = document.getElementById('miniprogram-qr-modal');
+  if (modal) {
+    modal.remove();
+    const hasOpenModals = document.querySelector('.modal.active');
+    if (!hasOpenModals) {
+      document.body.classList.remove('modal-open');
+    }
+  }
+}
+
+// ==================== 互动提示条功能结束 ====================
 
 // 路由处理
 function handleRouting() {
@@ -2336,16 +3098,17 @@ function initPullToRefresh(pageId, indicatorId, refreshCallback) {
 // ==================== 底部导航切换 ====================
 
 function switchBottomNav(navName) {
-  // 检查是否禁用网站写操作：创作和我的页面需要拦截
-  if (isWebWriteDisabled()) {
-    if (navName === 'create') {
-      showMiniprogramGuide('游戏创作', '/pages/create/create');
-      return;
-    }
-    if (navName === 'profile') {
-      showMiniprogramGuide('我的主页', '/pages/mine/mine');
-      return;
-    }
+  console.log('[DEBUG] switchBottomNav 被调用:', navName);
+  
+  // 检查是否禁用创作功能：仅创作页面需要拦截
+  // 使用细粒度的 isWebCreateDisabled 检查
+  const createDisabled = isWebCreateDisabled();
+  console.log('[DEBUG] 创作功能禁用状态:', createDisabled, ', navName:', navName);
+  
+  if (createDisabled && navName === 'create') {
+    console.log('[DEBUG] 创作被禁用，显示小程序引导弹窗');
+    showMiniprogramGuide('游戏创作', '/pages/create/create');
+    return;
   }
   
   // 先关闭所有弹窗
@@ -2388,6 +3151,14 @@ function switchBottomNav(navName) {
     if (settingsBtn) settingsBtn.classList.remove('visible');
   } else if (navName === 'profile') {
     document.getElementById('profile-page').classList.add('active');
+    
+    // 检查用户是否已登录，未登录则弹出登录框
+    const userToken = getUserToken();
+    if (!userToken || !state.account.loggedIn) {
+      console.log('🔐 用户未登录，弹出登录框');
+      showLoginDialog();
+    }
+    
     loadProfilePageData();
     // 初始化我的页面下拉刷新（只初始化一次）
     if (!state.profilePullRefreshInited) {
@@ -3699,33 +4470,13 @@ async function saveSettings() {
     const selectedRadio = document.querySelector('input[name="default-llm-model"]:checked');
     const selectedModel = selectedRadio ? selectedRadio.value : (state.llmModel || 'deepseek-v3');
     
-    // 获取模型配置信息
-    const modelConfig = MODEL_REGISTRY[selectedModel] || {};
-    
     const newNickname = document.getElementById('author-name')?.value?.trim() || '';
     
-    // 保存各模型的 API Keys
-    const llmKeys = {};
-    document.querySelectorAll('.llm-key-item').forEach(item => {
-      const modelId = item.dataset.modelId;
-      const input = item.querySelector('input[type="password"]');
-      if (modelId && input) {
-        const keyValue = input.value.trim();
-        if (keyValue) {
-          llmKeys[modelId] = keyValue;
-        }
-      }
-    });
-    localStorage.setItem('llm-api-keys', JSON.stringify(llmKeys));
-    
-    // 获取当前选中模型的 Key
-    const currentModelKey = llmKeys[selectedModel] || '';
+    // 不再保存用户API Keys（现在完全使用后台配置）
     
     const settings = {
       llmProvider: selectedModel,
       llmModelId: selectedModel,
-      llmApiKey: currentModelKey,
-      llmBaseUrl: document.getElementById('llm-base-url')?.value || modelConfig.baseUrl || '',
       llmModel: selectedModel,
       authorName: newNickname
     };
@@ -3951,62 +4702,74 @@ function switchSettingsSection(section) {
   });
 }
 
-// 渲染 LLM Keys 列表
+// 渲染 LLM 模型列表（只显示可用模型供选择，不再显示Key输入框）
 async function renderLLMKeysList() {
   const listContainer = document.getElementById('llm-keys-list');
   if (!listContainer) return;
   
-  // 获取模型列表
+  // 获取模型列表（只有后台配置了Key的模型才会返回）
   const models = await fetchTurboModels();
   if (!models || models.length === 0) {
-    listContainer.innerHTML = '<p class="text-muted">无法加载模型列表</p>';
+    listContainer.innerHTML = '<p class="text-muted">暂无可用模型，请联系管理员配置</p>';
     return;
   }
   
-  // 获取已保存的 API Keys 和默认模型
-  const savedKeys = JSON.parse(localStorage.getItem('llm-api-keys') || '{}');
   const defaultModel = getUserDefaultModel();
   
-  // 渲染列表
-  listContainer.innerHTML = models
-    .filter(model => model.id !== 'custom') // 排除自定义接口
-    .map(model => {
-      const savedKey = savedKeys[model.id] || '';
-      const hasKey = savedKey.length > 0;
-      const isFree = model.free || model.hasBackendKey;
-      const isDefault = model.id === defaultModel;
-      
-      return `
-        <div class="llm-key-item ${isDefault ? 'is-default' : ''}" data-model-id="${model.id}">
-          <div class="llm-key-header">
-            <label class="llm-default-check">
-              <input type="radio" 
-                     name="default-llm-model" 
-                     value="${model.id}" 
-                     ${isDefault ? 'checked' : ''}
-                     onchange="onDefaultModelChange('${model.id}')">
-              <span class="llm-default-label">默认</span>
-            </label>
-            <div class="llm-key-info">
-              <div class="llm-key-name">
-                ${escapeHtml(model.name)}
-                ${isFree ? '<span class="badge free">免费</span>' : '<span class="badge need-key">需配Key</span>'}
-              </div>
-              <div class="llm-key-status ${hasKey ? 'configured' : ''}">
-                ${hasKey ? '✓ 已配置' : (isFree ? '使用平台默认' : '未配置')}
-              </div>
+  // 渲染列表 - 只显示模型选择，不再显示Key输入
+  listContainer.innerHTML = models.map(model => {
+    const isDefault = model.id === defaultModel;
+    const creditCost = model.creditCost || 1;
+    const speedLabel = getSpeedLabel(model.speedLevel);
+    const qualityLabel = getQualityLabel(model.quality);
+    
+    return `
+      <div class="llm-key-item ${isDefault ? 'is-default' : ''}" data-model-id="${model.id}">
+        <div class="llm-key-header">
+          <label class="llm-default-check">
+            <input type="radio" 
+                   name="default-llm-model" 
+                   value="${model.id}" 
+                   ${isDefault ? 'checked' : ''}
+                   onchange="onDefaultModelChange('${model.id}')">
+            <span class="llm-default-label">默认</span>
+          </label>
+          <div class="llm-key-info">
+            <div class="llm-key-name">
+              ${escapeHtml(model.name)}
+              ${creditCost === 0 ? '<span class="badge free">免费</span>' : `<span class="badge credits">${creditCost}积分</span>`}
+            </div>
+            <div class="llm-key-status">
+              ${speedLabel} · ${qualityLabel}
             </div>
           </div>
-          <div class="llm-key-input">
-            <input type="password" 
-                   id="llm-key-${model.id}" 
-                   value="${escapeHtml(savedKey)}"
-                   placeholder="${isFree ? '可选，留空使用默认' : '输入您的 API Key'}"
-                   onchange="onLLMKeyChange('${model.id}')">
-          </div>
         </div>
-      `;
-    }).join('');
+      </div>
+    `;
+  }).join('');
+}
+
+// 获取速度等级显示文本
+function getSpeedLabel(speedLevel) {
+  const labels = {
+    'ultra': '⚡极速',
+    'fast': '🚀快速',
+    'normal': '⏱️普通',
+    'slow': '🐢较慢',
+    'very-slow': '🐌缓慢'
+  };
+  return labels[speedLevel] || '⏱️普通';
+}
+
+// 获取质量等级显示文本
+function getQualityLabel(quality) {
+  const labels = {
+    'medium': '中等质量',
+    'high': '高质量',
+    'very-high': '很高质量',
+    'excellent': '极佳质量'
+  };
+  return labels[quality] || '普通质量';
 }
 
 // 默认模型变更处理
@@ -4022,45 +4785,9 @@ function onDefaultModelChange(modelId) {
   console.log('[INFO] 默认模型已切换为:', modelId);
 }
 
-// LLM Key 变更处理
-function onLLMKeyChange(modelId) {
-  const input = document.getElementById(`llm-key-${modelId}`);
-  if (!input) return;
-  
-  const value = input.value.trim();
-  const item = input.closest('.llm-key-item');
-  const statusEl = item?.querySelector('.llm-key-status');
-  
-  if (statusEl) {
-    if (value) {
-      statusEl.textContent = '✓ 已配置';
-      statusEl.classList.add('configured');
-    } else {
-      const isFree = item.querySelector('.badge.free');
-      statusEl.textContent = isFree ? '使用平台默认配置' : '未配置';
-      statusEl.classList.remove('configured');
-    }
-  }
-}
-
-// 切换自定义 API Key 可见性
-function toggleCustomApiKeyVisibility() {
-  const input = document.getElementById('llm-custom-api-key');
-  const btn = input?.parentElement?.querySelector('.btn-toggle-pwd');
-  if (input) {
-    if (input.type === 'password') {
-      input.type = 'text';
-      if (btn) btn.textContent = '🙈';
-    } else {
-      input.type = 'password';
-      if (btn) btn.textContent = '👁️';
-    }
-  }
-}
-
-// 提供商切换
+// 提供商切换（保留，可能被其他地方使用）
 function onProviderChange() {
-  const provider = document.getElementById('llm-provider').value;
+  const provider = document.getElementById('llm-provider')?.value;
   const baseUrlGroup = document.getElementById('base-url-group');
   const modelGroup = document.getElementById('model-group');
   
@@ -4836,7 +5563,16 @@ async function generateGameWithTurbo(prompt, turboModelId) {
     const data = await response.json();
     
     if (!data.success) {
-      throw new Error(data.error || '生成失败');
+      const errorMsg = data.error || '生成失败';
+      // 检查是否是积分不足错误
+      if (errorMsg.includes('积分不足')) {
+        hideGeneratingOverlay();
+        openNoCreditsModal();
+        state.isGenerating = false;
+        stopGeneratingTimer();
+        return;
+      }
+      throw new Error(errorMsg);
     }
     
     log(`✅ 加速生成成功: ${data.title}`, 'success');
@@ -5302,48 +6038,22 @@ async function generateGame(advancedSettings = null) {
   const selectedModel = advSelectedModel || getUserDefaultModel();
   const modelInfo = MODEL_REGISTRY[selectedModel];
   
-  // 获取用户为各模型保存的 API Keys
-  const savedLLMKeys = JSON.parse(localStorage.getItem('llm-api-keys') || '{}');
-  const modelSpecificKey = savedLLMKeys[selectedModel] || '';
-  
-  // 判断用户是否有自己的 Key
-  // 检查高级设置中的Key，或者模型专属Key，或者全局设置中的Key
-  const advKeyInput = document.getElementById('adv-llm-key');
-  const advKey = advKeyInput?.value?.trim();
-  const userHasKey = (advKey && advKey.length > 0) || 
-                     (modelSpecificKey && modelSpecificKey.length > 0) ||
-                     (state.settings.llmApiKey && state.settings.llmApiKey.trim().length > 0);
+  // 现在完全使用后台配置的Key，不再支持用户自定义Key
   const backendHasKey = modelInfo?.hasDefaultKey === true;
   const modelCreditCost = modelInfo?.creditCost || 1;
   
-  // 自定义接口必须用户配置
-  if (selectedModel === 'custom') {
-    if (!state.settings.llmApiKey || !state.settings.llmBaseUrl) {
-      showToast('使用自定义接口需要配置 API Key 和接口地址', 'error');
-      openSettings();
-      return;
-    }
-  }
-  
-  // 检查 Key 可用性
-  // 规则：用户没Key + 后台也没Key = 不能生成
-  if (!userHasKey && !backendHasKey && selectedModel !== 'custom') {
-    showNeedApiKeyForModelModal(modelInfo?.name || selectedModel, selectedModel);
+  // 检查后台是否配置了Key（不再支持自定义接口和用户Key）
+  if (!backendHasKey) {
+    showToast(`模型 ${modelInfo?.name || selectedModel} 暂不可用`, 'error');
     return;
   }
   
   // 计算本次生成需要的积分
-  // 规则：用户有Key = 免费，用户没Key但后台有Key = 消耗后台配置的积分
   let creditCostThisTime = 0;
   let isFreeGeneration = false;
   let freeReason = '';
   
-  if (userHasKey) {
-    // 用户有自己的 Key，免费
-    creditCostThisTime = 0;
-    isFreeGeneration = true;
-    freeReason = '使用自己的 API Key，免费生成';
-  } else if (state.isFirstGeneration) {
+  if (state.isFirstGeneration) {
     // 首次生成免费
     creditCostThisTime = 0;
     isFreeGeneration = true;
@@ -5402,23 +6112,14 @@ async function generateGame(advancedSettings = null) {
   updateGeneratingStatus('正在连接 AI 服务...');
   
   try {
-    // 构建LLM配置 - 只传递 modelId 和用户的 apiKey（如果有）
-    // 后端会根据 modelId 从 LLM_MODELS 获取完整配置
-    // modelSpecificKey 已在前面定义
+    // 构建LLM配置 - 只传递 modelId，后端使用后台配置的Key
+    // 不再支持用户自定义API Key
     const llmConfig = {
-      provider: selectedModel,  // 这里传 modelId，后端会解析
-      apiKey: modelSpecificKey || state.settings.llmApiKey || ''  // 优先使用模型专属Key
+      provider: selectedModel  // 这里传 modelId，后端会解析并使用后台配置的Key
     };
-    
-    // 如果是自定义接口，需要传递完整配置
-    if (selectedModel === 'custom') {
-      llmConfig.baseUrl = state.settings.llmBaseUrl;
-      llmConfig.model = state.settings.llmModel;
-    }
     
     // 开发者信息仅在控制台输出（modelInfo 已在前面定义）
     console.log(`[DEBUG] 选择的模型ID: ${selectedModel}`);
-    console.log(`[DEBUG] 用户Key: ${llmConfig.apiKey ? '已配置' : '未配置'}`);
     
     const modelDisplayName = modelInfo?.name || selectedModel;
     log(`🤖 正在使用 ${modelDisplayName} 模型`);
@@ -5434,15 +6135,6 @@ async function generateGame(advancedSettings = null) {
     const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     state.currentRequestId = requestId;
     console.log(`[DEBUG] 生成请求ID: ${requestId}`);
-    
-    // 如果高级设置中有LLM覆盖，应用到llmConfig
-    if (advancedSettings?.llmOverride) {
-      const override = advancedSettings.llmOverride;
-      if (override.model) llmConfig.model = override.model;
-      if (override.apiKey) llmConfig.apiKey = override.apiKey;
-      if (override.apiUrl) llmConfig.baseUrl = override.apiUrl;
-      console.log(`[DEBUG] 使用高级设置覆盖: 模型=${override.model || '默认'}, URL=${override.apiUrl || '默认'}`);
-    }
     
     const response = await fetch('/api/generate', {
       method: 'POST',
@@ -5483,8 +6175,17 @@ async function generateGame(advancedSettings = null) {
         throw new Error(data.error);
       }
       
-      // 检查是否是 API Key 相关错误
+      // 检查是否是积分不足错误
       const errorMsg = data.error || '生成失败';
+      if (errorMsg.includes('积分不足')) {
+        // 显示积分不足弹窗
+        log('❌ 生成失败: 积分不足', 'error');
+        hideGeneratingOverlay();
+        openNoCreditsModal();
+        throw new Error(errorMsg);
+      }
+      
+      // 检查是否是 API Key 相关错误
       const isApiKeyError = errorMsg.includes('401') || 
                            errorMsg.includes('authentication') || 
                            errorMsg.includes('invalid') ||
@@ -6010,7 +6711,9 @@ async function confirmSaveGame() {
     }
     
     closeSaveModal();
-    showToast(isEditing ? '游戏已更新！' : '游戏已保存！', 'success');
+    
+    // 直接显示创作/编辑积分进度提示条，包含完整的进度信息和领取按钮
+    showInteractionCreditTip(isEditing ? 'edit' : 'generate');
     
     // 跳转到游戏页面
     state.currentGame.isNew = false;
@@ -6737,7 +7440,12 @@ async function executeRepairGame() {
         }, 500);
       }
     } else {
-      showToast(data.error || '修复失败，请重试', 'error');
+      // 检查是否是积分不足错误
+      if (data.error && data.error.includes('积分不足')) {
+        openNoCreditsModal();
+      } else {
+        showToast(data.error || '修复失败，请重试', 'error');
+      }
     }
   } catch (error) {
     console.error('AI修复失败:', error);
@@ -6842,12 +7550,17 @@ async function likeGame() {
       if (statLikeIcon) statLikeIcon.textContent = data.liked ? '❤️' : '🤍';
       if (statLikeBtn) statLikeBtn.classList.toggle('liked', data.liked);
       
-      // 显示提示，如果有积分奖励则显示积分信息
-      if (data.creditAwarded && data.creditMessage) {
-        showToast(`感谢点赞！❤️ ${data.creditMessage}`, 'success');
-        loadCredits(); // 刷新积分显示
+      // 点赞成功后直接显示积分进度提示条（引导去小程序领积分）
+      if (data.liked) {
+        // 直接显示积分进度提示条，包含完整的进度信息和领取按钮
+        showInteractionCreditTip('like');
       } else {
-        showToast(data.liked ? '感谢点赞！❤️' : '已取消点赞', data.liked ? 'success' : 'info');
+        // 取消点赞只显示简单提示
+        showToast('已取消点赞', 'info');
+      }
+      // 如果有直接积分奖励（网站端发放的），刷新积分
+      if (data.creditAwarded) {
+        loadCredits();
       }
     }
   } catch (error) {
@@ -6900,7 +7613,8 @@ async function copyShareUrl() {
   // 复制到剪贴板
   try {
     await navigator.clipboard.writeText(shareText);
-    showToast('分享内容已复制', 'success');
+    // 直接显示积分进度提示条，包含分享进度信息
+    showInteractionCreditTip('share');
   } catch (e) {
     // 降级方案
     const textarea = document.createElement('textarea');
@@ -6911,7 +7625,8 @@ async function copyShareUrl() {
     textarea.select();
     document.execCommand('copy');
     document.body.removeChild(textarea);
-    showToast('分享内容已复制', 'success');
+    // 直接显示积分进度提示条，包含分享进度信息
+    showInteractionCreditTip('share');
   }
 }
 
@@ -7458,10 +8173,6 @@ function updateCreditsDisplay() {
   const credits = state.credits;
   const formattedCredits = formatCredits(credits);
   
-  // 底部导航积分
-  const navCount = document.getElementById('nav-credits-count');
-  if (navCount) navCount.textContent = formattedCredits;
-  
   // 积分弹窗
   const modalCount = document.getElementById('credits-count');
   if (modalCount) modalCount.textContent = formattedCredits;
@@ -7483,21 +8194,62 @@ function updateCreditsDisplay() {
   if (profileCreditsValue) profileCreditsValue.textContent = formattedCredits;
   
   log(`积分显示已更新: ${formattedCredits}`, 'info');
+  
+  // 检查可领取奖励数量（异步更新红点）
+  checkClaimableRewardsCount();
 }
 
-// 打开积分弹窗
+// 可领取奖励状态
+let claimableRewardsState = {
+  count: 0,
+  lastCheckTime: 0,
+  checkInterval: 300000 // 5分钟检查一次
+};
+
+// 检查可领取奖励数量（包含签到、互动积分、成就）
+async function checkClaimableRewardsCount() {
+  const now = Date.now();
+  
+  // 防止频繁检查
+  if (now - claimableRewardsState.lastCheckTime < claimableRewardsState.checkInterval) {
+    return;
+  }
+  
+  claimableRewardsState.lastCheckTime = now;
+  
+  try {
+    const userToken = getUserToken();
+    if (!userToken) return;
+    
+    // 使用 credits-progress 接口获取完整的可领取数量
+    const response = await fetch('/api/user/credits-progress', {
+      headers: { 'X-User-Token': userToken }
+    });
+    
+    const data = await response.json();
+    
+    if (data.success && data.data.summary) {
+      // 总可领取数量 = 签到 + 互动积分 + 成就
+      claimableRewardsState.count = data.data.summary.claimable_count || 0;
+      claimableRewardsState.totalClaimableCredits = data.data.summary.total_claimable || 0;
+      updateClaimableRewardsBadge();
+    }
+  } catch (error) {
+    console.error('检查可领取奖励失败:', error);
+  }
+}
+
+// 更新可领取奖励红点显示（已移除底部导航栏徽章）
+function updateClaimableRewardsBadge() {
+  // 底部导航栏的积分徽章和可领取徽章已移除
+  // 此函数保留为空，以防其他地方调用
+}
+
+// 打开积分弹窗（复用积分不足弹窗界面，使用"查看"模式）
 function openCreditsModal() {
   loadCredits().then(() => {
-    openModal('credits-modal');
-    
-    // 更新广告次数显示
-    if (state.creditsConfig) {
-      const adLimit = document.getElementById('ad-daily-limit');
-      if (adLimit) adLimit.textContent = state.creditsConfig.dailyLimit;
-    }
-    
-    // 加载每日行为积分途径
-    loadActionWays();
+    // 复用积分弹窗，传入 'view' 模式显示"我的积分"界面
+    showInsufficientCreditsModal(0, 'view');
   });
 }
 
@@ -8071,19 +8823,15 @@ async function loadProfileData() {
 // 加载个人设置到表单
 function loadProfileSettings() {
   const modelSelect = document.getElementById('profile-model-select');
-  const apiKeyInput = document.getElementById('profile-api-key');
   const authorNameInput = document.getElementById('profile-author-name');
   const debugMode = document.getElementById('profile-debug-mode');
-  const baseUrlInput = document.getElementById('profile-base-url');
-  const customModelInput = document.getElementById('profile-custom-model');
   const emailInput = document.getElementById('profile-email');
   
-  if (modelSelect) modelSelect.value = getUserDefaultModel();
-  if (apiKeyInput) apiKeyInput.value = state.settings.llmApiKey || '';
+  // 动态加载可用模型到选择框
+  loadProfileModelSelect();
+  
   if (authorNameInput) authorNameInput.value = state.settings.authorName || '';
   if (debugMode) debugMode.checked = state.settings.debugMode || false;
-  if (baseUrlInput) baseUrlInput.value = state.settings.llmBaseUrl || '';
-  if (customModelInput) customModelInput.value = state.settings.llmModel || '';
   if (emailInput) emailInput.value = state.userEmail || '';
   
   // 更新邮箱和密码状态标签
@@ -8100,55 +8848,41 @@ function loadProfileSettings() {
     passwordBonusTag.textContent = '已设置';
     passwordBonusTag.classList.add('verified');
   }
-  
-  // 显示/隐藏自定义字段
-  onProfileModelChange();
 }
 
-// 个人中心模型选择变化
-function onProfileModelChange() {
-  const select = document.getElementById('profile-model-select');
-  if (!select) return;
+// 加载profile模型选择框
+async function loadProfileModelSelect() {
+  const modelSelect = document.getElementById('profile-model-select');
+  if (!modelSelect) return;
   
-  const modelId = select.value;
-  const baseUrlGroup = document.getElementById('profile-base-url-group');
-  const customModelGroup = document.getElementById('profile-custom-model-group');
+  // 获取可用模型列表
+  const models = await fetchTurboModels();
+  if (!models || models.length === 0) {
+    modelSelect.innerHTML = '<option value="">暂无可用模型</option>';
+    return;
+  }
   
-  if (modelId === 'custom') {
-    if (baseUrlGroup) baseUrlGroup.style.display = 'block';
-    if (customModelGroup) customModelGroup.style.display = 'block';
-  } else {
-    if (baseUrlGroup) baseUrlGroup.style.display = 'none';
-    if (customModelGroup) customModelGroup.style.display = 'none';
-  }
-}
-
-// 切换个人中心API Key可见性
-function toggleProfileApiKeyVisibility() {
-  const input = document.getElementById('profile-api-key');
-  if (input) {
-    input.type = input.type === 'password' ? 'text' : 'password';
-  }
+  const currentModel = getUserDefaultModel();
+  modelSelect.innerHTML = models.map(model => {
+    const creditCost = model.creditCost || 1;
+    const creditText = creditCost === 0 ? '免费' : `${creditCost}积分`;
+    return `<option value="${model.id}" ${model.id === currentModel ? 'selected' : ''}>${model.name} (${creditText})</option>`;
+  }).join('');
 }
 
 // 保存个人中心设置
 async function saveProfileSettings() {
   const modelSelect = document.getElementById('profile-model-select');
-  const apiKeyInput = document.getElementById('profile-api-key');
   const authorNameInput = document.getElementById('profile-author-name');
   const debugMode = document.getElementById('profile-debug-mode');
-  const baseUrlInput = document.getElementById('profile-base-url');
-  const customModelInput = document.getElementById('profile-custom-model');
   const emailInput = document.getElementById('profile-email');
   const passwordInput = document.getElementById('profile-password');
   
-  // 更新 state
+  // 更新 state（不再保存API Key相关设置）
   const selectedModel = modelSelect?.value || 'deepseek-v3';
   setUserDefaultModel(selectedModel);
-  state.settings.llmApiKey = apiKeyInput?.value || '';
   state.settings.authorName = authorNameInput?.value || '';
   state.settings.debugMode = debugMode?.checked || false;
-  state.settings.llmBaseUrl = baseUrlInput?.value || '';
   
   // 保存到 localStorage
   localStorage.setItem('aigame-settings', JSON.stringify(state.settings));
@@ -8521,12 +9255,17 @@ async function toggleFavorite() {
         statFavsCount.textContent = data.favorite_count;
       }
       
-      // 显示提示，如果有积分奖励则显示积分信息
-      if (data.creditAwarded && data.creditMessage) {
-        showToast(`已添加到收藏 ⭐ ${data.creditMessage}`, 'success');
-        loadCredits(); // 刷新积分显示
+      // 收藏成功后直接显示积分进度提示条（引导去小程序领积分）
+      if (data.favorited) {
+        // 直接显示积分进度提示条，包含完整的进度信息和领取按钮
+        showInteractionCreditTip('favorite');
       } else {
-        showToast(data.favorited ? '已添加到收藏 ⭐' : '已取消收藏', data.favorited ? 'success' : 'info');
+        // 取消收藏只显示简单提示
+        showToast('已取消收藏', 'info');
+      }
+      // 如果有直接积分奖励（网站端发放的），刷新积分
+      if (data.creditAwarded) {
+        loadCredits();
       }
     } else {
       showToast(data.error || '操作失败', 'error');
@@ -10163,12 +10902,17 @@ async function toggleFollowUser(targetToken, buttonElement) {
         buttonElement.textContent = data.following ? '已关注' : '关注';
       }
       
-      // 显示提示，如果有积分奖励则显示积分信息
-      if (data.creditAwarded && data.creditMessage) {
-        showToast(`关注成功 ✨ ${data.creditMessage}`, 'success');
-        loadCredits(); // 刷新积分显示
+      // 关注成功后直接显示积分进度提示条（引导去小程序领积分）
+      if (data.following) {
+        // 直接显示积分进度提示条，包含完整的进度信息和领取按钮
+        showInteractionCreditTip('follow');
       } else {
-        showToast(data.following ? '关注成功 ✨' : '已取消关注', data.following ? 'success' : 'info');
+        // 取消关注只显示简单提示
+        showToast('已取消关注', 'info');
+      }
+      // 如果有直接积分奖励（网站端发放的），刷新积分
+      if (data.creditAwarded) {
+        loadCredits();
       }
       
       // 如果在游戏详情页，更新作者关注按钮
@@ -11172,16 +11916,10 @@ function getEditorLLMConfig() {
   // 优先使用编辑器设置中选择的模型，否则使用全局设置
   const selectedModelId = editorSettings.selectedModel || getUserDefaultModel();
   
+  // 只传递 modelId，后端使用后台配置的Key
   const llmConfig = {
-    provider: selectedModelId,  // 传递 modelId，后端会从 LLM_MODELS 获取完整配置
-    apiKey: state.settings.llmApiKey || ''  // 用户自己的Key（如果有）
+    provider: selectedModelId  // 传递 modelId，后端会从 LLM_MODELS 获取完整配置并使用后台Key
   };
-  
-  // 如果是自定义接口，需要传递完整配置
-  if (selectedModelId === 'custom') {
-    llmConfig.baseUrl = state.settings.llmBaseUrl;
-    llmConfig.model = state.settings.llmModel;
-  }
   
   return llmConfig;
 }
@@ -11526,8 +12264,10 @@ async function saveGameEdit(saveAsNew) {
     const data = await response.json();
     
     if (data.success) {
-      showToast(data.message || '保存成功！', 'success');
       if (saveModal) saveModal.remove();
+      
+      // 直接显示创作/编辑积分进度提示条，包含完整的进度信息和领取按钮
+      showInteractionCreditTip(saveAsNew ? 'generate' : 'edit');
       
       // 关闭编辑器
       closeGameEditor();
@@ -12159,12 +12899,11 @@ async function submitComment() {
       renderComments();
       updateCommentsCount();
       
-      // 显示提示，如果有积分奖励则显示积分信息
-      if (data.creditAwarded && data.creditMessage) {
-        showToast(`留言发布成功！${data.creditMessage}`, 'success');
-        loadCredits(); // 刷新积分显示
-      } else {
-        showToast('留言发布成功', 'success');
+      // 直接显示积分进度提示条，包含完整的进度信息和领取按钮
+      showInteractionCreditTip('comment');
+      // 如果有直接积分奖励（网站端发放的），刷新积分
+      if (data.creditAwarded) {
+        loadCredits();
       }
     } else {
       showToast(data.error || '发布失败', 'error');

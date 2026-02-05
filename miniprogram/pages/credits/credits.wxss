@@ -1,0 +1,757 @@
+/* 积分中心页面样式 */
+.credits-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding-bottom: 40rpx;
+}
+
+/* 积分卡片 */
+.credits-card {
+  margin: 30rpx;
+  padding: 40rpx;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.15);
+}
+
+.credits-main {
+  display: flex;
+  align-items: baseline;
+  gap: 16rpx;
+}
+
+.credits-label {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.credits-value {
+  font-size: 72rpx;
+  font-weight: bold;
+  color: #667eea;
+}
+
+.credits-sub {
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 四个快捷入口（文档6.1节设计） */
+.quick-actions {
+  display: flex;
+  gap: 16rpx;
+  margin: 0 30rpx 30rpx;
+}
+
+.action-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24rpx 16rpx;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+}
+
+.action-item.disabled {
+  opacity: 0.6;
+}
+
+.action-icon {
+  font-size: 40rpx;
+  margin-bottom: 8rpx;
+}
+
+.action-title {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4rpx;
+}
+
+.action-reward {
+  font-size: 20rpx;
+  color: #10b981;
+  margin-bottom: 12rpx;
+}
+
+.action-item.disabled .action-reward {
+  color: #999;
+}
+
+.action-btn {
+  padding: 8rpx 20rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-size: 22rpx;
+  border-radius: 20rpx;
+  text-align: center;
+}
+
+.action-btn.disabled {
+  background: #e0e0e0;
+  color: #999;
+}
+
+/* 签到连续提示区域（文档6.1节设计） */
+.streak-section {
+  margin: 0 30rpx 20rpx;
+}
+
+.streak-card {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  gap: 16rpx;
+}
+
+.streak-icon {
+  font-size: 40rpx;
+}
+
+.streak-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.streak-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.streak-desc {
+  font-size: 24rpx;
+  color: #888;
+}
+
+.streak-bonus {
+  padding: 10rpx 16rpx;
+  background: linear-gradient(135deg, #ff9800 0%, #ff5722 100%);
+  color: #fff;
+  font-size: 22rpx;
+  border-radius: 20rpx;
+}
+
+.streak-tip {
+  padding: 20rpx 24rpx;
+  background: rgba(255, 193, 7, 0.15);
+  border: 1rpx solid rgba(255, 152, 0, 0.3);
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  color: #f57c00;
+  text-align: center;
+}
+
+/* Tab栏 */
+.tab-bar {
+  display: flex;
+  margin: 0 30rpx;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20rpx 20rpx 0 0;
+  overflow: hidden;
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  padding: 28rpx 0;
+  font-size: 28rpx;
+  color: #666;
+  position: relative;
+}
+
+.tab-item.active {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 48rpx;
+  height: 6rpx;
+  background: #667eea;
+  border-radius: 3rpx;
+}
+
+.badge {
+  min-width: 32rpx;
+  height: 32rpx;
+  padding: 0 8rpx;
+  background: #ff4757;
+  color: #fff;
+  font-size: 22rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Tab内容区 */
+.tab-content {
+  margin: 0 30rpx;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 0 0 20rpx 20rpx;
+  padding: 20rpx;
+  min-height: 400rpx;
+}
+
+/* 一键领取 */
+.claim-all-section {
+  margin-bottom: 24rpx;
+}
+
+.claim-all-btn {
+  width: 100%;
+  padding: 24rpx;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: 600;
+  border-radius: 16rpx;
+  border: none;
+}
+
+/* 奖励区域 */
+.reward-section {
+  margin-bottom: 24rpx;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.title-text {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.title-tip {
+  font-size: 24rpx;
+  color: #667eea;
+}
+
+/* 奖励列表 */
+.reward-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.reward-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx;
+  background: #f8f9fa;
+  border-radius: 12rpx;
+}
+
+.reward-info {
+  flex: 1;
+}
+
+.reward-name {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.reward-progress {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 8rpx;
+}
+
+.progress-bar {
+  flex: 1;
+  max-width: 200rpx;
+  height: 12rpx;
+  background: #e0e0e0;
+  border-radius: 6rpx;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  border-radius: 6rpx;
+  transition: width 0.3s;
+}
+
+.progress-text {
+  font-size: 22rpx;
+  color: #888;
+}
+
+.reward-btn {
+  padding: 12rpx 24rpx;
+  font-size: 24rpx;
+  border-radius: 24rpx;
+}
+
+.reward-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+}
+
+.reward-btn.disabled {
+  background: #f0f0f0;
+  color: #999;
+}
+
+/* 成就列表 */
+.achievement-section {
+  margin-bottom: 32rpx;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+  padding-bottom: 12rpx;
+  border-bottom: 1rpx solid #eee;
+}
+
+.section-title-text {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.section-reset {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.achievement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.achievement-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx;
+  background: #f8f9fa;
+  border-radius: 12rpx;
+  gap: 16rpx;
+}
+
+.achievement-item.claimable {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  border: 2rpx solid #667eea;
+}
+
+.achievement-item.claimed {
+  opacity: 0.6;
+}
+
+.achievement-icon {
+  font-size: 40rpx;
+}
+
+.achievement-info {
+  flex: 1;
+}
+
+.achievement-name {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.achievement-desc {
+  font-size: 22rpx;
+  color: #888;
+  margin-top: 4rpx;
+}
+
+.achievement-progress {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 8rpx;
+}
+
+.mini-progress-bar {
+  width: 120rpx;
+  height: 8rpx;
+  background: #e0e0e0;
+  border-radius: 4rpx;
+  overflow: hidden;
+}
+
+.mini-progress-fill {
+  height: 100%;
+  background: #667eea;
+  border-radius: 4rpx;
+}
+
+.mini-progress-text {
+  font-size: 20rpx;
+  color: #888;
+}
+
+.achievement-status {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.achievement-status .can-claim {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.achievement-status .credits-preview {
+  color: #f5576c;
+}
+
+.achievement-reward {
+  padding: 8rpx 16rpx;
+  background: #667eea;
+  color: #fff;
+  font-size: 24rpx;
+  border-radius: 16rpx;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60rpx 40rpx;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  margin-bottom: 24rpx;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 12rpx;
+}
+
+.empty-tip {
+  font-size: 24rpx;
+  color: #999;
+  text-align: center;
+  margin-bottom: 32rpx;
+}
+
+.go-website-btn {
+  padding: 20rpx 48rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-size: 28rpx;
+  border-radius: 32rpx;
+  border: none;
+}
+
+/* 积分明细统计（文档6.1节设计） */
+.logs-stats {
+  margin-bottom: 20rpx;
+  padding-bottom: 20rpx;
+  border-bottom: 1rpx solid #eee;
+}
+
+.logs-stats-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.logs-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.logs-more {
+  font-size: 24rpx;
+  color: #667eea;
+}
+
+.logs-stats-row {
+  display: flex;
+  justify-content: space-around;
+  background: #f8f9fa;
+  border-radius: 12rpx;
+  padding: 20rpx;
+}
+
+.stats-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.stats-label {
+  font-size: 24rpx;
+  color: #888;
+}
+
+.stats-value {
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.stats-value.positive {
+  color: #10b981;
+}
+
+/* 积分明细列表 */
+.logs-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.log-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.log-item:last-child {
+  border-bottom: none;
+}
+
+.log-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.log-desc {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.log-time {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.log-amount {
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.log-amount.positive {
+  color: #4caf50;
+}
+
+.log-amount.negative {
+  color: #f44336;
+}
+
+/* 智能贴士（文档6.1节底部设计） */
+.smart-tip {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24rpx 30rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.95), rgba(118, 75, 162, 0.95));
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.1);
+}
+
+.smart-tip-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+}
+
+.smart-tip-icon {
+  font-size: 32rpx;
+}
+
+.smart-tip-text {
+  font-size: 28rpx;
+  color: #fff;
+  font-weight: 500;
+}
+
+/* 📈 进行中区域样式（文档6.1节设计） */
+.in-progress-section {
+  margin-top: 24rpx;
+  background: #fafbfc;
+  border-radius: 16rpx;
+  padding: 20rpx;
+}
+
+.in-progress-section .section-title {
+  border-bottom: none;
+  margin-bottom: 16rpx;
+}
+
+.progress-category {
+  margin-bottom: 24rpx;
+}
+
+.progress-category:last-child {
+  margin-bottom: 0;
+}
+
+.category-header {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 12rpx;
+  padding-left: 8rpx;
+}
+
+.progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.progress-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 16rpx;
+  background: #fff;
+  border-radius: 12rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+
+.progress-name {
+  font-size: 26rpx;
+  color: #333;
+  min-width: 120rpx;
+  flex-shrink: 0;
+}
+
+.progress-bar-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.progress-bar-full {
+  flex: 1;
+  height: 16rpx;
+  background: #e8e8e8;
+  border-radius: 8rpx;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  border-radius: 8rpx;
+  transition: width 0.3s ease;
+}
+
+.progress-percent {
+  font-size: 22rpx;
+  color: #888;
+  min-width: 80rpx;
+  text-align: right;
+}
+
+.progress-reward {
+  font-size: 24rpx;
+  color: #667eea;
+  font-weight: 600;
+  min-width: 60rpx;
+  text-align: right;
+}
+
+/* 📅 签到奖励区域样式（文档6.1节设计） */
+.checkin-rewards-section {
+  background: #f8fafe;
+  border-radius: 16rpx;
+  padding: 20rpx;
+  margin-bottom: 24rpx;
+}
+
+.checkin-rewards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.checkin-reward-item {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 20rpx;
+  background: #fff;
+  border-radius: 12rpx;
+  border: 1rpx solid #e8e8e8;
+}
+
+.checkin-reward-item.achieved {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(5, 150, 105, 0.08));
+  border-color: #10b981;
+}
+
+.checkin-reward-name {
+  flex: 1;
+  font-size: 26rpx;
+  color: #333;
+}
+
+.checkin-reward-value {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #667eea;
+  margin-right: 16rpx;
+}
+
+.checkin-reward-status {
+  font-size: 24rpx;
+  color: #10b981;
+  font-weight: 500;
+}
+
+.checkin-reward-status.pending {
+  color: #999;
+}
+
+.checkin-reward-tip {
+  margin-top: 16rpx;
+  padding: 12rpx 16rpx;
+  background: rgba(102, 126, 234, 0.08);
+  border-radius: 8rpx;
+  text-align: center;
+}
+
+.checkin-reward-tip text {
+  font-size: 22rpx;
+  color: #667eea;
+}
+

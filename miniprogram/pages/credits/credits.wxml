@@ -1,0 +1,487 @@
+<!--积分中心页面-->
+<view class="credits-page">
+  <!-- 顶部积分卡片 -->
+  <view class="credits-card">
+    <view class="credits-main">
+      <text class="credits-label">💎 我的积分</text>
+      <text class="credits-value">{{credits}}</text>
+    </view>
+    <view class="credits-sub">
+      <text>可用于AI游戏创作</text>
+    </view>
+  </view>
+
+  <!-- 四个快捷入口（按文档6.1节设计） -->
+  <view class="quick-actions">
+    <view class="action-item" bindtap="handleCheckin">
+      <text class="action-icon">📅</text>
+      <text class="action-title">今日签到</text>
+      <text class="action-reward">+1积分</text>
+      <view class="action-btn {{checkinStatus.checkedInToday ? 'disabled' : ''}}">
+        <text>{{checkinStatus.checkedInToday ? '已签到 ✅' : '签到'}}</text>
+      </view>
+    </view>
+    <view class="action-item disabled">
+      <text class="action-icon">🎬</text>
+      <text class="action-title">看广告</text>
+      <text class="action-reward">即将开放</text>
+      <view class="action-btn disabled">
+        <text>敬请期待</text>
+      </view>
+    </view>
+    <view class="action-item" bindtap="handleInvite">
+      <text class="action-icon">👥</text>
+      <text class="action-title">邀请好友</text>
+      <text class="action-reward">+{{inviteReward}}积分</text>
+      <view class="action-btn">
+        <text>立即邀请</text>
+      </view>
+    </view>
+    <view class="action-item" bindtap="goToWebsite">
+      <text class="action-icon">🌐</text>
+      <text class="action-title">去网站创作</text>
+      <text class="action-reward">消耗积分</text>
+      <view class="action-btn">
+        <text>复制链接</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 签到连续提示（简化：不重复显示签到按钮，只显示连续签到加成信息） -->
+  <view class="streak-section" wx:if="{{checkinStatus.checkedInToday && checkinStatus.streakDays > 0}}">
+    <view class="streak-card">
+      <text class="streak-icon">✅</text>
+      <view class="streak-info">
+        <text class="streak-title">今日已签到</text>
+        <text class="streak-desc">已连续签到 {{checkinStatus.streakDays}} 天</text>
+      </view>
+      <view class="streak-bonus" wx:if="{{checkinStatus.nextBonus && checkinStatus.nextBonus.remaining > 0}}">
+        <text>🔥 再续{{checkinStatus.nextBonus.remaining}}天+{{checkinStatus.nextBonus.bonus}}</text>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 签到加成提示（未签到时显示） -->
+  <view class="streak-section" wx:if="{{!checkinStatus.checkedInToday && checkinStatus.streakDays > 0}}">
+    <view class="streak-tip">
+      <text>🔥 已连续签到{{checkinStatus.streakDays}}天，今日签到可保持连续天数！</text>
+    </view>
+  </view>
+
+  <!-- 【预留】激励视频广告入口（待500UV后启用） -->
+  <!-- 
+  <view class="ad-section" wx:if="{{adConfig.enabled}}">
+    <view class="ad-card" bindtap="handleWatchAd">
+      <view class="ad-left">
+        <text class="ad-icon">🎬</text>
+        <view class="ad-info">
+          <text class="ad-title">看视频领积分</text>
+          <text class="ad-desc">观看视频广告可得{{adConfig.rewardCredits}}积分</text>
+        </view>
+      </view>
+      <view class="ad-btn {{adStatus.remainingToday <= 0 ? 'disabled' : ''}}">
+        <text wx:if="{{adStatus.remainingToday > 0}}">观看 ({{adStatus.remainingToday}}/{{adConfig.dailyLimit}})</text>
+        <text wx:else>今日已领完</text>
+      </view>
+    </view>
+  </view>
+  -->
+
+  <!-- Tab切换 -->
+  <view class="tab-bar">
+    <view class="tab-item {{currentTab === 'rewards' ? 'active' : ''}}" 
+          bindtap="switchTab" data-tab="rewards">
+      <text>待领取</text>
+      <view class="badge" wx:if="{{claimableCount + (actionClaimableCredits > 0 ? 1 : 0) > 0}}">
+        {{claimableCount + (actionClaimableCredits > 0 ? 1 : 0)}}
+      </view>
+    </view>
+    <view class="tab-item {{currentTab === 'achievements' ? 'active' : ''}}" 
+          bindtap="switchTab" data-tab="achievements">
+      <text>成就</text>
+    </view>
+    <view class="tab-item {{currentTab === 'logs' ? 'active' : ''}}" 
+          bindtap="switchTab" data-tab="logs">
+      <text>明细</text>
+    </view>
+  </view>
+
+  <!-- 待领取奖励 -->
+  <view class="tab-content" wx:if="{{currentTab === 'rewards'}}">
+    <!-- 一键领取按钮 -->
+    <view class="claim-all-section" wx:if="{{claimableCredits > 0}}">
+      <button class="claim-all-btn" bindtap="claimAllAchievements" loading="{{claimLoading}}">
+        一键领取 +{{claimableCredits}}积分
+      </button>
+    </view>
+
+    <!-- 📅 签到奖励（文档6.1节设计） -->
+    <view class="reward-section checkin-rewards-section">
+      <view class="section-title">
+        <text class="title-text">📅 签到奖励</text>
+      </view>
+      <view class="checkin-rewards-list">
+        <view class="checkin-reward-item {{checkinStatus.streakDays >= 3 ? 'achieved' : ''}}">
+          <text class="checkin-reward-name">连续签到3天加成</text>
+          <text class="checkin-reward-value">+1</text>
+          <text class="checkin-reward-status" wx:if="{{checkinStatus.streakDays >= 3}}">已达成</text>
+          <text class="checkin-reward-status pending" wx:else>{{checkinStatus.streakDays}}/3天</text>
+        </view>
+        <view class="checkin-reward-item {{checkinStatus.streakDays >= 7 ? 'achieved' : ''}}">
+          <text class="checkin-reward-name">连续签到7天加成</text>
+          <text class="checkin-reward-value">+2</text>
+          <text class="checkin-reward-status" wx:if="{{checkinStatus.streakDays >= 7}}">已达成</text>
+          <text class="checkin-reward-status pending" wx:else>{{checkinStatus.streakDays}}/7天</text>
+        </view>
+        <view class="checkin-reward-item {{checkinStatus.streakDays >= 14 ? 'achieved' : ''}}">
+          <text class="checkin-reward-name">连续签到14天加成</text>
+          <text class="checkin-reward-value">+3</text>
+          <text class="checkin-reward-status" wx:if="{{checkinStatus.streakDays >= 14}}">已达成</text>
+          <text class="checkin-reward-status pending" wx:else>{{checkinStatus.streakDays}}/14天</text>
+        </view>
+        <view class="checkin-reward-item {{checkinStatus.streakDays >= 30 ? 'achieved' : ''}}">
+          <text class="checkin-reward-name">连续签到30天加成</text>
+          <text class="checkin-reward-value">+5</text>
+          <text class="checkin-reward-status" wx:if="{{checkinStatus.streakDays >= 30}}">已达成</text>
+          <text class="checkin-reward-status pending" wx:else>{{checkinStatus.streakDays}}/30天</text>
+        </view>
+      </view>
+      <view class="checkin-reward-tip">
+        <text>💡 连续签到可获得额外加成，中断后重新计算</text>
+      </view>
+    </view>
+
+    <!-- 互动奖励 -->
+    <view class="reward-section">
+      <view class="section-title">
+        <text class="title-text">📊 互动奖励</text>
+        <text class="title-tip" bindtap="goToWebsite">去网站做任务 ></text>
+      </view>
+      
+      <view class="reward-list">
+        <view class="reward-item" wx:for="{{actionRewards}}" wx:key="type">
+          <view class="reward-info">
+            <text class="reward-name">{{item.name}}</text>
+            <view class="reward-progress">
+              <view class="progress-bar">
+                <view class="progress-fill" style="width: {{(item.current_progress / item.target) * 100}}%"></view>
+              </view>
+              <text class="progress-text">{{item.current_progress}}/{{item.target}}</text>
+            </view>
+          </view>
+          <view class="reward-btn {{item.can_claim_count > 0 ? 'active' : 'disabled'}}" 
+                bindtap="claimActionReward" data-action="{{item}}">
+            <text wx:if="{{item.can_claim_count > 0}}">领取x{{item.can_claim_count}}</text>
+            <text wx:else>+{{item.reward_per_set || 1}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 可领取成就 -->
+    <view class="reward-section" wx:if="{{claimableCount > 0}}">
+      <view class="section-title">
+        <text class="title-text">🏆 可领取成就</text>
+      </view>
+      
+      <view class="achievement-list">
+        <block wx:for="{{achievements.daily}}" wx:key="id">
+          <view class="achievement-item {{item.can_claim ? 'claimable' : ''}}" 
+                wx:if="{{item.can_claim}}"
+                bindtap="claimAchievement" data-achievement="{{item}}">
+            <text class="achievement-icon">{{item.icon}}</text>
+            <view class="achievement-info">
+              <text class="achievement-name">{{item.name}}</text>
+              <text class="achievement-desc">{{item.description}}</text>
+            </view>
+            <view class="achievement-reward">+{{item.reward_credits}}</view>
+          </view>
+        </block>
+        <block wx:for="{{achievements.weekly}}" wx:key="id">
+          <view class="achievement-item claimable" 
+                wx:if="{{item.can_claim}}"
+                bindtap="claimAchievement" data-achievement="{{item}}">
+            <text class="achievement-icon">{{item.icon}}</text>
+            <view class="achievement-info">
+              <text class="achievement-name">{{item.name}}</text>
+              <text class="achievement-desc">{{item.description}}</text>
+            </view>
+            <view class="achievement-reward">+{{item.reward_credits}}</view>
+          </view>
+        </block>
+      </view>
+    </view>
+    
+    <!-- 📈 进行中区域（文档6.1节设计） -->
+    <view class="reward-section in-progress-section">
+      <view class="section-title">
+        <text class="title-text">📈 进行中</text>
+        <text class="title-tip">继续努力即可领取</text>
+      </view>
+      
+      <!-- 互动进度 -->
+      <view class="progress-category" wx:if="{{actionRewards.length > 0}}">
+        <view class="category-header">❤️ 互动进度</view>
+        <view class="progress-list">
+          <view class="progress-item" wx:for="{{actionRewards}}" wx:key="type" wx:if="{{item.can_claim_count === 0}}">
+            <text class="progress-name">{{item.name}}</text>
+            <view class="progress-bar-wrapper">
+              <view class="progress-bar-full">
+                <view class="progress-bar-fill" style="width: {{(item.current_progress / item.target) * 100}}%"></view>
+              </view>
+              <text class="progress-percent">{{item.current_progress}}/{{item.target}}</text>
+            </view>
+            <text class="progress-reward">+{{item.reward_per_set || 1}}</text>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 每日成就进度 -->
+      <view class="progress-category" wx:if="{{inProgressAchievements.daily.length > 0}}">
+        <view class="category-header">📆 每日成就</view>
+        <view class="progress-list">
+          <view class="progress-item" wx:for="{{inProgressAchievements.daily}}" wx:key="id">
+            <text class="progress-name">{{item.name}}</text>
+            <view class="progress-bar-wrapper">
+              <view class="progress-bar-full">
+                <view class="progress-bar-fill" style="width: {{item.progress}}%"></view>
+              </view>
+              <text class="progress-percent">{{item.progress}}%</text>
+            </view>
+            <text class="progress-reward">+{{item.reward_credits}}</text>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 每周成就进度 -->
+      <view class="progress-category" wx:if="{{inProgressAchievements.weekly.length > 0}}">
+        <view class="category-header">📅 每周成就</view>
+        <view class="progress-list">
+          <view class="progress-item" wx:for="{{inProgressAchievements.weekly}}" wx:key="id">
+            <text class="progress-name">{{item.name}}</text>
+            <view class="progress-bar-wrapper">
+              <view class="progress-bar-full">
+                <view class="progress-bar-fill" style="width: {{item.progress}}%"></view>
+              </view>
+              <text class="progress-percent">{{item.progress}}%</text>
+            </view>
+            <text class="progress-reward">+{{item.reward_credits}}</text>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 每月成就进度 -->
+      <view class="progress-category" wx:if="{{inProgressAchievements.monthly.length > 0}}">
+        <view class="category-header">📆 每月成就</view>
+        <view class="progress-list">
+          <view class="progress-item" wx:for="{{inProgressAchievements.monthly}}" wx:key="id">
+            <text class="progress-name">{{item.name}}</text>
+            <view class="progress-bar-wrapper">
+              <view class="progress-bar-full">
+                <view class="progress-bar-fill" style="width: {{item.progress}}%"></view>
+              </view>
+              <text class="progress-percent">{{item.progress}}%</text>
+            </view>
+            <text class="progress-reward">+{{item.reward_credits}}</text>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 永久成就进度 -->
+      <view class="progress-category" wx:if="{{inProgressAchievements.permanent.length > 0}}">
+        <view class="category-header">🎖️ 永久成就</view>
+        <view class="progress-list">
+          <view class="progress-item" wx:for="{{inProgressAchievements.permanent}}" wx:key="id">
+            <text class="progress-name">{{item.name}}</text>
+            <view class="progress-bar-wrapper">
+              <view class="progress-bar-full">
+                <view class="progress-bar-fill" style="width: {{item.progress}}%"></view>
+              </view>
+              <text class="progress-percent">{{item.current}}/{{item.target}}</text>
+            </view>
+            <text class="progress-reward">+{{item.reward_credits}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{claimableCount === 0 && actionClaimableCredits === 0 && !hasInProgress}}">
+      <text class="empty-icon">🎯</text>
+      <text class="empty-text">暂无可领取的奖励</text>
+      <text class="empty-tip">去网站点赞、收藏、评论，完成任务后回来领取</text>
+      <button class="go-website-btn" bindtap="goToWebsite">去网站做任务</button>
+    </view>
+  </view>
+
+  <!-- 成就列表 -->
+  <view class="tab-content" wx:if="{{currentTab === 'achievements'}}">
+    <!-- 每日成就 -->
+    <view class="achievement-section">
+      <view class="section-header">
+        <text class="section-title-text">📆 每日成就</text>
+        <text class="section-reset">每日00:00重置</text>
+      </view>
+      <view class="achievement-list">
+        <view class="achievement-item {{item.can_claim ? 'claimable' : item.is_claimed ? 'claimed' : ''}}" 
+              wx:for="{{achievements.daily}}" wx:key="id"
+              bindtap="{{item.can_claim ? 'claimAchievement' : ''}}" data-achievement="{{item}}">
+          <text class="achievement-icon">{{item.icon}}</text>
+          <view class="achievement-info">
+            <text class="achievement-name">{{item.name}}</text>
+            <text class="achievement-desc">{{item.description}}</text>
+            <view class="achievement-progress" wx:if="{{!item.is_completed}}">
+              <view class="mini-progress-bar">
+                <view class="mini-progress-fill" style="width: {{item.progress}}%"></view>
+              </view>
+              <text class="mini-progress-text">{{item.current}}/{{item.target}}</text>
+            </view>
+          </view>
+          <view class="achievement-status">
+            <text wx:if="{{item.is_claimed}}">✓已领</text>
+            <text wx:elif="{{item.can_claim}}" class="can-claim">领取</text>
+            <text wx:else class="credits-preview">+{{item.reward_credits}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 每周成就 -->
+    <view class="achievement-section">
+      <view class="section-header">
+        <text class="section-title-text">📅 每周成就</text>
+        <text class="section-reset">每周一重置</text>
+      </view>
+      <view class="achievement-list">
+        <view class="achievement-item {{item.can_claim ? 'claimable' : item.is_claimed ? 'claimed' : ''}}" 
+              wx:for="{{achievements.weekly}}" wx:key="id"
+              bindtap="{{item.can_claim ? 'claimAchievement' : ''}}" data-achievement="{{item}}">
+          <text class="achievement-icon">{{item.icon}}</text>
+          <view class="achievement-info">
+            <text class="achievement-name">{{item.name}}</text>
+            <text class="achievement-desc">{{item.description}}</text>
+            <view class="achievement-progress" wx:if="{{!item.is_completed}}">
+              <view class="mini-progress-bar">
+                <view class="mini-progress-fill" style="width: {{item.progress}}%"></view>
+              </view>
+              <text class="mini-progress-text">{{item.current}}/{{item.target}}</text>
+            </view>
+          </view>
+          <view class="achievement-status">
+            <text wx:if="{{item.is_claimed}}">✓已领</text>
+            <text wx:elif="{{item.can_claim}}" class="can-claim">领取</text>
+            <text wx:else class="credits-preview">+{{item.reward_credits}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 每月成就 -->
+    <view class="achievement-section">
+      <view class="section-header">
+        <text class="section-title-text">📆 每月成就</text>
+        <text class="section-reset">每月1日重置</text>
+      </view>
+      <view class="achievement-list">
+        <view class="achievement-item {{item.can_claim ? 'claimable' : item.is_claimed ? 'claimed' : ''}}" 
+              wx:for="{{achievements.monthly}}" wx:key="id"
+              bindtap="{{item.can_claim ? 'claimAchievement' : ''}}" data-achievement="{{item}}">
+          <text class="achievement-icon">{{item.icon}}</text>
+          <view class="achievement-info">
+            <text class="achievement-name">{{item.name}}</text>
+            <text class="achievement-desc">{{item.description}}</text>
+            <view class="achievement-progress" wx:if="{{!item.is_completed}}">
+              <view class="mini-progress-bar">
+                <view class="mini-progress-fill" style="width: {{item.progress}}%"></view>
+              </view>
+              <text class="mini-progress-text">{{item.current}}/{{item.target}}</text>
+            </view>
+          </view>
+          <view class="achievement-status">
+            <text wx:if="{{item.is_claimed}}">✓已领</text>
+            <text wx:elif="{{item.can_claim}}" class="can-claim">领取</text>
+            <text wx:else class="credits-preview">+{{item.reward_credits}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 永久成就 -->
+    <view class="achievement-section">
+      <view class="section-header">
+        <text class="section-title-text">🏅 永久成就</text>
+      </view>
+      <view class="achievement-list">
+        <view class="achievement-item {{item.can_claim ? 'claimable' : item.is_claimed ? 'claimed' : ''}}" 
+              wx:for="{{achievements.permanent}}" wx:key="id"
+              bindtap="{{item.can_claim ? 'claimAchievement' : ''}}" data-achievement="{{item}}">
+          <text class="achievement-icon">{{item.icon}}</text>
+          <view class="achievement-info">
+            <text class="achievement-name">{{item.name}}</text>
+            <text class="achievement-desc">{{item.description}}</text>
+            <view class="achievement-progress" wx:if="{{!item.is_completed && item.target > 1}}">
+              <view class="mini-progress-bar">
+                <view class="mini-progress-fill" style="width: {{item.progress}}%"></view>
+              </view>
+              <text class="mini-progress-text">{{item.current}}/{{item.target}}</text>
+            </view>
+          </view>
+          <view class="achievement-status">
+            <text wx:if="{{item.is_claimed}}">✓已领</text>
+            <text wx:elif="{{item.can_claim}}" class="can-claim">领取</text>
+            <text wx:else class="credits-preview">+{{item.reward_credits}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 积分明细 -->
+  <view class="tab-content" wx:if="{{currentTab === 'logs'}}">
+    <!-- 积分统计（文档6.1节要求） -->
+    <view class="logs-stats">
+      <view class="logs-stats-header">
+        <text class="logs-title">📋 积分明细</text>
+        <text class="logs-more" wx:if="{{creditLogs.length >= 20}}">更多 ></text>
+      </view>
+      <view class="logs-stats-row">
+        <view class="stats-item">
+          <text class="stats-label">今日</text>
+          <text class="stats-value positive">+{{logStats.today || 0}}</text>
+        </view>
+        <view class="stats-item">
+          <text class="stats-label">本周</text>
+          <text class="stats-value positive">+{{logStats.week || 0}}</text>
+        </view>
+        <view class="stats-item">
+          <text class="stats-label">本月</text>
+          <text class="stats-value positive">+{{logStats.month || 0}}</text>
+        </view>
+      </view>
+    </view>
+    
+    <view class="logs-list" wx:if="{{creditLogs.length > 0}}">
+      <view class="log-item" wx:for="{{creditLogs}}" wx:key="id">
+        <view class="log-info">
+          <text class="log-desc">{{item.description}}</text>
+          <text class="log-time">{{item.created_at}}</text>
+        </view>
+        <text class="log-amount {{item.amount > 0 ? 'positive' : 'negative'}}">
+          {{item.amount > 0 ? '+' : ''}}{{item.amount}}
+        </text>
+      </view>
+    </view>
+    <view class="empty-state" wx:else>
+      <text class="empty-icon">📝</text>
+      <text class="empty-text">暂无积分记录</text>
+    </view>
+  </view>
+
+  <!-- 智能贴士（文档6.1节底部设计） -->
+  <view class="smart-tip" wx:if="{{smartTip.show}}">
+    <view class="smart-tip-content">
+      <text class="smart-tip-icon">💡</text>
+      <text class="smart-tip-text">{{smartTip.text}}</text>
+    </view>
+  </view>
+</view>

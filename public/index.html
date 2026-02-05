@@ -20,7 +20,7 @@
         .then(r => r.json())
         .then(data => {
           if (data.success) {
-            const siteName = data.siteName || 'JustOneWord';
+            const siteName = data.siteName || '一句话游戏';
             const siteSlogan = data.siteSlogan || '一句话生成游戏';
             const fullTitle = siteName + ' - ' + siteSlogan;
             document.title = fullTitle;
@@ -35,7 +35,7 @@
           }
         })
         .catch(function() {
-          document.title = 'JustOneWord - 一句话生成游戏';
+          document.title = '一句话游戏 - 一句话生成游戏';
         });
     })();
   </script>
@@ -965,7 +965,7 @@
       <div class="home-top-bar">
         <div class="top-bar-brand">
           <span class="brand-logo">🤖</span>
-          <span class="brand-name">JustOneWord</span>
+          <span class="brand-name">一句话游戏</span>
         </div>
         <div class="top-bar-actions">
           <button class="search-trigger-btn" onclick="openSearchPanel()">
@@ -1413,10 +1413,9 @@
         <span class="nav-icon-create">✨</span>
         <span class="nav-label">创作</span>
       </button>
-      <button class="nav-item" data-nav="profile" onclick="handleProfileNavClick()">
+      <button class="nav-item" data-nav="profile" onclick="switchBottomNav('profile')">
         <span class="nav-icon">👤</span>
         <span class="nav-label">我的</span>
-        <span class="nav-badge" id="nav-credits-count">0</span>
       </button>
     </nav>
 
@@ -1812,35 +1811,15 @@
           <div class="settings-panel" id="settings-panel-llm">
             <div class="settings-panel-header">
               <h2>LLM 设置</h2>
-              <p class="settings-panel-desc">选择默认模型并配置 API Key</p>
+              <p class="settings-panel-desc">选择默认使用的AI模型</p>
             </div>
             <div class="settings-panel-body">
               <!-- 模型列表 -->
               <div class="settings-group">
-                <h3>模型配置</h3>
-                <p class="settings-group-hint">勾选设为默认模型，可配置您自己的 API Key（留空使用平台配置）</p>
+                <h3>可用模型</h3>
+                <p class="settings-group-hint">勾选设为默认模型，不同模型消耗不同积分</p>
                 <div class="llm-keys-list" id="llm-keys-list">
                   <!-- 动态生成 -->
-                </div>
-              </div>
-              
-              <!-- 自定义接口设置 -->
-              <div class="settings-group" id="custom-api-group" style="display:none;">
-                <h3>自定义接口</h3>
-                <div class="form-group">
-                  <label>API 地址</label>
-                  <input type="text" id="llm-base-url" placeholder="https://api.example.com/v1">
-                </div>
-                <div class="form-group">
-                  <label>模型名称</label>
-                  <input type="text" id="llm-model" placeholder="gpt-4o">
-                </div>
-                <div class="form-group">
-                  <label>API Key</label>
-                  <div class="input-with-toggle">
-                    <input type="password" id="llm-custom-api-key" placeholder="输入您的 API Key">
-                    <button class="btn-toggle-pwd" onclick="toggleCustomApiKeyVisibility()">👁️</button>
-                  </div>
                 </div>
               </div>
             </div>
@@ -2185,38 +2164,10 @@
                 <h4>🤖 AI 模型</h4>
                 <div class="form-group">
                   <label>选择模型</label>
-                  <select id="profile-model-select" onchange="onProfileModelChange()">
-                    <option value="deepseek-v3">DeepSeek V3 ⭐</option>
-                    <option value="deepseek-r1">DeepSeek R1</option>
-                    <option value="glm-4.7">GLM 4.7</option>
-                    <option value="kimi-k2.5">Kimi K2.5 (多模态)</option>
-                    <option value="kimi-k2-turbo-preview">Kimi K2 Turbo ⭐</option>
-                    <option value="kimi-k2-thinking">Kimi K2 Thinking</option>
-                    <option value="kimi-k2-thinking-turbo">Kimi K2 Thinking Turbo</option>
-                    <option value="kimi-k2-0905-preview">Kimi K2 0905</option>
-                    <option value="kimi-k2-0711-preview">Kimi K2 0711</option>
-                    <option value="qwen3-coder-plus">Qwen3 Coder</option>
-                    <option value="gpt-4o-mini">GPT-4o Mini</option>
-                    <option value="gpt-4o">GPT-4o</option>
-                    <option value="claude-4-sonnet">Claude 4 Sonnet</option>
-                    <option value="claude-4.5-haiku">Claude 4.5 Haiku</option>
-                    <option value="custom">自定义接口...</option>
+                  <select id="profile-model-select">
+                    <!-- 动态从后端加载可用模型 -->
                   </select>
-                </div>
-                <div class="form-group">
-                  <label>API Key <span class="optional-hint">(可选)</span></label>
-                  <div class="input-with-toggle">
-                    <input type="password" id="profile-api-key" placeholder="留空使用默认配置">
-                    <button class="btn-toggle-pwd" onclick="toggleProfileApiKeyVisibility()">👁️</button>
-                  </div>
-                </div>
-                <div class="form-group" id="profile-base-url-group" style="display:none;">
-                  <label>API 地址</label>
-                  <input type="text" id="profile-base-url" placeholder="https://api.example.com/v1">
-                </div>
-                <div class="form-group" id="profile-custom-model-group" style="display:none;">
-                  <label>模型名称</label>
-                  <input type="text" id="profile-custom-model" placeholder="model-name">
+                  <p class="form-hint">不同模型消耗不同积分</p>
                 </div>
               </div>
               
@@ -2430,13 +2381,23 @@
 
   // 处理底部导航"我的"按钮点击
   function handleProfileNavClick() {
-    // 检查用户是否真正登录
+    // 检查用户是否已登录
     if (isReallyLoggedIn()) {
-      // 已登录用户直接进入个人主页
-      goToProfile();
+      // 已登录用户：直接切换到个人主页
+      if (typeof switchBottomNav === 'function') {
+        switchBottomNav('profile');
+      } else {
+        directSwitchToProfile();
+      }
     } else {
-      // 未登录用户：显示登录引导弹窗
-      showLoginPrompt();
+      // 未登录用户：弹出登录弹窗
+      if (typeof openModal === 'function') {
+        openModal('login-modal');
+      } else if (typeof goToLogin === 'function') {
+        goToLogin();
+      } else {
+        alert('请先登录');
+      }
     }
   }
   

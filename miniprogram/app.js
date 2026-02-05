@@ -1,5 +1,5 @@
 /**
- * AI游戏工坊 - 微信小程序
+ * 一句话游戏 - 微信小程序
  * 全局入口文件
  */
 
@@ -12,8 +12,8 @@ const config = {
   // 版本号
   version: '1.0.0',
   // 站点名称（从后台加载）
-  siteName: 'AI游戏工坊',
-  miniprogramName: 'AI游戏工坊',
+  siteName: '一句话游戏',
+  miniprogramName: '一句话游戏',
   siteSlogan: '一句话生成游戏'
 };
 
@@ -75,7 +75,7 @@ App({
 
   // 获取小程序名称（供各页面使用）
   getAppName() {
-    return this.globalData.config.miniprogramName || 'AI游戏工坊';
+    return this.globalData.config.miniprogramName || '一句话游戏';
   },
 
   // 检查登录状态

@@ -1973,7 +1973,7 @@ const API_BASE = '/api/games';
 // 网站配置（禁用写操作检查）
 let siteConfig = {
   webWriteDisabled: true,  // 默认禁用，等待API返回
-  miniprogram: { name: 'JustOneWord', appId: '', defaultPath: '/pages/create/create' }
+  miniprogram: { name: '一句话游戏', appId: '', defaultPath: '/pages/create/create' }
 };
 
 // 加载网站配置
@@ -1998,9 +1998,18 @@ function isWebWriteDisabled() {
 // ==================== 网站登录检测 ====================
 
 // 检查网站登录状态
+// 兼容多种登录凭证：aigame-jwt（密码登录）、aigame-user-token 或 aigame-author-token（设备自动登录）
 function isWebLoggedIn() {
   const jwt = localStorage.getItem('aigame-jwt');
-  return jwt && jwt.length > 0;
+  if (jwt && jwt.length > 0) return true;
+  
+  const userToken = localStorage.getItem('aigame-user-token');
+  if (userToken && userToken.length > 0) return true;
+  
+  const authorToken = localStorage.getItem('aigame-author-token');
+  if (authorToken && authorToken.length > 0) return true;
+  
+  return false;
 }
 
 // 获取网站登录用户信息
@@ -2094,7 +2103,7 @@ function getMaxZIndex() {
 
 // 显示小程序引导弹窗
 function showMiniprogramGuide(actionName, targetPath) {
-  const mpName = siteConfig.miniprogram?.name || 'JustOneWord';
+  const mpName = siteConfig.miniprogram?.name || '一句话游戏';
   const appId = siteConfig.miniprogram?.appId || '';
   const path = targetPath || siteConfig.miniprogram?.defaultPath || '/pages/create/create';
   const fullPath = gameId ? path + '?id=' + gameId : path;
@@ -2138,7 +2147,7 @@ function showMiniprogramGuide(actionName, targetPath) {
 }
 
 function showQrcodeError() {
-  const mpName = siteConfig.miniprogram?.name || 'JustOneWord';
+  const mpName = siteConfig.miniprogram?.name || '一句话游戏';
   const container = document.getElementById('miniprogram-qrcode-container');
   if (container) {
     container.innerHTML = '<div style="text-align:center;padding:1rem;color:#666;"><div style="font-size:2rem;margin-bottom:0.5rem;">🔍</div><p style="font-size:0.75rem;">微信搜索</p><p style="font-size:0.875rem;font-weight:600;color:#333;">' + mpName + '</p></div>';
@@ -2148,6 +2157,345 @@ function showQrcodeError() {
 function closeMiniprogramGuide() {
   const modal = document.getElementById('miniprogram-guide-modal');
   if (modal) modal.remove();
+}
+
+// 显示积分不足弹窗（严格按文档设计，与主站一致）
+function showCreditsModal() {
+  const mpName = siteConfig.miniprogram?.name || '一句话游戏';
+  const qrcodeUrl = '/images/miniprogram.png';
+  
+  // 移除旧的弹窗
+  const oldModal = document.getElementById('credits-modal');
+  if (oldModal) oldModal.remove();
+  
+  // 动态计算z-index
+  const maxZIndex = getMaxZIndex();
+  const modalZIndex = maxZIndex + 10;
+  
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.id = 'credits-modal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:' + modalZIndex + ';';
+  modal.onclick = function(e) { if (e.target === modal) closeCreditsModal(); };
+  
+  modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:16px;max-width:480px;width:90%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.5);color:#fff;">' +
+    '<div style="padding:1rem 1.5rem;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">' +
+      '<h3 style="margin:0;font-size:1.1rem;">💎 积分不足</h3>' +
+      '<button onclick="closeCreditsModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#888;">×</button>' +
+    '</div>' +
+    '<div style="padding:1rem 1.25rem;overflow-y:auto;flex:1;">' +
+      // 顶部：积分状态
+      '<div style="text-align:center;margin-bottom:1rem;">' +
+        '<div style="font-size:2.5rem;margin-bottom:0.5rem;">😢</div>' +
+        '<p style="color:#f87171;font-size:0.9375rem;margin:0;">积分不足，无法执行此操作</p>' +
+      '</div>' +
+      // 小程序二维码区域
+      '<div style="background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.1));border:1px solid rgba(99,102,241,0.3);border-radius:12px;padding:1rem;margin-bottom:1rem;">' +
+        '<div style="text-align:center;font-size:0.875rem;font-weight:600;color:#e2e8f0;margin-bottom:0.75rem;">📱 扫码打开小程序领取积分</div>' +
+        '<div style="display:flex;align-items:center;gap:1rem;">' +
+          '<div style="background:#fff;border-radius:8px;padding:8px;flex-shrink:0;">' +
+            '<img src="' + qrcodeUrl + '" alt="小程序码" style="width:90px;height:90px;display:block;" onerror="this.parentNode.innerHTML=\'<div style=text-align:center;padding:1rem;font-size:0.75rem;color:#666>扫码失败<br>请搜索「' + mpName + '」</div>\'">' +
+          '</div>' +
+          '<div style="flex:1;min-width:0;display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">' +
+            '<div style="font-size:0.75rem;color:#94a3b8;">📅 签到 <strong style="color:#10b981;">+1</strong></div>' +
+            '<div style="font-size:0.75rem;color:#94a3b8;">🏆 领成就 <strong style="color:#10b981;">+N</strong></div>' +
+            '<div style="font-size:0.75rem;color:#94a3b8;">👥 邀请 <strong style="color:#10b981;">+5</strong></div>' +
+            '<div style="font-size:0.75rem;color:#94a3b8;">🎬 广告 <span style="color:#64748b;">即将开放</span></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      // 可领取奖励区域
+      '<div style="margin-bottom:1rem;">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">' +
+          '<div style="display:flex;align-items:center;gap:0.5rem;">' +
+            '<span style="font-size:1rem;">🎁</span>' +
+            '<span style="font-size:0.875rem;font-weight:600;color:#e2e8f0;">可领取奖励</span>' +
+            '<span id="credits-modal-total" style="font-size:0.75rem;color:#10b981;"></span>' +
+          '</div>' +
+          '<a href="javascript:void(0)" onclick="showMpClaimTip()" style="font-size:0.75rem;color:#6366f1;text-decoration:none;">去小程序领取 →</a>' +
+        '</div>' +
+        '<div id="credits-modal-claimable" style="max-height:200px;overflow-y:auto;border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:rgba(0,0,0,0.2);">' +
+          '<div style="text-align:center;padding:1rem;color:#94a3b8;font-size:0.8125rem;">加载中...</div>' +
+        '</div>' +
+      '</div>' +
+      // 进行中区域
+      '<div id="credits-modal-inprogress-section" style="margin-bottom:1rem;display:none;">' +
+        '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">' +
+          '<span style="font-size:1rem;">📈</span>' +
+          '<span style="font-size:0.875rem;font-weight:600;color:#e2e8f0;">进行中</span>' +
+          '<span style="font-size:0.75rem;color:#94a3b8;">(继续努力即可领取)</span>' +
+        '</div>' +
+        '<div id="credits-modal-inprogress" style="max-height:180px;overflow-y:auto;border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:rgba(0,0,0,0.2);"></div>' +
+      '</div>' +
+      // 底部智能贴士
+      '<div id="credits-modal-tips">' +
+        '<div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:8px;padding:0.75rem;text-align:center;">' +
+          '<p style="color:#10b981;font-size:0.8125rem;margin:0;">💡 在小程序中点赞、收藏、评论都可以获得积分奖励</p>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="padding:1rem 1.5rem;display:flex;gap:0.75rem;justify-content:center;border-top:1px solid rgba(255,255,255,0.1);flex-shrink:0;">' +
+      '<button onclick="closeCreditsModal()" style="padding:0.75rem 1.5rem;background:rgba(255,255,255,0.1);color:#94a3b8;border:none;border-radius:8px;font-size:0.875rem;cursor:pointer;">稍后再说</button>' +
+      '<button onclick="copyMpName()" style="padding:0.75rem 1.5rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:8px;font-size:0.875rem;cursor:pointer;font-weight:600;">📋 复制小程序名</button>' +
+    '</div>' +
+  '</div>';
+  
+  document.body.appendChild(modal);
+  
+  // 异步加载可领取奖励
+  loadCreditsModalData();
+}
+
+// 点击提示去小程序领取
+function showMpClaimTip() {
+  const mpName = siteConfig.miniprogram?.name || '一句话游戏';
+  showToast('请打开微信搜索「' + mpName + '」小程序领取积分奖励', 'info');
+}
+
+// 点击单个条目提示
+function onCreditsItemClick(name) {
+  const mpName = siteConfig.miniprogram?.name || '一句话游戏';
+  showToast('【' + name + '】奖励需在小程序中领取，请搜索「' + mpName + '」', 'info');
+}
+
+// 加载弹窗数据
+function loadCreditsModalData() {
+  const claimableContainer = document.getElementById('credits-modal-claimable');
+  const inprogressContainer = document.getElementById('credits-modal-inprogress');
+  const inprogressSection = document.getElementById('credits-modal-inprogress-section');
+  const totalEl = document.getElementById('credits-modal-total');
+  const tipsEl = document.getElementById('credits-modal-tips');
+  
+  const userToken = getUserToken();
+  if (!userToken) {
+    claimableContainer.innerHTML = '<div style="text-align:center;padding:1rem;color:#94a3b8;font-size:0.8125rem;">📱 请先登录，然后去小程序获取积分</div>';
+    return;
+  }
+  
+  fetch('/api/user/credits-progress', { headers: { 'X-User-Token': userToken } })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (!data.success) {
+        claimableContainer.innerHTML = '<div style="text-align:center;padding:1rem;color:#94a3b8;font-size:0.8125rem;">去小程序查看更多成就任务</div>';
+        return;
+      }
+      
+      var result = data.data;
+      var checkin = result.checkin;
+      var actionProgress = result.action_progress;
+      var claimableAchievements = result.claimable_achievements;
+      var inProgressAchievements = result.in_progress_achievements;
+      var summary = result.summary;
+      var tips = result.tips;
+      
+      // 更新总积分
+      if (totalEl) {
+        totalEl.textContent = '(共 ' + (summary.total_claimable || 0) + ' 积分)';
+      }
+      
+      // 构建可领取区域HTML
+      var claimableHtml = '';
+      
+      // 签到
+      var checkinItems = '';
+      if (!checkin.checked_in_today) {
+        checkinItems += renderCreditsItem('今日签到', '+1', '未签到', 'pending');
+      }
+      if (checkin.streak_days >= 3 && checkin.streak_days < 7) {
+        checkinItems += renderCreditsItem('连续签到3天奖励', '+1', '已达成', 'claimable');
+      }
+      if (checkin.streak_days >= 7) {
+        checkinItems += renderCreditsItem('连续签到7天奖励', '+2', '已达成', 'claimable');
+      }
+      if (checkinItems) {
+        claimableHtml += renderCreditsCategory('📅', '签到', checkinItems);
+      }
+      
+      // 互动积分
+      var actionItems = '';
+      actionProgress.forEach(function(action) {
+        if (action.can_claim_count > 0) {
+          for (var i = 0; i < action.can_claim_count; i++) {
+            actionItems += renderCreditsItem(action.name + '奖励 (' + action.target + '/' + action.target + ')', '+' + action.reward, '可领取', 'claimable');
+          }
+        }
+      });
+      if (actionItems) {
+        claimableHtml += renderCreditsCategory('❤️', '互动积分', actionItems);
+      }
+      
+      // 成就分类
+      var achievementsByCategory = {
+        daily: { icon: '🏆', name: '每日成就', items: [] },
+        weekly: { icon: '📅', name: '每周成就', items: [] },
+        monthly: { icon: '📆', name: '每月成就', items: [] },
+        permanent: { icon: '🎖️', name: '永久成就', items: [] }
+      };
+      
+      claimableAchievements.forEach(function(ach) {
+        var cat = achievementsByCategory[ach.category] || achievementsByCategory.permanent;
+        cat.items.push(ach);
+      });
+      
+      Object.keys(achievementsByCategory).forEach(function(key) {
+        var cat = achievementsByCategory[key];
+        if (cat.items.length > 0) {
+          var items = '';
+          cat.items.forEach(function(ach) {
+            var progressText = ach.current !== undefined ? ' (' + ach.current + '/' + ach.target + ')' : '';
+            items += renderCreditsItem(escapeHtmlSimple(ach.name) + progressText, '+' + ach.reward, '可领取', 'claimable');
+          });
+          claimableHtml += renderCreditsCategory(cat.icon, cat.name, items);
+        }
+      });
+      
+      if (claimableHtml) {
+        claimableContainer.innerHTML = claimableHtml;
+      } else {
+        claimableContainer.innerHTML = '<div style="text-align:center;padding:1rem;color:#94a3b8;font-size:0.8125rem;">暂无可领取奖励，去小程序签到、互动即可获得</div>';
+      }
+      
+      // 构建进行中区域HTML
+      var inprogressHtml = '';
+      
+      // 互动进度（显示所有未完成的互动类型）
+      var actionProgressItems = '';
+      actionProgress.forEach(function(action) {
+        if (action.can_claim_count === 0) {
+          // 按文档设计格式：点赞 28/30 93% +1
+          actionProgressItems += renderCreditsProgressItem(action.name, action.current, action.target, action.progress, action.reward);
+        }
+      });
+      if (actionProgressItems) {
+        inprogressHtml += renderCreditsCategory('❤️', '互动进度', actionProgressItems);
+      }
+      
+      // 进行中的成就
+      var inProgressByCategory = {
+        daily: { icon: '🏆', name: '每日成就', items: [] },
+        weekly: { icon: '📅', name: '每周成就', items: [] },
+        monthly: { icon: '📆', name: '每月成就', items: [] },
+        permanent: { icon: '🎖️', name: '永久成就', items: [] }
+      };
+      
+      inProgressAchievements.forEach(function(ach) {
+        if (ach.progress > 0) {
+          var cat = inProgressByCategory[ach.category] || inProgressByCategory.permanent;
+          cat.items.push(ach);
+        }
+      });
+      
+      Object.keys(inProgressByCategory).forEach(function(key) {
+        var cat = inProgressByCategory[key];
+        if (cat.items.length > 0) {
+          var items = '';
+          cat.items.forEach(function(ach) {
+            items += renderCreditsProgressItem(escapeHtmlSimple(ach.name), ach.current, ach.target, ach.progress, ach.reward);
+          });
+          inprogressHtml += renderCreditsCategory(cat.icon, cat.name, items);
+        }
+      });
+      
+      if (inprogressHtml && inprogressContainer && inprogressSection) {
+        inprogressContainer.innerHTML = inprogressHtml;
+        inprogressSection.style.display = 'block';
+      }
+      
+      // 更新智能提示
+      if (tipsEl && tips && tips.length > 0) {
+        tipsEl.innerHTML = '<div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:8px;padding:0.75rem;text-align:center;">' +
+          '<p style="color:#10b981;font-size:0.8125rem;margin:0;">💡 ' + tips[0] + '</p>' +
+        '</div>';
+      }
+    })
+    .catch(function(err) {
+      console.error('加载积分进度失败:', err);
+      claimableContainer.innerHTML = '<div style="text-align:center;padding:1rem;color:#94a3b8;font-size:0.8125rem;">📱 去小程序查看更多获取积分的方式</div>';
+    });
+}
+
+// 渲染分类
+function renderCreditsCategory(icon, name, itemsHtml) {
+  return '<div style="border-bottom:1px solid rgba(255,255,255,0.1);">' +
+    '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;background:rgba(99,102,241,0.1);">' +
+      '<span>' + icon + '</span>' +
+      '<span style="font-size:0.8125rem;font-weight:600;color:#e2e8f0;">' + name + '</span>' +
+    '</div>' +
+    itemsHtml +
+  '</div>';
+}
+
+// 渲染可领取条目
+function renderCreditsItem(name, credits, status, statusType) {
+  var statusColors = {
+    'pending': { bg: 'rgba(148,163,184,0.2)', text: '#94a3b8' },
+    'claimable': { bg: 'rgba(16,185,129,0.2)', text: '#10b981' }
+  };
+  var colors = statusColors[statusType] || statusColors.claimable;
+  
+  return '<div onclick="onCreditsItemClick(\'' + escapeHtmlSimple(name) + '\')" ' +
+    'style="display:flex;align-items:center;padding:0.5rem 0.75rem;cursor:pointer;transition:background 0.2s;" ' +
+    'onmouseover="this.style.background=\'rgba(99,102,241,0.1)\'" onmouseout="this.style.background=\'transparent\'">' +
+    '<div style="flex:1;font-size:0.8125rem;color:#e2e8f0;">• ' + name + '</div>' +
+    '<div style="font-size:0.8125rem;color:#10b981;margin-right:0.75rem;">' + credits + '</div>' +
+    '<div style="font-size:0.6875rem;padding:2px 8px;border-radius:4px;background:' + colors.bg + ';color:' + colors.text + ';">' + status + '</div>' +
+  '</div>';
+}
+
+// 渲染进度条条目
+function renderCreditsProgressItem(name, current, target, progress, reward) {
+  return '<div style="padding:0.5rem 0.75rem;">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">' +
+      '<span style="font-size:0.8125rem;color:#e2e8f0;">• ' + name + '</span>' +
+      '<span style="font-size:0.75rem;color:#6366f1;">+' + reward + '</span>' +
+    '</div>' +
+    '<div style="display:flex;align-items:center;gap:0.5rem;">' +
+      '<div style="flex:1;height:6px;background:rgba(99,102,241,0.15);border-radius:3px;overflow:hidden;">' +
+        '<div style="height:100%;width:' + progress + '%;background:linear-gradient(90deg,#6366f1,#8b5cf6);border-radius:3px;"></div>' +
+      '</div>' +
+      '<span style="font-size:0.625rem;color:#94a3b8;">' + progress + '%</span>' +
+      '<span style="font-size:0.6875rem;color:#94a3b8;min-width:45px;text-align:right;">' + current + '/' + target + '</span>' +
+    '</div>' +
+  '</div>';
+}
+
+// 简单的HTML转义
+function escapeHtmlSimple(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function closeCreditsModal() {
+  const modal = document.getElementById('credits-modal');
+  if (modal) modal.remove();
+}
+
+function copyMpName() {
+  const mpName = siteConfig.miniprogram?.name || '一句话游戏';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(mpName).then(function() {
+      showToast('已复制「' + mpName + '」，请在微信中搜索', 'success');
+    }).catch(function() {
+      fallbackCopy(mpName);
+    });
+  } else {
+    fallbackCopy(mpName);
+  }
+}
+
+function fallbackCopy(text) {
+  const input = document.createElement('input');
+  input.value = text;
+  input.style.cssText = 'position:fixed;left:-9999px;';
+  document.body.appendChild(input);
+  input.select();
+  try {
+    document.execCommand('copy');
+    showToast('已复制「' + text + '」，请在微信中搜索', 'success');
+  } catch (e) {
+    showToast('复制失败，请手动搜索「' + text + '」', 'error');
+  }
+  document.body.removeChild(input);
 }
 
 // 调试日志
@@ -2263,6 +2611,141 @@ function showToast(message, type) {
     toast.style.transition = 'opacity 0.3s ease';
     setTimeout(function() { if (toast.parentNode) toast.remove(); }, 300);
   }, 2500);
+}
+
+// ====== 互动积分提示条功能 ======
+var interactionTipState = { lastShowTime: 0, showCount: 0, maxShowPerSession: 10 };
+
+// 显示互动积分提示条（引导用户去小程序领取积分）
+function showInteractionCreditTip(actionType) {
+  console.log('[积分提示条] showInteractionCreditTip 被调用, actionType:', actionType);
+  
+  // 检查显示限制
+  console.log('[积分提示条] 状态检查 - showCount:', interactionTipState.showCount, 'maxShowPerSession:', interactionTipState.maxShowPerSession);
+  if (interactionTipState.showCount >= interactionTipState.maxShowPerSession) {
+    console.log('[积分提示条] 达到最大显示次数，跳过');
+    return;
+  }
+  var now = Date.now();
+  var timeSinceLast = now - interactionTipState.lastShowTime;
+  console.log('[积分提示条] 时间检查 - 距上次:', timeSinceLast, 'ms');
+  if (timeSinceLast < 5000) {
+    console.log('[积分提示条] 时间间隔太短，跳过');
+    return;
+  }
+  
+  // 移除已存在的提示条
+  var existingTip = document.getElementById('interaction-credit-tip');
+  if (existingTip) existingTip.remove();
+  
+  var userToken = getUserToken();
+  console.log('[积分提示条] userToken:', userToken ? userToken.substring(0, 8) + '...' : 'null');
+  if (!userToken) {
+    console.log('[积分提示条] 未登录，跳过');
+    return;
+  }
+  
+  console.log('[积分提示条] 开始获取积分进度...');
+  // 获取积分进度数据
+  fetch('/api/user/credits-progress', { headers: { 'X-User-Token': userToken } })
+    .then(function(res) { return res.json(); })
+    .then(function(result) {
+      console.log('[积分提示条] API响应:', result.success ? '成功' : '失败');
+      if (!result.success) {
+        console.log('[积分提示条] API返回失败，跳过');
+        return;
+      }
+      var actionProgress = result.data.action_progress;
+      var ap = actionProgress.find(function(a) { return a.type === actionType; });
+      
+      var actionIcons = { like: '❤️', favorite: '⭐', comment: '💬', follow: '➕', share: '🔗' };
+      var actionNames = { like: '点赞', favorite: '收藏', comment: '评论', follow: '关注', share: '分享' };
+      var icon = actionIcons[actionType] || '💎';
+      var actionName = actionNames[actionType] || '互动';
+      
+      var tipText;
+      if (ap) {
+        if (ap.can_claim_count > 0) {
+          tipText = '🎉 ' + actionName + '满' + ap.target + '次！去小程序领取' + ap.reward + '积分';
+        } else if (ap.remaining <= 3) {
+          tipText = icon + ' 再' + actionName + ap.remaining + '次即可领取' + ap.reward + '积分！';
+        } else {
+          tipText = icon + ' ' + actionName + '成功！累计' + ap.current + '/' + ap.target + '次，完成后去小程序领' + ap.reward + '积分';
+        }
+      } else {
+        tipText = icon + ' ' + actionName + '成功！去小程序签到可领取更多积分~';
+      }
+      
+      // 动态获取当前最高的z-index（优先使用弹窗管理器的层级）
+      var tipZIndex = 9999;
+      console.log('[积分提示条] modalZIndexManager存在:', typeof modalZIndexManager !== 'undefined');
+      if (typeof modalZIndexManager !== 'undefined') {
+        console.log('[积分提示条] modalZIndexManager.currentZIndex:', modalZIndexManager.currentZIndex);
+        console.log('[积分提示条] modalZIndexManager.modalStack:', JSON.stringify(modalZIndexManager.modalStack));
+      }
+      if (typeof modalZIndexManager !== 'undefined' && modalZIndexManager.currentZIndex) {
+        tipZIndex = modalZIndexManager.currentZIndex + 100;
+        console.log('[积分提示条] 使用modalZIndexManager层级, tipZIndex:', tipZIndex);
+      } else {
+        var maxZ = 9998;
+        document.querySelectorAll('*').forEach(function(el) {
+          var z = parseInt(window.getComputedStyle(el).zIndex);
+          if (!isNaN(z) && z > maxZ && z < 2147483647) maxZ = z;
+        });
+        tipZIndex = maxZ + 10;
+        console.log('[积分提示条] 扫描元素层级, maxZ:', maxZ, 'tipZIndex:', tipZIndex);
+      }
+      
+      // 查找当前打开的弹窗的实际z-index
+      var commentsModal = document.querySelector('.comments-modal, [class*="modal"]');
+      if (commentsModal) {
+        console.log('[积分提示条] 找到弹窗元素:', commentsModal.className, '实际z-index:', window.getComputedStyle(commentsModal).zIndex);
+      }
+      
+      console.log('[积分提示条] 最终使用的tipZIndex:', tipZIndex);
+      
+      // 创建提示条
+      var tipBar = document.createElement('div');
+      tipBar.id = 'interaction-credit-tip';
+      tipBar.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px 10px 16px;">' +
+        '<span style="font-size:0.8125rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + tipText + '</span>' +
+        '<button onclick="openMiniprogramQRPanel()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:4px 12px;border-radius:15px;font-size:0.75rem;cursor:pointer;white-space:nowrap;">去领取</button>' +
+        '<button onclick="closeInteractionCreditTip()" style="background:none;border:none;color:rgba(255,255,255,0.7);font-size:1.25rem;cursor:pointer;padding:0 4px;line-height:1;">×</button>' +
+        '</div>';
+      tipBar.style.cssText = 'position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:' + tipZIndex + ';background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;padding:0;border-radius:25px;box-shadow:0 4px 20px rgba(99,102,241,0.4);animation:tipSlideUp 0.3s ease-out;max-width:calc(100% - 32px);width:auto;';
+      
+      // 添加动画样式
+      if (!document.getElementById('tip-anim-style')) {
+        var style = document.createElement('style');
+        style.id = 'tip-anim-style';
+        style.textContent = '@keyframes tipSlideUp{from{opacity:0;transform:translateX(-50%) translateY(20px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}';
+        document.head.appendChild(style);
+      }
+      
+      document.body.appendChild(tipBar);
+      interactionTipState.lastShowTime = now;
+      interactionTipState.showCount++;
+      
+      // 5秒后自动关闭
+      setTimeout(closeInteractionCreditTip, 5000);
+    })
+    .catch(function(e) { console.log('获取积分进度失败', e); });
+}
+
+// 关闭互动提示条
+function closeInteractionCreditTip() {
+  var tip = document.getElementById('interaction-credit-tip');
+  if (tip) {
+    tip.style.opacity = '0';
+    tip.style.transition = 'opacity 0.3s ease';
+    setTimeout(function() { if (tip.parentNode) tip.remove(); }, 300);
+  }
+}
+
+// 打开小程序码面板（显示引导弹窗，引导用户扫码或搜索小程序）
+function openMiniprogramQRPanel() {
+  // 显示小程序引导弹窗，引导用户扫码或搜索小程序领取积分
+  showMiniprogramGuide('领取积分', '/pages/credits/credits');
 }
 
 function getAuthHeaders() {
@@ -2435,7 +2918,12 @@ function repairGame() {
           showToast('🔧 修复任务已启动！AI正在后台处理，完成后请刷新页面查看', 'success');
         }
       } else {
-        showToast(data.error || '修复失败，请重试', 'error');
+        // 检查是否是积分不足错误
+        if (data.error && data.error.includes('积分不足')) {
+          showCreditsModal();
+        } else {
+          showToast(data.error || '修复失败，请重试', 'error');
+        }
       }
     })
     .catch(err => {
@@ -2492,11 +2980,9 @@ function likeGame() {
         if (data.liked !== undefined) {
           btn.classList.toggle('liked', data.liked);
         }
-        // 显示提示
-        if (data.creditAwarded && data.creditMessage) {
-          showToast('感谢点赞！❤️ ' + data.creditMessage, 'success');
-        } else if (data.liked) {
-          showToast('感谢点赞！❤️', 'success');
+        // 点赞成功后直接显示积分进度提示条
+        if (data.liked) {
+          showInteractionCreditTip('like');
         } else {
           showToast('已取消点赞');
         }
@@ -2547,11 +3033,9 @@ function toggleFavorite() {
         if (data.favorite_count !== undefined) {
           countEl.innerText = data.favorite_count;
         }
-        // 显示提示
-        if (data.creditAwarded && data.creditMessage) {
-          showToast('已添加到收藏 ⭐ ' + data.creditMessage, 'success');
-        } else if (data.favorited) {
-          showToast('已添加到收藏 ⭐', 'success');
+        // 收藏成功后直接显示积分进度提示条
+        if (data.favorited) {
+          showInteractionCreditTip('favorite');
         } else {
           showToast('已取消收藏');
         }
@@ -2603,8 +3087,9 @@ function copyShareText() {
   const text = document.getElementById('share-text').value;
   if (navigator.clipboard) {
     navigator.clipboard.writeText(text).then(() => {
-      alert('分享内容已复制，快去分享给好友吧！');
       closeSharePanel();
+      // 直接显示积分进度提示条
+      showInteractionCreditTip('share');
     }).catch(() => {
       fallbackCopy(text);
     });
@@ -2622,8 +3107,9 @@ function fallbackCopy(text) {
   textarea.select();
   document.execCommand('copy');
   document.body.removeChild(textarea);
-  alert('分享内容已复制，快去分享给好友吧！');
   closeSharePanel();
+  // 直接显示积分进度提示条
+  showInteractionCreditTip('share');
 }
 
 // 用户主页作品分页状态
@@ -3533,12 +4019,8 @@ function submitGameComment() {
         commentsData.total++;
         renderComments();
         updateCommentsCount();
-        // 显示提示
-        if (data.creditAwarded && data.creditMessage) {
-          showToast('留言发布成功！' + data.creditMessage, 'success');
-        } else {
-          showToast('留言发布成功', 'success');
-        }
+        // 评论成功后直接显示积分进度提示条
+        showInteractionCreditTip('comment');
       } else {
         showToast(data.error || '发布失败');
       }

@@ -5,7 +5,7 @@ const app = getApp();
 
 Page({
   data: {
-    appName: 'AI游戏工坊', // 从全局配置获取
+    appName: '一句话游戏', // 从全局配置获取
     // 轮播Tab
     currentTab: 0,
     tabs: [

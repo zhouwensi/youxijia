@@ -1399,7 +1399,7 @@ const API_BASE = '/api/games';
 // 网站配置（禁用写操作检查）
 let siteConfig = {
   webWriteDisabled: true,  // 默认禁用，等待API返回
-  miniprogram: { name: 'JustOneWord', appId: '', defaultPath: '/pages/create/create' }
+  miniprogram: { name: '一句话游戏', appId: '', defaultPath: '/pages/create/create' }
 };
 
 // 加载网站配置
@@ -1424,9 +1424,18 @@ function isWebWriteDisabled() {
 // ==================== 网站登录检测 ====================
 
 // 检查网站登录状态
+// 兼容多种登录凭证：aigame-jwt（密码登录）、aigame-user-token 或 aigame-author-token（设备自动登录）
 function isWebLoggedIn() {
   const jwt = localStorage.getItem('aigame-jwt');
-  return jwt && jwt.length > 0;
+  if (jwt && jwt.length > 0) return true;
+  
+  const userToken = localStorage.getItem('aigame-user-token');
+  if (userToken && userToken.length > 0) return true;
+  
+  const authorToken = localStorage.getItem('aigame-author-token');
+  if (authorToken && authorToken.length > 0) return true;
+  
+  return false;
 }
 
 // 获取网站登录用户信息
@@ -1520,7 +1529,7 @@ function getMaxZIndex() {
 
 // 显示小程序引导弹窗
 function showMiniprogramGuide(actionName, targetPath) {
-  const mpName = siteConfig.miniprogram?.name || 'JustOneWord';
+  const mpName = siteConfig.miniprogram?.name || '一句话游戏';
   const appId = siteConfig.miniprogram?.appId || '';
   const path = targetPath || siteConfig.miniprogram?.defaultPath || '/pages/create/create';
   const fullPath = gameId ? path + '?id=' + gameId : path;
@@ -1564,7 +1573,7 @@ function showMiniprogramGuide(actionName, targetPath) {
 }
 
 function showQrcodeError() {
-  const mpName = siteConfig.miniprogram?.name || 'JustOneWord';
+  const mpName = siteConfig.miniprogram?.name || '一句话游戏';
   const container = document.getElementById('miniprogram-qrcode-container');
   if (container) {
     container.innerHTML = '<div style="text-align:center;padding:1rem;color:#666;"><div style="font-size:2rem;margin-bottom:0.5rem;">🔍</div><p style="font-size:0.75rem;">微信搜索</p><p style="font-size:0.875rem;font-weight:600;color:#333;">' + mpName + '</p></div>';
@@ -1574,6 +1583,345 @@ function showQrcodeError() {
 function closeMiniprogramGuide() {
   const modal = document.getElementById('miniprogram-guide-modal');
   if (modal) modal.remove();
+}
+
+// 显示积分不足弹窗（严格按文档设计，与主站一致）
+function showCreditsModal() {
+  const mpName = siteConfig.miniprogram?.name || '一句话游戏';
+  const qrcodeUrl = '/images/miniprogram.png';
+  
+  // 移除旧的弹窗
+  const oldModal = document.getElementById('credits-modal');
+  if (oldModal) oldModal.remove();
+  
+  // 动态计算z-index
+  const maxZIndex = getMaxZIndex();
+  const modalZIndex = maxZIndex + 10;
+  
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.id = 'credits-modal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:' + modalZIndex + ';';
+  modal.onclick = function(e) { if (e.target === modal) closeCreditsModal(); };
+  
+  modal.innerHTML = '<div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:16px;max-width:480px;width:90%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.5);color:#fff;">' +
+    '<div style="padding:1rem 1.5rem;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">' +
+      '<h3 style="margin:0;font-size:1.1rem;">💎 积分不足</h3>' +
+      '<button onclick="closeCreditsModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#888;">×</button>' +
+    '</div>' +
+    '<div style="padding:1rem 1.25rem;overflow-y:auto;flex:1;">' +
+      // 顶部：积分状态
+      '<div style="text-align:center;margin-bottom:1rem;">' +
+        '<div style="font-size:2.5rem;margin-bottom:0.5rem;">😢</div>' +
+        '<p style="color:#f87171;font-size:0.9375rem;margin:0;">积分不足，无法执行此操作</p>' +
+      '</div>' +
+      // 小程序二维码区域
+      '<div style="background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.1));border:1px solid rgba(99,102,241,0.3);border-radius:12px;padding:1rem;margin-bottom:1rem;">' +
+        '<div style="text-align:center;font-size:0.875rem;font-weight:600;color:#e2e8f0;margin-bottom:0.75rem;">📱 扫码打开小程序领取积分</div>' +
+        '<div style="display:flex;align-items:center;gap:1rem;">' +
+          '<div style="background:#fff;border-radius:8px;padding:8px;flex-shrink:0;">' +
+            '<img src="' + qrcodeUrl + '" alt="小程序码" style="width:90px;height:90px;display:block;" onerror="this.parentNode.innerHTML=\\'<div style=text-align:center;padding:1rem;font-size:0.75rem;color:#666>扫码失败<br>请搜索「' + mpName + '」</div>\\'">' +
+          '</div>' +
+          '<div style="flex:1;min-width:0;display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">' +
+            '<div style="font-size:0.75rem;color:#94a3b8;">📅 签到 <strong style="color:#10b981;">+1</strong></div>' +
+            '<div style="font-size:0.75rem;color:#94a3b8;">🏆 领成就 <strong style="color:#10b981;">+N</strong></div>' +
+            '<div style="font-size:0.75rem;color:#94a3b8;">👥 邀请 <strong style="color:#10b981;">+5</strong></div>' +
+            '<div style="font-size:0.75rem;color:#94a3b8;">🎬 广告 <span style="color:#64748b;">即将开放</span></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      // 可领取奖励区域
+      '<div style="margin-bottom:1rem;">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">' +
+          '<div style="display:flex;align-items:center;gap:0.5rem;">' +
+            '<span style="font-size:1rem;">🎁</span>' +
+            '<span style="font-size:0.875rem;font-weight:600;color:#e2e8f0;">可领取奖励</span>' +
+            '<span id="credits-modal-total" style="font-size:0.75rem;color:#10b981;"></span>' +
+          '</div>' +
+          '<a href="javascript:void(0)" onclick="showMpClaimTip()" style="font-size:0.75rem;color:#6366f1;text-decoration:none;">去小程序领取 →</a>' +
+        '</div>' +
+        '<div id="credits-modal-claimable" style="max-height:200px;overflow-y:auto;border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:rgba(0,0,0,0.2);">' +
+          '<div style="text-align:center;padding:1rem;color:#94a3b8;font-size:0.8125rem;">加载中...</div>' +
+        '</div>' +
+      '</div>' +
+      // 进行中区域
+      '<div id="credits-modal-inprogress-section" style="margin-bottom:1rem;display:none;">' +
+        '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">' +
+          '<span style="font-size:1rem;">📈</span>' +
+          '<span style="font-size:0.875rem;font-weight:600;color:#e2e8f0;">进行中</span>' +
+          '<span style="font-size:0.75rem;color:#94a3b8;">(继续努力即可领取)</span>' +
+        '</div>' +
+        '<div id="credits-modal-inprogress" style="max-height:180px;overflow-y:auto;border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:rgba(0,0,0,0.2);"></div>' +
+      '</div>' +
+      // 底部智能贴士
+      '<div id="credits-modal-tips">' +
+        '<div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:8px;padding:0.75rem;text-align:center;">' +
+          '<p style="color:#10b981;font-size:0.8125rem;margin:0;">💡 在小程序中点赞、收藏、评论都可以获得积分奖励</p>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="padding:1rem 1.5rem;display:flex;gap:0.75rem;justify-content:center;border-top:1px solid rgba(255,255,255,0.1);flex-shrink:0;">' +
+      '<button onclick="closeCreditsModal()" style="padding:0.75rem 1.5rem;background:rgba(255,255,255,0.1);color:#94a3b8;border:none;border-radius:8px;font-size:0.875rem;cursor:pointer;">稍后再说</button>' +
+      '<button onclick="copyMpName()" style="padding:0.75rem 1.5rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:8px;font-size:0.875rem;cursor:pointer;font-weight:600;">📋 复制小程序名</button>' +
+    '</div>' +
+  '</div>';
+  
+  document.body.appendChild(modal);
+  
+  // 异步加载可领取奖励
+  loadCreditsModalData();
+}
+
+// 点击提示去小程序领取
+function showMpClaimTip() {
+  const mpName = siteConfig.miniprogram?.name || '一句话游戏';
+  showToast('请打开微信搜索「' + mpName + '」小程序领取积分奖励', 'info');
+}
+
+// 点击单个条目提示
+function onCreditsItemClick(name) {
+  const mpName = siteConfig.miniprogram?.name || '一句话游戏';
+  showToast('【' + name + '】奖励需在小程序中领取，请搜索「' + mpName + '」', 'info');
+}
+
+// 加载弹窗数据
+function loadCreditsModalData() {
+  const claimableContainer = document.getElementById('credits-modal-claimable');
+  const inprogressContainer = document.getElementById('credits-modal-inprogress');
+  const inprogressSection = document.getElementById('credits-modal-inprogress-section');
+  const totalEl = document.getElementById('credits-modal-total');
+  const tipsEl = document.getElementById('credits-modal-tips');
+  
+  const userToken = getUserToken();
+  if (!userToken) {
+    claimableContainer.innerHTML = '<div style="text-align:center;padding:1rem;color:#94a3b8;font-size:0.8125rem;">📱 请先登录，然后去小程序获取积分</div>';
+    return;
+  }
+  
+  fetch('/api/user/credits-progress', { headers: { 'X-User-Token': userToken } })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (!data.success) {
+        claimableContainer.innerHTML = '<div style="text-align:center;padding:1rem;color:#94a3b8;font-size:0.8125rem;">去小程序查看更多成就任务</div>';
+        return;
+      }
+      
+      var result = data.data;
+      var checkin = result.checkin;
+      var actionProgress = result.action_progress;
+      var claimableAchievements = result.claimable_achievements;
+      var inProgressAchievements = result.in_progress_achievements;
+      var summary = result.summary;
+      var tips = result.tips;
+      
+      // 更新总积分
+      if (totalEl) {
+        totalEl.textContent = '(共 ' + (summary.total_claimable || 0) + ' 积分)';
+      }
+      
+      // 构建可领取区域HTML
+      var claimableHtml = '';
+      
+      // 签到
+      var checkinItems = '';
+      if (!checkin.checked_in_today) {
+        checkinItems += renderCreditsItem('今日签到', '+1', '未签到', 'pending');
+      }
+      if (checkin.streak_days >= 3 && checkin.streak_days < 7) {
+        checkinItems += renderCreditsItem('连续签到3天奖励', '+1', '已达成', 'claimable');
+      }
+      if (checkin.streak_days >= 7) {
+        checkinItems += renderCreditsItem('连续签到7天奖励', '+2', '已达成', 'claimable');
+      }
+      if (checkinItems) {
+        claimableHtml += renderCreditsCategory('📅', '签到', checkinItems);
+      }
+      
+      // 互动积分
+      var actionItems = '';
+      actionProgress.forEach(function(action) {
+        if (action.can_claim_count > 0) {
+          for (var i = 0; i < action.can_claim_count; i++) {
+            actionItems += renderCreditsItem(action.name + '奖励 (' + action.target + '/' + action.target + ')', '+' + action.reward, '可领取', 'claimable');
+          }
+        }
+      });
+      if (actionItems) {
+        claimableHtml += renderCreditsCategory('❤️', '互动积分', actionItems);
+      }
+      
+      // 成就分类
+      var achievementsByCategory = {
+        daily: { icon: '🏆', name: '每日成就', items: [] },
+        weekly: { icon: '📅', name: '每周成就', items: [] },
+        monthly: { icon: '📆', name: '每月成就', items: [] },
+        permanent: { icon: '🎖️', name: '永久成就', items: [] }
+      };
+      
+      claimableAchievements.forEach(function(ach) {
+        var cat = achievementsByCategory[ach.category] || achievementsByCategory.permanent;
+        cat.items.push(ach);
+      });
+      
+      Object.keys(achievementsByCategory).forEach(function(key) {
+        var cat = achievementsByCategory[key];
+        if (cat.items.length > 0) {
+          var items = '';
+          cat.items.forEach(function(ach) {
+            var progressText = ach.current !== undefined ? ' (' + ach.current + '/' + ach.target + ')' : '';
+            items += renderCreditsItem(escapeHtmlSimple(ach.name) + progressText, '+' + ach.reward, '可领取', 'claimable');
+          });
+          claimableHtml += renderCreditsCategory(cat.icon, cat.name, items);
+        }
+      });
+      
+      if (claimableHtml) {
+        claimableContainer.innerHTML = claimableHtml;
+      } else {
+        claimableContainer.innerHTML = '<div style="text-align:center;padding:1rem;color:#94a3b8;font-size:0.8125rem;">暂无可领取奖励，去小程序签到、互动即可获得</div>';
+      }
+      
+      // 构建进行中区域HTML
+      var inprogressHtml = '';
+      
+      // 互动进度（显示所有未完成的互动类型）
+      var actionProgressItems = '';
+      actionProgress.forEach(function(action) {
+        if (action.can_claim_count === 0) {
+          // 按文档设计格式：点赞 28/30 93% +1
+          actionProgressItems += renderCreditsProgressItem(action.name, action.current, action.target, action.progress, action.reward);
+        }
+      });
+      if (actionProgressItems) {
+        inprogressHtml += renderCreditsCategory('❤️', '互动进度', actionProgressItems);
+      }
+      
+      // 进行中的成就
+      var inProgressByCategory = {
+        daily: { icon: '🏆', name: '每日成就', items: [] },
+        weekly: { icon: '📅', name: '每周成就', items: [] },
+        monthly: { icon: '📆', name: '每月成就', items: [] },
+        permanent: { icon: '🎖️', name: '永久成就', items: [] }
+      };
+      
+      inProgressAchievements.forEach(function(ach) {
+        if (ach.progress > 0) {
+          var cat = inProgressByCategory[ach.category] || inProgressByCategory.permanent;
+          cat.items.push(ach);
+        }
+      });
+      
+      Object.keys(inProgressByCategory).forEach(function(key) {
+        var cat = inProgressByCategory[key];
+        if (cat.items.length > 0) {
+          var items = '';
+          cat.items.forEach(function(ach) {
+            items += renderCreditsProgressItem(escapeHtmlSimple(ach.name), ach.current, ach.target, ach.progress, ach.reward);
+          });
+          inprogressHtml += renderCreditsCategory(cat.icon, cat.name, items);
+        }
+      });
+      
+      if (inprogressHtml && inprogressContainer && inprogressSection) {
+        inprogressContainer.innerHTML = inprogressHtml;
+        inprogressSection.style.display = 'block';
+      }
+      
+      // 更新智能提示
+      if (tipsEl && tips && tips.length > 0) {
+        tipsEl.innerHTML = '<div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:8px;padding:0.75rem;text-align:center;">' +
+          '<p style="color:#10b981;font-size:0.8125rem;margin:0;">💡 ' + tips[0] + '</p>' +
+        '</div>';
+      }
+    })
+    .catch(function(err) {
+      console.error('加载积分进度失败:', err);
+      claimableContainer.innerHTML = '<div style="text-align:center;padding:1rem;color:#94a3b8;font-size:0.8125rem;">📱 去小程序查看更多获取积分的方式</div>';
+    });
+}
+
+// 渲染分类
+function renderCreditsCategory(icon, name, itemsHtml) {
+  return '<div style="border-bottom:1px solid rgba(255,255,255,0.1);">' +
+    '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;background:rgba(99,102,241,0.1);">' +
+      '<span>' + icon + '</span>' +
+      '<span style="font-size:0.8125rem;font-weight:600;color:#e2e8f0;">' + name + '</span>' +
+    '</div>' +
+    itemsHtml +
+  '</div>';
+}
+
+// 渲染可领取条目
+function renderCreditsItem(name, credits, status, statusType) {
+  var statusColors = {
+    'pending': { bg: 'rgba(148,163,184,0.2)', text: '#94a3b8' },
+    'claimable': { bg: 'rgba(16,185,129,0.2)', text: '#10b981' }
+  };
+  var colors = statusColors[statusType] || statusColors.claimable;
+  
+  return '<div onclick="onCreditsItemClick(\\'' + escapeHtmlSimple(name) + '\\')" ' +
+    'style="display:flex;align-items:center;padding:0.5rem 0.75rem;cursor:pointer;transition:background 0.2s;" ' +
+    'onmouseover="this.style.background=\\'rgba(99,102,241,0.1)\\'" onmouseout="this.style.background=\\'transparent\\'">' +
+    '<div style="flex:1;font-size:0.8125rem;color:#e2e8f0;">• ' + name + '</div>' +
+    '<div style="font-size:0.8125rem;color:#10b981;margin-right:0.75rem;">' + credits + '</div>' +
+    '<div style="font-size:0.6875rem;padding:2px 8px;border-radius:4px;background:' + colors.bg + ';color:' + colors.text + ';">' + status + '</div>' +
+  '</div>';
+}
+
+// 渲染进度条条目
+function renderCreditsProgressItem(name, current, target, progress, reward) {
+  return '<div style="padding:0.5rem 0.75rem;">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">' +
+      '<span style="font-size:0.8125rem;color:#e2e8f0;">• ' + name + '</span>' +
+      '<span style="font-size:0.75rem;color:#6366f1;">+' + reward + '</span>' +
+    '</div>' +
+    '<div style="display:flex;align-items:center;gap:0.5rem;">' +
+      '<div style="flex:1;height:6px;background:rgba(99,102,241,0.15);border-radius:3px;overflow:hidden;">' +
+        '<div style="height:100%;width:' + progress + '%;background:linear-gradient(90deg,#6366f1,#8b5cf6);border-radius:3px;"></div>' +
+      '</div>' +
+      '<span style="font-size:0.625rem;color:#94a3b8;">' + progress + '%</span>' +
+      '<span style="font-size:0.6875rem;color:#94a3b8;min-width:45px;text-align:right;">' + current + '/' + target + '</span>' +
+    '</div>' +
+  '</div>';
+}
+
+// 简单的HTML转义
+function escapeHtmlSimple(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function closeCreditsModal() {
+  const modal = document.getElementById('credits-modal');
+  if (modal) modal.remove();
+}
+
+function copyMpName() {
+  const mpName = siteConfig.miniprogram?.name || '一句话游戏';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(mpName).then(function() {
+      showToast('已复制「' + mpName + '」，请在微信中搜索', 'success');
+    }).catch(function() {
+      fallbackCopy(mpName);
+    });
+  } else {
+    fallbackCopy(mpName);
+  }
+}
+
+function fallbackCopy(text) {
+  const input = document.createElement('input');
+  input.value = text;
+  input.style.cssText = 'position:fixed;left:-9999px;';
+  document.body.appendChild(input);
+  input.select();
+  try {
+    document.execCommand('copy');
+    showToast('已复制「' + text + '」，请在微信中搜索', 'success');
+  } catch (e) {
+    showToast('复制失败，请手动搜索「' + text + '」', 'error');
+  }
+  document.body.removeChild(input);
 }
 
 // 调试日志
@@ -1689,6 +2037,141 @@ function showToast(message, type) {
     toast.style.transition = 'opacity 0.3s ease';
     setTimeout(function() { if (toast.parentNode) toast.remove(); }, 300);
   }, 2500);
+}
+
+// ====== 互动积分提示条功能 ======
+var interactionTipState = { lastShowTime: 0, showCount: 0, maxShowPerSession: 10 };
+
+// 显示互动积分提示条（引导用户去小程序领取积分）
+function showInteractionCreditTip(actionType) {
+  console.log('[积分提示条] showInteractionCreditTip 被调用, actionType:', actionType);
+  
+  // 检查显示限制
+  console.log('[积分提示条] 状态检查 - showCount:', interactionTipState.showCount, 'maxShowPerSession:', interactionTipState.maxShowPerSession);
+  if (interactionTipState.showCount >= interactionTipState.maxShowPerSession) {
+    console.log('[积分提示条] 达到最大显示次数，跳过');
+    return;
+  }
+  var now = Date.now();
+  var timeSinceLast = now - interactionTipState.lastShowTime;
+  console.log('[积分提示条] 时间检查 - 距上次:', timeSinceLast, 'ms');
+  if (timeSinceLast < 5000) {
+    console.log('[积分提示条] 时间间隔太短，跳过');
+    return;
+  }
+  
+  // 移除已存在的提示条
+  var existingTip = document.getElementById('interaction-credit-tip');
+  if (existingTip) existingTip.remove();
+  
+  var userToken = getUserToken();
+  console.log('[积分提示条] userToken:', userToken ? userToken.substring(0, 8) + '...' : 'null');
+  if (!userToken) {
+    console.log('[积分提示条] 未登录，跳过');
+    return;
+  }
+  
+  console.log('[积分提示条] 开始获取积分进度...');
+  // 获取积分进度数据
+  fetch('/api/user/credits-progress', { headers: { 'X-User-Token': userToken } })
+    .then(function(res) { return res.json(); })
+    .then(function(result) {
+      console.log('[积分提示条] API响应:', result.success ? '成功' : '失败');
+      if (!result.success) {
+        console.log('[积分提示条] API返回失败，跳过');
+        return;
+      }
+      var actionProgress = result.data.action_progress;
+      var ap = actionProgress.find(function(a) { return a.type === actionType; });
+      
+      var actionIcons = { like: '❤️', favorite: '⭐', comment: '💬', follow: '➕', share: '🔗' };
+      var actionNames = { like: '点赞', favorite: '收藏', comment: '评论', follow: '关注', share: '分享' };
+      var icon = actionIcons[actionType] || '💎';
+      var actionName = actionNames[actionType] || '互动';
+      
+      var tipText;
+      if (ap) {
+        if (ap.can_claim_count > 0) {
+          tipText = '🎉 ' + actionName + '满' + ap.target + '次！去小程序领取' + ap.reward + '积分';
+        } else if (ap.remaining <= 3) {
+          tipText = icon + ' 再' + actionName + ap.remaining + '次即可领取' + ap.reward + '积分！';
+        } else {
+          tipText = icon + ' ' + actionName + '成功！累计' + ap.current + '/' + ap.target + '次，完成后去小程序领' + ap.reward + '积分';
+        }
+      } else {
+        tipText = icon + ' ' + actionName + '成功！去小程序签到可领取更多积分~';
+      }
+      
+      // 动态获取当前最高的z-index（优先使用弹窗管理器的层级）
+      var tipZIndex = 9999;
+      console.log('[积分提示条] modalZIndexManager存在:', typeof modalZIndexManager !== 'undefined');
+      if (typeof modalZIndexManager !== 'undefined') {
+        console.log('[积分提示条] modalZIndexManager.currentZIndex:', modalZIndexManager.currentZIndex);
+        console.log('[积分提示条] modalZIndexManager.modalStack:', JSON.stringify(modalZIndexManager.modalStack));
+      }
+      if (typeof modalZIndexManager !== 'undefined' && modalZIndexManager.currentZIndex) {
+        tipZIndex = modalZIndexManager.currentZIndex + 100;
+        console.log('[积分提示条] 使用modalZIndexManager层级, tipZIndex:', tipZIndex);
+      } else {
+        var maxZ = 9998;
+        document.querySelectorAll('*').forEach(function(el) {
+          var z = parseInt(window.getComputedStyle(el).zIndex);
+          if (!isNaN(z) && z > maxZ && z < 2147483647) maxZ = z;
+        });
+        tipZIndex = maxZ + 10;
+        console.log('[积分提示条] 扫描元素层级, maxZ:', maxZ, 'tipZIndex:', tipZIndex);
+      }
+      
+      // 查找当前打开的弹窗的实际z-index
+      var commentsModal = document.querySelector('.comments-modal, [class*="modal"]');
+      if (commentsModal) {
+        console.log('[积分提示条] 找到弹窗元素:', commentsModal.className, '实际z-index:', window.getComputedStyle(commentsModal).zIndex);
+      }
+      
+      console.log('[积分提示条] 最终使用的tipZIndex:', tipZIndex);
+      
+      // 创建提示条
+      var tipBar = document.createElement('div');
+      tipBar.id = 'interaction-credit-tip';
+      tipBar.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px 10px 16px;">' +
+        '<span style="font-size:0.8125rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + tipText + '</span>' +
+        '<button onclick="openMiniprogramQRPanel()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;padding:4px 12px;border-radius:15px;font-size:0.75rem;cursor:pointer;white-space:nowrap;">去领取</button>' +
+        '<button onclick="closeInteractionCreditTip()" style="background:none;border:none;color:rgba(255,255,255,0.7);font-size:1.25rem;cursor:pointer;padding:0 4px;line-height:1;">×</button>' +
+        '</div>';
+      tipBar.style.cssText = 'position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:' + tipZIndex + ';background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;padding:0;border-radius:25px;box-shadow:0 4px 20px rgba(99,102,241,0.4);animation:tipSlideUp 0.3s ease-out;max-width:calc(100% - 32px);width:auto;';
+      
+      // 添加动画样式
+      if (!document.getElementById('tip-anim-style')) {
+        var style = document.createElement('style');
+        style.id = 'tip-anim-style';
+        style.textContent = '@keyframes tipSlideUp{from{opacity:0;transform:translateX(-50%) translateY(20px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}';
+        document.head.appendChild(style);
+      }
+      
+      document.body.appendChild(tipBar);
+      interactionTipState.lastShowTime = now;
+      interactionTipState.showCount++;
+      
+      // 5秒后自动关闭
+      setTimeout(closeInteractionCreditTip, 5000);
+    })
+    .catch(function(e) { console.log('获取积分进度失败', e); });
+}
+
+// 关闭互动提示条
+function closeInteractionCreditTip() {
+  var tip = document.getElementById('interaction-credit-tip');
+  if (tip) {
+    tip.style.opacity = '0';
+    tip.style.transition = 'opacity 0.3s ease';
+    setTimeout(function() { if (tip.parentNode) tip.remove(); }, 300);
+  }
+}
+
+// 打开小程序码面板（显示引导弹窗，引导用户扫码或搜索小程序）
+function openMiniprogramQRPanel() {
+  // 显示小程序引导弹窗，引导用户扫码或搜索小程序领取积分
+  showMiniprogramGuide('领取积分', '/pages/credits/credits');
 }
 
 function getAuthHeaders() {
@@ -1861,7 +2344,12 @@ function repairGame() {
           showToast('🔧 修复任务已启动！AI正在后台处理，完成后请刷新页面查看', 'success');
         }
       } else {
-        showToast(data.error || '修复失败，请重试', 'error');
+        // 检查是否是积分不足错误
+        if (data.error && data.error.includes('积分不足')) {
+          showCreditsModal();
+        } else {
+          showToast(data.error || '修复失败，请重试', 'error');
+        }
       }
     })
     .catch(err => {
@@ -1918,11 +2406,9 @@ function likeGame() {
         if (data.liked !== undefined) {
           btn.classList.toggle('liked', data.liked);
         }
-        // 显示提示
-        if (data.creditAwarded && data.creditMessage) {
-          showToast('感谢点赞！❤️ ' + data.creditMessage, 'success');
-        } else if (data.liked) {
-          showToast('感谢点赞！❤️', 'success');
+        // 点赞成功后直接显示积分进度提示条
+        if (data.liked) {
+          showInteractionCreditTip('like');
         } else {
           showToast('已取消点赞');
         }
@@ -1973,11 +2459,9 @@ function toggleFavorite() {
         if (data.favorite_count !== undefined) {
           countEl.innerText = data.favorite_count;
         }
-        // 显示提示
-        if (data.creditAwarded && data.creditMessage) {
-          showToast('已添加到收藏 ⭐ ' + data.creditMessage, 'success');
-        } else if (data.favorited) {
-          showToast('已添加到收藏 ⭐', 'success');
+        // 收藏成功后直接显示积分进度提示条
+        if (data.favorited) {
+          showInteractionCreditTip('favorite');
         } else {
           showToast('已取消收藏');
         }
@@ -2029,8 +2513,9 @@ function copyShareText() {
   const text = document.getElementById('share-text').value;
   if (navigator.clipboard) {
     navigator.clipboard.writeText(text).then(() => {
-      alert('分享内容已复制，快去分享给好友吧！');
       closeSharePanel();
+      // 直接显示积分进度提示条
+      showInteractionCreditTip('share');
     }).catch(() => {
       fallbackCopy(text);
     });
@@ -2048,8 +2533,9 @@ function fallbackCopy(text) {
   textarea.select();
   document.execCommand('copy');
   document.body.removeChild(textarea);
-  alert('分享内容已复制，快去分享给好友吧！');
   closeSharePanel();
+  // 直接显示积分进度提示条
+  showInteractionCreditTip('share');
 }
 
 // 用户主页作品分页状态
@@ -2959,12 +3445,8 @@ function submitGameComment() {
         commentsData.total++;
         renderComments();
         updateCommentsCount();
-        // 显示提示
-        if (data.creditAwarded && data.creditMessage) {
-          showToast('留言发布成功！' + data.creditMessage, 'success');
-        } else {
-          showToast('留言发布成功', 'success');
-        }
+        // 评论成功后直接显示积分进度提示条
+        showInteractionCreditTip('comment');
       } else {
         showToast(data.error || '发布失败');
       }
@@ -3534,13 +4016,26 @@ function getModelSpeedLevel(modelId) {
 
 function getTurboModels() {
   return Object.entries(LLM_MODELS)
-    .filter(([key, config]) => isModelEnabled(key))  // 只返回启用的模型
+    .filter(([key, config]) => {
+      // 只返回启用的模型
+      if (!isModelEnabled(key)) return false;
+      
+      // 只返回后台已配置API Key的模型（不再支持用户自定义Key）
+      const apiKeyKey = `llm_apikey_${key}`;
+      const hasBackendKey = getConfig(apiKeyKey, null) !== null && getConfig(apiKeyKey, '').length > 0;
+      
+      // 也检查默认Key和环境变量
+      const defaultApiKey = getConfig('llm_default_api_key', null);
+      const hasDefaultKey = defaultApiKey && defaultApiKey.length > 0;
+      const hasEnvKey = process.env.DEEPSEEK_API_KEY && process.env.DEEPSEEK_API_KEY.length > 0;
+      
+      // 模型必须有可用的Key才显示给用户
+      return hasBackendKey || hasDefaultKey || hasEnvKey;
+    })
     .map(([key, config]) => {
       const creditCost = getModelCreditCost(key);
       const quality = getModelQuality(key);
       const maxTokens = getModelMaxTokens(key);
-      const apiKeyKey = `llm_apikey_${key}`;
-      const hasDefaultKey = getConfig(apiKeyKey, null) !== null && getConfig(apiKeyKey, '').length > 0;
       
       // 获取配置的速度等级
       const speedLevel = getModelSpeedLevel(key);
@@ -3553,8 +4048,7 @@ function getTurboModels() {
         quality: quality,
         maxTokens: maxTokens,  // 最大Token数
         turboRecommended: config.turboRecommended || false,
-        hasDefaultKey: hasDefaultKey,  // 是否配置了默认API Key
-        needsUserKey: creditCost === 0 && !hasDefaultKey  // 需要用户自己配置Key
+        hasDefaultKey: true  // 所有返回的模型都已配置Key
       };
     })
     .sort((a, b) => {
@@ -4138,7 +4632,45 @@ const defaultConfigs = [
   { key: 'credits_action_comment', value: '0.5', description: '评论作品奖励积分' },
   { key: 'credits_action_comment_daily_limit', value: '2', description: '每日评论获取积分上限次数' },
   { key: 'credits_comment_min_length', value: '10', description: '评论获得积分的最低字数' },
-  { key: 'site_name', value: 'JustOneWord', description: '网站名称' },
+  // ==================== 积分引流系统配置 ====================
+  // 基础积分配置
+  { key: 'credits_register', value: '1', description: '新用户注册积分' },
+  { key: 'credits_daily_login', value: '1', description: '每日登录积分' },
+  // 签到配置（小程序端）
+  { key: 'credits_checkin_base', value: '1', description: '签到基础积分' },
+  { key: 'credits_checkin_streak_3', value: '1', description: '连续签到3天额外加成' },
+  { key: 'credits_checkin_streak_7', value: '2', description: '连续签到7天额外加成' },
+  { key: 'credits_checkin_streak_14', value: '3', description: '连续签到14天额外加成' },
+  { key: 'credits_checkin_streak_30', value: '5', description: '连续签到30天额外加成' },
+  // 互动任务积分领取规则（网站做任务，小程序领取）
+  { key: 'credits_claim_like_threshold', value: '10', description: '点赞N次可领取积分' },
+  { key: 'credits_claim_like_reward', value: '1', description: '点赞任务领取积分' },
+  { key: 'credits_claim_like_daily_limit', value: '3', description: '点赞任务每日领取上限' },
+  { key: 'credits_claim_favorite_threshold', value: '5', description: '收藏N次可领取积分' },
+  { key: 'credits_claim_favorite_reward', value: '1', description: '收藏任务领取积分' },
+  { key: 'credits_claim_favorite_daily_limit', value: '3', description: '收藏任务每日领取上限' },
+  { key: 'credits_claim_follow_threshold', value: '5', description: '关注N次可领取积分' },
+  { key: 'credits_claim_follow_reward', value: '1', description: '关注任务领取积分' },
+  { key: 'credits_claim_follow_daily_limit', value: '3', description: '关注任务每日领取上限' },
+  { key: 'credits_claim_comment_threshold', value: '2', description: '评论N次可领取积分' },
+  { key: 'credits_claim_comment_reward', value: '1', description: '评论任务领取积分' },
+  { key: 'credits_claim_comment_daily_limit', value: '3', description: '评论任务每日领取上限' },
+  { key: 'credits_claim_share_threshold', value: '2', description: '分享N次可领取积分' },
+  { key: 'credits_claim_share_reward', value: '1', description: '分享任务领取积分' },
+  { key: 'credits_claim_share_daily_limit', value: '3', description: '分享任务每日领取上限' },
+  // 创作激励配置
+  { key: 'credits_create_game', value: '2', description: '创作游戏奖励积分' },
+  { key: 'credits_create_game_daily_limit', value: '1', description: '创作游戏每日领取上限' },
+  { key: 'credits_edit_game_threshold', value: '2', description: '编辑游戏N次可领取' },
+  { key: 'credits_edit_game_reward', value: '1', description: '编辑游戏领取积分' },
+  { key: 'credits_edit_game_daily_limit', value: '1', description: '编辑游戏每日领取上限' },
+  // 激励视频广告配置（预留）
+  { key: 'credits_ad_reward', value: '3', description: '激励视频广告奖励' },
+  { key: 'credits_ad_daily_limit', value: '10', description: '激励广告每日上限' },
+  { key: 'credits_ad_enabled', value: 'false', description: '激励广告功能是否启用' },
+  // 邀请好友配置（小程序端）
+  { key: 'credits_mp_invite', value: '5', description: '小程序邀请好友奖励（好友首次创作后双方得）' },
+  { key: 'site_name', value: '一句话游戏', description: '网站名称' },
   { key: 'site_announcement', value: '', description: '网站公告' },
   // LLM 默认配置
   { key: 'llm_default_model', value: 'deepseek-chat', description: '默认LLM模型' },
@@ -4152,7 +4684,32 @@ const defaultConfigs = [
   // 网站激活配置
   { key: 'site_url', value: '', description: '网站域名（用于生成激活链接，如 https://youxijia.fun）' },
   { key: 'activate_token_expire_minutes', value: '10', description: '激活Token有效期（分钟）' },
+  // 功能开关配置（默认全部开放）
+  { key: 'web_create_disabled', value: 'false', description: '禁用网站创作功能' },
+  { key: 'web_edit_disabled', value: 'false', description: '禁用网站编辑/修复功能' },
+  { key: 'web_interact_disabled', value: 'false', description: '禁用网站互动功能' },
 ];
+
+// 【重要】强制修复功能开关配置：确保网站创作功能默认开放
+// 这是为了修复之前默认值错误导致的问题
+const fixedConfigs = [
+  { key: 'web_create_disabled', value: 'false' },
+  { key: 'web_edit_disabled', value: 'false' },
+  { key: 'web_interact_disabled', value: 'false' },
+];
+fixedConfigs.forEach(config => {
+  const current = db.prepare('SELECT value FROM system_config WHERE key = ?').get(config.key);
+  if (!current) {
+    // 配置不存在，插入默认值
+    db.prepare('INSERT INTO system_config (key, value) VALUES (?, ?)').run(config.key, config.value);
+    console.log(`[CONFIG] 初始化功能开关: ${config.key} = ${config.value}`);
+  } else if (current.value === 'true') {
+    // 【一次性修复】如果配置为 'true'，强制改为 'false' 以修复错误
+    // 用户之后可以在后台管理页面重新设置
+    db.prepare('UPDATE system_config SET value = ? WHERE key = ?').run(config.value, config.key);
+    console.log(`[CONFIG] 修复功能开关: ${config.key} = 'true' → '${config.value}'`);
+  }
+});
 
 const insertConfig = db.prepare(`
   INSERT OR IGNORE INTO system_config (key, value, description) VALUES (?, ?, ?)
@@ -4308,6 +4865,155 @@ db.exec(`
   )
 `);
 
+// ==================== 小程序积分引流系统 - 数据库表 ====================
+
+// 创建成就定义表
+db.exec(`
+  CREATE TABLE IF NOT EXISTS achievements (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    icon TEXT,
+    category TEXT,
+    condition_type TEXT,
+    condition_value INTEGER,
+    reward_credits REAL,
+    sort_order INTEGER DEFAULT 0,
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+// 创建用户成就进度表
+db.exec(`
+  CREATE TABLE IF NOT EXISTS user_achievements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_token TEXT NOT NULL,
+    achievement_id TEXT NOT NULL,
+    current_value INTEGER DEFAULT 0,
+    is_completed INTEGER DEFAULT 0,
+    is_claimed INTEGER DEFAULT 0,
+    completed_at DATETIME,
+    claimed_at DATETIME,
+    period_start TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_token, achievement_id, period_start)
+  )
+`);
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_user_achievements_user ON user_achievements(user_token);
+  CREATE INDEX IF NOT EXISTS idx_user_achievements_achievement ON user_achievements(achievement_id);
+`);
+
+// 创建签到记录表
+db.exec(`
+  CREATE TABLE IF NOT EXISTS user_checkins (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_token TEXT NOT NULL,
+    checkin_date TEXT NOT NULL,
+    streak_days INTEGER DEFAULT 1,
+    reward_credits REAL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_token, checkin_date)
+  )
+`);
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_user_checkins_user ON user_checkins(user_token);
+  CREATE INDEX IF NOT EXISTS idx_user_checkins_date ON user_checkins(checkin_date);
+`);
+
+// 创建用户行为统计表（用于成就系统和互动积分领取）
+db.exec(`
+  CREATE TABLE IF NOT EXISTS user_action_stats (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_token TEXT NOT NULL,
+    action_type TEXT NOT NULL,
+    period_type TEXT NOT NULL,
+    period_start TEXT NOT NULL,
+    action_count INTEGER DEFAULT 0,
+    claimed_count INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_token, action_type, period_type, period_start)
+  )
+`);
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_user_action_stats_user ON user_action_stats(user_token);
+  CREATE INDEX IF NOT EXISTS idx_user_action_stats_period ON user_action_stats(period_type, period_start);
+`);
+
+// 创建用户互动记录表（防止同一游戏/用户重复计入积分统计）
+db.exec(`
+  CREATE TABLE IF NOT EXISTS user_action_records (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_token TEXT NOT NULL,
+    action_type TEXT NOT NULL,
+    target_id TEXT NOT NULL,
+    period_start TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_token, action_type, target_id, period_start)
+  )
+`);
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_user_action_records_user ON user_action_records(user_token, action_type, period_start);
+`);
+
+// 初始化成就数据
+function initAchievementsData() {
+  const existingCount = db.prepare('SELECT COUNT(*) as cnt FROM achievements').get().cnt;
+  if (existingCount > 0) {
+    console.log('[DB] 成就数据已存在，跳过初始化');
+    return;
+  }
+  
+  console.log('[DB] 初始化成就数据...');
+  
+  const achievements = [
+    // 每日成就
+    { id: 'daily_active', name: '日活跃', description: '登录+任意1次互动', icon: '🌟', category: 'daily', condition_type: 'daily_active', condition_value: 1, reward_credits: 1, sort_order: 1 },
+    { id: 'daily_interactive', name: '互动达标', description: '点赞+收藏+关注各完成每日上限', icon: '🎯', category: 'daily', condition_type: 'daily_interactive', condition_value: 1, reward_credits: 3, sort_order: 2 },
+    { id: 'daily_comment', name: '社区贡献', description: '发表1条有效评论', icon: '💬', category: 'daily', condition_type: 'comment_count', condition_value: 1, reward_credits: 1, sort_order: 3 },
+    
+    // 每周成就
+    { id: 'weekly_active', name: '周活跃之星', description: '连续登录7天', icon: '⭐', category: 'weekly', condition_type: 'login_days', condition_value: 7, reward_credits: 5, sort_order: 1 },
+    { id: 'weekly_like', name: '周点赞达人', description: '本周点赞50次', icon: '❤️', category: 'weekly', condition_type: 'like_count', condition_value: 50, reward_credits: 5, sort_order: 2 },
+    { id: 'weekly_favorite', name: '周收藏家', description: '本周收藏20次', icon: '📚', category: 'weekly', condition_type: 'favorite_count', condition_value: 20, reward_credits: 5, sort_order: 3 },
+    { id: 'weekly_follow', name: '周社交王', description: '本周关注15人', icon: '👥', category: 'weekly', condition_type: 'follow_count', condition_value: 15, reward_credits: 5, sort_order: 4 },
+    { id: 'weekly_comment', name: '周评论家', description: '本周发表7条评论', icon: '✏️', category: 'weekly', condition_type: 'comment_count', condition_value: 7, reward_credits: 5, sort_order: 5 },
+    
+    // 每月成就
+    { id: 'monthly_active', name: '月度活跃', description: '本月登录20天', icon: '🏅', category: 'monthly', condition_type: 'login_days', condition_value: 20, reward_credits: 15, sort_order: 1 },
+    { id: 'monthly_interactive', name: '月度互动王', description: '本月互动满300次', icon: '🔥', category: 'monthly', condition_type: 'total_interactive', condition_value: 300, reward_credits: 20, sort_order: 2 },
+    { id: 'monthly_creator', name: '月度创作者', description: '本月创作2个游戏', icon: '🎮', category: 'monthly', condition_type: 'game_count', condition_value: 2, reward_credits: 20, sort_order: 3 },
+    { id: 'monthly_popular', name: '月度人气', description: '本月作品获100赞', icon: '👑', category: 'monthly', condition_type: 'received_likes', condition_value: 100, reward_credits: 25, sort_order: 4 },
+    
+    // 永久成就
+    { id: 'first_login', name: '初来乍到', description: '首次登录', icon: '👋', category: 'permanent', condition_type: 'first_login', condition_value: 1, reward_credits: 3, sort_order: 1 },
+    { id: 'first_game', name: '首次创作', description: '发布首个游戏', icon: '🎲', category: 'permanent', condition_type: 'first_game', condition_value: 1, reward_credits: 5, sort_order: 2 },
+    { id: 'hundred_likes', name: '百赞作者', description: '单作品获100赞', icon: '💯', category: 'permanent', condition_type: 'single_game_likes', condition_value: 100, reward_credits: 20, sort_order: 3 },
+    { id: 'thousand_likes', name: '千赞大神', description: '单作品获1000赞', icon: '🌟', category: 'permanent', condition_type: 'single_game_likes', condition_value: 1000, reward_credits: 100, sort_order: 4 },
+    { id: 'master_creator', name: '创作大师', description: '累计创作50个游戏', icon: '🏆', category: 'permanent', condition_type: 'total_games', condition_value: 50, reward_credits: 50, sort_order: 5 },
+    { id: 'veteran_user', name: '社区元老', description: '注册满1年', icon: '🎖️', category: 'permanent', condition_type: 'days_since_register', condition_value: 365, reward_credits: 50, sort_order: 6 }
+  ];
+  
+  const stmt = db.prepare(`
+    INSERT OR IGNORE INTO achievements (id, name, description, icon, category, condition_type, condition_value, reward_credits, sort_order)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  
+  for (const a of achievements) {
+    stmt.run(a.id, a.name, a.description, a.icon, a.category, a.condition_type, a.condition_value, a.reward_credits, a.sort_order);
+  }
+  
+  console.log(`[DB] 成就数据初始化完成，共 ${achievements.length} 条`);
+}
+
+// 执行成就数据初始化
+initAchievementsData();
+
+console.log('[DB] 小程序积分引流系统表初始化完成');
+
 // ==================== 网站账号激活系统 ====================
 // 创建激活Token表
 db.exec(`
@@ -4376,172 +5082,110 @@ function ensureUserCredits(userToken) {
   return credits;
 }
 
-// ==================== 行为积分系统 ====================
+// ==================== 行为积分系统（改造版：网站端只记录，小程序端领取） ====================
 
 /**
- * 尝试发放行为积分
+ * 记录用户行为（不发放积分，积分改为小程序端领取）
+ * 防止刷次数：同一用户对同一目标（游戏/用户）的同类型操作，在同一天内只计算一次
  * @param {string} userToken - 用户Token
- * @param {string} actionType - 行为类型: like/favorite/follow/comment
+ * @param {string} actionType - 行为类型: like/favorite/follow/comment/share
  * @param {object} options - 额外选项
- * @param {string} options.gameId - 游戏ID（用于评论去重）
- * @param {string} options.commentContent - 评论内容（用于字数检查和重复检测）
- * @returns {object} { awarded: boolean, credits: number, message: string }
+ * @param {string} options.gameId - 游戏ID（点赞、收藏、评论时使用）
+ * @param {string} options.targetToken - 目标用户Token（关注时使用）
+ * @param {string} options.commentContent - 评论内容
+ * @returns {object} { recorded: boolean, message: string, claimableInMiniprogram: boolean }
  */
 function tryAwardActionCredits(userToken, actionType, options = {}) {
-  console.log(`[积分] tryAwardActionCredits 调用: actionType=${actionType}, userToken=${userToken?.substring(0,8)}...`);
+  console.log(`[行为记录] tryAwardActionCredits 调用: actionType=${actionType}, userToken=${userToken?.substring(0,8)}...`);
   
   if (!userToken) {
-    console.log('[积分] 用户未登录');
-    return { awarded: false, credits: 0, message: '未登录' };
+    console.log('[行为记录] 用户未登录');
+    return { awarded: false, credits: 0, message: '未登录', recorded: false };
   }
 
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const actionNames = { 
+    like: '点赞', 
+    favorite: '收藏', 
+    follow: '关注', 
+    comment: '评论',
+    share: '分享',
+    generate: '创作游戏',
+    edit: '编辑游戏'
+  };
+
+  // 确定目标ID（用于防重复检查）
+  // 对于点赞、收藏、评论：使用gameId
+  // 对于关注：使用targetToken 或 followingToken
+  // 对于分享：使用gameId
+  // 对于创作/编辑：使用gameId
+  let targetId = options.gameId || options.targetToken || options.followingToken || 'general';
   
-  // 获取配置
-  const rewardCredits = parseFloat(getConfig(`credits_action_${actionType}`, '0'));
-  const dailyLimit = parseInt(getConfig(`credits_action_${actionType}_daily_limit`, '0'));
+  // 获取今天日期作为周期开始
+  const today = getPeriodStart('daily');
   
-  console.log(`[积分] 配置: rewardCredits=${rewardCredits}, dailyLimit=${dailyLimit}`);
+  // 检查是否已经记录过同一目标的同类型操作（同一天内）
+  const existingRecord = db.prepare(`
+    SELECT id FROM user_action_records 
+    WHERE user_token = ? AND action_type = ? AND target_id = ? AND period_start = ?
+  `).get(userToken, actionType, targetId, today);
   
-  if (rewardCredits <= 0 || dailyLimit <= 0) {
-    console.log('[积分] 配置为0，不发放积分');
-    return { awarded: false, credits: 0, message: '该行为暂不奖励积分' };
+  if (existingRecord) {
+    console.log(`[行为记录] 用户 ${userToken.substring(0, 8)}... 今天已对目标 ${targetId.substring(0, 8)}... 进行过 ${actionNames[actionType] || actionType} 操作，跳过重复计数`);
+    return { 
+      awarded: false, 
+      credits: 0, 
+      message: '今天已记录过该操作',
+      recorded: false,
+      duplicate: true,
+      claimableInMiniprogram: true,
+      actionType,
+      actionName: actionNames[actionType] || actionType
+    };
+  }
+  
+  // 记录本次操作（防止重复）
+  try {
+    db.prepare(`
+      INSERT INTO user_action_records (user_token, action_type, target_id, period_start)
+      VALUES (?, ?, ?, ?)
+    `).run(userToken, actionType, targetId, today);
+  } catch (e) {
+    // 唯一约束冲突，说明已存在记录
+    console.log(`[行为记录] 插入记录失败（可能已存在）: ${e.message}`);
+    return { 
+      awarded: false, 
+      credits: 0, 
+      message: '操作已记录',
+      recorded: false,
+      duplicate: true,
+      claimableInMiniprogram: true,
+      actionType,
+      actionName: actionNames[actionType] || actionType
+    };
   }
 
-  // 点赞特殊处理：同游戏仅首次获得积分（防止取消再点赞重复获取）
+  // 记录行为统计（用于成就系统和小程序领取）
+  recordUserAction(userToken, actionType, 1);
+  
+  // 如果是作者收到点赞，也记录received_like
   if (actionType === 'like' && options.gameId) {
-    const existingLikeCredit = db.prepare(
-      'SELECT id FROM like_credit_logs WHERE user_token = ? AND game_id = ?'
-    ).get(userToken, options.gameId);
-    
-    if (existingLikeCredit) {
-      return { awarded: false, credits: 0, message: '该游戏已获得过点赞积分' };
+    const game = db.prepare('SELECT author_token FROM games WHERE id = ?').get(options.gameId);
+    if (game && game.author_token && game.author_token !== userToken) {
+      recordUserAction(game.author_token, 'received_like', 1);
     }
   }
   
-  // 收藏特殊处理：同游戏仅首次获得积分（防止取消再收藏重复获取）
-  if (actionType === 'favorite' && options.gameId) {
-    const existingFavoriteCredit = db.prepare(
-      'SELECT id FROM favorite_credit_logs WHERE user_token = ? AND game_id = ?'
-    ).get(userToken, options.gameId);
-    
-    if (existingFavoriteCredit) {
-      return { awarded: false, credits: 0, message: '该游戏已获得过收藏积分' };
-    }
-  }
+  console.log(`[行为记录] 用户 ${userToken.substring(0, 8)}... ${actionNames[actionType] || actionType} 行为已记录（积分请到小程序领取）`);
   
-  // 关注特殊处理：同用户仅首次获得积分（防止取消再关注重复获取）
-  if (actionType === 'follow' && options.followingToken) {
-    const existingFollowCredit = db.prepare(
-      'SELECT id FROM follow_credit_logs WHERE follower_token = ? AND following_token = ?'
-    ).get(userToken, options.followingToken);
-    
-    if (existingFollowCredit) {
-      return { awarded: false, credits: 0, message: '该用户已获得过关注积分' };
-    }
-  }
-
-  // 评论特殊处理：字数检查
-  if (actionType === 'comment') {
-    const minLength = parseInt(getConfig('credits_comment_min_length', '10'));
-    const content = options.commentContent || '';
-    if (content.length < minLength) {
-      return { awarded: false, credits: 0, message: `评论至少${minLength}字才能获得积分` };
-    }
-    
-    // 同游戏仅首次获得积分
-    if (options.gameId) {
-      const existingCommentCredit = db.prepare(
-        'SELECT id FROM comment_credit_logs WHERE user_token = ? AND game_id = ?'
-      ).get(userToken, options.gameId);
-      
-      if (existingCommentCredit) {
-        return { awarded: false, credits: 0, message: '该游戏已获得过评论积分' };
-      }
-    }
-    
-    // 重复内容检测（检查今日评论是否有相似内容）
-    const todayComments = db.prepare(`
-      SELECT content FROM game_comments 
-      WHERE user_token = ? AND date(created_at) = ? AND content != ?
-    `).all(userToken, today, options.commentContent);
-    
-    for (const comment of todayComments) {
-      if (calculateSimilarity(comment.content, options.commentContent) > 0.8) {
-        return { awarded: false, credits: 0, message: '评论内容与之前过于相似' };
-      }
-    }
-  }
-
-  // 检查今日已获得次数
-  let dailyRecord = db.prepare(
-    'SELECT count FROM daily_action_credits WHERE user_token = ? AND action_type = ? AND action_date = ?'
-  ).get(userToken, actionType, today);
-  
-  const currentCount = dailyRecord?.count || 0;
-  
-  if (currentCount >= dailyLimit) {
-    return { awarded: false, credits: 0, message: '今日该类型积分已达上限' };
-  }
-
-  // 发放积分
-  ensureUserCredits(userToken);
-  
-  db.prepare(`
-    UPDATE user_credits 
-    SET credits = credits + ?, total_earned = total_earned + ?, updated_at = CURRENT_TIMESTAMP 
-    WHERE user_token = ?
-  `).run(rewardCredits, rewardCredits, userToken);
-  
-  // 记录积分日志
-  const actionNames = { like: '点赞', favorite: '收藏', follow: '关注', comment: '评论' };
-  db.prepare(`
-    INSERT INTO credit_logs (user_token, amount, type, description)
-    VALUES (?, ?, ?, ?)
-  `).run(userToken, rewardCredits, `action_${actionType}`, `${actionNames[actionType]}作品奖励`);
-  
-  // 更新每日计数
-  db.prepare(`
-    INSERT INTO daily_action_credits (user_token, action_type, action_date, count)
-    VALUES (?, ?, ?, 1)
-    ON CONFLICT(user_token, action_type, action_date) 
-    DO UPDATE SET count = count + 1
-  `).run(userToken, actionType, today);
-  
-  // 点赞：记录游戏积分获取（防止取消再点赞重复获取）
-  if (actionType === 'like' && options.gameId) {
-    db.prepare(`
-      INSERT OR IGNORE INTO like_credit_logs (user_token, game_id) VALUES (?, ?)
-    `).run(userToken, options.gameId);
-  }
-  
-  // 收藏：记录游戏积分获取（防止取消再收藏重复获取）
-  if (actionType === 'favorite' && options.gameId) {
-    db.prepare(`
-      INSERT OR IGNORE INTO favorite_credit_logs (user_token, game_id) VALUES (?, ?)
-    `).run(userToken, options.gameId);
-  }
-  
-  // 关注：记录用户积分获取（防止取消再关注重复获取）
-  if (actionType === 'follow' && options.followingToken) {
-    db.prepare(`
-      INSERT OR IGNORE INTO follow_credit_logs (follower_token, following_token) VALUES (?, ?)
-    `).run(userToken, options.followingToken);
-  }
-  
-  // 评论：记录游戏积分获取
-  if (actionType === 'comment' && options.gameId) {
-    db.prepare(`
-      INSERT OR IGNORE INTO comment_credit_logs (user_token, game_id) VALUES (?, ?)
-    `).run(userToken, options.gameId);
-  }
-  
-  const remaining = dailyLimit - currentCount - 1;
+  // 返回兼容旧接口的格式，但不再发放积分
   return { 
-    awarded: true, 
-    credits: rewardCredits, 
-    message: `+${rewardCredits}积分`,
-    remaining: remaining
+    awarded: false,  // 网站端不再直接发放积分
+    credits: 0, 
+    message: '行为已记录，去小程序领取积分奖励',
+    recorded: true,
+    claimableInMiniprogram: true,
+    actionType,
+    actionName: actionNames[actionType] || actionType
   };
 }
 
@@ -5331,7 +5975,7 @@ app.delete('/api/admin/test-account/:accountId', (req, res) => {
 });
 
 // 安全恢复账号（需要验证设备或密码）
-app.post('/api/account/secure-recover', (req, res) => {
+app.post('/api/account/secure-recover', async (req, res) => {
   try {
     const { accountId, password, deviceFingerprint } = req.body;
     const clientIP = getClientIP(req);
@@ -5357,7 +6001,12 @@ app.post('/api/account/secure-recover', (req, res) => {
     
     const isSameDevice = deviceFingerprint && account.device_fingerprint === deviceFingerprint;
     const hasPassword = account.has_password && account.password_hash;
-    const passwordCorrect = hasPassword && password && hashPassword(password) === account.password_hash;
+    
+    // 使用异步密码验证（支持bcrypt和旧版SHA256格式）
+    let passwordCorrect = false;
+    if (hasPassword && password) {
+      passwordCorrect = await verifyPasswordAsync(password, account.password_hash);
+    }
     
     if (hasPassword && !passwordCorrect && !isSameDevice) {
       // 账号有密码，但密码错误且不是同设备
@@ -5410,29 +6059,34 @@ app.post('/api/account/secure-recover', (req, res) => {
 app.get('/api/site-config', (req, res) => {
   try {
     // 网站功能细粒度权限控制
-    // web_write_disabled: 旧配置，用于兼容（如果为true，则创作和编辑都禁用）
-    const webWriteDisabledLegacy = getConfig('web_write_disabled', 'true') === 'true';
+    // 【已移除旧配置 web_write_disabled 的影响，直接使用新的细粒度配置】
+    const webCreateDisabled = getConfig('web_create_disabled', 'false') === 'true';
+    const webEditDisabled = getConfig('web_edit_disabled', 'false') === 'true';
     
-    // 新的细粒度配置（如果旧配置为true，则这些也为true）
-    const webCreateDisabled = webWriteDisabledLegacy || getConfig('web_create_disabled', 'true') === 'true';  // 创作游戏禁用（默认禁用）
-    const webEditDisabled = webWriteDisabledLegacy || getConfig('web_edit_disabled', 'true') === 'true';      // 编辑/修复游戏禁用（默认禁用）
+    // 【调试日志】打印功能开关配置读取结果
+    console.log('[SITE-CONFIG] 功能开关配置:');
+    console.log('  - web_create_disabled:', getConfig('web_create_disabled', 'false'), '→', webCreateDisabled);
+    console.log('  - web_edit_disabled:', getConfig('web_edit_disabled', 'false'), '→', webEditDisabled);
     const webInteractDisabled = getConfig('web_interact_disabled', 'false') === 'true';  // 互动功能禁用（点赞/收藏/评论/关注，默认开放）
     
     // 兼容旧版：只有当创作和编辑都禁用且互动开放时，才算完全禁用写操作
     const webWriteDisabled = webCreateDisabled && webEditDisabled;
     
     // 站点名称和标语
-    const siteName = getConfig('site_name', 'JustOneWord');
+    const siteName = getConfig('site_name', '一句话游戏');
     const siteSlogan = getConfig('site_slogan', '一句话生成游戏');
     
     // 小程序相关配置
-    const miniprogramName = getConfig('miniprogram_name', 'JustOneWord');
+    const miniprogramName = getConfig('miniprogram_name', '一句话游戏');
     const miniprogramAppId = getConfig('miniprogram_appid', '');
     const miniprogramPath = getConfig('miniprogram_default_path', '/pages/create/create');
     
     // 小程序功能开关配置（仅影响小程序，不影响网站）
     const miniprogramCommentDisabled = getConfig('miniprogram_comment_disabled', 'false') === 'true';
     const miniprogramLLMDisabled = getConfig('miniprogram_llm_disabled', 'false') === 'true';
+    
+    // 邀请好友积分配置（小程序使用）
+    const inviteReward = parseFloat(getConfig('credits_mp_invite', '3')) || 3;
     
     res.json({
       success: true,
@@ -5448,6 +6102,8 @@ app.get('/api/site-config', (req, res) => {
       // 小程序功能开关（仅小程序使用）
       miniprogramCommentDisabled: miniprogramCommentDisabled,
       miniprogramLLMDisabled: miniprogramLLMDisabled,
+      // 邀请好友积分配置
+      inviteReward: inviteReward,
       // 同时返回 config 对象（兼容旧版）
       config: {
         webWriteDisabled: webWriteDisabled,
@@ -5572,16 +6228,19 @@ app.get('/api/credits', (req, res) => {
     
     // 如果用户不存在，创建新用户
     if (!user) {
+      // 从配置读取新用户注册积分
+      const registerCredits = parseFloat(getConfig('credits_register', '1')) || 1;
+      
       db.prepare(`
         INSERT INTO user_credits (user_token, credits, total_earned) 
         VALUES (?, ?, ?)
-      `).run(userToken, CREDITS_CONFIG.initial, CREDITS_CONFIG.initial);
+      `).run(userToken, registerCredits, registerCredits);
       
       // 记录初始积分
       db.prepare(`
         INSERT INTO credit_logs (user_token, amount, type, description)
-        VALUES (?, ?, 'initial', '新用户初始积分')
-      `).run(userToken, CREDITS_CONFIG.initial);
+        VALUES (?, ?, 'register', '新用户注册积分')
+      `).run(userToken, registerCredits);
       
       user = db.prepare('SELECT * FROM user_credits WHERE user_token = ?').get(userToken);
     }
@@ -5840,8 +6499,8 @@ app.post('/api/credits/daily-login', (req, res) => {
       });
     }
     
-    // 发放每日登录积分
-    const reward = CREDITS_CONFIG.dailyLogin || 1;
+    // 发放每日登录积分（从配置读取）
+    const reward = parseFloat(getConfig('credits_daily_login', '1')) || 1;
     db.prepare(`
       UPDATE user_credits 
       SET credits = credits + ?, total_earned = total_earned + ?, 
@@ -6335,6 +6994,279 @@ app.put('/api/admin/extra-credits-config', (req, res) => {
   }
 });
 
+// ==================== 积分引流系统配置 API ====================
+
+// 获取所有积分配置（综合）
+app.get('/api/admin/credits-all-config', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const config = {
+      // 基础积分配置
+      basic: {
+        register: parseFloat(getConfig('credits_register', '1')),
+        dailyLogin: parseFloat(getConfig('credits_daily_login', '1'))
+      },
+      // 签到配置（小程序端）
+      checkin: {
+        base: parseFloat(getConfig('credits_checkin_base', '1')),
+        streak3: parseFloat(getConfig('credits_checkin_streak_3', '1')),
+        streak7: parseFloat(getConfig('credits_checkin_streak_7', '2')),
+        streak14: parseFloat(getConfig('credits_checkin_streak_14', '3')),
+        streak30: parseFloat(getConfig('credits_checkin_streak_30', '5'))
+      },
+      // 互动任务积分领取规则
+      claim: {
+        likeThreshold: parseInt(getConfig('credits_claim_like_threshold', '10')),
+        likeReward: parseFloat(getConfig('credits_claim_like_reward', '1')),
+        likeDailyLimit: parseInt(getConfig('credits_claim_like_daily_limit', '3')),
+        favoriteThreshold: parseInt(getConfig('credits_claim_favorite_threshold', '5')),
+        favoriteReward: parseFloat(getConfig('credits_claim_favorite_reward', '1')),
+        favoriteDailyLimit: parseInt(getConfig('credits_claim_favorite_daily_limit', '3')),
+        followThreshold: parseInt(getConfig('credits_claim_follow_threshold', '5')),
+        followReward: parseFloat(getConfig('credits_claim_follow_reward', '1')),
+        followDailyLimit: parseInt(getConfig('credits_claim_follow_daily_limit', '3')),
+        commentThreshold: parseInt(getConfig('credits_claim_comment_threshold', '2')),
+        commentReward: parseFloat(getConfig('credits_claim_comment_reward', '1')),
+        commentDailyLimit: parseInt(getConfig('credits_claim_comment_daily_limit', '3')),
+        shareThreshold: parseInt(getConfig('credits_claim_share_threshold', '2')),
+        shareReward: parseFloat(getConfig('credits_claim_share_reward', '1')),
+        shareDailyLimit: parseInt(getConfig('credits_claim_share_daily_limit', '3'))
+      },
+      // 创作激励配置
+      create: {
+        gameReward: parseFloat(getConfig('credits_create_game', '2')),
+        gameDailyLimit: parseInt(getConfig('credits_create_game_daily_limit', '1')),
+        editThreshold: parseInt(getConfig('credits_edit_game_threshold', '2')),
+        editReward: parseFloat(getConfig('credits_edit_game_reward', '1')),
+        editDailyLimit: parseInt(getConfig('credits_edit_game_daily_limit', '1'))
+      },
+      // 激励视频广告配置（预留）
+      ad: {
+        reward: parseFloat(getConfig('credits_ad_reward', '3')),
+        dailyLimit: parseInt(getConfig('credits_ad_daily_limit', '10')),
+        enabled: getConfig('credits_ad_enabled', 'false') === 'true'
+      },
+      // 邀请好友配置（小程序端）
+      invite: {
+        mpReward: parseFloat(getConfig('credits_mp_invite', '5'))
+      },
+      // 现有行为积分配置（兼容）
+      action: {
+        like: {
+          credits: parseFloat(getConfig('credits_action_like', '0.1')),
+          dailyLimit: parseInt(getConfig('credits_action_like_daily_limit', '10'))
+        },
+        favorite: {
+          credits: parseFloat(getConfig('credits_action_favorite', '0.2')),
+          dailyLimit: parseInt(getConfig('credits_action_favorite_daily_limit', '5'))
+        },
+        follow: {
+          credits: parseFloat(getConfig('credits_action_follow', '0.2')),
+          dailyLimit: parseInt(getConfig('credits_action_follow_daily_limit', '5'))
+        },
+        comment: {
+          credits: parseFloat(getConfig('credits_action_comment', '0.5')),
+          dailyLimit: parseInt(getConfig('credits_action_comment_daily_limit', '2')),
+          minLength: parseInt(getConfig('credits_comment_min_length', '10'))
+        }
+      },
+      // 现有特殊积分配置（兼容）
+      extra: {
+        shareGame: {
+          credits: parseFloat(getConfig('credits_share_game', '1')),
+          dailyLimit: parseInt(getConfig('credits_share_game_daily_limit', '5'))
+        },
+        inviteFriend: {
+          credits: parseFloat(getConfig('credits_invite_friend', '3')),
+          dailyLimit: parseInt(getConfig('credits_invite_friend_daily_limit', '5'))
+        },
+        article: {
+          credits: parseFloat(getConfig('credits_article', '1')),
+          dailyLimit: parseInt(getConfig('credits_article_daily_limit', '3'))
+        }
+      }
+    };
+    
+    res.json({ success: true, config });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 保存所有积分配置（综合）
+app.put('/api/admin/credits-all-config', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { basic, checkin, claim, create, ad, invite, action, extra } = req.body;
+    
+    // 基础积分配置
+    if (basic) {
+      if (basic.register !== undefined) setConfig('credits_register', String(basic.register));
+      if (basic.dailyLogin !== undefined) setConfig('credits_daily_login', String(basic.dailyLogin));
+    }
+    
+    // 签到配置
+    if (checkin) {
+      if (checkin.base !== undefined) setConfig('credits_checkin_base', String(checkin.base));
+      if (checkin.streak3 !== undefined) setConfig('credits_checkin_streak_3', String(checkin.streak3));
+      if (checkin.streak7 !== undefined) setConfig('credits_checkin_streak_7', String(checkin.streak7));
+      if (checkin.streak14 !== undefined) setConfig('credits_checkin_streak_14', String(checkin.streak14));
+      if (checkin.streak30 !== undefined) setConfig('credits_checkin_streak_30', String(checkin.streak30));
+    }
+    
+    // 互动任务配置
+    if (claim) {
+      if (claim.likeThreshold !== undefined) setConfig('credits_claim_like_threshold', String(claim.likeThreshold));
+      if (claim.likeReward !== undefined) setConfig('credits_claim_like_reward', String(claim.likeReward));
+      if (claim.likeDailyLimit !== undefined) setConfig('credits_claim_like_daily_limit', String(claim.likeDailyLimit));
+      if (claim.favoriteThreshold !== undefined) setConfig('credits_claim_favorite_threshold', String(claim.favoriteThreshold));
+      if (claim.favoriteReward !== undefined) setConfig('credits_claim_favorite_reward', String(claim.favoriteReward));
+      if (claim.favoriteDailyLimit !== undefined) setConfig('credits_claim_favorite_daily_limit', String(claim.favoriteDailyLimit));
+      if (claim.followThreshold !== undefined) setConfig('credits_claim_follow_threshold', String(claim.followThreshold));
+      if (claim.followReward !== undefined) setConfig('credits_claim_follow_reward', String(claim.followReward));
+      if (claim.followDailyLimit !== undefined) setConfig('credits_claim_follow_daily_limit', String(claim.followDailyLimit));
+      if (claim.commentThreshold !== undefined) setConfig('credits_claim_comment_threshold', String(claim.commentThreshold));
+      if (claim.commentReward !== undefined) setConfig('credits_claim_comment_reward', String(claim.commentReward));
+      if (claim.commentDailyLimit !== undefined) setConfig('credits_claim_comment_daily_limit', String(claim.commentDailyLimit));
+      if (claim.shareThreshold !== undefined) setConfig('credits_claim_share_threshold', String(claim.shareThreshold));
+      if (claim.shareReward !== undefined) setConfig('credits_claim_share_reward', String(claim.shareReward));
+      if (claim.shareDailyLimit !== undefined) setConfig('credits_claim_share_daily_limit', String(claim.shareDailyLimit));
+    }
+    
+    // 创作激励配置
+    if (create) {
+      if (create.gameReward !== undefined) setConfig('credits_create_game', String(create.gameReward));
+      if (create.gameDailyLimit !== undefined) setConfig('credits_create_game_daily_limit', String(create.gameDailyLimit));
+      if (create.editThreshold !== undefined) setConfig('credits_edit_game_threshold', String(create.editThreshold));
+      if (create.editReward !== undefined) setConfig('credits_edit_game_reward', String(create.editReward));
+      if (create.editDailyLimit !== undefined) setConfig('credits_edit_game_daily_limit', String(create.editDailyLimit));
+    }
+    
+    // 广告配置
+    if (ad) {
+      if (ad.reward !== undefined) setConfig('credits_ad_reward', String(ad.reward));
+      if (ad.dailyLimit !== undefined) setConfig('credits_ad_daily_limit', String(ad.dailyLimit));
+      if (ad.enabled !== undefined) setConfig('credits_ad_enabled', String(ad.enabled));
+    }
+    
+    // 邀请配置
+    if (invite) {
+      if (invite.mpReward !== undefined) setConfig('credits_mp_invite', String(invite.mpReward));
+    }
+    
+    // 现有行为积分配置（兼容）
+    if (action) {
+      if (action.like) {
+        if (action.like.credits !== undefined) setConfig('credits_action_like', String(action.like.credits));
+        if (action.like.dailyLimit !== undefined) setConfig('credits_action_like_daily_limit', String(action.like.dailyLimit));
+      }
+      if (action.favorite) {
+        if (action.favorite.credits !== undefined) setConfig('credits_action_favorite', String(action.favorite.credits));
+        if (action.favorite.dailyLimit !== undefined) setConfig('credits_action_favorite_daily_limit', String(action.favorite.dailyLimit));
+      }
+      if (action.follow) {
+        if (action.follow.credits !== undefined) setConfig('credits_action_follow', String(action.follow.credits));
+        if (action.follow.dailyLimit !== undefined) setConfig('credits_action_follow_daily_limit', String(action.follow.dailyLimit));
+      }
+      if (action.comment) {
+        if (action.comment.credits !== undefined) setConfig('credits_action_comment', String(action.comment.credits));
+        if (action.comment.dailyLimit !== undefined) setConfig('credits_action_comment_daily_limit', String(action.comment.dailyLimit));
+        if (action.comment.minLength !== undefined) setConfig('credits_comment_min_length', String(action.comment.minLength));
+      }
+    }
+    
+    // 现有特殊积分配置（兼容）
+    if (extra) {
+      if (extra.shareGame) {
+        if (extra.shareGame.credits !== undefined) setConfig('credits_share_game', String(extra.shareGame.credits));
+        if (extra.shareGame.dailyLimit !== undefined) setConfig('credits_share_game_daily_limit', String(extra.shareGame.dailyLimit));
+      }
+      if (extra.inviteFriend) {
+        if (extra.inviteFriend.credits !== undefined) setConfig('credits_invite_friend', String(extra.inviteFriend.credits));
+        if (extra.inviteFriend.dailyLimit !== undefined) setConfig('credits_invite_friend_daily_limit', String(extra.inviteFriend.dailyLimit));
+      }
+      if (extra.article) {
+        if (extra.article.credits !== undefined) setConfig('credits_article', String(extra.article.credits));
+        if (extra.article.dailyLimit !== undefined) setConfig('credits_article_daily_limit', String(extra.article.dailyLimit));
+      }
+    }
+    
+    res.json({ success: true, message: '积分配置已保存' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 获取成就列表（管理后台）
+app.get('/api/admin/achievements', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const achievements = db.prepare(`
+      SELECT id, name, description, icon, category, condition_type, condition_value, reward_credits, sort_order, is_active
+      FROM achievements
+      ORDER BY category, sort_order
+    `).all();
+    
+    res.json({ success: true, achievements });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 更新成就配置（管理后台）
+app.put('/api/admin/achievements', (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { achievements } = req.body;
+    
+    if (!achievements || !Array.isArray(achievements)) {
+      return res.status(400).json({ success: false, error: '无效的成就数据' });
+    }
+    
+    const updateStmt = db.prepare(`
+      UPDATE achievements 
+      SET condition_value = ?, reward_credits = ?, is_active = ?, description = ?
+      WHERE id = ?
+    `);
+    
+    const updateMany = db.transaction((items) => {
+      for (const item of items) {
+        if (item.id) {
+          updateStmt.run(
+            item.condition_value ?? 1,
+            item.reward_credits ?? 1,
+            item.is_active ?? 1,
+            item.description || '',
+            item.id
+          );
+        }
+      }
+    });
+    
+    updateMany(achievements);
+    
+    res.json({ success: true, message: `已更新 ${achievements.length} 个成就配置` });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // 获取系统配置（包括模型列表）
 app.get('/api/config', (req, res) => {
   res.json({
@@ -6649,6 +7581,1148 @@ app.get('/api/user/is-admin', (req, res) => {
     const isAdmin = isUserAdmin(userToken);
     res.json({ success: true, isAdmin });
   } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==================== 小程序积分引流 API ====================
+
+/**
+ * 获取周期开始日期
+ * @param {string} periodType - 周期类型: daily/weekly/monthly
+ * @returns {string} YYYY-MM-DD 格式的周期开始日期
+ */
+function getPeriodStart(periodType) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  
+  switch (periodType) {
+    case 'daily':
+      return `${year}-${month}-${day}`;
+    case 'weekly':
+      // 获取本周一的日期
+      const dayOfWeek = now.getDay();
+      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const monday = new Date(now);
+      monday.setDate(now.getDate() + mondayOffset);
+      return monday.toISOString().split('T')[0];
+    case 'monthly':
+      return `${year}-${month}-01`;
+    default:
+      return '';
+  }
+}
+
+/**
+ * 记录用户行为统计（供网站端调用）
+ * 只记录行为次数，不发放积分
+ */
+function recordUserAction(userToken, actionType, count = 1) {
+  if (!userToken) return;
+  
+  const today = getPeriodStart('daily');
+  const weekStart = getPeriodStart('weekly');
+  const monthStart = getPeriodStart('monthly');
+  
+  // 更新每日统计
+  db.prepare(`
+    INSERT INTO user_action_stats (user_token, action_type, period_type, period_start, action_count)
+    VALUES (?, ?, 'daily', ?, ?)
+    ON CONFLICT(user_token, action_type, period_type, period_start)
+    DO UPDATE SET action_count = action_count + ?, updated_at = CURRENT_TIMESTAMP
+  `).run(userToken, actionType, today, count, count);
+  
+  // 更新每周统计
+  db.prepare(`
+    INSERT INTO user_action_stats (user_token, action_type, period_type, period_start, action_count)
+    VALUES (?, ?, 'weekly', ?, ?)
+    ON CONFLICT(user_token, action_type, period_type, period_start)
+    DO UPDATE SET action_count = action_count + ?, updated_at = CURRENT_TIMESTAMP
+  `).run(userToken, actionType, weekStart, count, count);
+  
+  // 更新每月统计
+  db.prepare(`
+    INSERT INTO user_action_stats (user_token, action_type, period_type, period_start, action_count)
+    VALUES (?, ?, 'monthly', ?, ?)
+    ON CONFLICT(user_token, action_type, period_type, period_start)
+    DO UPDATE SET action_count = action_count + ?, updated_at = CURRENT_TIMESTAMP
+  `).run(userToken, actionType, monthStart, count, count);
+  
+  console.log(`[行为统计] 用户 ${userToken.substring(0, 8)}... ${actionType} +${count}`);
+}
+
+/**
+ * 获取用户行为统计
+ */
+function getUserActionStats(userToken, periodType) {
+  const periodStart = getPeriodStart(periodType);
+  
+  const stats = db.prepare(`
+    SELECT action_type, action_count, claimed_count
+    FROM user_action_stats
+    WHERE user_token = ? AND period_type = ? AND period_start = ?
+  `).all(userToken, periodType, periodStart);
+  
+  const result = {};
+  for (const stat of stats) {
+    result[stat.action_type] = {
+      count: stat.action_count,
+      claimed: stat.claimed_count
+    };
+  }
+  return result;
+}
+
+/**
+ * 签到接口（仅小程序可用）
+ * POST /api/user/checkin
+ * Headers: x-user-token, x-platform: miniprogram
+ */
+app.post('/api/user/checkin', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    const platform = req.headers['x-platform'];
+    
+    // 验证是否为小程序请求
+    if (platform !== 'miniprogram') {
+      return res.status(403).json({ 
+        success: false, 
+        error: '签到功能仅在小程序端可用，请打开小程序进行签到' 
+      });
+    }
+    
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '请先登录' });
+    }
+    
+    const today = new Date().toISOString().split('T')[0];
+    
+    // 检查今日是否已签到
+    const existingCheckin = db.prepare(
+      'SELECT * FROM user_checkins WHERE user_token = ? AND checkin_date = ?'
+    ).get(userToken, today);
+    
+    if (existingCheckin) {
+      return res.json({
+        success: false,
+        error: '今日已签到',
+        data: {
+          already_checked_in: true,
+          streak_days: existingCheckin.streak_days,
+          checkin_date: existingCheckin.checkin_date
+        }
+      });
+    }
+    
+    // 查询昨天的签到记录，计算连续签到天数
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    
+    const yesterdayCheckin = db.prepare(
+      'SELECT streak_days FROM user_checkins WHERE user_token = ? AND checkin_date = ?'
+    ).get(userToken, yesterdayStr);
+    
+    // 计算连续签到天数
+    const streakDays = yesterdayCheckin ? yesterdayCheckin.streak_days + 1 : 1;
+    
+    // 基础签到积分
+    let rewardCredits = 1;
+    
+    // 计算连续签到加成
+    let bonusCredits = 0;
+    if (streakDays >= 30) {
+      bonusCredits = 5;
+    } else if (streakDays >= 14) {
+      bonusCredits = 3;
+    } else if (streakDays >= 7) {
+      bonusCredits = 2;
+    } else if (streakDays >= 3) {
+      bonusCredits = 1;
+    }
+    
+    const totalCredits = rewardCredits + bonusCredits;
+    
+    // 插入签到记录
+    db.prepare(`
+      INSERT INTO user_checkins (user_token, checkin_date, streak_days, reward_credits)
+      VALUES (?, ?, ?, ?)
+    `).run(userToken, today, streakDays, totalCredits);
+    
+    // 发放积分
+    ensureUserCredits(userToken);
+    db.prepare(`
+      UPDATE user_credits 
+      SET credits = credits + ?, total_earned = total_earned + ?, updated_at = CURRENT_TIMESTAMP 
+      WHERE user_token = ?
+    `).run(totalCredits, totalCredits, userToken);
+    
+    // 记录积分日志
+    let description = `每日签到奖励`;
+    if (bonusCredits > 0) {
+      description += ` + 连续${streakDays}天签到加成`;
+    }
+    db.prepare(`
+      INSERT INTO credit_logs (user_token, amount, type, description)
+      VALUES (?, ?, 'checkin', ?)
+    `).run(userToken, totalCredits, description);
+    
+    // 记录登录行为（用于成就系统）
+    recordUserAction(userToken, 'login', 1);
+    
+    // 获取用户当前积分
+    const userCredits = db.prepare('SELECT credits FROM user_credits WHERE user_token = ?').get(userToken);
+    
+    console.log(`[签到] 用户 ${userToken.substring(0, 8)}... 签到成功，连续${streakDays}天，获得${totalCredits}积分`);
+    
+    res.json({
+      success: true,
+      data: {
+        credits_earned: rewardCredits,
+        bonus_credits: bonusCredits,
+        total_earned: totalCredits,
+        streak_days: streakDays,
+        total_credits: userCredits?.credits || 0,
+        next_bonus: getNextStreakBonus(streakDays)
+      }
+    });
+  } catch (error) {
+    console.error('[签到] 错误:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * 获取下一个连续签到加成信息
+ */
+function getNextStreakBonus(currentStreak) {
+  if (currentStreak < 3) {
+    return { days: 3, bonus: 1, remaining: 3 - currentStreak };
+  } else if (currentStreak < 7) {
+    return { days: 7, bonus: 2, remaining: 7 - currentStreak };
+  } else if (currentStreak < 14) {
+    return { days: 14, bonus: 3, remaining: 14 - currentStreak };
+  } else if (currentStreak < 30) {
+    return { days: 30, bonus: 5, remaining: 30 - currentStreak };
+  } else {
+    return { days: 30, bonus: 5, remaining: 0, message: '已达最高连续签到加成！' };
+  }
+}
+
+/**
+ * 获取签到状态
+ * GET /api/user/checkin-status
+ * Headers: x-user-token
+ */
+app.get('/api/user/checkin-status', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '请先登录' });
+    }
+    
+    const today = new Date().toISOString().split('T')[0];
+    
+    // 检查今日签到状态
+    const todayCheckin = db.prepare(
+      'SELECT * FROM user_checkins WHERE user_token = ? AND checkin_date = ?'
+    ).get(userToken, today);
+    
+    // 获取最近签到记录（计算连续天数）
+    const latestCheckin = db.prepare(
+      'SELECT * FROM user_checkins WHERE user_token = ? ORDER BY checkin_date DESC LIMIT 1'
+    ).get(userToken);
+    
+    // 计算当前连续签到天数
+    let currentStreak = 0;
+    if (latestCheckin) {
+      const lastDate = new Date(latestCheckin.checkin_date);
+      const todayDate = new Date(today);
+      const diffDays = Math.floor((todayDate - lastDate) / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 0) {
+        // 今天已签到
+        currentStreak = latestCheckin.streak_days;
+      } else if (diffDays === 1) {
+        // 昨天签到了，今天还没签
+        currentStreak = latestCheckin.streak_days;
+      } else {
+        // 中断了
+        currentStreak = 0;
+      }
+    }
+    
+    // 获取本月签到天数
+    const monthStart = getPeriodStart('monthly');
+    const monthCheckins = db.prepare(`
+      SELECT COUNT(*) as count FROM user_checkins 
+      WHERE user_token = ? AND checkin_date >= ?
+    `).get(userToken, monthStart);
+    
+    res.json({
+      success: true,
+      data: {
+        checked_in_today: !!todayCheckin,
+        streak_days: currentStreak,
+        next_bonus: getNextStreakBonus(currentStreak),
+        month_checkins: monthCheckins?.count || 0,
+        last_checkin: latestCheckin?.checkin_date || null
+      }
+    });
+  } catch (error) {
+    console.error('[签到状态] 错误:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==================== 成就系统 API ====================
+
+/**
+ * 计算用户成就进度
+ */
+function calculateAchievementProgress(userToken, achievement) {
+  const { id, category, condition_type, condition_value } = achievement;
+  let currentValue = 0;
+  
+  // 根据成就类型确定周期
+  let periodType = 'daily';
+  if (category === 'weekly') periodType = 'weekly';
+  if (category === 'monthly') periodType = 'monthly';
+  
+  const periodStart = getPeriodStart(periodType);
+  
+  switch (condition_type) {
+    case 'daily_active': {
+      // 登录 + 任意1次互动
+      const hasLogin = db.prepare(`
+        SELECT 1 FROM user_action_stats 
+        WHERE user_token = ? AND action_type = 'login' AND period_type = 'daily' AND period_start = ? AND action_count > 0
+      `).get(userToken, periodStart);
+      
+      const hasInteraction = db.prepare(`
+        SELECT 1 FROM user_action_stats 
+        WHERE user_token = ? AND action_type IN ('like', 'favorite', 'follow', 'comment') 
+        AND period_type = 'daily' AND period_start = ? AND action_count > 0
+      `).get(userToken, periodStart);
+      
+      currentValue = (hasLogin && hasInteraction) ? 1 : 0;
+      break;
+    }
+    
+    case 'daily_interactive': {
+      // 点赞+收藏+关注各完成每日上限
+      const likeLimit = parseInt(getConfig('credits_action_like_daily_limit', '10'));
+      const favoriteLimit = parseInt(getConfig('credits_action_favorite_daily_limit', '5'));
+      const followLimit = parseInt(getConfig('credits_action_follow_daily_limit', '5'));
+      
+      const likeCount = db.prepare(`
+        SELECT action_count FROM user_action_stats 
+        WHERE user_token = ? AND action_type = 'like' AND period_type = 'daily' AND period_start = ?
+      `).get(userToken, periodStart)?.action_count || 0;
+      
+      const favoriteCount = db.prepare(`
+        SELECT action_count FROM user_action_stats 
+        WHERE user_token = ? AND action_type = 'favorite' AND period_type = 'daily' AND period_start = ?
+      `).get(userToken, periodStart)?.action_count || 0;
+      
+      const followCount = db.prepare(`
+        SELECT action_count FROM user_action_stats 
+        WHERE user_token = ? AND action_type = 'follow' AND period_type = 'daily' AND period_start = ?
+      `).get(userToken, periodStart)?.action_count || 0;
+      
+      const likeComplete = likeCount >= likeLimit ? 1 : 0;
+      const favoriteComplete = favoriteCount >= favoriteLimit ? 1 : 0;
+      const followComplete = followCount >= followLimit ? 1 : 0;
+      
+      currentValue = (likeComplete + favoriteComplete + followComplete) >= 3 ? 1 : 0;
+      break;
+    }
+    
+    case 'comment_count': {
+      const stat = db.prepare(`
+        SELECT action_count FROM user_action_stats 
+        WHERE user_token = ? AND action_type = 'comment' AND period_type = ? AND period_start = ?
+      `).get(userToken, periodType, periodStart);
+      currentValue = stat?.action_count || 0;
+      break;
+    }
+    
+    case 'login_days': {
+      if (category === 'weekly') {
+        // 本周连续登录天数
+        const weekStart = getPeriodStart('weekly');
+        const logins = db.prepare(`
+          SELECT COUNT(DISTINCT checkin_date) as count FROM user_checkins 
+          WHERE user_token = ? AND checkin_date >= ?
+        `).get(userToken, weekStart);
+        currentValue = logins?.count || 0;
+      } else if (category === 'monthly') {
+        // 本月登录天数
+        const monthStart = getPeriodStart('monthly');
+        const logins = db.prepare(`
+          SELECT COUNT(DISTINCT checkin_date) as count FROM user_checkins 
+          WHERE user_token = ? AND checkin_date >= ?
+        `).get(userToken, monthStart);
+        currentValue = logins?.count || 0;
+      }
+      break;
+    }
+    
+    case 'like_count':
+    case 'favorite_count':
+    case 'follow_count': {
+      const actionType = condition_type.replace('_count', '');
+      const stat = db.prepare(`
+        SELECT action_count FROM user_action_stats 
+        WHERE user_token = ? AND action_type = ? AND period_type = ? AND period_start = ?
+      `).get(userToken, actionType, periodType, periodStart);
+      currentValue = stat?.action_count || 0;
+      break;
+    }
+    
+    case 'total_interactive': {
+      // 本月总互动次数
+      const monthStart = getPeriodStart('monthly');
+      const stats = db.prepare(`
+        SELECT SUM(action_count) as total FROM user_action_stats 
+        WHERE user_token = ? AND action_type IN ('like', 'favorite', 'follow', 'comment') 
+        AND period_type = 'monthly' AND period_start = ?
+      `).get(userToken, monthStart);
+      currentValue = stats?.total || 0;
+      break;
+    }
+    
+    case 'game_count': {
+      // 本月创作游戏数
+      const monthStart = getPeriodStart('monthly');
+      const games = db.prepare(`
+        SELECT COUNT(*) as count FROM games 
+        WHERE author_token = ? AND date(created_at) >= ?
+      `).get(userToken, monthStart);
+      currentValue = games?.count || 0;
+      break;
+    }
+    
+    case 'received_likes': {
+      // 本月作品获得的赞数（需要计算增量）
+      // 简化实现：查看本月互动统计中的received_likes
+      const monthStart = getPeriodStart('monthly');
+      const stat = db.prepare(`
+        SELECT action_count FROM user_action_stats 
+        WHERE user_token = ? AND action_type = 'received_like' AND period_type = 'monthly' AND period_start = ?
+      `).get(userToken, monthStart);
+      currentValue = stat?.action_count || 0;
+      break;
+    }
+    
+    case 'first_login': {
+      // 首次登录（永久成就）
+      const account = db.prepare('SELECT 1 FROM user_accounts WHERE user_token = ?').get(userToken);
+      currentValue = account ? 1 : 0;
+      break;
+    }
+    
+    case 'first_game': {
+      // 首个游戏（永久成就）
+      const game = db.prepare('SELECT 1 FROM games WHERE author_token = ? LIMIT 1').get(userToken);
+      currentValue = game ? 1 : 0;
+      break;
+    }
+    
+    case 'single_game_likes': {
+      // 单作品最高赞数（永久成就）
+      const maxLikes = db.prepare(`
+        SELECT MAX(like_count) as max_likes FROM games WHERE author_token = ?
+      `).get(userToken);
+      currentValue = maxLikes?.max_likes || 0;
+      break;
+    }
+    
+    case 'total_games': {
+      // 累计创作游戏数（永久成就）
+      const games = db.prepare('SELECT COUNT(*) as count FROM games WHERE author_token = ?').get(userToken);
+      currentValue = games?.count || 0;
+      break;
+    }
+    
+    case 'days_since_register': {
+      // 注册天数（永久成就）
+      const account = db.prepare('SELECT created_at FROM user_accounts WHERE user_token = ?').get(userToken);
+      if (account) {
+        const registerDate = new Date(account.created_at);
+        const now = new Date();
+        currentValue = Math.floor((now - registerDate) / (1000 * 60 * 60 * 24));
+      }
+      break;
+    }
+    
+    default:
+      currentValue = 0;
+  }
+  
+  return {
+    current: currentValue,
+    target: condition_value,
+    is_completed: currentValue >= condition_value,
+    progress: Math.min(100, Math.round((currentValue / condition_value) * 100))
+  };
+}
+
+/**
+ * 获取成就列表及用户进度
+ * GET /api/achievements
+ * Query: category (可选，筛选分类)
+ * Headers: x-user-token
+ */
+app.get('/api/achievements', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    const { category } = req.query;
+    
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '请先登录' });
+    }
+    
+    // 获取成就列表
+    let query = 'SELECT * FROM achievements WHERE is_active = 1';
+    const params = [];
+    if (category) {
+      query += ' AND category = ?';
+      params.push(category);
+    }
+    query += ' ORDER BY category, sort_order';
+    
+    const achievements = db.prepare(query).all(...params);
+    
+    // 计算每个成就的进度
+    const achievementList = achievements.map(achievement => {
+      const periodStart = achievement.category === 'permanent' ? '' : getPeriodStart(
+        achievement.category === 'daily' ? 'daily' : 
+        achievement.category === 'weekly' ? 'weekly' : 'monthly'
+      );
+      
+      // 获取用户成就记录
+      const userAchievement = db.prepare(`
+        SELECT * FROM user_achievements 
+        WHERE user_token = ? AND achievement_id = ? AND (period_start = ? OR period_start IS NULL OR period_start = '')
+        ORDER BY created_at DESC LIMIT 1
+      `).get(userToken, achievement.id, periodStart);
+      
+      // 计算当前进度
+      const progress = calculateAchievementProgress(userToken, achievement);
+      
+      return {
+        id: achievement.id,
+        name: achievement.name,
+        description: achievement.description,
+        icon: achievement.icon,
+        category: achievement.category,
+        current: progress.current,
+        target: progress.target,
+        progress: progress.progress,
+        is_completed: progress.is_completed,
+        is_claimed: userAchievement?.is_claimed === 1,
+        reward_credits: achievement.reward_credits,
+        can_claim: progress.is_completed && userAchievement?.is_claimed !== 1
+      };
+    });
+    
+    // 统计可领取数量和积分
+    const claimable = achievementList.filter(a => a.can_claim);
+    const claimableCredits = claimable.reduce((sum, a) => sum + a.reward_credits, 0);
+    
+    // 按分类分组
+    const grouped = {
+      daily: achievementList.filter(a => a.category === 'daily'),
+      weekly: achievementList.filter(a => a.category === 'weekly'),
+      monthly: achievementList.filter(a => a.category === 'monthly'),
+      permanent: achievementList.filter(a => a.category === 'permanent')
+    };
+    
+    res.json({
+      success: true,
+      data: {
+        achievements: achievementList,
+        grouped,
+        claimable_count: claimable.length,
+        claimable_credits: claimableCredits
+      }
+    });
+  } catch (error) {
+    console.error('[成就列表] 错误:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * 领取成就奖励（仅小程序可用）
+ * POST /api/achievements/:id/claim
+ * Headers: x-user-token, x-platform: miniprogram
+ */
+app.post('/api/achievements/:id/claim', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    const platform = req.headers['x-platform'];
+    const achievementId = req.params.id;
+    
+    // 验证是否为小程序请求
+    if (platform !== 'miniprogram') {
+      return res.status(403).json({ 
+        success: false, 
+        error: '成就奖励仅可在小程序端领取' 
+      });
+    }
+    
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '请先登录' });
+    }
+    
+    // 获取成就信息
+    const achievement = db.prepare('SELECT * FROM achievements WHERE id = ? AND is_active = 1').get(achievementId);
+    if (!achievement) {
+      return res.status(404).json({ success: false, error: '成就不存在' });
+    }
+    
+    // 确定周期
+    const periodStart = achievement.category === 'permanent' ? '' : getPeriodStart(
+      achievement.category === 'daily' ? 'daily' : 
+      achievement.category === 'weekly' ? 'weekly' : 'monthly'
+    );
+    
+    // 检查是否已领取
+    const existingClaim = db.prepare(`
+      SELECT * FROM user_achievements 
+      WHERE user_token = ? AND achievement_id = ? AND is_claimed = 1
+      AND (period_start = ? OR (? = '' AND period_start IS NULL) OR period_start = ?)
+    `).get(userToken, achievementId, periodStart, periodStart, periodStart);
+    
+    if (existingClaim) {
+      return res.json({
+        success: false,
+        error: '该成就奖励已领取'
+      });
+    }
+    
+    // 计算进度，确认是否已完成
+    const progress = calculateAchievementProgress(userToken, achievement);
+    if (!progress.is_completed) {
+      return res.json({
+        success: false,
+        error: '成就尚未完成',
+        data: {
+          current: progress.current,
+          target: progress.target,
+          progress: progress.progress
+        }
+      });
+    }
+    
+    // 记录领取
+    db.prepare(`
+      INSERT INTO user_achievements (user_token, achievement_id, current_value, is_completed, is_claimed, completed_at, claimed_at, period_start)
+      VALUES (?, ?, ?, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
+      ON CONFLICT(user_token, achievement_id, period_start)
+      DO UPDATE SET is_claimed = 1, claimed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+    `).run(userToken, achievementId, progress.current, periodStart);
+    
+    // 发放积分
+    ensureUserCredits(userToken);
+    db.prepare(`
+      UPDATE user_credits 
+      SET credits = credits + ?, total_earned = total_earned + ?, updated_at = CURRENT_TIMESTAMP 
+      WHERE user_token = ?
+    `).run(achievement.reward_credits, achievement.reward_credits, userToken);
+    
+    // 记录积分日志
+    db.prepare(`
+      INSERT INTO credit_logs (user_token, amount, type, description)
+      VALUES (?, ?, 'achievement', ?)
+    `).run(userToken, achievement.reward_credits, `领取成就【${achievement.name}】奖励`);
+    
+    // 获取用户当前积分
+    const userCredits = db.prepare('SELECT credits FROM user_credits WHERE user_token = ?').get(userToken);
+    
+    console.log(`[成就] 用户 ${userToken.substring(0, 8)}... 领取【${achievement.name}】奖励 +${achievement.reward_credits}积分`);
+    
+    res.json({
+      success: true,
+      data: {
+        achievement_name: achievement.name,
+        credits_earned: achievement.reward_credits,
+        total_credits: userCredits?.credits || 0
+      }
+    });
+  } catch (error) {
+    console.error('[领取成就] 错误:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * 批量领取所有可领取的成就奖励（仅小程序可用）
+ * POST /api/achievements/claim-all
+ * Headers: x-user-token, x-platform: miniprogram
+ */
+app.post('/api/achievements/claim-all', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    const platform = req.headers['x-platform'];
+    
+    // 验证是否为小程序请求
+    if (platform !== 'miniprogram') {
+      return res.status(403).json({ 
+        success: false, 
+        error: '成就奖励仅可在小程序端领取' 
+      });
+    }
+    
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '请先登录' });
+    }
+    
+    // 获取所有成就
+    const achievements = db.prepare('SELECT * FROM achievements WHERE is_active = 1').all();
+    
+    let totalCredits = 0;
+    const claimedList = [];
+    
+    for (const achievement of achievements) {
+      const periodStart = achievement.category === 'permanent' ? '' : getPeriodStart(
+        achievement.category === 'daily' ? 'daily' : 
+        achievement.category === 'weekly' ? 'weekly' : 'monthly'
+      );
+      
+      // 检查是否已领取
+      const existingClaim = db.prepare(`
+        SELECT * FROM user_achievements 
+        WHERE user_token = ? AND achievement_id = ? AND is_claimed = 1
+        AND (period_start = ? OR (? = '' AND period_start IS NULL) OR period_start = ?)
+      `).get(userToken, achievement.id, periodStart, periodStart, periodStart);
+      
+      if (existingClaim) continue;
+      
+      // 计算进度
+      const progress = calculateAchievementProgress(userToken, achievement);
+      if (!progress.is_completed) continue;
+      
+      // 记录领取
+      db.prepare(`
+        INSERT INTO user_achievements (user_token, achievement_id, current_value, is_completed, is_claimed, completed_at, claimed_at, period_start)
+        VALUES (?, ?, ?, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
+        ON CONFLICT(user_token, achievement_id, period_start)
+        DO UPDATE SET is_claimed = 1, claimed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      `).run(userToken, achievement.id, progress.current, periodStart);
+      
+      totalCredits += achievement.reward_credits;
+      claimedList.push({
+        id: achievement.id,
+        name: achievement.name,
+        credits: achievement.reward_credits
+      });
+    }
+    
+    if (totalCredits > 0) {
+      // 发放积分
+      ensureUserCredits(userToken);
+      db.prepare(`
+        UPDATE user_credits 
+        SET credits = credits + ?, total_earned = total_earned + ?, updated_at = CURRENT_TIMESTAMP 
+        WHERE user_token = ?
+      `).run(totalCredits, totalCredits, userToken);
+      
+      // 记录积分日志
+      db.prepare(`
+        INSERT INTO credit_logs (user_token, amount, type, description)
+        VALUES (?, ?, 'achievement', ?)
+      `).run(userToken, totalCredits, `一键领取${claimedList.length}个成就奖励`);
+    }
+    
+    // 获取用户当前积分
+    const userCredits = db.prepare('SELECT credits FROM user_credits WHERE user_token = ?').get(userToken);
+    
+    console.log(`[成就] 用户 ${userToken.substring(0, 8)}... 一键领取${claimedList.length}个成就，共${totalCredits}积分`);
+    
+    res.json({
+      success: true,
+      data: {
+        claimed_count: claimedList.length,
+        claimed_list: claimedList,
+        total_credits_earned: totalCredits,
+        total_credits: userCredits?.credits || 0
+      }
+    });
+  } catch (error) {
+    console.error('[一键领取成就] 错误:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * 获取互动积分领取情况（网站做任务，小程序领取）
+ * GET /api/user/action-rewards
+ * Headers: x-user-token
+ */
+app.get('/api/user/action-rewards', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '请先登录' });
+    }
+    
+    const today = getPeriodStart('daily');
+    
+    // 获取各类行为的统计和可领取情况（含创作类激励）
+    const actionTypes = [
+      { type: 'like', name: '点赞', target: 10, reward: 1 },
+      { type: 'favorite', name: '收藏', target: 5, reward: 1 },
+      { type: 'follow', name: '关注', target: 5, reward: 1 },
+      { type: 'comment', name: '评论', target: 2, reward: 1 },
+      { type: 'share', name: '分享', target: 2, reward: 1 },
+      // 创作类激励（每日重置）
+      { type: 'generate', name: '创作游戏', target: 1, reward: 2 },
+      { type: 'edit', name: '编辑游戏', target: 2, reward: 1 }
+    ];
+    
+    const rewards = actionTypes.map(action => {
+      const stat = db.prepare(`
+        SELECT action_count, claimed_count FROM user_action_stats 
+        WHERE user_token = ? AND action_type = ? AND period_type = 'daily' AND period_start = ?
+      `).get(userToken, action.type, today);
+      
+      const count = stat?.action_count || 0;
+      const claimed = stat?.claimed_count || 0;
+      
+      // 计算可领取次数（每完成target次可领取一次）
+      const completedSets = Math.floor(count / action.target);
+      const canClaimCount = completedSets - claimed;
+      const currentProgress = count % action.target;
+      
+      return {
+        type: action.type,
+        name: action.name,
+        count,
+        target: action.target,
+        current_progress: currentProgress,
+        completed_sets: completedSets,
+        claimed_sets: claimed,
+        can_claim_count: Math.max(0, canClaimCount),
+        can_claim_credits: Math.max(0, canClaimCount) * action.reward,
+        reward_per_set: action.reward
+      };
+    });
+    
+    // 计算总可领取积分
+    const totalClaimable = rewards.reduce((sum, r) => sum + r.can_claim_credits, 0);
+    
+    res.json({
+      success: true,
+      data: {
+        rewards,
+        total_claimable: totalClaimable
+      }
+    });
+  } catch (error) {
+    console.error('[互动积分] 错误:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * 领取互动积分（仅小程序可用）
+ * POST /api/user/action-rewards/:type/claim
+ * Headers: x-user-token, x-platform: miniprogram
+ */
+app.post('/api/user/action-rewards/:type/claim', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    const platform = req.headers['x-platform'];
+    const actionType = req.params.type;
+    
+    // 验证是否为小程序请求
+    if (platform !== 'miniprogram') {
+      return res.status(403).json({ 
+        success: false, 
+        error: '互动积分仅可在小程序端领取' 
+      });
+    }
+    
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '请先登录' });
+    }
+    
+    const actionConfig = {
+      like: { name: '点赞', target: 10, reward: 1 },
+      favorite: { name: '收藏', target: 5, reward: 1 },
+      follow: { name: '关注', target: 5, reward: 1 },
+      comment: { name: '评论', target: 2, reward: 1 },
+      share: { name: '分享', target: 2, reward: 1 }
+    };
+    
+    const config = actionConfig[actionType];
+    if (!config) {
+      return res.status(400).json({ success: false, error: '无效的行为类型' });
+    }
+    
+    const today = getPeriodStart('daily');
+    
+    // 获取统计
+    const stat = db.prepare(`
+      SELECT action_count, claimed_count FROM user_action_stats 
+      WHERE user_token = ? AND action_type = ? AND period_type = 'daily' AND period_start = ?
+    `).get(userToken, actionType, today);
+    
+    const count = stat?.action_count || 0;
+    const claimed = stat?.claimed_count || 0;
+    const completedSets = Math.floor(count / config.target);
+    const canClaimCount = completedSets - claimed;
+    
+    if (canClaimCount <= 0) {
+      return res.json({
+        success: false,
+        error: '暂无可领取的积分',
+        data: {
+          current: count % config.target,
+          target: config.target,
+          next_reward: config.target - (count % config.target)
+        }
+      });
+    }
+    
+    // 领取所有可领取的积分
+    const creditsToAdd = canClaimCount * config.reward;
+    
+    // 更新claimed_count
+    db.prepare(`
+      UPDATE user_action_stats 
+      SET claimed_count = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE user_token = ? AND action_type = ? AND period_type = 'daily' AND period_start = ?
+    `).run(completedSets, userToken, actionType, today);
+    
+    // 发放积分
+    ensureUserCredits(userToken);
+    db.prepare(`
+      UPDATE user_credits 
+      SET credits = credits + ?, total_earned = total_earned + ?, updated_at = CURRENT_TIMESTAMP 
+      WHERE user_token = ?
+    `).run(creditsToAdd, creditsToAdd, userToken);
+    
+    // 记录积分日志
+    db.prepare(`
+      INSERT INTO credit_logs (user_token, amount, type, description)
+      VALUES (?, ?, 'action_reward', ?)
+    `).run(userToken, creditsToAdd, `领取${config.name}奖励 x${canClaimCount}`);
+    
+    // 获取用户当前积分
+    const userCredits = db.prepare('SELECT credits FROM user_credits WHERE user_token = ?').get(userToken);
+    
+    console.log(`[互动积分] 用户 ${userToken.substring(0, 8)}... 领取${config.name}积分 +${creditsToAdd}`);
+    
+    res.json({
+      success: true,
+      data: {
+        action_type: actionType,
+        action_name: config.name,
+        claimed_count: canClaimCount,
+        credits_earned: creditsToAdd,
+        total_credits: userCredits?.credits || 0
+      }
+    });
+  } catch (error) {
+    console.error('[领取互动积分] 错误:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * 获取用户积分进度（供网站积分不足弹窗显示）
+ * GET /api/user/credits-progress
+ * Headers: x-user-token
+ * 
+ * 返回：
+ * - 用户当前积分
+ * - 互动积分进度（点赞/收藏/关注/评论/分享）
+ * - 可领取的成就列表
+ * - 进行中的成就列表
+ * - 签到状态
+ * - 智能提示（最接近完成的任务）
+ */
+app.get('/api/user/credits-progress', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '请先登录' });
+    }
+    
+    const today = getPeriodStart('daily');
+    const weekStart = getPeriodStart('weekly');
+    const monthStart = getPeriodStart('monthly');
+    
+    // 1. 获取用户当前积分
+    const userCredits = db.prepare('SELECT credits FROM user_credits WHERE user_token = ?').get(userToken);
+    const credits = userCredits?.credits || 0;
+    
+    // 2. 获取签到状态
+    const todayCheckin = db.prepare(
+      'SELECT * FROM user_checkins WHERE user_token = ? AND checkin_date = ?'
+    ).get(userToken, today);
+    
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
+    const yesterdayCheckin = db.prepare(
+      'SELECT streak_days FROM user_checkins WHERE user_token = ? AND checkin_date = ?'
+    ).get(userToken, yesterdayStr);
+    
+    const checkin = {
+      checked_in_today: !!todayCheckin,
+      streak_days: todayCheckin?.streak_days || (yesterdayCheckin?.streak_days || 0),
+      reward: 1,
+      can_claim: !todayCheckin
+    };
+    
+    // 3. 获取互动积分进度（含创作类激励）
+    const actionTypes = [
+      { type: 'like', name: '点赞', icon: '❤️', target: 10, reward: 1 },
+      { type: 'favorite', name: '收藏', icon: '⭐', target: 5, reward: 1 },
+      { type: 'follow', name: '关注', icon: '👥', target: 5, reward: 1 },
+      { type: 'comment', name: '评论', icon: '💬', target: 2, reward: 1 },
+      { type: 'share', name: '分享', icon: '🔗', target: 2, reward: 1 },
+      // 创作类激励（每日重置）
+      { type: 'generate', name: '创作游戏', icon: '🎮', target: 1, reward: 2 },
+      { type: 'edit', name: '编辑游戏', icon: '✏️', target: 2, reward: 1 }
+    ];
+    
+    const actionProgress = actionTypes.map(action => {
+      const stat = db.prepare(`
+        SELECT action_count, claimed_count FROM user_action_stats 
+        WHERE user_token = ? AND action_type = ? AND period_type = 'daily' AND period_start = ?
+      `).get(userToken, action.type, today);
+      
+      const count = stat?.action_count || 0;
+      const claimed = stat?.claimed_count || 0;
+      const completedSets = Math.floor(count / action.target);
+      const canClaimCount = Math.max(0, completedSets - claimed);
+      const currentProgress = count % action.target;
+      const progressPercent = Math.round((currentProgress / action.target) * 100);
+      
+      return {
+        type: action.type,
+        name: action.name,
+        icon: action.icon,
+        current: currentProgress,
+        target: action.target,
+        total_count: count,
+        progress: progressPercent,
+        can_claim_count: canClaimCount,
+        can_claim_credits: canClaimCount * action.reward,
+        reward: action.reward,
+        remaining: action.target - currentProgress
+      };
+    });
+    
+    // 4. 获取成就列表
+    const achievements = db.prepare('SELECT * FROM achievements WHERE is_active = 1 ORDER BY category, sort_order').all();
+    
+    const claimableAchievements = [];
+    const inProgressAchievements = [];
+    
+    for (const achievement of achievements) {
+      const periodStart = achievement.category === 'permanent' ? '' : getPeriodStart(
+        achievement.category === 'daily' ? 'daily' : 
+        achievement.category === 'weekly' ? 'weekly' : 'monthly'
+      );
+      
+      const progress = calculateAchievementProgress(userToken, achievement);
+      
+      // 检查是否已领取
+      const userAchievement = db.prepare(`
+        SELECT is_claimed FROM user_achievements 
+        WHERE user_token = ? AND achievement_id = ? 
+        AND (period_start = ? OR period_start IS NULL OR period_start = '')
+        ORDER BY created_at DESC LIMIT 1
+      `).get(userToken, achievement.id, periodStart);
+      
+      const isClaimed = userAchievement?.is_claimed === 1;
+      
+      const achievementData = {
+        id: achievement.id,
+        name: achievement.name,
+        description: achievement.description,
+        icon: achievement.icon,
+        category: achievement.category,
+        current: progress.current,
+        target: progress.target,
+        progress: progress.progress,
+        reward: achievement.reward_credits,
+        is_completed: progress.is_completed,
+        is_claimed: isClaimed
+      };
+      
+      if (progress.is_completed && !isClaimed) {
+        claimableAchievements.push(achievementData);
+      } else if (!progress.is_completed) {
+        inProgressAchievements.push(achievementData);
+      }
+    }
+    
+    // 5. 计算可领取总积分
+    const actionClaimableCredits = actionProgress.reduce((sum, a) => sum + a.can_claim_credits, 0);
+    const achievementClaimableCredits = claimableAchievements.reduce((sum, a) => sum + a.reward, 0);
+    const checkinClaimableCredits = checkin.can_claim ? 1 : 0;
+    const totalClaimableCredits = actionClaimableCredits + achievementClaimableCredits + checkinClaimableCredits;
+    
+    // 6. 生成智能提示（找到最接近完成的任务）
+    const tips = [];
+    
+    // 找最接近完成的互动积分
+    const closestAction = actionProgress
+      .filter(a => a.remaining > 0 && a.remaining <= 5)
+      .sort((a, b) => a.remaining - b.remaining)[0];
+    
+    if (closestAction) {
+      tips.push(`再${closestAction.name}${closestAction.remaining}次即可领取${closestAction.reward}积分`);
+    }
+    
+    // 找最接近完成的成就
+    const closestAchievement = inProgressAchievements
+      .filter(a => a.progress >= 50)
+      .sort((a, b) => b.progress - a.progress)[0];
+    
+    if (closestAchievement) {
+      const remaining = closestAchievement.target - closestAchievement.current;
+      tips.push(`${closestAchievement.name}还差${remaining}即可领取${closestAchievement.reward}积分`);
+    }
+    
+    // 签到提示
+    if (!todayCheckin) {
+      tips.push('今日未签到，去小程序签到可得1积分');
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        credits,
+        checkin,
+        action_progress: actionProgress,
+        claimable_achievements: claimableAchievements,
+        in_progress_achievements: inProgressAchievements,
+        summary: {
+          action_claimable: actionClaimableCredits,
+          achievement_claimable: achievementClaimableCredits,
+          checkin_claimable: checkinClaimableCredits,
+          total_claimable: totalClaimableCredits,
+          claimable_count: claimableAchievements.length + actionProgress.filter(a => a.can_claim_count > 0).length + (checkin.can_claim ? 1 : 0)
+        },
+        tips: tips.slice(0, 3) // 最多返回3条提示
+      }
+    });
+  } catch (error) {
+    console.error('[积分进度] 错误:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -7543,8 +9617,7 @@ async function handleGenerateInternal(body, headers, progressCallback) {
       return 'deepseek';
     };
     
-    // 判断用户是否提供了自己的API Key
-    const useUserApiKey = llmConfig?.apiKey && llmConfig.apiKey.length > 0;
+    // 不再支持用户自定义API Key，完全使用后台配置
     
     // ========== 模型选择逻辑 ==========
     let finalModel, finalProvider, finalBaseUrl;
@@ -7561,13 +9634,6 @@ async function handleGenerateInternal(body, headers, progressCallback) {
       finalBaseUrl = modelConfig.baseUrl;
       selectedModelId = requestedModelId;
       console.log(`[AsyncGenerate] 使用后端配置的模型: ${modelConfig.name}`);
-    } else if (requestedModelId === 'custom' && useUserApiKey) {
-      // 用户使用自定义接口
-      finalModel = llmConfig?.model || 'deepseek-chat';
-      finalProvider = 'custom';
-      finalBaseUrl = llmConfig?.baseUrl || 'https://api.deepseek.com';
-      selectedModelId = null;
-      console.log('[AsyncGenerate] 使用用户自定义接口配置');
     } else {
       // 使用后台配置的默认模型
       if (defaultModel && LLM_MODELS[defaultModel]) {
@@ -7615,29 +9681,23 @@ async function handleGenerateInternal(body, headers, progressCallback) {
       return null;
     };
     
-    // API Key优先级：用户Key > 模型专属Key > 默认Key > 环境变量
+    // API Key优先级：模型专属Key > 默认Key > 环境变量（不再支持用户Key）
     let finalApiKey = null;
     let keySource = '';
     
-    if (useUserApiKey && llmConfig.apiKey) {
-      finalApiKey = llmConfig.apiKey;
-      keySource = 'user';
-      console.log('[AsyncGenerate] 使用用户自己配置的API Key');
-    } else {
-      const modelSpecificKey = getModelApiKey(selectedModelId);
-      if (modelSpecificKey) {
-        finalApiKey = modelSpecificKey;
-        keySource = 'model_specific';
-        console.log(`[AsyncGenerate] 使用模型 ${selectedModelId} 的专属API Key`);
-      } else if (defaultApiKey) {
-        finalApiKey = defaultApiKey;
-        keySource = 'default';
-        console.log('[AsyncGenerate] 使用后台默认API Key');
-      } else if (process.env.DEEPSEEK_API_KEY) {
-        finalApiKey = process.env.DEEPSEEK_API_KEY;
-        keySource = 'env';
-        console.log('[AsyncGenerate] 使用环境变量API Key');
-      }
+    const modelSpecificKey = getModelApiKey(selectedModelId);
+    if (modelSpecificKey) {
+      finalApiKey = modelSpecificKey;
+      keySource = 'model_specific';
+      console.log(`[AsyncGenerate] 使用模型 ${selectedModelId} 的专属API Key`);
+    } else if (defaultApiKey) {
+      finalApiKey = defaultApiKey;
+      keySource = 'default';
+      console.log('[AsyncGenerate] 使用后台默认API Key');
+    } else if (process.env.DEEPSEEK_API_KEY) {
+      finalApiKey = process.env.DEEPSEEK_API_KEY;
+      keySource = 'env';
+      console.log('[AsyncGenerate] 使用环境变量API Key');
     }
     
     // 调试信息
@@ -7653,7 +9713,7 @@ async function handleGenerateInternal(body, headers, progressCallback) {
     });
     
     if (!finalApiKey) {
-      return { success: false, error: 'API Key未配置，请在后台设置或使用自己的Key' };
+      return { success: false, error: '该模型暂不可用，请联系管理员配置API Key' };
     }
 
     progressCallback && progressCallback(30, 'AI正在构思游戏...');
@@ -7927,8 +9987,7 @@ app.post('/api/generate', async (req, res) => {
       return 'deepseek';
     };
 
-    // 判断用户是否提供了自己的API Key
-    const useUserApiKey = llmConfig?.apiKey && llmConfig.apiKey.length > 0;
+    // 不再支持用户自定义API Key，完全使用后台配置
     
     // 根据provider确定默认baseUrl
     const getDefaultBaseUrl = (provider) => {
@@ -7969,13 +10028,6 @@ app.post('/api/generate', async (req, res) => {
         finalBaseUrl = modelConfig.baseUrl;
         selectedModelId = requestedModelId;
         console.log(`[INFO] 使用后端配置的模型: ${modelConfig.name} (${selectedModelId})`);
-      } else if (requestedModelId === 'custom' && useUserApiKey) {
-        // 用户使用自定义接口（需要自己提供Key和配置）
-        finalModel = llmConfig?.model || 'deepseek-chat';
-        finalProvider = 'custom';
-        finalBaseUrl = llmConfig?.baseUrl || 'https://api.deepseek.com';
-        selectedModelId = null;
-        console.log('[INFO] 使用用户自定义接口配置');
       } else {
         // 使用后台配置的默认模型
         // 先检查默认模型是否在 LLM_MODELS 中
@@ -8022,37 +10074,29 @@ app.post('/api/generate', async (req, res) => {
       return null;
     };
     
-    // 确定API Key来源
+    // 确定API Key来源（不再支持用户自定义Key）
     let finalApiKey = null;
     let keySource = '';
     
     // API Key优先级（从高到低）：
-    // 1. 用户自己配置的Key（如果提供了）
-    // 2. 该模型在后台配置的专属Key（llm_apikey_${modelId}）
-    // 3. 后台配置的默认Key（llm_default_api_key）
-    // 4. 环境变量中的Key（DEEPSEEK_API_KEY）
+    // 1. 该模型在后台配置的专属Key（llm_apikey_${modelId}）
+    // 2. 后台配置的默认Key（llm_default_api_key）
+    // 3. 环境变量中的Key（DEEPSEEK_API_KEY）
     
-    if (useUserApiKey && llmConfig.apiKey) {
-      // 用户自己配置的Key优先级最高
-      finalApiKey = llmConfig.apiKey;
-      keySource = 'user';
-      console.log('[INFO] 使用用户自己配置的API Key');
-    } else {
-      // 尝试获取模型特定的Key
-      const modelSpecificKey = getModelApiKey(selectedModelId);
-      if (modelSpecificKey) {
-        finalApiKey = modelSpecificKey;
-        keySource = 'model_specific';
-        console.log(`[INFO] 使用模型 ${selectedModelId} 的专属API Key`);
-      } else if (defaultApiKey) {
-        finalApiKey = defaultApiKey;
-        keySource = 'default';
-        console.log('[INFO] 使用后台默认API Key');
-      } else if (process.env.DEEPSEEK_API_KEY) {
-        finalApiKey = process.env.DEEPSEEK_API_KEY;
-        keySource = 'env';
-        console.log('[INFO] 使用环境变量API Key');
-      }
+    // 尝试获取模型特定的Key
+    const modelSpecificKey = getModelApiKey(selectedModelId);
+    if (modelSpecificKey) {
+      finalApiKey = modelSpecificKey;
+      keySource = 'model_specific';
+      console.log(`[INFO] 使用模型 ${selectedModelId} 的专属API Key`);
+    } else if (defaultApiKey) {
+      finalApiKey = defaultApiKey;
+      keySource = 'default';
+      console.log('[INFO] 使用后台默认API Key');
+    } else if (process.env.DEEPSEEK_API_KEY) {
+      finalApiKey = process.env.DEEPSEEK_API_KEY;
+      keySource = 'env';
+      console.log('[INFO] 使用环境变量API Key');
     }
 
     const config = {
@@ -8117,8 +10161,6 @@ app.post('/api/generate', async (req, res) => {
         
         console.log(`[Credits] 用户 ${userToken.substring(0, 8)}... 消耗 ${actualCreditCost} 积分`);
       }
-    } else if (keySource === 'user') {
-      console.log('[INFO] 用户使用自己的API Key，免费生成');
     } else if (isFromMiniProgram) {
       console.log('[INFO] 小程序请求，跳过积分扣除');
     }
@@ -9022,27 +11064,21 @@ app.post('/api/games/:id/edit', async (req, res) => {
         
         // 确定 API Key（优先级：用户Key > 模型专属Key > 默认Key > 环境变量）
         let finalApiKey = null;
-        const useUserApiKey = llmConfig?.apiKey && llmConfig.apiKey.length > 0;
-        
-        if (useUserApiKey) {
-          finalApiKey = llmConfig.apiKey;
-          console.log('[编辑] 使用用户自己配置的 API Key');
-        } else {
-          const modelSpecificKey = getModelApiKey(selectedModelId);
-          if (modelSpecificKey) {
-            finalApiKey = modelSpecificKey;
-            console.log(`[编辑] 使用模型 ${selectedModelId} 的专属 API Key`);
-          } else if (defaultApiKey) {
-            finalApiKey = defaultApiKey;
-            console.log('[编辑] 使用后台默认 API Key');
-          } else if (process.env.DEEPSEEK_API_KEY) {
-            finalApiKey = process.env.DEEPSEEK_API_KEY;
-            console.log('[编辑] 使用环境变量 API Key');
-          }
+        // 不再支持用户自定义API Key，完全使用后台配置
+        const modelSpecificKey = getModelApiKey(selectedModelId);
+        if (modelSpecificKey) {
+          finalApiKey = modelSpecificKey;
+          console.log(`[编辑] 使用模型 ${selectedModelId} 的专属 API Key`);
+        } else if (defaultApiKey) {
+          finalApiKey = defaultApiKey;
+          console.log('[编辑] 使用后台默认 API Key');
+        } else if (process.env.DEEPSEEK_API_KEY) {
+          finalApiKey = process.env.DEEPSEEK_API_KEY;
+          console.log('[编辑] 使用环境变量 API Key');
         }
         
         if (!finalApiKey) {
-          return res.status(400).json({ success: false, error: 'API Key 未配置，请联系管理员或在设置中配置您的 API Key' });
+          return res.status(400).json({ success: false, error: '该模型暂不可用，请联系管理员配置API Key' });
         }
         
         const provider = finalProvider;
@@ -10703,15 +12739,18 @@ app.post('/api/invite/link-visit', (req, res) => {
     db.prepare('INSERT OR REPLACE INTO user_extras (user_token, invited_by) VALUES (?, ?)')
       .run(userToken, inviter.creator_token);
     
-    // 被邀请者获得奖励 (inviteBonus: 3积分)
-    const newUserReward = CREDITS_CONFIG.inviteBonus;
+    // 从数据库配置读取邀请奖励积分（支持后台配置）
+    const mpInviteReward = parseFloat(getConfig('credits_mp_invite', '3')) || 3;
+    
+    // 被邀请者获得奖励
+    const newUserReward = mpInviteReward;
     db.prepare('UPDATE user_credits SET credits = credits + ?, total_earned = total_earned + ? WHERE user_token = ?')
       .run(newUserReward, newUserReward, userToken);
     db.prepare('INSERT INTO credit_logs (user_token, amount, type, description) VALUES (?, ?, ?, ?)')
       .run(userToken, newUserReward, 'invite_bonus', '通过邀请链接注册奖励');
     
-    // 邀请者获得奖励 (inviteFriend: 3积分)
-    const inviterReward = CREDITS_CONFIG.inviteFriend;
+    // 邀请者获得奖励（与被邀请者相同）
+    const inviterReward = mpInviteReward;
     db.prepare('UPDATE user_credits SET credits = credits + ?, total_earned = total_earned + ? WHERE user_token = ?')
       .run(inviterReward, inviterReward, inviter.creator_token);
     db.prepare('INSERT INTO credit_logs (user_token, amount, type, description) VALUES (?, ?, ?, ?)')
@@ -11338,6 +13377,32 @@ function deleteConfig(key) {
   db.prepare('DELETE FROM system_config WHERE key = ?').run(key);
 }
 
+// 【临时修复接口】强制重置功能开关配置
+app.get('/api/admin/fix-config', (req, res) => {
+  try {
+    // 强制将功能开关设置为 false（开放创作）
+    setConfig('web_create_disabled', 'false');
+    setConfig('web_edit_disabled', 'false');
+    setConfig('web_interact_disabled', 'false');
+    setConfig('web_write_disabled', 'false');
+    
+    console.log('[CONFIG] 已强制重置功能开关配置为 false');
+    
+    res.json({ 
+      success: true, 
+      message: '功能开关已重置',
+      configs: {
+        web_create_disabled: 'false',
+        web_edit_disabled: 'false',
+        web_interact_disabled: 'false',
+        web_write_disabled: 'false'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // 更新系统配置
 app.put('/api/admin/config', (req, res) => {
   const adminKey = req.headers['x-admin-key'];
@@ -11347,6 +13412,8 @@ app.put('/api/admin/config', (req, res) => {
   
   try {
     const { configs } = req.body;
+    console.log('[CONFIG] 收到保存请求:', JSON.stringify(configs));
+    
     if (!configs || !Array.isArray(configs)) {
       return res.status(400).json({ success: false, error: '无效的配置数据' });
     }
@@ -14355,7 +16422,7 @@ app.post('/api/admin/regenerate-static', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`\n========================================`);
-  console.log(`🎮 JustOneWord服务器启动成功！`);
+  console.log(`🎮 一句话游戏服务器启动成功！`);
   console.log(`========================================`);
   console.log(`📍 地址: http://localhost:${PORT}`);
   console.log(`🔒 环境: ${process.env.NODE_ENV || 'development'}`);

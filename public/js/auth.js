@@ -6,9 +6,19 @@
 // ==================== 登录状态检测 ====================
 
 // 检查是否已登录（网站登录）
+// 兼容多种登录凭证：aigame-jwt（密码登录）、aigame-user-token 或 aigame-author-token（设备自动登录）
 function isWebLoggedIn() {
   const jwt = localStorage.getItem('aigame-jwt');
-  return jwt && jwt.length > 0;
+  if (jwt && jwt.length > 0) return true;
+  
+  // 兼容通过设备指纹自动登录的用户（未使用密码登录，没有jwt但有userToken）
+  const userToken = localStorage.getItem('aigame-user-token');
+  if (userToken && userToken.length > 0) return true;
+  
+  const authorToken = localStorage.getItem('aigame-author-token');
+  if (authorToken && authorToken.length > 0) return true;
+  
+  return false;
 }
 
 // 获取登录用户信息

@@ -1,9 +1,5 @@
-<!--pages/create/create.wxml-->
-<!--
-  创作页面 - 首页
--->
+<!--创作引导页 - 引导用户去网站创作，小程序端领取积分-->
 <view class="page-container">
-  <!-- 顶部标题栏 -->
   <view class="header">
     <view class="header-left">
       <text class="logo-icon">🎮</text>
@@ -17,226 +13,85 @@
   </view>
 
   <scroll-view class="main-scroll" scroll-y enhanced show-scrollbar="{{false}}">
-    <!-- 创作区域 -->
-    <view class="create-section" wx:if="{{!generatedGame}}">
-      <!-- 创作卡片 -->
-      <view class="create-card">
-        <view class="create-title">
-          <text class="title-icon">✨</text>
-          <text class="title-text">一句话生成游戏</text>
-        </view>
-        
-        <!-- 输入框 -->
-        <view class="input-wrapper">
-          <textarea 
-            class="prompt-input"
-            placeholder="描述你想要的游戏，例如：贪吃蛇游戏"
-            placeholder-class="placeholder"
-            value="{{prompt}}"
-            bindinput="onPromptInput"
-            maxlength="200"
-            auto-height
-            disabled="{{generating}}"
-          ></textarea>
-          <view class="char-count">{{prompt.length}}/200</view>
-          <view class="clear-btn" wx:if="{{prompt && !generating}}" bindtap="clearPrompt">×</view>
-        </view>
-
-        <!-- 生成按钮 - 紧挨输入框 -->
-        <button 
-          class="generate-btn {{generating ? 'disabled' : ''}}" 
-          bindtap="startGenerate"
-          disabled="{{generating}}"
-        >
-          <text wx:if="{{!generating}}">✨ 开始生成</text>
-          <text wx:else>生成中...</text>
-        </button>
-
-        <!-- 生成进度 -->
-        <view class="progress-section" wx:if="{{generating || progress > 0}}">
-          <view class="progress-container">
-            <view class="progress-bar">
-              <view class="progress-fill" style="width: {{progress}}%"></view>
-            </view>
-            <view class="progress-info">
-              <text class="progress-text">{{progressText}}</text>
-              <text class="progress-percent">{{progress}}%</text>
-            </view>
+    <view class="credits-section">
+      <view class="credits-card" bindtap="goToCredits">
+        <view class="credits-main">
+          <view class="credits-info">
+            <text class="credits-label">我的积分</text>
+            <text class="credits-value">{{credits}}</text>
+          </view>
+          <view class="credits-arrow">
+            <text>查看详情 ></text>
           </view>
         </view>
-
-        <!-- 灵感推荐 -->
-        <view class="inspiration-section">
-          <view class="section-title">
-            <text class="title-icon">💡</text>
-            <text>灵感推荐</text>
-          </view>
-          <view class="inspiration-list">
-            <view 
-              class="inspiration-tag" 
-              wx:for="{{inspirations}}" 
-              wx:key="text"
-              data-text="{{item.text}}"
-              bindtap="useInspiration"
-            >
-              <text class="tag-icon">{{item.icon}}</text>
-              <text class="tag-text">{{item.text}}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <!-- 高级设置区域 - 可折叠 -->
-      <view class="advanced-section">
-        <view class="section-title collapsible" bindtap="toggleAdvanced">
-          <view class="title-left">
-            <text class="title-icon">⚙️</text>
-            <text>高级设置</text>
-          </view>
-          <text class="collapse-arrow {{showAdvanced ? 'expanded' : ''}}">›</text>
-        </view>
-
-        <view class="advanced-panel {{showAdvanced ? 'show' : 'hide'}}">
-          <!-- 游戏名称 -->
-          <view class="setting-item">
-            <text class="setting-label">🎮 游戏名称</text>
-            <input 
-              class="setting-input" 
-              placeholder="自动生成"
-              value="{{advancedSettings.gameName}}"
-              data-field="gameName"
-              bindinput="onAdvancedChange"
-            />
-          </view>
-
-          <!-- 画风 -->
-          <view class="setting-item">
-            <text class="setting-label">🎨 画风</text>
-            <picker 
-              mode="selector" 
-              range="{{artStyleOptions}}" 
-              range-key="label"
-              data-field="artStyle"
-              bindchange="onPickerChange"
-            >
-              <view class="setting-picker">
-                <text>{{advancedSettings.artStyle === 'auto' ? '自动' : advancedSettings.artStyle === 'pixel' ? '像素风' : advancedSettings.artStyle === 'cartoon' ? '卡通风' : advancedSettings.artStyle === 'minimal' ? '极简风' : '写实风'}}</text>
-                <text class="picker-arrow">›</text>
-              </view>
-            </picker>
-          </view>
-
-          <!-- 屏幕方向 -->
-          <view class="setting-item">
-            <text class="setting-label">� 屏幕方向</text>
-            <picker 
-              mode="selector" 
-              range="{{orientationOptions}}" 
-              range-key="label"
-              data-field="orientation"
-              bindchange="onPickerChange"
-            >
-              <view class="setting-picker">
-                <text>{{advancedSettings.orientation === 'auto' ? '自动' : advancedSettings.orientation === 'portrait' ? '竖屏' : '横屏'}}</text>
-                <text class="picker-arrow">›</text>
-              </view>
-            </picker>
-          </view>
-
-          <!-- 可见性 -->
-          <view class="setting-item">
-            <text class="setting-label">👁️ 可见性</text>
-            <picker 
-              mode="selector" 
-              range="{{visibilityOptions}}" 
-              range-key="label"
-              data-field="visibility"
-              bindchange="onPickerChange"
-            >
-              <view class="setting-picker">
-                <text>{{advancedSettings.visibility === 'public' ? '公开' : '私密'}}</text>
-                <text class="picker-arrow">›</text>
-              </view>
-            </picker>
-          </view>
-
-          <!-- 游戏类型 -->
-          <view class="setting-item">
-            <text class="setting-label">🎲 游戏类型</text>
-            <picker 
-              mode="selector" 
-              range="{{gameTypeOptions}}" 
-              range-key="label"
-              data-field="gameType"
-              bindchange="onPickerChange"
-            >
-              <view class="setting-picker">
-                <text>{{advancedSettings.gameType === 'auto' ? '自动选择' : advancedSettings.gameType === '2d' ? '2D平面' : advancedSettings.gameType === '2.5d' ? '2.5D等距' : '3D立体'}}</text>
-                <text class="picker-arrow">›</text>
-              </view>
-            </picker>
-          </view>
-
-          <!-- LLM设置 - 跳转链接 -->
-          <view class="setting-item llm-link" bindtap="goToLLMSettings">
-            <text class="setting-label">🤖 LLM 设置</text>
-            <view class="setting-link">
-              <text class="link-text">配置模型与API Key</text>
-              <text class="link-arrow">›</text>
-            </view>
-          </view>
-
-          <!-- 重置按钮 -->
-          <view class="reset-btn" bindtap="resetAdvancedSettings">
-            <text>🔄 重置设置</text>
-          </view>
+        <view class="claimable-tip" wx:if="{{claimableCount > 0}}">
+          <text class="tip-icon">🎁</text>
+          <text class="tip-text">有{{claimableCount}}个奖励可领取，共{{claimableCredits}}积分</text>
         </view>
       </view>
     </view>
 
-    <!-- 生成结果 -->
-    <view class="result-section" wx:if="{{generatedGame}}">
-      <view class="success-card">
-        <view class="success-icon">🎉</view>
-        <view class="success-title">游戏创作成功！</view>
-        
-        <view class="game-card">
-          <view class="game-emoji">🎮</view>
-          <view class="game-info">
-            <view class="game-title">{{generatedGame.title}}</view>
-            <view class="game-prompt">{{prompt}}</view>
+    <!-- 签到区域（按文档6.2节优化设计） -->
+    <view class="checkin-section">
+      <view class="checkin-card" bindtap="handleCheckin">
+        <view class="checkin-left">
+          <text class="checkin-icon">{{checkinStatus.checkedInToday ? '✅' : '📅'}}</text>
+          <view class="checkin-info">
+            <text class="checkin-title">{{checkinStatus.checkedInToday ? '今日已签到' : '每日签到'}}</text>
+            <text class="checkin-desc" wx:if="{{!checkinStatus.checkedInToday}}">
+              签到可得1积分{{checkinStatus.streakDays >= 2 ? '，已连续' + checkinStatus.streakDays + '天' : ''}}
+            </text>
+            <text class="checkin-desc" wx:else>
+              已连续签到{{checkinStatus.streakDays}}天，保持记录！
+            </text>
           </view>
         </view>
-
-        <!-- 操作按钮 -->
-        <view class="action-buttons">
-          <button class="action-btn primary" bindtap="playGame">
-            🎮 去玩游戏
-          </button>
-          <button class="action-btn secondary" bindtap="viewGameDetail">
-            📋 查看详情
-          </button>
-          <button class="action-btn secondary" open-type="share">
-            📤 分享好友
-          </button>
-          <button class="action-btn outline" bindtap="createAnother">
-            ➕ 继续创作
-          </button>
+        <view class="checkin-btn {{checkinStatus.checkedInToday ? 'success' : ''}}">
+          <text>{{checkinStatus.checkedInToday ? '+1 ✓' : '签到 +1'}}</text>
         </view>
+      </view>
+    </view>
 
-        <!-- 游戏链接 -->
-        <view class="game-url-section">
-          <view class="url-label">游戏链接</view>
-          <view class="url-box" bindtap="copyGameUrl">
-            <text class="url-text">{{gameUrl}}</text>
+    <view class="create-guide-section">
+      <view class="guide-card">
+        <view class="guide-header">
+          <text class="guide-icon">✨</text>
+          <text class="guide-title">去网站创作游戏</text>
+        </view>
+        <view class="guide-content">
+          <text class="guide-desc">在网站上使用AI一句话生成游戏，创作完成后回来领取积分奖励</text>
+          <view class="guide-steps">
+            <view class="step-item"><text class="step-num">1</text><text class="step-text">复制网站链接</text></view>
+            <view class="step-item"><text class="step-num">2</text><text class="step-text">浏览器打开创作</text></view>
+            <view class="step-item"><text class="step-num">3</text><text class="step-text">回小程序领积分</text></view>
+          </view>
+        </view>
+        <view class="guide-actions">
+          <button class="primary-btn" bindtap="goToWebCreate">🌐 去网站创作</button>
+          <view class="url-copy" bindtap="copyWebUrl">
+            <text class="url-text">{{webUrl}}</text>
             <text class="copy-icon">📋</text>
           </view>
-          <view class="url-tip">点击复制链接，可分享给朋友</view>
         </view>
       </view>
     </view>
 
-    <!-- 全站最新作品 -->
+    <view class="quick-entry-section">
+      <view class="entry-item" bindtap="goToCredits">
+        <text class="entry-icon">🏆</text>
+        <text class="entry-text">领成就</text>
+        <view class="entry-badge" wx:if="{{claimableCount > 0}}">{{claimableCount}}</view>
+      </view>
+      <view class="entry-item" bindtap="goToWorksPage">
+        <text class="entry-icon">🎮</text>
+        <text class="entry-text">作品广场</text>
+      </view>
+      <view class="entry-item" open-type="share">
+        <text class="entry-icon">📤</text>
+        <text class="entry-text">分享好友</text>
+      </view>
+    </view>
+
     <view class="my-works-section">
       <view class="section-header">
         <view class="section-title">
@@ -248,47 +103,29 @@
           <text class="arrow">→</text>
         </view>
       </view>
-
-      <!-- 最新游戏列表 - 最多显示6个 -->
       <view class="my-games-grid" wx:if="{{latestGames.length > 0}}">
-        <view 
-          class="my-game-card" 
-          wx:for="{{latestGames}}" 
-          wx:key="id"
-          data-game="{{item}}"
-          bindtap="goToGameDetail"
-        >
-          <view class="my-game-cover">
-            <text class="my-game-emoji">{{item.emoji || '🎮'}}</text>
-          </view>
+        <view class="my-game-card" wx:for="{{latestGames}}" wx:key="id" data-game="{{item}}" bindtap="goToGameDetail">
+          <view class="my-game-cover"><text class="my-game-emoji">{{item.emoji || '🎮'}}</text></view>
           <view class="my-game-info">
             <text class="my-game-title ellipsis">{{item.title || '未命名'}}</text>
-            <view class="my-game-author">
-              <text class="author-text">👤 {{item.author_name || '匿名'}}</text>
-            </view>
+            <view class="my-game-author"><text class="author-text">👤 {{item.author_name || '匿名'}}</text></view>
             <view class="my-game-stats">
               <text class="stat-item">❤️ {{item.likes || 0}}</text>
               <text class="stat-item">👁️ {{item.plays || 0}}</text>
-              <text class="stat-item">⭐ {{item.favorites || 0}}</text>
             </view>
           </view>
         </view>
       </view>
-
-      <!-- 加载状态 -->
       <view class="loading-more" wx:if="{{loadingLatestGames}}">
         <view class="loading-spinner"></view>
         <text class="loading-text">加载中...</text>
       </view>
-
-      <!-- 空状态 -->
       <view class="empty-state" wx:if="{{!loadingLatestGames && latestGames.length === 0}}">
         <text class="empty-icon">🎮</text>
-        <text class="empty-text">暂无作品，快来创作第一个吧！</text>
+        <text class="empty-text">暂无作品，快去网站创作吧！</text>
       </view>
     </view>
 
-    <!-- 底部安全区 -->
     <view class="safe-area-bottom"></view>
   </scroll-view>
 </view>

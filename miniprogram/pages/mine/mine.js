@@ -361,18 +361,11 @@ Page({
   // 去设置页 - 弹出设置菜单
   goToSettings() {
     const that = this;
-    const llmDisabled = this.data.llmDisabled;
     const webActivated = this.data.webActivated;
     
-    // 构建菜单项
+    // 构建菜单项（已移除LLM设置，现在由后台统一配置）
     const menuItems = [];
     const menuActions = [];
-    
-    // LLM设置（如果未禁用）
-    if (!llmDisabled) {
-      menuItems.push('🤖 LLM 设置');
-      menuActions.push('llm');
-    }
     
     // 访问网页版
     menuItems.push('🌐 访问网页版');
@@ -391,9 +384,6 @@ Page({
       success(res) {
         const action = menuActions[res.tapIndex];
         switch (action) {
-          case 'llm':
-            that.goToLLMSettings();
-            break;
           case 'web':
             that.goToWeb();
             break;
@@ -405,13 +395,6 @@ Page({
             break;
         }
       }
-    });
-  },
-
-  // 去LLM设置页
-  goToLLMSettings() {
-    wx.navigateTo({
-      url: '/pages/llm-settings/llm-settings'
     });
   },
 

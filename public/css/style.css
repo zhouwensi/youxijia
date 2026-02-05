@@ -1,5 +1,5 @@
 /* ==================== 未来科技风主题 ==================== */
-/* AI游戏工坊 - Cyberpunk / Futuristic Theme */
+/* 一句话游戏 - Cyberpunk / Futuristic Theme */
 
 /* 全局变量 */
 :root {
@@ -389,21 +389,6 @@ body {
 .nav-label {
   font-weight: 500;
   font-size: 0.75rem;
-}
-
-.nav-badge {
-  position: absolute;
-  top: 0.375rem;
-  right: 50%;
-  transform: translateX(1rem);
-  background: var(--primary-color);
-  color: white;
-  font-size: 0.65rem;
-  padding: 0.1rem 0.35rem;
-  border-radius: 10px;
-  font-weight: 600;
-  min-width: 1.25rem;
-  text-align: center;
 }
 
 /* 中间创作按钮 */

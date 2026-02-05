@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>管理后台 - JustOneWord</title>
+  <title>管理后台 - 一句话游戏</title>
   <style>
     * {
       margin: 0;
@@ -556,7 +556,7 @@
   <!-- 管理面板 -->
   <div class="admin-container" id="admin-container">
     <div class="admin-header">
-      <h1>🎮 JustOneWord - 管理后台</h1>
+      <h1>🎮 一句话游戏 - 管理后台</h1>
       <div class="header-actions">
         <a href="/" class="btn btn-sm" style="background: rgba(99, 102, 241, 0.2); color: #a5b4fc; text-decoration: none;">🏠 返回首页</a>
         <button class="btn btn-sm btn-logout" onclick="logout()">退出登录</button>
@@ -671,7 +671,7 @@
         <div class="config-grid">
           <div class="config-item">
             <label>网站名称</label>
-            <input type="text" id="config-site_name" placeholder="JustOneWord">
+            <input type="text" id="config-site_name" placeholder="一句话游戏">
           </div>
           <div class="config-item">
             <label>网站公告</label>
@@ -697,7 +697,7 @@
           <!-- 创作游戏开关 -->
           <div class="config-item" style="grid-column: 1 / -1; padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.2);">
             <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
-              <input type="checkbox" id="config-web_create_disabled" checked
+              <input type="checkbox" id="config-web_create_disabled"
                 style="width: 20px; height: 20px; cursor: pointer; accent-color: #6366f1;">
               <span style="font-weight: 600;">🎨 禁用网站创作功能</span>
             </label>
@@ -709,7 +709,7 @@
           <!-- 编辑/修复游戏开关 -->
           <div class="config-item" style="grid-column: 1 / -1; padding: 1rem; background: rgba(245, 158, 11, 0.1); border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.2);">
             <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
-              <input type="checkbox" id="config-web_edit_disabled" checked
+              <input type="checkbox" id="config-web_edit_disabled"
                 style="width: 20px; height: 20px; cursor: pointer; accent-color: #f59e0b;">
               <span style="font-weight: 600;">✏️ 禁用网站编辑/修复功能</span>
             </label>
@@ -744,7 +744,7 @@
         <div class="config-grid" style="margin-top: 1rem;">
           <div class="config-item">
             <label>小程序名称</label>
-            <input type="text" id="config-miniprogram_name" placeholder="如：JustOneWord">
+            <input type="text" id="config-miniprogram_name" placeholder="如：一句话游戏">
           </div>
           <div class="config-item">
             <label>小程序 AppID</label>
@@ -835,105 +835,366 @@
 
     <!-- 积分管理 -->
     <div class="tab-content" id="tab-promo">
-      <!-- 行为积分配置 -->
+      <!-- 📌 基础积分配置 -->
       <div class="config-section" style="margin-bottom: 1.5rem;">
-        <h2>⚡ 行为积分配置</h2>
+        <h2>📌 基础积分配置</h2>
         <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1rem;">
-          配置用户点赞、收藏、关注、评论等行为可获得的积分奖励。每日每种类型有上限。
+          配置网站端基础积分奖励，包括新用户注册和每日登录。
+        </p>
+        
+        <table style="width: 100%; font-size: 0.875rem; border-collapse: collapse; margin-bottom: 1rem;">
+          <thead>
+            <tr style="text-align: left; color: #94a3b8; background: rgba(0,0,0,0.2);">
+              <th style="padding: 0.75rem;">类型</th>
+              <th style="padding: 0.75rem;">奖励积分</th>
+              <th style="padding: 0.75rem;">说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <td style="padding: 0.75rem;">🆕 新用户注册</td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="basic-register" step="0.1" min="0" value="1"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;"> 积分
+              </td>
+              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">仅首次注册发放一次</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <td style="padding: 0.75rem;">📅 每日登录</td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="basic-daily-login" step="0.1" min="0" value="1"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;"> 积分
+              </td>
+              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">每天首次访问网站时发放</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- 📅 签到配置 -->
+      <div class="config-section" style="margin-bottom: 1.5rem;">
+        <h2>📅 签到配置</h2>
+        <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1rem;">
+          配置小程序端签到功能的积分奖励，包括基础签到和连续签到加成。
+        </p>
+        
+        <table style="width: 100%; font-size: 0.875rem; border-collapse: collapse; margin-bottom: 1rem;">
+          <thead>
+            <tr style="text-align: left; color: #94a3b8; background: rgba(0,0,0,0.2);">
+              <th style="padding: 0.75rem;">类型</th>
+              <th style="padding: 0.75rem;">奖励积分</th>
+              <th style="padding: 0.75rem;">说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <td style="padding: 0.75rem;">📅 每日签到</td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="checkin-base" step="0.1" min="0" value="1"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;"> 积分
+              </td>
+              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">小程序签到基础积分</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <td style="padding: 0.75rem;">🔥 连续签到3天</td>
+              <td style="padding: 0.75rem;">
+                额外 <input type="number" id="checkin-streak-3" step="0.1" min="0" value="1"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;"> 积分
+              </td>
+              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">连续签到3天时额外奖励</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <td style="padding: 0.75rem;">🔥 连续签到7天</td>
+              <td style="padding: 0.75rem;">
+                额外 <input type="number" id="checkin-streak-7" step="0.1" min="0" value="2"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;"> 积分
+              </td>
+              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">连续签到7天时额外奖励</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <td style="padding: 0.75rem;">🔥 连续签到14天</td>
+              <td style="padding: 0.75rem;">
+                额外 <input type="number" id="checkin-streak-14" step="0.1" min="0" value="3"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;"> 积分
+              </td>
+              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">连续签到14天时额外奖励</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <td style="padding: 0.75rem;">🏆 连续签到30天</td>
+              <td style="padding: 0.75rem;">
+                额外 <input type="number" id="checkin-streak-30" step="0.1" min="0" value="5"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;"> 积分
+              </td>
+              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">连续签到30天时额外奖励</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- ❤️ 互动任务配置 -->
+      <div class="config-section" style="margin-bottom: 1.5rem;">
+        <h2>❤️ 互动任务配置</h2>
+        <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1rem;">
+          用户在网站完成互动任务后，去小程序领取积分。配置每种行为完成N次可领取X积分，每日有领取上限。
         </p>
         
         <table style="width: 100%; font-size: 0.875rem; border-collapse: collapse; margin-bottom: 1rem;">
           <thead>
             <tr style="text-align: left; color: #94a3b8; background: rgba(0,0,0,0.2);">
               <th style="padding: 0.75rem;">行为类型</th>
-              <th style="padding: 0.75rem;">单次奖励积分</th>
-              <th style="padding: 0.75rem;">每日上限次数</th>
-              <th style="padding: 0.75rem;">每日最多获得</th>
-              <th style="padding: 0.75rem;">备注</th>
+              <th style="padding: 0.75rem;">完成N次</th>
+              <th style="padding: 0.75rem;">可领X积分</th>
+              <th style="padding: 0.75rem;">每日上限</th>
+              <th style="padding: 0.75rem;">说明</th>
             </tr>
           </thead>
           <tbody>
             <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-              <td style="padding: 0.75rem;">👍 点赞作品</td>
+              <td style="padding: 0.75rem;">👍 点赞</td>
               <td style="padding: 0.75rem;">
-                <input type="number" id="action-like-credits" step="0.1" min="0" value="0.1"
-                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
+                <input type="number" id="claim-like-threshold" min="1" value="10" oninput="updateClaimDesc('like')"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 70px;"> 次
               </td>
               <td style="padding: 0.75rem;">
-                <input type="number" id="action-like-limit" min="0" value="10"
-                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
+                <input type="number" id="claim-like-reward" step="0.1" min="0" value="1" oninput="updateClaimDesc('like')"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 70px;"> 积分
               </td>
-              <td style="padding: 0.75rem;"><span id="action-like-max">1</span> 积分</td>
-              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">不能点赞自己的作品</td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="claim-like-daily-limit" min="1" value="3" oninput="updateClaimDesc('like')"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 70px;"> 次
+              </td>
+              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;" id="claim-like-desc">每10次点赞可领取1积分，每日最多领3次</td>
             </tr>
             <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-              <td style="padding: 0.75rem;">⭐ 收藏作品</td>
+              <td style="padding: 0.75rem;">⭐ 收藏</td>
               <td style="padding: 0.75rem;">
-                <input type="number" id="action-favorite-credits" step="0.1" min="0" value="0.2"
-                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
+                <input type="number" id="claim-favorite-threshold" min="1" value="5" oninput="updateClaimDesc('favorite')"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 70px;"> 次
               </td>
               <td style="padding: 0.75rem;">
-                <input type="number" id="action-favorite-limit" min="0" value="5"
-                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
+                <input type="number" id="claim-favorite-reward" step="0.1" min="0" value="1" oninput="updateClaimDesc('favorite')"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 70px;"> 积分
               </td>
-              <td style="padding: 0.75rem;"><span id="action-favorite-max">1</span> 积分</td>
-              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">不能收藏自己的作品</td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="claim-favorite-daily-limit" min="1" value="3" oninput="updateClaimDesc('favorite')"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 70px;"> 次
+              </td>
+              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;" id="claim-favorite-desc">每5次收藏可领取1积分，每日最多领3次</td>
             </tr>
             <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-              <td style="padding: 0.75rem;">➕ 关注用户</td>
+              <td style="padding: 0.75rem;">➕ 关注</td>
               <td style="padding: 0.75rem;">
-                <input type="number" id="action-follow-credits" step="0.1" min="0" value="0.2"
-                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
+                <input type="number" id="claim-follow-threshold" min="1" value="5" oninput="updateClaimDesc('follow')"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 70px;"> 次
               </td>
               <td style="padding: 0.75rem;">
-                <input type="number" id="action-follow-limit" min="0" value="5"
-                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
+                <input type="number" id="claim-follow-reward" step="0.1" min="0" value="1" oninput="updateClaimDesc('follow')"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 70px;"> 积分
               </td>
-              <td style="padding: 0.75rem;"><span id="action-follow-max">1</span> 积分</td>
-              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">不能关注自己</td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="claim-follow-daily-limit" min="1" value="3" oninput="updateClaimDesc('follow')"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 70px;"> 次
+              </td>
+              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;" id="claim-follow-desc">每5次关注可领取1积分，每日最多领3次</td>
             </tr>
             <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-              <td style="padding: 0.75rem;">💬 评论作品</td>
+              <td style="padding: 0.75rem;">💬 评论</td>
               <td style="padding: 0.75rem;">
-                <input type="number" id="action-comment-credits" step="0.1" min="0" value="0.5"
-                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
+                <input type="number" id="claim-comment-threshold" min="1" value="2" oninput="updateClaimDesc('comment')"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 70px;"> 次
               </td>
               <td style="padding: 0.75rem;">
-                <input type="number" id="action-comment-limit" min="0" value="2"
-                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
+                <input type="number" id="claim-comment-reward" step="0.1" min="0" value="1" oninput="updateClaimDesc('comment')"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 70px;"> 积分
               </td>
-              <td style="padding: 0.75rem;"><span id="action-comment-max">1</span> 积分</td>
-              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">
-                最低字数：<input type="number" id="action-comment-minlen" min="1" value="10"
-                  style="padding: 0.2rem 0.4rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 50px;"> 字
+              <td style="padding: 0.75rem;">
+                <input type="number" id="claim-comment-daily-limit" min="1" value="3" oninput="updateClaimDesc('comment')"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 70px;"> 次
+              </td>
+              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;" id="claim-comment-desc">每2次评论可领取1积分，每日最多领3次</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <td style="padding: 0.75rem;">🔗 分享</td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="claim-share-threshold" min="1" value="2" oninput="updateClaimDesc('share')"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 70px;"> 次
+              </td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="claim-share-reward" step="0.1" min="0" value="1" oninput="updateClaimDesc('share')"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 70px;"> 积分
+              </td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="claim-share-daily-limit" min="1" value="3" oninput="updateClaimDesc('share')"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 70px;"> 次
+              </td>
+              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;" id="claim-share-desc">每2次分享可领取1积分，每日最多领3次</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- 🎮 创作激励配置 -->
+      <div class="config-section" style="margin-bottom: 1.5rem;">
+        <h2>🎮 创作激励配置</h2>
+        <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1rem;">
+          鼓励用户创作和编辑游戏的积分奖励，每日有领取上限。
+        </p>
+        
+        <table style="width: 100%; font-size: 0.875rem; border-collapse: collapse; margin-bottom: 1rem;">
+          <thead>
+            <tr style="text-align: left; color: #94a3b8; background: rgba(0,0,0,0.2);">
+              <th style="padding: 0.75rem;">类型</th>
+              <th style="padding: 0.75rem;">完成条件</th>
+              <th style="padding: 0.75rem;">奖励积分</th>
+              <th style="padding: 0.75rem;">每日上限</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <td style="padding: 0.75rem;">🎮 创作游戏</td>
+              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">每次创作</td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="create-game-reward" step="0.1" min="0" value="2"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;"> 积分
+              </td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="create-game-limit" min="0" value="1"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;"> 次
+              </td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <td style="padding: 0.75rem;">✏️ 编辑游戏</td>
+              <td style="padding: 0.75rem;">
+                每 <input type="number" id="edit-game-threshold" min="1" value="2"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 60px;"> 次
+              </td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="edit-game-reward" step="0.1" min="0" value="1"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;"> 积分
+              </td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="edit-game-limit" min="0" value="1"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;"> 次
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- 📱 小程序专属配置 -->
+      <div class="config-section" style="margin-bottom: 1.5rem;">
+        <h2>📱 小程序专属配置</h2>
+        <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1rem;">
+          小程序端专属的积分奖励配置。
+        </p>
+        
+        <table style="width: 100%; font-size: 0.875rem; border-collapse: collapse; margin-bottom: 1rem;">
+          <thead>
+            <tr style="text-align: left; color: #94a3b8; background: rgba(0,0,0,0.2);">
+              <th style="padding: 0.75rem;">类型</th>
+              <th style="padding: 0.75rem;">奖励积分</th>
+              <th style="padding: 0.75rem;">每日上限</th>
+              <th style="padding: 0.75rem;">状态</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <td style="padding: 0.75rem;">👥 邀请好友</td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="mp-invite-reward" step="0.1" min="0" value="5"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;"> 积分
+              </td>
+              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">无上限</td>
+              <td style="padding: 0.75rem; color: #10b981;">✅ 已启用</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <td style="padding: 0.75rem;">🎬 激励视频广告</td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="ad-reward" step="0.1" min="0" value="3"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;"> 积分
+              </td>
+              <td style="padding: 0.75rem;">
+                <input type="number" id="ad-daily-limit" min="0" value="10"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;"> 次
+              </td>
+              <td style="padding: 0.75rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                  <input type="checkbox" id="ad-enabled"
+                    style="width: 18px; height: 18px; cursor: pointer; accent-color: #10b981;">
+                  <span id="ad-status-text" style="color: #f59e0b;">待开通</span>
+                </label>
               </td>
             </tr>
           </tbody>
         </table>
         
+        <p style="color: #64748b; font-size: 0.8rem; margin-top: 1rem;">
+          💡 <strong>说明：</strong><br>
+          • 邀请好友：被邀请者首次创作游戏后，双方各获得积分奖励<br>
+          • 激励视频广告：需达到500UV后申请开通，开通后勾选启用
+        </p>
+      </div>
+      
+      <!-- 🏆 成就系统配置 -->
+      <div class="config-section" style="margin-bottom: 1.5rem;">
+        <h2>🏆 成就系统配置</h2>
+        <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1rem;">
+          配置各类成就的达成条件和奖励积分。用户在网站达成条件后，去小程序领取奖励。
+        </p>
+        
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+          <button class="tab-btn" onclick="filterAchievements('all')" id="ach-filter-all" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; background: #6366f1;">全部</button>
+          <button class="tab-btn" onclick="filterAchievements('daily')" id="ach-filter-daily" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; background: rgba(255,255,255,0.1);">每日</button>
+          <button class="tab-btn" onclick="filterAchievements('weekly')" id="ach-filter-weekly" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; background: rgba(255,255,255,0.1);">每周</button>
+          <button class="tab-btn" onclick="filterAchievements('monthly')" id="ach-filter-monthly" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; background: rgba(255,255,255,0.1);">每月</button>
+          <button class="tab-btn" onclick="filterAchievements('permanent')" id="ach-filter-permanent" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; background: rgba(255,255,255,0.1);">永久</button>
+        </div>
+        
+        <table style="width: 100%; font-size: 0.875rem; border-collapse: collapse; margin-bottom: 1rem;">
+          <thead>
+            <tr style="text-align: left; color: #94a3b8; background: rgba(0,0,0,0.2);">
+              <th style="padding: 0.75rem;">成就名称</th>
+              <th style="padding: 0.75rem;">分类</th>
+              <th style="padding: 0.75rem;">达成条件</th>
+              <th style="padding: 0.75rem;">奖励积分</th>
+              <th style="padding: 0.75rem;">状态</th>
+            </tr>
+          </thead>
+          <tbody id="achievements-tbody">
+            <tr><td colspan="5" style="padding: 1rem; color: #64748b; text-align: center;">加载中...</td></tr>
+          </tbody>
+        </table>
+        
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-          <button class="btn-save" onclick="saveActionCreditsConfig()" style="background: linear-gradient(135deg, #10b981, #059669);">
-            💾 保存行为积分配置
+          <button class="btn-save" onclick="saveAchievementsConfig()" style="background: linear-gradient(135deg, #10b981, #059669);">
+            💾 保存成就配置
           </button>
-          <button class="btn-save" onclick="loadActionCreditsConfig()" style="background: linear-gradient(135deg, #6366f1, #4f46e5);">
+          <button class="btn-save" onclick="loadAchievementsConfig()" style="background: linear-gradient(135deg, #6366f1, #4f46e5);">
             🔄 刷新
           </button>
         </div>
-        
-        <p style="color: #64748b; font-size: 0.8rem; margin-top: 1rem;">
-          💡 <strong>规则说明：</strong><br>
-          • 取消操作（取消点赞/收藏/关注）<strong>不会扣除</strong>已获得的积分<br>
-          • 对<strong>自己的作品</strong>点赞、收藏、评论<strong>不会获得</strong>积分<br>
-          • 评论需满足最低字数要求，且同一游戏仅首次评论可获得积分<br>
-          • 设置积分为 0 或上限为 0 可禁用该类型的积分奖励
-        </p>
       </div>
+      
+      <!-- 统一保存按钮 -->
+      <div class="config-section" style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.3);">
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+          <button class="btn-save" onclick="saveAllCreditsConfig()" style="background: linear-gradient(135deg, #10b981, #059669); padding: 0.75rem 2rem; font-size: 1rem;">
+            💾 保存以上所有积分配置
+          </button>
+          <button class="btn-save" onclick="loadAllCreditsConfig()" style="background: linear-gradient(135deg, #6366f1, #4f46e5);">
+            🔄 刷新所有配置
+          </button>
+          <span style="color: #10b981; font-size: 0.875rem;">一键保存基础积分、签到、互动任务、创作激励、小程序专属配置</span>
+        </div>
+      </div>
+      
+      <hr style="border: none; border-top: 1px dashed rgba(255,255,255,0.2); margin: 2rem 0;">
       
       <!-- 特殊积分配置 -->
       <div class="config-section" style="margin-bottom: 1.5rem;">
         <h2>🎯 特殊积分配置</h2>
         <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1rem;">
-          配置分享游戏、邀请好友、阅读文章的积分奖励。每种类型有每日上限，每日凌晨自动重置。
+          配置分享游戏、阅读文章的积分奖励。每种类型有每日上限，每日凌晨自动重置。
         </p>
         
         <table style="width: 100%; font-size: 0.875rem; border-collapse: collapse; margin-bottom: 1rem;">
@@ -959,19 +1220,6 @@
               </td>
               <td style="padding: 0.75rem;"><span id="extra-share-max">5</span> 积分</td>
               <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">只有作者分享自己的游戏才算</td>
-            </tr>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-              <td style="padding: 0.75rem;">👥 邀请好友</td>
-              <td style="padding: 0.75rem;">
-                <input type="number" id="extra-invite-credits" step="0.1" min="0" value="3"
-                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
-              </td>
-              <td style="padding: 0.75rem;">
-                <input type="number" id="extra-invite-limit" min="0" value="5"
-                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;">
-              </td>
-              <td style="padding: 0.75rem;"><span id="extra-invite-max">15</span> 积分</td>
-              <td style="padding: 0.75rem; color: #64748b; font-size: 0.8rem;">被邀请者首次生成游戏时双方各得积分</td>
             </tr>
             <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
               <td style="padding: 0.75rem;">📖 阅读文章</td>
@@ -1875,6 +2123,8 @@
           loadConfig(); // 小程序配置也需要加载（复用 loadConfig，因为 checkbox 会自动匹配 id）
           break;
         case 'promo':
+          loadAllCreditsConfig();
+          loadAchievementsConfig();
           loadActionCreditsConfig();
           loadExtraCreditsConfig();
           loadPromoCodes();
@@ -4181,6 +4431,345 @@
       return code;
     }
     
+    // ========== 积分引流系统配置功能 ==========
+    
+    // 全局变量存储成就数据
+    let achievementsData = [];
+    let achievementsFilter = 'all';
+    
+    // 行为类型名称映射
+    const claimTypeNames = {
+      like: '点赞',
+      favorite: '收藏',
+      follow: '关注',
+      comment: '评论',
+      share: '分享'
+    };
+    
+    // 更新互动任务说明文字
+    function updateClaimDesc(type) {
+      const threshold = parseInt(document.getElementById(`claim-${type}-threshold`)?.value) || 1;
+      const reward = parseFloat(document.getElementById(`claim-${type}-reward`)?.value) || 1;
+      const dailyLimit = parseInt(document.getElementById(`claim-${type}-daily-limit`)?.value) || 1;
+      const typeName = claimTypeNames[type] || type;
+      const descEl = document.getElementById(`claim-${type}-desc`);
+      if (descEl) {
+        descEl.textContent = `每${threshold}次${typeName}可领取${reward}积分，每日最多领${dailyLimit}次`;
+      }
+    }
+    
+    // 更新所有互动任务说明
+    function updateAllClaimDescs() {
+      ['like', 'favorite', 'follow', 'comment', 'share'].forEach(type => {
+        updateClaimDesc(type);
+      });
+    }
+    
+    // 加载所有积分配置
+    async function loadAllCreditsConfig() {
+      try {
+        const response = await fetch('/api/admin/credits-all-config', {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+        
+        if (data.success && data.config) {
+          const config = data.config;
+          
+          // 基础积分配置
+          const basicRegister = document.getElementById('basic-register');
+          const basicDailyLogin = document.getElementById('basic-daily-login');
+          if (basicRegister) basicRegister.value = config.basic?.register ?? 1;
+          if (basicDailyLogin) basicDailyLogin.value = config.basic?.dailyLogin ?? 1;
+          
+          // 签到配置
+          const checkinBase = document.getElementById('checkin-base');
+          const checkinStreak3 = document.getElementById('checkin-streak-3');
+          const checkinStreak7 = document.getElementById('checkin-streak-7');
+          const checkinStreak14 = document.getElementById('checkin-streak-14');
+          const checkinStreak30 = document.getElementById('checkin-streak-30');
+          if (checkinBase) checkinBase.value = config.checkin?.base ?? 1;
+          if (checkinStreak3) checkinStreak3.value = config.checkin?.streak3 ?? 1;
+          if (checkinStreak7) checkinStreak7.value = config.checkin?.streak7 ?? 2;
+          if (checkinStreak14) checkinStreak14.value = config.checkin?.streak14 ?? 3;
+          if (checkinStreak30) checkinStreak30.value = config.checkin?.streak30 ?? 5;
+          
+          // 互动任务配置
+          const claimTypes = ['like', 'favorite', 'follow', 'comment', 'share'];
+          const claimDefaults = {
+            like: { threshold: 10, reward: 1, dailyLimit: 3 },
+            favorite: { threshold: 5, reward: 1, dailyLimit: 3 },
+            follow: { threshold: 5, reward: 1, dailyLimit: 3 },
+            comment: { threshold: 2, reward: 1, dailyLimit: 3 },
+            share: { threshold: 2, reward: 1, dailyLimit: 3 }
+          };
+          claimTypes.forEach(type => {
+            const thresholdEl = document.getElementById(`claim-${type}-threshold`);
+            const rewardEl = document.getElementById(`claim-${type}-reward`);
+            const dailyLimitEl = document.getElementById(`claim-${type}-daily-limit`);
+            const camelType = type.charAt(0).toUpperCase() + type.slice(1);
+            if (thresholdEl) thresholdEl.value = config.claim?.[`${type}Threshold`] ?? claimDefaults[type].threshold;
+            if (rewardEl) rewardEl.value = config.claim?.[`${type}Reward`] ?? claimDefaults[type].reward;
+            if (dailyLimitEl) dailyLimitEl.value = config.claim?.[`${type}DailyLimit`] ?? claimDefaults[type].dailyLimit;
+          });
+          // 更新所有说明文字
+          updateAllClaimDescs();
+          
+          // 创作激励配置
+          const createGameReward = document.getElementById('create-game-reward');
+          const createGameLimit = document.getElementById('create-game-limit');
+          const editGameThreshold = document.getElementById('edit-game-threshold');
+          const editGameReward = document.getElementById('edit-game-reward');
+          const editGameLimit = document.getElementById('edit-game-limit');
+          if (createGameReward) createGameReward.value = config.create?.gameReward ?? 2;
+          if (createGameLimit) createGameLimit.value = config.create?.gameDailyLimit ?? 1;
+          if (editGameThreshold) editGameThreshold.value = config.create?.editThreshold ?? 2;
+          if (editGameReward) editGameReward.value = config.create?.editReward ?? 1;
+          if (editGameLimit) editGameLimit.value = config.create?.editDailyLimit ?? 1;
+          
+          // 小程序专属配置
+          const mpInviteReward = document.getElementById('mp-invite-reward');
+          const adReward = document.getElementById('ad-reward');
+          const adDailyLimit = document.getElementById('ad-daily-limit');
+          const adEnabled = document.getElementById('ad-enabled');
+          const adStatusText = document.getElementById('ad-status-text');
+          if (mpInviteReward) mpInviteReward.value = config.invite?.mpReward ?? 5;
+          if (adReward) adReward.value = config.ad?.reward ?? 3;
+          if (adDailyLimit) adDailyLimit.value = config.ad?.dailyLimit ?? 10;
+          if (adEnabled) {
+            adEnabled.checked = config.ad?.enabled ?? false;
+            if (adStatusText) {
+              adStatusText.textContent = config.ad?.enabled ? '✅ 已启用' : '待开通';
+              adStatusText.style.color = config.ad?.enabled ? '#10b981' : '#f59e0b';
+            }
+          }
+        }
+      } catch (error) {
+        console.error('加载积分配置失败:', error);
+      }
+    }
+    
+    // 保存所有积分配置
+    async function saveAllCreditsConfig() {
+      try {
+        const config = {
+          basic: {
+            register: parseFloat(document.getElementById('basic-register')?.value) || 1,
+            dailyLogin: parseFloat(document.getElementById('basic-daily-login')?.value) || 1
+          },
+          checkin: {
+            base: parseFloat(document.getElementById('checkin-base')?.value) || 1,
+            streak3: parseFloat(document.getElementById('checkin-streak-3')?.value) || 1,
+            streak7: parseFloat(document.getElementById('checkin-streak-7')?.value) || 2,
+            streak14: parseFloat(document.getElementById('checkin-streak-14')?.value) || 3,
+            streak30: parseFloat(document.getElementById('checkin-streak-30')?.value) || 5
+          },
+          claim: {
+            likeThreshold: parseInt(document.getElementById('claim-like-threshold')?.value) || 10,
+            likeReward: parseFloat(document.getElementById('claim-like-reward')?.value) || 1,
+            likeDailyLimit: parseInt(document.getElementById('claim-like-daily-limit')?.value) || 3,
+            favoriteThreshold: parseInt(document.getElementById('claim-favorite-threshold')?.value) || 5,
+            favoriteReward: parseFloat(document.getElementById('claim-favorite-reward')?.value) || 1,
+            favoriteDailyLimit: parseInt(document.getElementById('claim-favorite-daily-limit')?.value) || 3,
+            followThreshold: parseInt(document.getElementById('claim-follow-threshold')?.value) || 5,
+            followReward: parseFloat(document.getElementById('claim-follow-reward')?.value) || 1,
+            followDailyLimit: parseInt(document.getElementById('claim-follow-daily-limit')?.value) || 3,
+            commentThreshold: parseInt(document.getElementById('claim-comment-threshold')?.value) || 2,
+            commentReward: parseFloat(document.getElementById('claim-comment-reward')?.value) || 1,
+            commentDailyLimit: parseInt(document.getElementById('claim-comment-daily-limit')?.value) || 3,
+            shareThreshold: parseInt(document.getElementById('claim-share-threshold')?.value) || 2,
+            shareReward: parseFloat(document.getElementById('claim-share-reward')?.value) || 1,
+            shareDailyLimit: parseInt(document.getElementById('claim-share-daily-limit')?.value) || 3
+          },
+          create: {
+            gameReward: parseFloat(document.getElementById('create-game-reward')?.value) || 2,
+            gameDailyLimit: parseInt(document.getElementById('create-game-limit')?.value) || 1,
+            editThreshold: parseInt(document.getElementById('edit-game-threshold')?.value) || 2,
+            editReward: parseFloat(document.getElementById('edit-game-reward')?.value) || 1,
+            editDailyLimit: parseInt(document.getElementById('edit-game-limit')?.value) || 1
+          },
+          ad: {
+            reward: parseFloat(document.getElementById('ad-reward')?.value) || 3,
+            dailyLimit: parseInt(document.getElementById('ad-daily-limit')?.value) || 10,
+            enabled: document.getElementById('ad-enabled')?.checked || false
+          },
+          invite: {
+            mpReward: parseFloat(document.getElementById('mp-invite-reward')?.value) || 5
+          }
+        };
+        
+        const response = await fetch('/api/admin/credits-all-config', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify(config)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showMessage('积分配置已保存', 'success');
+          // 更新广告状态显示
+          const adStatusText = document.getElementById('ad-status-text');
+          if (adStatusText) {
+            adStatusText.textContent = config.ad.enabled ? '✅ 已启用' : '待开通';
+            adStatusText.style.color = config.ad.enabled ? '#10b981' : '#f59e0b';
+          }
+        } else {
+          showMessage(data.error || '保存失败', 'error');
+        }
+      } catch (error) {
+        console.error('保存积分配置失败:', error);
+        showMessage('保存失败', 'error');
+      }
+    }
+    
+    // 加载成就配置
+    async function loadAchievementsConfig() {
+      try {
+        const response = await fetch('/api/admin/achievements', {
+          headers: { 'X-Admin-Key': adminKey }
+        });
+        const data = await response.json();
+        
+        if (data.success && data.achievements) {
+          achievementsData = data.achievements;
+          renderAchievements();
+        }
+      } catch (error) {
+        console.error('加载成就配置失败:', error);
+      }
+    }
+    
+    // 渲染成就列表
+    function renderAchievements() {
+      const tbody = document.getElementById('achievements-tbody');
+      if (!tbody) return;
+      
+      const filteredData = achievementsFilter === 'all' 
+        ? achievementsData 
+        : achievementsData.filter(a => a.category === achievementsFilter);
+      
+      if (filteredData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="padding: 1rem; color: #64748b; text-align: center;">暂无成就数据</td></tr>';
+        return;
+      }
+      
+      const categoryMap = {
+        'daily': '每日',
+        'weekly': '每周',
+        'monthly': '每月',
+        'permanent': '永久'
+      };
+      
+      tbody.innerHTML = filteredData.map(a => `
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);" data-id="${a.id}">
+          <td style="padding: 0.75rem;">${a.icon || ''} ${a.name}</td>
+          <td style="padding: 0.75rem;">
+            <span style="background: rgba(99, 102, 241, 0.2); color: #a5b4fc; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">
+              ${categoryMap[a.category] || a.category}
+            </span>
+          </td>
+          <td style="padding: 0.75rem;">
+            <input type="number" class="ach-condition-value" data-id="${a.id}" min="1" value="${a.condition_value}"
+              style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 70px;">
+          </td>
+          <td style="padding: 0.75rem;">
+            <input type="number" class="ach-reward-credits" data-id="${a.id}" step="0.1" min="0" value="${a.reward_credits}"
+              style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 70px;"> 积分
+          </td>
+          <td style="padding: 0.75rem;">
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+              <input type="checkbox" class="ach-is-active" data-id="${a.id}" ${a.is_active ? 'checked' : ''}
+                style="width: 18px; height: 18px; cursor: pointer; accent-color: #10b981;">
+              <span style="color: ${a.is_active ? '#10b981' : '#f59e0b'};">${a.is_active ? '启用' : '禁用'}</span>
+            </label>
+          </td>
+        </tr>
+      `).join('');
+      
+      // 绑定状态切换事件
+      tbody.querySelectorAll('.ach-is-active').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+          const span = this.parentElement.querySelector('span');
+          span.textContent = this.checked ? '启用' : '禁用';
+          span.style.color = this.checked ? '#10b981' : '#f59e0b';
+        });
+      });
+    }
+    
+    // 过滤成就
+    function filterAchievements(category) {
+      achievementsFilter = category;
+      
+      // 更新按钮样式
+      ['all', 'daily', 'weekly', 'monthly', 'permanent'].forEach(cat => {
+        const btn = document.getElementById(`ach-filter-${cat}`);
+        if (btn) {
+          btn.style.background = cat === category ? '#6366f1' : 'rgba(255,255,255,0.1)';
+        }
+      });
+      
+      renderAchievements();
+    }
+    
+    // 保存成就配置
+    async function saveAchievementsConfig() {
+      try {
+        const achievements = [];
+        
+        document.querySelectorAll('#achievements-tbody tr[data-id]').forEach(row => {
+          const id = row.dataset.id;
+          const conditionValue = parseInt(row.querySelector('.ach-condition-value')?.value) || 1;
+          const rewardCredits = parseFloat(row.querySelector('.ach-reward-credits')?.value) || 1;
+          const isActive = row.querySelector('.ach-is-active')?.checked ? 1 : 0;
+          
+          achievements.push({
+            id,
+            condition_value: conditionValue,
+            reward_credits: rewardCredits,
+            is_active: isActive
+          });
+        });
+        
+        const response = await fetch('/api/admin/achievements', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ achievements })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showMessage(data.message || '成就配置已保存', 'success');
+        } else {
+          showMessage(data.error || '保存失败', 'error');
+        }
+      } catch (error) {
+        console.error('保存成就配置失败:', error);
+        showMessage('保存失败', 'error');
+      }
+    }
+    
+    // 监听广告开关变化
+    document.addEventListener('DOMContentLoaded', () => {
+      const adEnabled = document.getElementById('ad-enabled');
+      if (adEnabled) {
+        adEnabled.addEventListener('change', function() {
+          const adStatusText = document.getElementById('ad-status-text');
+          if (adStatusText) {
+            adStatusText.textContent = this.checked ? '✅ 已启用' : '待开通';
+            adStatusText.style.color = this.checked ? '#10b981' : '#f59e0b';
+          }
+        });
+      }
+    });
+    
     // ========== 行为积分配置功能 ==========
     
     // 计算每日最多获得积分
@@ -4289,7 +4878,7 @@
       }
     }
     
-    // ========== 特殊积分配置（分享/邀请/文章） ==========
+    // ========== 特殊积分配置（分享/文章） ==========
     
     // 加载特殊积分配置
     async function loadExtraCreditsConfig() {
@@ -4305,10 +4894,6 @@
           // 分享游戏
           document.getElementById('extra-share-credits').value = config.shareGame?.credits || 1;
           document.getElementById('extra-share-limit').value = config.shareGame?.dailyLimit || 5;
-          
-          // 邀请好友
-          document.getElementById('extra-invite-credits').value = config.inviteFriend?.credits || 3;
-          document.getElementById('extra-invite-limit').value = config.inviteFriend?.dailyLimit || 5;
           
           // 阅读文章
           document.getElementById('extra-article-credits').value = config.article?.credits || 1;
@@ -4329,10 +4914,6 @@
           shareGame: {
             credits: parseFloat(document.getElementById('extra-share-credits').value) || 0,
             dailyLimit: parseInt(document.getElementById('extra-share-limit').value) || 0
-          },
-          inviteFriend: {
-            credits: parseFloat(document.getElementById('extra-invite-credits').value) || 0,
-            dailyLimit: parseInt(document.getElementById('extra-invite-limit').value) || 0
           },
           article: {
             credits: parseFloat(document.getElementById('extra-article-credits').value) || 0,
@@ -4364,21 +4945,19 @@
     
     // 更新特殊积分最大值显示
     function updateExtraMaxCredits() {
-      const shareCredits = parseFloat(document.getElementById('extra-share-credits').value) || 0;
-      const shareLimit = parseInt(document.getElementById('extra-share-limit').value) || 0;
-      document.getElementById('extra-share-max').textContent = (shareCredits * shareLimit).toFixed(1);
+      const shareCredits = parseFloat(document.getElementById('extra-share-credits')?.value) || 0;
+      const shareLimit = parseInt(document.getElementById('extra-share-limit')?.value) || 0;
+      const shareMaxEl = document.getElementById('extra-share-max');
+      if (shareMaxEl) shareMaxEl.textContent = (shareCredits * shareLimit).toFixed(1);
       
-      const inviteCredits = parseFloat(document.getElementById('extra-invite-credits').value) || 0;
-      const inviteLimit = parseInt(document.getElementById('extra-invite-limit').value) || 0;
-      document.getElementById('extra-invite-max').textContent = (inviteCredits * inviteLimit).toFixed(1);
-      
-      const articleCredits = parseFloat(document.getElementById('extra-article-credits').value) || 0;
-      const articleLimit = parseInt(document.getElementById('extra-article-limit').value) || 0;
-      document.getElementById('extra-article-max').textContent = (articleCredits * articleLimit).toFixed(1);
+      const articleCredits = parseFloat(document.getElementById('extra-article-credits')?.value) || 0;
+      const articleLimit = parseInt(document.getElementById('extra-article-limit')?.value) || 0;
+      const articleMaxEl = document.getElementById('extra-article-max');
+      if (articleMaxEl) articleMaxEl.textContent = (articleCredits * articleLimit).toFixed(1);
     }
     
     // 监听特殊积分输入变化
-    ['extra-share-credits', 'extra-share-limit', 'extra-invite-credits', 'extra-invite-limit', 'extra-article-credits', 'extra-article-limit'].forEach(id => {
+    ['extra-share-credits', 'extra-share-limit', 'extra-article-credits', 'extra-article-limit'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.addEventListener('input', updateExtraMaxCredits);
     });

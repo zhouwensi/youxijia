@@ -3,17 +3,17 @@
     "pages/create/create",
     "pages/works/works",
     "pages/mine/mine",
+    "pages/credits/credits",
     "pages/game-detail/game-detail",
     "pages/game-edit/game-edit",
     "pages/index/index",
     "pages/user/user",
     "pages/search/search",
-    "pages/works-list/works-list",
-    "pages/llm-settings/llm-settings"
+    "pages/works-list/works-list"
   ],
   "window": {
     "navigationBarBackgroundColor": "#1a1a2e",
-    "navigationBarTitleText": "AI游戏工坊",
+    "navigationBarTitleText": "游戏家",
     "navigationBarTextStyle": "white",
     "backgroundColor": "#0f0f1a",
     "backgroundTextStyle": "light"
