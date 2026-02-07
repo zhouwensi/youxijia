@@ -1367,6 +1367,9 @@ body {
 <body>
   <!-- 原游戏body内容 -->
   
+
+
+
     <div class="container">
         <header>
             <h1>数独游戏</h1>
@@ -1555,18 +1558,22 @@ body {
             
             // 移除数字直到达到预设数量
             let removed = 0;
-            while (cells.length > presetCount) {
-                const cellIndex = cells.pop();
+            const cellsToRemove = cells.slice(0, 81 - presetCount);
+            
+            for (const cellIndex of cellsToRemove) {
                 const row = Math.floor(cellIndex / 9);
                 const col = cellIndex % 9;
                 
                 // 保存原始值
                 const temp = board[row][col];
+                if (temp === 0) continue;
+                
                 board[row][col] = 0;
                 
                 // 检查是否仍然有唯一解
                 const boardCopy = JSON.parse(JSON.stringify(board));
-                if (countSolutions(boardCopy) === 1) {
+                const solutionCount = countSolutions(boardCopy);
+                if (solutionCount === 1) {
                     removed++;
                 } else {
                     // 恢复数字
@@ -1578,35 +1585,38 @@ body {
         }
         
         // 计算解的数量
-        function countSolutions(board) {
-            // 创建副本以避免修改原数组
-            const boardCopy = JSON.parse(JSON.stringify(board));
-            return countSolutionsHelper(boardCopy, 0);
+        function countSolutions(board, limit = 2) {
+            return countSolutionsHelper(board, 0, 0, limit);
         }
         
-        function countSolutionsHelper(board, count) {
-            for (let row = 0; row < 9; row++) {
-                for (let col = 0; col < 9; col++) {
-                    if (board[row][col] === 0) {
-                        for (let num = 1; num <= 9; num++) {
-                            if (isValidMove(board, row, col, num)) {
-                                board[row][col] = num;
-                                count = countSolutionsHelper(board, count);
-                                board[row][col] = 0;
-                                
-                                // 如果找到多个解，提前返回
-                                if (count > 1) return count;
-                            }
-                        }
-                        return count;
-                    }
+        function countSolutionsHelper(board, row, col, limit, count = 0) {
+            if (row === 9) {
+                return count + 1;
+            }
+            
+            if (col === 9) {
+                return countSolutionsHelper(board, row + 1, 0, limit, count);
+            }
+            
+            if (board[row][col] !== 0) {
+                return countSolutionsHelper(board, row, col + 1, limit, count);
+            }
+            
+            for (let num = 1; num <= 9 && count < limit; num++) {
+                if (isValidMove(board, row, col, num)) {
+                    board[row][col] = num;
+                    count = countSolutionsHelper(board, row, col + 1, limit, count);
+                    board[row][col] = 0;
                 }
             }
-            return count + 1;
+            
+            return count;
         }
         
         // 检查移动是否有效
         function isValidMove(board, row, col, num) {
+            if (row < 0 || row >= 9 || col < 0 || col >= 9) return false;
+            
             // 检查行
             for (let x = 0; x < 9; x++) {
                 if (board[row][x] === num) return false;
@@ -1766,7 +1776,7 @@ body {
             
             // 棋盘点击事件
             canvas.addEventListener('click', handleCanvasClick);
-            canvas.addEventListener('touchstart', handleCanvasTouch);
+            canvas.addEventListener('touchstart', handleCanvasTouch, { passive: false });
             
             // 数字按钮点击事件
             numberButtons.forEach(btn => {
@@ -1850,12 +1860,29 @@ body {
         // 处理触摸事件
         function handleCanvasTouch(e) {
             e.preventDefault();
+            const canvas = document.getElementById('sudoku-board');
+            const rect = canvas.getBoundingClientRect();
+            const size = canvas.width;
+            const cellSize = size / 9;
+            
             const touch = e.touches[0];
-            const mouseEvent = new MouseEvent('click', {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
-            handleCanvasClick(mouseEvent);
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            
+            const col = Math.floor(x / cellSize);
+            const row = Math.floor(y / cellSize);
+            
+            // 确保点击在有效范围内
+            if (row >= 0 && row < 9 && col >= 0 && col < 9) {
+                // 如果点击的是预设数字，不能选择
+                if (gameState.initialBoard[row][col] === 0) {
+                    gameState.selectedCell = { row, col };
+                    drawBoard();
+                    
+                    // 高亮选中的数字按钮
+                    highlightSelectedNumber();
+                }
+            }
         }
         
         // 处理数字输入
@@ -1916,55 +1943,68 @@ body {
                 e.preventDefault();
                 
                 let { row, col } = gameState.selectedCell;
+                let newRow = row;
+                let newCol = col;
                 
                 switch (key) {
-                    case 'ArrowUp': row = Math.max(0, row - 1); break;
-                    case 'ArrowDown': row = Math.min(8, row + 1); break;
-                    case 'ArrowLeft': col = Math.max(0, col - 1); break;
-                    case 'ArrowRight': col = Math.min(8, col + 1); break;
+                    case 'ArrowUp': newRow = Math.max(0, row - 1); break;
+                    case 'ArrowDown': newRow = Math.min(8, row + 1); break;
+                    case 'ArrowLeft': newCol = Math.max(0, col - 1); break;
+                    case 'ArrowRight': newCol = Math.min(8, col + 1); break;
                 }
                 
-                // 如果移动到预设数字，继续移动
-                while (gameState.initialBoard[row][col] !== 0) {
-                    switch (key) {
-                        case 'ArrowUp': row = Math.max(0, row - 1); break;
-                        case 'ArrowDown': row = Math.min(8, row + 1); break;
-                        case 'ArrowLeft': col = Math.max(0, col - 1); break;
-                        case 'ArrowRight': col = Math.min(8, col + 1); break;
+                // 检查新位置是否有效且不是预设数字
+                if (newRow >= 0 && newRow < 9 && newCol >= 0 && newCol < 9) {
+                    // 如果移动到预设数字，继续移动
+                    let attempts = 0;
+                    while (gameState.initialBoard[newRow][newCol] !== 0 && attempts < 9) {
+                        switch (key) {
+                            case 'ArrowUp': newRow = Math.max(0, newRow - 1); break;
+                            case 'ArrowDown': newRow = Math.min(8, newRow + 1); break;
+                            case 'ArrowLeft': newCol = Math.max(0, newCol - 1); break;
+                            case 'ArrowRight': newCol = Math.min(8, newCol + 1); break;
+                        }
+                        attempts++;
+                        
+                        // 防止无限循环
+                        if (newRow === row && newCol === col) {
+                            break;
+                        }
                     }
                     
-                    // 防止无限循环
-                    if (row === gameState.selectedCell.row && col === gameState.selectedCell.col) {
-                        break;
+                    // 如果找到可编辑的单元格，更新选择
+                    if (gameState.initialBoard[newRow][newCol] === 0) {
+                        gameState.selectedCell = { row: newRow, col: newCol };
+                        drawBoard();
+                        highlightSelectedNumber();
                     }
                 }
-                
-                gameState.selectedCell = { row, col };
-                drawBoard();
-                highlightSelectedNumber();
             }
         }
         
         // 检查答案
         function checkSolution() {
             let hasErrors = false;
+            const canvas = document.getElementById('sudoku-board');
+            const ctx = canvas.getContext('2d');
+            const size = canvas.width;
+            const cellSize = size / 9;
+            
+            // 先绘制棋盘
+            drawBoard();
             
             for (let row = 0; row < 9; row++) {
                 for (let col = 0; col < 9; col++) {
                     const value = gameState.board[row][col];
                     
-                    // 跳过空白单元格
-                    if (value === 0) continue;
+                    // 跳过空白单元格和预设单元格
+                    if (value === 0 || gameState.initialBoard[row][col] !== 0) continue;
                     
                     // 检查是否正确
                     if (value !== gameState.solution[row][col]) {
                         hasErrors = true;
                         
-                        // 临时高亮错误单元格
-                        const canvas = document.getElementById('sudoku-board');
-                        const ctx = canvas.getContext('2d');
-                        const size = canvas.width;
-                        const cellSize = size / 9;
+                        // 高亮错误单元格
                         const x = col * cellSize;
                         const y = row * cellSize;
                         
@@ -2085,30 +2125,6 @@ body {
             setTimeout(() => {
                 messageEl.classList.remove('show');
             }, 3000);
-        }
-        
-        // 工具函数：打乱数组
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        }
-        
-        // 页面加载完成后初始化游戏
-        window.addEventListener('load', initGame);
-        
-        // 窗口大小变化时调整Canvas尺寸
-        window.addEventListener('resize', () => {
-            const canvas = document.getElementById('sudoku-board');
-            const maxSize = Math.min(450, window.innerWidth - 60);
-            canvas.width = maxSize;
-            canvas.height = maxSize;
-            drawBoard();
-        });
-    </script>
-
   <!-- YXJ-PLATFORM-UI-START -->
   
 <!-- 游戏家顶部导航 - 返回按钮 -->
@@ -2127,7 +2143,7 @@ body {
           <span class="follow-icon">+</span> 关注
         </button>
       </div>
-      
+      <span class="tiktok-publish-time" style="display:block!important;margin:0!important;padding:0!important;">发布于 2026年2月5日</span>
     </div>
   </div>
 </div>

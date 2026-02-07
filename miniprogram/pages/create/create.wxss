@@ -337,6 +337,17 @@
   justify-content: center;
 }
 
+/* 分享按钮样式 - 去除button默认样式 */
+.entry-share-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  line-height: normal;
+}
+
+.entry-share-btn::after {
+  border: none;
+}
+
 /* 最新作品区域 */
 .my-works-section {
   padding: 24rpx 32rpx;

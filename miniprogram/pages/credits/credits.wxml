@@ -460,7 +460,13 @@
       </view>
     </view>
     
-    <view class="logs-list" wx:if="{{creditLogs.length > 0}}">
+    <!-- 加载中状态 -->
+    <view class="logs-loading" wx:if="{{logsLoading}}">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载中...</text>
+    </view>
+    
+    <view class="logs-list" wx:elif="{{creditLogs.length > 0}}">
       <view class="log-item" wx:for="{{creditLogs}}" wx:key="id">
         <view class="log-info">
           <text class="log-desc">{{item.description}}</text>

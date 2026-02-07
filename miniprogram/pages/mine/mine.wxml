@@ -56,6 +56,14 @@
     </view>
   </view>
 
+  <!-- 订阅通知提示（只有在创作中有任务时才显示） -->
+  <view class="subscribe-tip-card" wx:if="{{isLoggedIn && creatingTasks.length > 0}}">
+    <view class="subscribe-tip-content">
+      <text class="subscribe-tip-icon">💡</text>
+      <text class="subscribe-tip-text">点击任务右侧🔔可订阅完成通知（+{{subscribeReward || 0.5}}积分）</text>
+    </view>
+  </view>
+
   <!-- Tab切换 -->
   <view class="tab-bar" wx:if="{{isLoggedIn}}">
     <view 
@@ -77,32 +85,84 @@
     wx:if="{{isLoggedIn}}"
     bindscrolltolower="onReachBottom"
   >
+    <!-- 创作中的任务列表（仅在"我的作品"Tab显示） -->
+    <view class="creating-tasks" wx:if="{{currentTab === 'games' && creatingTasks.length > 0}}">
+      <view class="creating-header">
+        <text class="creating-title">⏳ 创作中 ({{creatingTasks.length}})</text>
+      </view>
+      <view 
+        class="creating-item" 
+        wx:for="{{creatingTasks}}" 
+        wx:key="taskId"
+      >
+        <view class="creating-cover">
+          <text class="creating-emoji">🎮</text>
+        </view>
+        <view class="creating-info">
+          <view class="creating-name ellipsis">{{item.gameTitle || item.prompt || '新游戏'}}</view>
+          <view class="creating-status">
+            <text class="status-text">{{item.progressText || '创作中...'}}</text>
+          </view>
+          <view class="creating-progress">
+            <view class="progress-bar">
+              <view class="progress-fill" style="width: {{item.progress || 0}}%;"></view>
+            </view>
+            <text class="progress-text">{{item.progress || 0}}%</text>
+          </view>
+        </view>
+        <button 
+          class="creating-subscribe-btn {{item.subscribed ? 'subscribed' : ''}}"
+          catchtap="handleTaskSubscribe"
+          data-task="{{item}}"
+          wx:if="{{!item.subscribed}}"
+        >
+          <text>🔔 订阅</text>
+        </button>
+        <view class="creating-subscribed" wx:else>
+          <text>✅ 已订阅</text>
+        </view>
+      </view>
+    </view>
+
     <!-- 游戏列表 -->
     <view class="game-list">
       <view 
-        class="game-item" 
+        class="game-item {{item.status === 'draft' ? 'game-item-draft' : ''}}" 
         wx:for="{{listData}}" 
         wx:key="id"
         data-game="{{item}}"
-        bindtap="goToGameDetail"
+        bindtap="{{item.status === 'draft' ? 'handleDraftTap' : 'goToGameDetail'}}"
       >
-        <view class="game-cover">
-          <text class="game-emoji">🎮</text>
+        <view class="game-cover {{item.status === 'draft' ? 'draft-cover' : ''}}">
+          <text class="game-emoji">{{item.status === 'draft' ? '⏳' : '🎮'}}</text>
+          <!-- 草稿标识 -->
+          <view class="draft-badge" wx:if="{{item.status === 'draft'}}">创作中</view>
         </view>
         <view class="game-info">
           <view class="game-title ellipsis">{{item.title || '未命名游戏'}}</view>
           <view class="game-desc ellipsis">{{item.prompt || '暂无描述'}}</view>
+          <!-- 草稿状态提示 -->
+          <view class="draft-status" wx:if="{{item.status === 'draft'}}">
+            <text class="draft-hint">🔄 AI正在创作中...</text>
+          </view>
           <!-- 对于点赞/收藏的游戏显示作者 -->
-          <view class="game-author" wx:if="{{currentTab !== 'games' && item.author_name}}">
+          <view class="game-author" wx:if="{{currentTab !== 'games' && item.author_name && item.status !== 'draft'}}">
             <text class="author-text">👤 {{item.author_name}}</text>
           </view>
-          <view class="game-meta">
+          <view class="game-meta" wx:if="{{item.status !== 'draft'}}">
             <text class="meta-item">❤️ {{item.likes || 0}}</text>
             <text class="meta-item">👁️ {{item.plays || 0}}</text>
             <text class="meta-item">⭐ {{item.favorites || 0}}</text>
           </view>
         </view>
-        <view class="game-arrow">›</view>
+        <!-- 草稿游戏显示订阅按钮 -->
+        <button 
+          class="draft-subscribe-btn" 
+          wx:if="{{item.status === 'draft'}}"
+          catchtap="handleDraftSubscribe"
+          data-game="{{item}}"
+        >🔔</button>
+        <view class="game-arrow" wx:else>›</view>
       </view>
     </view>
 

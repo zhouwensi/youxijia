@@ -86,10 +86,10 @@
         <text class="entry-icon">🎮</text>
         <text class="entry-text">作品广场</text>
       </view>
-      <view class="entry-item" open-type="share">
+      <button class="entry-item entry-share-btn" open-type="share">
         <text class="entry-icon">📤</text>
         <text class="entry-text">分享好友</text>
-      </view>
+      </button>
     </view>
 
     <view class="my-works-section">

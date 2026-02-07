@@ -717,6 +717,53 @@ body {
   font-size: 1.125rem;
 }
 
+/* 订阅通知区域样式 */
+.create-subscribe-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(34, 197, 94, 0.08));
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: var(--border-radius-sm);
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.create-subscribe-info strong {
+  color: #10b981;
+  font-weight: 700;
+}
+
+.create-subscribe-info a {
+  color: #10b981;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+
+.subscribe-icon {
+  font-size: 1rem;
+}
+
+.subscribe-status {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.subscribe-status.enabled {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.subscribe-status.disabled {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
 /* ==================== 我的页面样式 ==================== */
 .profile-page-header {
   padding: 1.25rem 1rem;
@@ -1157,6 +1204,36 @@ body {
   33% { content: '.'; }
   66% { content: '..'; }
   100% { content: '...'; }
+}
+
+/* 卡片上的订阅按钮 */
+.card-subscribe-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: linear-gradient(135deg, #ffc107, #ff9800);
+  border: none;
+  border-radius: 50%;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  transition: all 0.2s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.card-subscribe-btn:hover {
+  transform: scale(1.15);
+  box-shadow: 0 3px 10px rgba(255, 193, 7, 0.5);
+}
+
+.profile-game-card-h.draft-card {
+  position: relative;
 }
 
 /* 草稿进度弹窗 */
@@ -5208,6 +5285,72 @@ body.modal-open .modal-content {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* ==================== 生成弹窗订阅区域 ==================== */
+.generating-subscribe-section {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0.75rem auto;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.15), rgba(255, 152, 0, 0.1));
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 24px;
+}
+
+.btn-subscribe-notify {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: linear-gradient(135deg, #ffc107, #ff9800);
+  border: none;
+  border-radius: 16px;
+  color: #1a1a2e;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-subscribe-notify:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+}
+
+.btn-subscribe-notify:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-subscribe-notify.subscribed {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.btn-subscribe-notify .subscribe-icon {
+  font-size: 0.9rem;
+}
+
+.btn-subscribe-notify .subscribe-badge {
+  font-size: 0.65rem;
+  background: rgba(0,0,0,0.15);
+  padding: 2px 6px;
+  border-radius: 8px;
+}
+
+.subscribe-hint {
+  font-size: 0.7rem;
+  color: rgba(255, 193, 7, 0.9);
+  white-space: nowrap;
+}
+
+.subscribe-hint strong {
+  color: #ffc107;
+  font-weight: 700;
 }
 
 /* ==================== 切换模型区域 ==================== */

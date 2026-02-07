@@ -1389,13 +1389,7 @@ body {
 </head>
 <body>
   <!-- 原游戏body内容 -->
-  # 五子棋竞技场 - 策略对战游戏
-
-我将设计一个基于五子棋的竞技对战游戏，结合策略元素和虚拟经济系统。这个游戏将保持五子棋的核心玩法，同时增加竞技排名和虚拟货币系统，确保游戏公平、有趣且具有操作性。
-
-下面是完整的HTML5游戏实现：
-
-
+  
 
 
 
@@ -1558,6 +1552,10 @@ body {
             updatePlayerInfo();
             updateTurnDisplay();
             winMessage.style.display = 'none';
+            
+            // 启用下注控件
+            betSlider.disabled = false;
+            document.getElementById('placeBetBtn').disabled = false;
             
             // 绘制棋盘
             drawBoard();
@@ -2064,21 +2062,7 @@ body {
             // 更新回合显示
             updateTurnDisplay();
             
-            alert(`下注成功！本局赌注：${betAmount}金币`);
-        }
-        
-        // 重新开始游戏
-        function restartGame() {
-            // 重置金币（如果金币太少）
-            if (playerCoins < 100 || aiCoins < 100) {
-                playerCoins = 1000;
-                aiCoins = 1000;
-                updatePlayerInfo();
-            }
-            
-            // 重置下注控件
-            betSlider.disabled = false;
-            document.getElementById('
+            alert(`下注成功！本局赌注：${betAmount
   <!-- YXJ-PLATFORM-UI-START -->
   
 <!-- 游戏家顶部导航 - 返回按钮 -->

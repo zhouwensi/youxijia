@@ -1282,6 +1282,10 @@ body {
                 <div class="info-label">下一个</div>
                 <canvas id="next-piece" width="80" height="80"></canvas>
             </div>
+            <div class="info-box">
+                <div class="info-label">状态</div>
+                <div id="status" class="info-value">准备</div>
+            </div>
         </div>
 
         <!-- 游戏开始/结束 覆盖层 -->
@@ -1418,6 +1422,17 @@ body {
 
             drawMatrix(arena, {x: 0, y: 0}, context);
             drawMatrix(player.matrix, player.pos, context);
+            
+            // 如果游戏暂停，绘制半透明覆盖层
+            if (isPaused && !isGameOver) {
+                context.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                context.fillRect(0, 0, canvas.width/20, canvas.height/20);
+                
+                context.fillStyle = 'white';
+                context.font = '1px Arial';
+                context.textAlign = 'center';
+                context.fillText('暂停', canvas.width/40, canvas.height/40);
+            }
         }
 
         // 绘制矩阵
@@ -1576,6 +1591,34 @@ body {
         function updateScore() {
             document.getElementById('score').innerText = player.score;
             document.getElementById('level').innerText = player.level;
+            updateStatus();
+        }
+
+        // 更新状态显示
+        function updateStatus() {
+            const statusElement = document.getElementById('status');
+            if (isGameOver) {
+                statusElement.innerText = "结束";
+            } else if (isPaused) {
+                statusElement.innerText = "暂停";
+            } else {
+                statusElement.innerText = "游戏中";
+            }
+        }
+
+        // 切换暂停状态
+        function togglePause() {
+            if (isGameOver) return;
+            
+            isPaused = !isPaused;
+            updateStatus();
+            
+            if (!isPaused) {
+                lastTime = performance.now();
+                update();
+            } else {
+                draw(); // 绘制暂停状态
+            }
         }
 
         // 游戏结束
@@ -1594,6 +1637,7 @@ body {
             btn.innerText = "重新开始";
             
             overlay.classList.remove('hidden');
+            updateStatus();
         }
 
         // 开始游戏
@@ -1643,9 +1687,13 @@ body {
                 playerDrop();
             } else if (event.keyCode === 38) { // Up
                 playerRotate(1);
+            } else if (event.keyCode === 32 || event.keyCode === 80) { // Space or P - 暂停
+                togglePause();
             }
         });
 
+        // 初始化状态显示
+        updateStatus();
     </script>
 
   <!-- YXJ-PLATFORM-UI-START -->

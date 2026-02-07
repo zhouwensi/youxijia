@@ -4072,6 +4072,10 @@ const activeEdits = new Map(); // sessionId -> { userToken, startTime, cancelled
 // 用于存储异步生成任务的状态和结果
 const asyncGenerateTasks = new Map(); // taskId -> { status, progress, progressText, result, error, createdAt, userToken }
 
+// ============ 异步编辑任务系统（解决Cloudflare 524超时问题） ============
+// 用于存储异步编辑任务的状态和结果
+const asyncEditTasks = new Map(); // taskId -> { status, progress, progressText, result, error, createdAt, userToken, sessionId, gameId }
+
 // 清理过期的异步任务（超过30分钟的）
 function cleanupOldAsyncTasks() {
   const now = Date.now();
@@ -4080,6 +4084,13 @@ function cleanupOldAsyncTasks() {
     if (now - task.createdAt > expireTime) {
       asyncGenerateTasks.delete(taskId);
       console.log(`[AsyncTask] 清理过期任务: ${taskId}`);
+    }
+  }
+  // 同时清理编辑任务
+  for (const [taskId, task] of asyncEditTasks.entries()) {
+    if (now - task.createdAt > expireTime) {
+      asyncEditTasks.delete(taskId);
+      console.log(`[AsyncEditTask] 清理过期任务: ${taskId}`);
     }
   }
 }
@@ -4458,6 +4469,22 @@ try {
   // 字段已存在，忽略
 }
 
+// 添加订阅通知次数字段（用于小程序订阅消息）
+try {
+  db.exec(`ALTER TABLE user_accounts ADD COLUMN subscribe_count INTEGER DEFAULT 0`);
+  console.log('[DB] 添加 subscribe_count 字段成功');
+} catch (e) {
+  // 字段已存在，忽略
+}
+
+// 添加积分字段（用于存储用户积分余额）
+try {
+  db.exec(`ALTER TABLE user_accounts ADD COLUMN credits REAL DEFAULT 0`);
+  console.log('[DB] 添加 credits 字段成功');
+} catch (e) {
+  // 字段已存在，忽略
+}
+
 // 创建账号索引
 db.exec(`
   CREATE INDEX IF NOT EXISTS idx_user_accounts_account_id ON user_accounts(account_id);
@@ -4658,6 +4685,8 @@ const defaultConfigs = [
   { key: 'credits_claim_share_threshold', value: '2', description: '分享N次可领取积分' },
   { key: 'credits_claim_share_reward', value: '1', description: '分享任务领取积分' },
   { key: 'credits_claim_share_daily_limit', value: '3', description: '分享任务每日领取上限' },
+  // 订阅通知配置
+  { key: 'credits_subscribe_task', value: '0.5', description: '订阅创作中任务完成通知奖励积分' },
   // 创作激励配置
   { key: 'credits_create_game', value: '2', description: '创作游戏奖励积分' },
   { key: 'credits_create_game_daily_limit', value: '1', description: '创作游戏每日领取上限' },
@@ -6088,6 +6117,9 @@ app.get('/api/site-config', (req, res) => {
     // 邀请好友积分配置（小程序使用）
     const inviteReward = parseFloat(getConfig('credits_mp_invite', '3')) || 3;
     
+    // 微信订阅消息模板ID（从环境变量读取）
+    const wxSubscribeTmplId = process.env.WX_SUBSCRIBE_TMPL_GAME_CREATED || '';
+    
     res.json({
       success: true,
       // 直接返回字段（供前端页面使用）
@@ -6104,6 +6136,8 @@ app.get('/api/site-config', (req, res) => {
       miniprogramLLMDisabled: miniprogramLLMDisabled,
       // 邀请好友积分配置
       inviteReward: inviteReward,
+      // 微信订阅消息模板ID
+      wxSubscribeTmplId: wxSubscribeTmplId,
       // 同时返回 config 对象（兼容旧版）
       config: {
         webWriteDisabled: webWriteDisabled,
@@ -6298,6 +6332,126 @@ app.get('/api/credits', (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
+/**
+ * 获取积分明细
+ * GET /api/credits/logs
+ * 支持参数: limit, offset, include_stats
+ */
+app.get('/api/credits/logs', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '请先登录' });
+    }
+    
+    // 解析请求参数
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const offset = parseInt(req.query.offset) || 0;
+    const includeStats = req.query.include_stats === '1';
+    
+    // 获取积分明细（从credit_logs表查询）
+    const logs = db.prepare(`
+      SELECT id, amount, type, description, created_at
+      FROM credit_logs 
+      WHERE user_token = ? 
+      ORDER BY created_at DESC 
+      LIMIT ? OFFSET ?
+    `).all(userToken, limit, offset);
+    
+    // 格式化日期
+    const formattedLogs = logs.map(log => ({
+      id: log.id,
+      amount: log.amount,
+      action: log.type,
+      description: log.description,
+      created_at: formatCreditLogDate(log.created_at)
+    }));
+    
+    // 返回结果
+    const result = {
+      success: true,
+      data: formattedLogs
+    };
+    
+    // 如果需要统计数据
+    if (includeStats) {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // 计算本周一的日期
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const monday = new Date(now);
+      monday.setDate(monday.getDate() + mondayOffset);
+      const weekStart = monday.toISOString().split('T')[0];
+      
+      // 计算本月第一天
+      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+      
+      // 统计今日获得的积分（只计正数）
+      const todayResult = db.prepare(`
+        SELECT COALESCE(SUM(amount), 0) as total
+        FROM credit_logs 
+        WHERE user_token = ? AND amount > 0 AND date(created_at) = ?
+      `).get(userToken, today);
+      
+      // 统计本周获得的积分
+      const weekResult = db.prepare(`
+        SELECT COALESCE(SUM(amount), 0) as total
+        FROM credit_logs 
+        WHERE user_token = ? AND amount > 0 AND date(created_at) >= ?
+      `).get(userToken, weekStart);
+      
+      // 统计本月获得的积分
+      const monthResult = db.prepare(`
+        SELECT COALESCE(SUM(amount), 0) as total
+        FROM credit_logs 
+        WHERE user_token = ? AND amount > 0 AND date(created_at) >= ?
+      `).get(userToken, monthStart);
+      
+      result.stats = {
+        today_earned: todayResult?.total || 0,
+        week_earned: weekResult?.total || 0,
+        month_earned: monthResult?.total || 0
+      };
+      
+      console.log(`[Credits Logs] 用户 ${userToken.substring(0, 8)}... 统计: 今日=${result.stats.today_earned}, 本周=${result.stats.week_earned}, 本月=${result.stats.month_earned}`);
+    }
+    
+    res.json(result);
+  } catch (error) {
+    console.error('[Credits Logs API] 获取积分明细失败:', error);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
+// 格式化积分日志日期
+function formatCreditLogDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const now = new Date();
+  
+  // 如果是今天，只显示时间
+  if (d.toDateString() === now.toDateString()) {
+    return `今天 ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+  }
+  
+  // 如果是昨天
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (d.toDateString() === yesterday.toDateString()) {
+    return `昨天 ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+  }
+  
+  // 如果是今年，显示月/日 时:分
+  if (d.getFullYear() === now.getFullYear()) {
+    return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+  }
+  
+  // 其他显示完整日期
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+}
 
 // 消耗积分（生成游戏时调用）
 app.post('/api/credits/use', (req, res) => {
@@ -9242,6 +9396,388 @@ app.get('/api/user/web-status', (req, res) => {
   }
 });
 
+// ==================== 订阅通知管理 API ====================
+
+/**
+ * 获取用户订阅通知次数
+ * GET /api/user/subscribe-count
+ * Headers: x-user-token
+ */
+app.get('/api/user/subscribe-count', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '未登录' });
+    }
+    
+    const user = db.prepare('SELECT subscribe_count FROM user_accounts WHERE user_token = ?').get(userToken);
+    if (!user) {
+      return res.status(404).json({ success: false, error: '用户不存在' });
+    }
+    
+    res.json({
+      success: true,
+      subscribeCount: user.subscribe_count || 0
+    });
+  } catch (error) {
+    console.error('[订阅次数] 查询失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * 订阅创作中任务的完成通知
+ * POST /api/task/:taskId/subscribe
+ * Headers: x-user-token
+ * 
+ * 限制：
+ * - 只能订阅创作中（pending/processing）的任务
+ * - 每个任务只能订阅一次
+ * - 订阅成功奖励积分（从后台配置读取 credits_subscribe_task）
+ */
+app.post('/api/task/:taskId/subscribe', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '未登录' });
+    }
+    
+    const { taskId } = req.params;
+    if (!taskId) {
+      return res.status(400).json({ success: false, error: '缺少任务ID' });
+    }
+    
+    // 在多个任务队列中查找任务（创建、编辑、修复）
+    let task = null;
+    let taskType = null;
+    
+    // 1. 创建任务队列
+    task = asyncGenerateTasks.get(taskId);
+    if (task) {
+      taskType = 'create';
+    }
+    
+    // 2. 编辑任务队列
+    if (!task && typeof asyncEditTasks !== 'undefined') {
+      task = asyncEditTasks.get(taskId);
+      if (task) {
+        taskType = 'edit';
+      }
+    }
+    
+    // 3. 修复任务队列（修复任务以 gameId 为键，需要遍历查找）
+    if (!task && typeof repairTaskQueue !== 'undefined') {
+      for (const [gameId, repairTask] of repairTaskQueue.entries()) {
+        if (repairTask.taskId === taskId) {
+          task = repairTask;
+          taskType = 'repair';
+          break;
+        }
+      }
+    }
+    
+    if (!task) {
+      return res.status(404).json({ success: false, error: '任务不存在或已完成' });
+    }
+    
+    // 验证任务所有者
+    if (task.userToken !== userToken) {
+      return res.status(403).json({ success: false, error: '无权操作此任务' });
+    }
+    
+    // 检查任务状态（只能订阅进行中的任务）
+    const validStatuses = ['pending', 'processing', 'running'];
+    if (!validStatuses.includes(task.status)) {
+      return res.json({
+        success: false,
+        error: '任务已完成，无法订阅',
+        taskStatus: task.status
+      });
+    }
+    
+    // 检查是否已订阅
+    if (task.subscribeNotify) {
+      return res.json({
+        success: false,
+        error: '已订阅此任务',
+        alreadySubscribed: true
+      });
+    }
+    
+    // 获取用户的微信 openId
+    const user = db.prepare('SELECT id, wechat_openid FROM user_accounts WHERE user_token = ?').get(userToken);
+    if (!user) {
+      return res.status(404).json({ success: false, error: '用户不存在' });
+    }
+    
+    if (!user.wechat_openid) {
+      return res.json({
+        success: false,
+        error: '请先在小程序中登录以获取通知权限',
+        needWechatLogin: true
+      });
+    }
+    
+    // 更新任务的订阅状态
+    task.subscribeNotify = true;
+    task.wechatOpenId = user.wechat_openid;
+    
+    // 从后台配置读取订阅奖励积分
+    let creditsReward = 0.5; // 默认值
+    try {
+      const config = db.prepare('SELECT value FROM site_settings WHERE key = ?').get('credits_subscribe_task');
+      if (config && config.value) {
+        creditsReward = parseFloat(config.value) || 0.5;
+      }
+    } catch (e) {
+      console.log('[任务订阅] 读取积分配置失败，使用默认值:', e.message);
+    }
+    
+    // 奖励积分
+    if (creditsReward > 0) {
+      db.prepare('UPDATE user_accounts SET credits = COALESCE(credits, 0) + ? WHERE user_token = ?').run(creditsReward, userToken);
+      
+      // 记录积分日志
+      try {
+        db.prepare(`
+          INSERT INTO credits_logs (user_token, amount, type, description, created_at)
+          VALUES (?, ?, 'subscribe_task', '订阅任务完成通知', datetime('now'))
+        `).run(userToken, creditsReward);
+      } catch (e) {
+        // 积分日志表可能不存在，忽略
+      }
+    }
+    
+    // 更新订阅次数（用于统计）
+    try {
+      db.prepare('UPDATE user_accounts SET subscribe_count = COALESCE(subscribe_count, 0) + 1 WHERE user_token = ?').run(userToken);
+    } catch (e) {}
+    
+    console.log(`[任务订阅] 用户 ${userToken.substring(0, 8)}... 订阅任务 ${taskId}，奖励 ${creditsReward} 积分`);
+    
+    res.json({
+      success: true,
+      taskId,
+      creditsReward,
+      message: creditsReward > 0 ? `订阅成功！+${creditsReward}积分` : '订阅成功！'
+    });
+  } catch (error) {
+    console.error('[任务订阅] 失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * 保留旧接口兼容性（已废弃，返回提示）
+ * POST /api/user/subscribe-add
+ * @deprecated 请使用 POST /api/task/:taskId/subscribe
+ */
+app.post('/api/user/subscribe-add', (req, res) => {
+  res.json({
+    success: false,
+    error: '此接口已废弃，请在创作中的任务上点击订阅',
+    deprecated: true
+  });
+});
+
+/**
+ * 内部函数：消耗订阅次数（供异步任务调用）
+ * @param {string} userToken - 用户token
+ * @param {number} count - 消耗数量，默认1
+ * @returns {{ success: boolean, message?: string, remainingCount?: number }}
+ */
+function consumeSubscribeCount(userToken, count = 1) {
+  try {
+    if (!userToken) {
+      return { success: false, message: '用户token无效' };
+    }
+    
+    const user = db.prepare('SELECT id, subscribe_count, wechat_openid FROM user_accounts WHERE user_token = ?').get(userToken);
+    if (!user) {
+      return { success: false, message: '用户不存在' };
+    }
+    
+    const currentCount = user.subscribe_count || 0;
+    
+    // 检查次数是否足够
+    if (currentCount < count) {
+      return { 
+        success: false, 
+        message: `订阅次数不足（当前${currentCount}次，需要${count}次）`,
+        remainingCount: currentCount 
+      };
+    }
+    
+    // 扣减次数
+    const newCount = currentCount - count;
+    db.prepare('UPDATE user_accounts SET subscribe_count = ? WHERE user_token = ?').run(newCount, userToken);
+    
+    console.log(`[订阅次数-内部] 用户 ${userToken.substring(0, 8)}... 消耗 ${count} 次，剩余 ${newCount} 次`);
+    
+    return { 
+      success: true, 
+      remainingCount: newCount,
+      openId: user.wechat_openid 
+    };
+  } catch (error) {
+    console.error('[订阅次数-内部] 消耗失败:', error);
+    return { success: false, message: error.message };
+  }
+}
+
+/**
+ * 消耗订阅通知次数（发送通知时API调用）
+ * POST /api/user/subscribe-consume
+ * Headers: x-user-token 或 x-author-token
+ * Body: { count: 1 } - 消耗的次数，默认1
+ * 
+ * 返回是否成功消耗（次数不足返回 false）
+ */
+app.post('/api/user/subscribe-consume', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'] || req.headers['x-author-token'];
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '未登录' });
+    }
+    
+    const count = Math.max(1, parseInt(req.body.count) || 1);
+    
+    const user = db.prepare('SELECT id, subscribe_count, wechat_openid FROM user_accounts WHERE user_token = ?').get(userToken);
+    if (!user) {
+      return res.status(404).json({ success: false, error: '用户不存在' });
+    }
+    
+    const currentCount = user.subscribe_count || 0;
+    
+    // 检查次数是否足够
+    if (currentCount < count) {
+      return res.json({
+        success: false,
+        error: '订阅次数不足',
+        subscribeCount: currentCount,
+        hasOpenId: !!user.wechat_openid
+      });
+    }
+    
+    // 扣减次数
+    const newCount = currentCount - count;
+    db.prepare('UPDATE user_accounts SET subscribe_count = ? WHERE user_token = ?').run(newCount, userToken);
+    
+    console.log(`[订阅次数] 用户 ${userToken.substring(0, 8)}... 消耗 ${count} 次订阅，剩余 ${newCount} 次`);
+    
+    res.json({
+      success: true,
+      subscribeCount: newCount,
+      consumed: count,
+      openId: user.wechat_openid // 返回 openId 供发送通知使用
+    });
+  } catch (error) {
+    console.error('[订阅次数] 消耗失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * 获取用户正在创作中的任务列表
+ * GET /api/user/creating-tasks
+ * Headers: x-user-token
+ * 
+ * 返回用户当前正在进行的创建/编辑/修复任务
+ */
+app.get('/api/user/creating-tasks', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '未登录' });
+    }
+    
+    const tasks = [];
+    
+    // 1. 从异步生成任务队列中查找用户的任务
+    for (const [taskId, task] of asyncGenerateTasks.entries()) {
+      if (task.userToken === userToken && (task.status === 'pending' || task.status === 'processing')) {
+        tasks.push({
+          taskId,
+          type: 'create',
+          typeName: '创建游戏',
+          status: task.status,
+          progress: task.progress || 0,
+          progressText: task.progressText || '处理中...',
+          prompt: task.prompt || '',
+          createdAt: task.createdAt,
+          // 是否已订阅通知
+          subscribed: task.subscribeNotify || false,
+          // 草稿ID（用于小程序匹配草稿游戏）
+          gameId: task.draftId || null
+        });
+      }
+    }
+    
+    // 2. 从修复任务队列中查找用户的任务
+    for (const [gameId, task] of repairTaskQueue.entries()) {
+      if (task.userToken === userToken && task.status === 'running') {
+        // 获取游戏标题
+        let gameTitle = '未知游戏';
+        try {
+          const game = db.prepare('SELECT title FROM games WHERE id = ?').get(gameId);
+          if (game) gameTitle = game.title;
+        } catch (e) {}
+        
+        tasks.push({
+          taskId: task.taskId,
+          gameId,
+          type: 'repair',
+          typeName: '修复游戏',
+          status: 'processing',
+          progress: 50, // 修复任务没有精确进度
+          progressText: '正在修复...',
+          gameTitle,
+          createdAt: task.startTime,
+          subscribed: task.subscribeNotify || false
+        });
+      }
+    }
+    
+    // 3. 从编辑任务队列中查找用户的任务
+    if (typeof asyncEditTasks !== 'undefined') {
+      for (const [taskId, task] of asyncEditTasks.entries()) {
+        if (task.userToken === userToken && (task.status === 'pending' || task.status === 'processing')) {
+          let gameTitle = '未知游戏';
+          try {
+            const game = db.prepare('SELECT title FROM games WHERE id = ?').get(task.gameId);
+            if (game) gameTitle = game.title;
+          } catch (e) {}
+          
+          tasks.push({
+            taskId: taskId,
+            gameId: task.gameId,
+            type: 'edit',
+            typeName: '编辑游戏',
+            status: task.status,
+            progress: task.progress || 50,
+            progressText: task.progressText || '正在编辑...',
+            gameTitle,
+            createdAt: task.createdAt,
+            subscribed: task.subscribeNotify || false
+          });
+        }
+      }
+    }
+    
+    // 按创建时间倒序排列
+    tasks.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    
+    res.json({
+      success: true,
+      tasks,
+      count: tasks.length
+    });
+  } catch (error) {
+    console.error('[创作中任务] 查询失败:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ==================== 游戏留言板 API ====================
 
 // 获取游戏留言列表
@@ -9469,6 +10005,7 @@ app.post('/api/generate-async', async (req, res) => {
     error: null,
     createdAt: Date.now(),
     userToken,
+    prompt: prompt.trim(), // 保存prompt用于显示任务信息
     // 订阅消息相关
     subscribeNotify: !!subscribeNotify,
     wechatOpenId: wechatOpenId
@@ -9506,21 +10043,42 @@ app.post('/api/generate-async', async (req, res) => {
           finalTask.progressText = '生成完成！';
           finalTask.result = generateResult;
           
-          // ===== 发送订阅消息通知 =====
-          if (finalTask.subscribeNotify && finalTask.wechatOpenId && generateResult.game) {
+          // ===== 发送订阅消息通知（基于任务订阅状态） =====
+          // 只有用户明确订阅了此任务才发送通知
+          if (finalTask.subscribeNotify && finalTask.userToken && generateResult.game) {
             try {
-              console.log(`[AsyncTask] 准备发送订阅消息通知, openId: ${finalTask.wechatOpenId.substring(0, 8)}...`);
-              await wechatUtils.sendGameCreatedNotification({
-                openId: finalTask.wechatOpenId,
-                gameName: generateResult.game.title || '您的游戏',
-                gameId: generateResult.game.id,
-                status: '已完成'
-              });
-              console.log(`[AsyncTask] 订阅消息通知发送成功`);
+              // 获取用户的微信 openId（优先使用任务上保存的，否则从数据库获取）
+              let wechatOpenId = finalTask.wechatOpenId;
+              if (!wechatOpenId) {
+                try {
+                  const userAccount = db.prepare('SELECT wechat_openid FROM user_accounts WHERE user_token = ?').get(finalTask.userToken);
+                  if (userAccount && userAccount.wechat_openid) {
+                    wechatOpenId = userAccount.wechat_openid;
+                  }
+                } catch (e) {
+                  console.log(`[AsyncTask] 获取用户 openId 失败:`, e.message);
+                }
+              }
+              
+              if (!wechatOpenId) {
+                console.log(`[AsyncTask] 用户没有绑定微信，跳过通知`);
+              } else {
+                // 直接发送通知（已在订阅时验证过用户授权）
+                console.log(`[AsyncTask] 用户已订阅此任务，准备发送通知, openId: ${wechatOpenId.substring(0, 8)}...`);
+                await wechatUtils.sendGameCreatedNotification({
+                  openId: wechatOpenId,
+                  gameName: generateResult.game.title || '您的游戏',
+                  gameId: generateResult.game.id,
+                  status: '已完成'
+                });
+                console.log(`[AsyncTask] 订阅消息通知发送成功`);
+              }
             } catch (notifyErr) {
               // 通知发送失败不影响任务结果
               console.error(`[AsyncTask] 发送订阅消息通知失败:`, notifyErr.message);
             }
+          } else if (!finalTask.subscribeNotify) {
+            console.log(`[AsyncTask] 用户未订阅此任务，跳过通知`);
           }
         } else {
           finalTask.status = 'failed';
@@ -9785,8 +10343,6 @@ async function handleGenerateInternal(body, headers, progressCallback) {
     const titleMatch = code.match(/<title>(.*?)<\/title>/i);
     let title = titleMatch ? titleMatch[1] : prompt.substring(0, 20);
     
-    // 生成游戏ID并保存
-    const gameId = generateGameId();
     const authorName = advancedSettings?.authorName || '游戏家用户';
     
     // 获取可见性设置（从小程序传递的 advancedSettings 中读取）
@@ -9794,11 +10350,45 @@ async function handleGenerateInternal(body, headers, progressCallback) {
     const gameOrientation = advancedSettings?.orientation || 'portrait';
     const isPublic = gameVisibility === 'public' ? 1 : 0;
     
-    // 保存到数据库（status 设置为 'published' 确保网站可见）
-    db.prepare(`
-      INSERT INTO games (id, title, prompt, code, author_name, author_token, llm_model, status, visibility, is_public, orientation, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 'published', ?, ?, ?, datetime('now'))
-    `).run(gameId, title, prompt, code, authorName, userToken || authorToken, finalModel, gameVisibility, isPublic, gameOrientation);
+    let gameId;
+    
+    // 如果有草稿ID，更新草稿为已发布状态
+    if (draftId) {
+      try {
+        const draftGame = db.prepare('SELECT id, author_token FROM games WHERE id = ? AND status = ?').get(draftId, 'draft');
+        if (draftGame) {
+          // 验证作者权限
+          const draftAuthorToken = draftGame.author_token;
+          const currentToken = userToken || authorToken;
+          if (draftAuthorToken === currentToken || !draftAuthorToken) {
+            // 更新草稿为已发布
+            db.prepare(`
+              UPDATE games 
+              SET title = ?, code = ?, status = 'published', llm_model = ?, visibility = ?, is_public = ?, orientation = ?, updated_at = datetime('now')
+              WHERE id = ?
+            `).run(title, code, finalModel, gameVisibility, isPublic, gameOrientation, draftId);
+            
+            gameId = draftId;
+            console.log(`[AsyncGenerate] 草稿已发布: ${draftId}`);
+          } else {
+            console.log(`[AsyncGenerate] 草稿权限不匹配，创建新游戏`);
+          }
+        } else {
+          console.log(`[AsyncGenerate] 草稿不存在或已发布: ${draftId}`);
+        }
+      } catch (draftError) {
+        console.error('[AsyncGenerate] 更新草稿失败:', draftError.message);
+      }
+    }
+    
+    // 如果没有成功更新草稿，创建新游戏
+    if (!gameId) {
+      gameId = generateGameId();
+      db.prepare(`
+        INSERT INTO games (id, title, prompt, code, author_name, author_token, llm_model, status, visibility, is_public, orientation, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'published', ?, ?, ?, datetime('now'))
+      `).run(gameId, title, prompt, code, authorName, userToken || authorToken, finalModel, gameVisibility, isPublic, gameOrientation);
+    }
     
     // 保存静态文件
     saveGameStaticFile(gameId, code, {
@@ -9862,6 +10452,25 @@ app.post('/api/generate', async (req, res) => {
       isTurboSwitch: isTurboSwitch || false,
       requestId: requestId || '无'
     });
+    
+    // 如果有草稿ID且有用户token，创建一个临时任务到 asyncGenerateTasks
+    // 这样小程序端可以通过 /api/user/creating-tasks 获取到这个任务并订阅通知
+    const syncTaskId = draftId ? `sync_${draftId}` : null;
+    if (syncTaskId && userToken) {
+      asyncGenerateTasks.set(syncTaskId, {
+        status: 'processing',
+        progress: 10,
+        progressText: '正在生成...',
+        prompt: prompt,
+        createdAt: Date.now(),
+        userToken: userToken,
+        draftId: draftId,
+        subscribeNotify: false,
+        wechatOpenId: null,
+        isSyncTask: true  // 标记为同步任务创建的伪任务
+      });
+      console.log(`[SYNC] 创建同步任务追踪: ${syncTaskId}`);
+    }
     
     // 创建 AbortController 用于中断 LLM 请求
     const llmAbortController = new AbortController();
@@ -10483,6 +11092,39 @@ ${advancedHint}${gameNameHint}
       activeGenerations.delete(requestId);
       console.log(`[TRACK] 已清理请求记录: ${requestId}`);
     }
+    
+    // 处理同步任务的订阅通知和清理
+    // syncTaskId 已在前面定义
+    if (syncTaskId && asyncGenerateTasks.has(syncTaskId)) {
+      const syncTask = asyncGenerateTasks.get(syncTaskId);
+      
+      // 如果用户订阅了通知，发送微信消息
+      if (syncTask.subscribeNotify && syncTask.wechatOpenId) {
+        try {
+          console.log(`[SYNC] 同步任务完成，发送订阅通知: ${syncTaskId}`);
+          await wechatUtils.sendGameCreatedNotification({
+            openId: syncTask.wechatOpenId,
+            gameName: title || '您的游戏',
+            gameId: draftId,
+            status: '已完成'
+          });
+          console.log(`[SYNC] 订阅通知发送成功`);
+        } catch (notifyErr) {
+          console.error(`[SYNC] 发送订阅通知失败:`, notifyErr.message);
+        }
+      }
+      
+      // 更新任务状态为完成，稍后清理
+      syncTask.status = 'completed';
+      syncTask.progress = 100;
+      syncTask.progressText = '生成完成！';
+      
+      // 延迟清理（保留5分钟让用户看到完成状态）
+      setTimeout(() => {
+        asyncGenerateTasks.delete(syncTaskId);
+        console.log(`[SYNC] 已清理同步任务: ${syncTaskId}`);
+      }, 5 * 60 * 1000);
+    }
 
     res.json({ 
       success: true, 
@@ -10523,6 +11165,20 @@ ${advancedHint}${gameNameHint}
     if (requestId) {
       activeGenerations.delete(requestId);
     }
+    
+    // 清理同步任务（从请求体获取 draftId）
+    const failedDraftId = req.body?.draftId;
+    const failedSyncTaskId = failedDraftId ? `sync_${failedDraftId}` : null;
+    if (failedSyncTaskId && asyncGenerateTasks.has(failedSyncTaskId)) {
+      const syncTask = asyncGenerateTasks.get(failedSyncTaskId);
+      syncTask.status = 'failed';
+      syncTask.error = error.message;
+      // 延迟清理
+      setTimeout(() => {
+        asyncGenerateTasks.delete(failedSyncTaskId);
+      }, 5 * 60 * 1000);
+    }
+    
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -11336,6 +11992,353 @@ app.post('/api/games/:id/edit', async (req, res) => {
     console.error('[编辑API错误]', error);
     return res.status(500).json({ success: false, error: error.message });
   }
+});
+
+// ============ 异步编辑游戏 API（解决Cloudflare 524超时问题） ============
+
+// 异步编辑游戏 - 立即返回 taskId，后台处理
+app.post('/api/games/:id/edit-async', async (req, res) => {
+  const taskId = `edit_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+  const userToken = req.headers['x-user-token'] || req.headers['x-author-token'];
+  const gameId = req.params.id;
+  
+  console.log(`[AsyncEdit] 创建异步编辑任务: ${taskId}`);
+  
+  if (!userToken) {
+    return res.status(401).json({ success: false, error: '请先登录' });
+  }
+  
+  const { sessionId, message, llmConfig } = req.body;
+  
+  if (!sessionId) {
+    return res.status(400).json({ success: false, error: '缺少会话ID' });
+  }
+  
+  if (!message || message.trim().length === 0) {
+    return res.status(400).json({ success: false, error: '请输入修改要求' });
+  }
+  
+  try {
+    // 验证游戏和会话
+    const game = db.prepare('SELECT * FROM games WHERE id = ?').get(gameId);
+    if (!game) {
+      return res.status(404).json({ success: false, error: '游戏不存在' });
+    }
+    
+    const session = db.prepare('SELECT * FROM game_edit_sessions WHERE id = ?').get(sessionId);
+    if (!session) {
+      return res.status(404).json({ success: false, error: '编辑会话不存在或已过期' });
+    }
+    
+    if (session.user_token !== userToken) {
+      // 检查是否为管理员
+      const isAdmin = isUserAdmin(userToken);
+      if (!isAdmin) {
+        return res.status(403).json({ success: false, error: '无权访问此会话' });
+      }
+    }
+    
+    // 创建任务记录
+    asyncEditTasks.set(taskId, {
+      status: 'pending',
+      progress: 0,
+      progressText: '任务已创建，等待处理...',
+      result: null,
+      error: null,
+      createdAt: Date.now(),
+      userToken,
+      sessionId,
+      gameId,
+      message
+    });
+    
+    // 立即返回 taskId
+    res.json({ success: true, taskId });
+    
+    // 后台异步处理编辑
+    (async () => {
+      try {
+        const task = asyncEditTasks.get(taskId);
+        if (!task) return;
+        
+        task.status = 'processing';
+        task.progress = 10;
+        task.progressText = '正在准备编辑环境...';
+        
+        // 确保表存在
+        ensureEditTablesExist();
+        
+        // 获取历史对话
+        const history = db.prepare(`
+          SELECT role, content FROM game_edit_messages 
+          WHERE session_id = ? 
+          ORDER BY created_at ASC
+        `).all(sessionId);
+        
+        task.progress = 20;
+        task.progressText = '正在构建上下文...';
+        
+        // 构建对话上下文
+        const messages = [
+          { role: 'system', content: EDIT_SYSTEM_PROMPT },
+          { role: 'user', content: `这是当前的游戏代码：\n\n\`\`\`html\n${session.current_code}\n\`\`\`` }
+        ];
+        
+        history.forEach(msg => {
+          messages.push({ role: msg.role, content: msg.content });
+        });
+        
+        messages.push({ role: 'user', content: `请按照以下要求修改游戏：${message}` });
+        
+        // 保存用户消息
+        db.prepare(`
+          INSERT INTO game_edit_messages (session_id, role, content)
+          VALUES (?, 'user', ?)
+        `).run(sessionId, message);
+        
+        task.progress = 30;
+        task.progressText = '正在配置AI模型...';
+        
+        // ========== 获取 LLM 配置 ==========
+        const defaultModel = getConfig('llm_default_model', 'deepseek-v3');
+        const defaultApiKey = getConfig('llm_default_api_key', '');
+        
+        const getModelApiKey = (modelId) => {
+          if (!modelId) return null;
+          const apiKeyKey = `llm_apikey_${modelId}`;
+          const configuredKey = getConfig(apiKeyKey, null);
+          return configuredKey && configuredKey.length > 0 ? configuredKey : null;
+        };
+        
+        let finalModel, finalProvider, finalBaseUrl, selectedModelId;
+        const requestedModelId = llmConfig?.provider || null;
+        
+        if (requestedModelId && LLM_MODELS[requestedModelId]) {
+          const modelConfig = LLM_MODELS[requestedModelId];
+          finalModel = modelConfig.model;
+          finalProvider = modelConfig.provider;
+          finalBaseUrl = modelConfig.baseUrl;
+          selectedModelId = requestedModelId;
+        } else if (defaultModel && LLM_MODELS[defaultModel]) {
+          const modelConfig = LLM_MODELS[defaultModel];
+          finalModel = modelConfig.model;
+          finalProvider = modelConfig.provider;
+          finalBaseUrl = modelConfig.baseUrl;
+          selectedModelId = defaultModel;
+        } else {
+          const fallbackConfig = LLM_MODELS['deepseek-v3'];
+          finalModel = fallbackConfig.model;
+          finalProvider = fallbackConfig.provider;
+          finalBaseUrl = fallbackConfig.baseUrl;
+          selectedModelId = 'deepseek-v3';
+        }
+        
+        let finalApiKey = getModelApiKey(selectedModelId) || defaultApiKey || process.env.DEEPSEEK_API_KEY;
+        
+        if (!finalApiKey) {
+          task.status = 'failed';
+          task.error = '该模型暂不可用，请联系管理员配置API Key';
+          return;
+        }
+        
+        const modelMaxTokens = selectedModelId ? getModelMaxTokens(selectedModelId) : 8192;
+        const modelTemperature = selectedModelId ? getModelTemperature(selectedModelId, 0.7) : 0.7;
+        
+        console.log(`[AsyncEdit] 使用模型: ${finalModel}, Provider: ${finalProvider}`);
+        
+        task.progress = 40;
+        task.progressText = '正在连接AI服务...';
+        
+        // 根据 provider 调整 API 调用
+        let apiUrl = finalProvider === 'zhipu' ? `${finalBaseUrl}/v4/chat/completions` : `${finalBaseUrl}/v1/chat/completions`;
+        let headers = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${finalApiKey}`
+        };
+        
+        if (finalProvider === 'anthropic') {
+          apiUrl = `${finalBaseUrl}/v1/messages`;
+          headers = {
+            'Content-Type': 'application/json',
+            'x-api-key': finalApiKey,
+            'anthropic-version': '2023-06-01'
+          };
+        }
+        
+        if (finalProvider === 'openrouter') {
+          headers['HTTP-Referer'] = 'https://youxijia.fun';
+          headers['X-Title'] = 'GameMaker AI Editor';
+        }
+        
+        task.progress = 50;
+        task.progressText = 'AI正在分析并修改代码...';
+        
+        const startTime = Date.now();
+        
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(finalProvider === 'anthropic' ? {
+            model: finalModel,
+            max_tokens: modelMaxTokens,
+            messages: messages.filter(m => m.role !== 'system').map(m => ({
+              role: m.role,
+              content: m.content
+            })),
+            system: EDIT_SYSTEM_PROMPT
+          } : {
+            model: finalModel,
+            messages: messages,
+            temperature: modelTemperature,
+            max_tokens: modelMaxTokens
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.text();
+          throw new Error(`LLM API错误: ${response.status} - ${errorData}`);
+        }
+        
+        const data = await response.json();
+        const apiTime = Date.now() - startTime;
+        console.log(`[AsyncEdit] LLM响应时间: ${apiTime}ms`);
+        
+        task.progress = 80;
+        task.progressText = '正在处理AI响应...';
+        
+        // 根据 provider 提取内容
+        let newCode;
+        if (finalProvider === 'anthropic') {
+          newCode = data.content?.[0]?.text || '';
+        } else {
+          newCode = data.choices?.[0]?.message?.content || '';
+        }
+        
+        // 使用统一的代码提取函数
+        newCode = extractHtmlFromResponse(newCode);
+        
+        // 额外清理
+        newCode = newCode.replace(/^```html\s*\n?/gi, '');
+        newCode = newCode.replace(/^```\s*\n?/gi, '');
+        newCode = newCode.replace(/\n?```\s*$/gi, '');
+        
+        task.progress = 90;
+        task.progressText = '正在验证代码...';
+        
+        // 验证代码结构完整性
+        if (!newCode.includes('<html') && !newCode.includes('<!DOCTYPE')) {
+          throw new Error('AI返回的代码格式不正确，请重试');
+        }
+        
+        const hasHtmlEnd = newCode.includes('</html>');
+        const hasBodyEnd = newCode.includes('</body>');
+        if (!hasHtmlEnd || !hasBodyEnd) {
+          throw new Error('AI返回的代码不完整（缺少结束标签），请重试');
+        }
+        
+        // 保存AI回复
+        db.prepare(`
+          INSERT INTO game_edit_messages (session_id, role, content, code_snapshot, tokens_used)
+          VALUES (?, 'assistant', ?, ?, ?)
+        `).run(sessionId, '已完成修改', newCode, data.usage?.total_tokens || 0);
+        
+        // 更新会话的当前代码
+        db.prepare(`
+          UPDATE game_edit_sessions SET current_code = ?, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `).run(newCode, sessionId);
+        
+        // 任务完成
+        task.status = 'completed';
+        task.progress = 100;
+        task.progressText = '修改完成！';
+        task.result = {
+          success: true,
+          code: newCode,
+          message: '修改完成！可以预览效果或继续优化',
+          changes: detectCodeChanges(session.current_code, newCode),
+          tokensUsed: data.usage?.total_tokens || 0,
+          apiTime
+        };
+        
+        console.log(`[AsyncEdit] 任务完成: ${taskId}`);
+        
+        // ===== 发送订阅消息通知（编辑完成，基于任务订阅状态） =====
+        if (task.subscribeNotify && task.userToken && task.wechatOpenId) {
+          try {
+            console.log(`[AsyncEdit] 用户已订阅此任务，准备发送通知`);
+            await wechatUtils.sendGameCreatedNotification({
+              openId: task.wechatOpenId,
+              gameName: game.title || '您的游戏',
+              gameId: task.gameId,
+              status: '编辑完成'
+            });
+            console.log(`[AsyncEdit] 订阅消息通知发送成功`);
+          } catch (notifyErr) {
+            console.error(`[AsyncEdit] 发送通知失败:`, notifyErr.message);
+          }
+        } else if (!task.subscribeNotify) {
+          console.log(`[AsyncEdit] 用户未订阅此任务，跳过通知`);
+        }
+        
+      } catch (error) {
+        console.error(`[AsyncEdit] 任务失败: ${taskId}`, error);
+        const task = asyncEditTasks.get(taskId);
+        if (task) {
+          task.status = 'failed';
+          task.progress = 0;
+          task.progressText = '编辑失败';
+          task.error = error.message || '编辑失败';
+        }
+      }
+    })();
+    
+  } catch (error) {
+    console.error('[AsyncEdit] 创建任务失败:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 查询异步编辑任务状态
+app.get('/api/games/:id/edit-status/:taskId', (req, res) => {
+  const { taskId } = req.params;
+  const task = asyncEditTasks.get(taskId);
+  
+  if (!task) {
+    return res.status(404).json({ 
+      success: false, 
+      error: '任务不存在或已过期',
+      status: 'not_found'
+    });
+  }
+  
+  const response = {
+    success: true,
+    taskId,
+    status: task.status,
+    progress: task.progress,
+    progressText: task.progressText
+  };
+  
+  // 如果任务完成，返回结果
+  if (task.status === 'completed' && task.result) {
+    response.result = task.result;
+    // 任务完成后60秒删除
+    setTimeout(() => {
+      asyncEditTasks.delete(taskId);
+    }, 60000);
+  }
+  
+  // 如果任务失败，返回错误
+  if (task.status === 'failed') {
+    response.error = task.error;
+    // 失败任务60秒后删除
+    setTimeout(() => {
+      asyncEditTasks.delete(taskId);
+    }, 60000);
+  }
+  
+  res.json(response);
 });
 
 // AI修复游戏代码API
@@ -13785,8 +14788,10 @@ async function executeRepairTask(gameId, game, apiConfig, operator = 'admin') {
   const taskId = `repair_${gameId}_${Date.now()}`;
   
   try {
-    repairTaskQueue.set(gameId, { taskId, status: 'running', startTime: Date.now() });
-    console.log(`[AI-REPAIR] 开始后台修复任务: ${taskId}`);
+    // 保存 userToken 用于显示创作中任务和发送通知
+    const userToken = (typeof operator === 'string' && operator !== 'admin') ? operator : null;
+    repairTaskQueue.set(gameId, { taskId, status: 'running', startTime: Date.now(), userToken });
+    console.log(`[AI-REPAIR] 开始后台修复任务: ${taskId}, userToken: ${userToken?.substring(0, 8) || 'admin'}`);
     
     // 构造修复Prompt
     const repairPrompt = `你是一个专业的前端代码修复专家。请分析以下HTML游戏代码，找出并修复其中的错误。
@@ -13855,7 +14860,8 @@ ${game.code}
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`[AI-REPAIR] LLM API错误 (${taskId}):`, errorText);
-      repairTaskQueue.set(gameId, { taskId, status: 'failed', error: 'AI服务调用失败', endTime: Date.now() });
+      const failedTask = repairTaskQueue.get(gameId);
+      repairTaskQueue.set(gameId, { ...failedTask, taskId, status: 'failed', error: 'AI服务调用失败', endTime: Date.now() });
       return;
     }
     
@@ -13864,7 +14870,8 @@ ${game.code}
     
     if (!aiResponse) {
       console.error(`[AI-REPAIR] AI未返回有效响应 (${taskId})`);
-      repairTaskQueue.set(gameId, { taskId, status: 'failed', error: 'AI未返回有效响应', endTime: Date.now() });
+      const failedTask = repairTaskQueue.get(gameId);
+      repairTaskQueue.set(gameId, { ...failedTask, taskId, status: 'failed', error: 'AI未返回有效响应', endTime: Date.now() });
       return;
     }
     
@@ -13880,7 +14887,8 @@ ${game.code}
     
     if (!repairedCode || repairedCode.length < 100) {
       console.error(`[AI-REPAIR] AI未返回有效的修复代码 (${taskId})`);
-      repairTaskQueue.set(gameId, { taskId, status: 'failed', error: 'AI未返回有效的修复代码', endTime: Date.now() });
+      const failedTask = repairTaskQueue.get(gameId);
+      repairTaskQueue.set(gameId, { ...failedTask, taskId, status: 'failed', error: 'AI未返回有效的修复代码', endTime: Date.now() });
       return;
     }
     
@@ -13897,19 +14905,42 @@ ${game.code}
       created_at: game.created_at
     });
     
-    const duration = ((Date.now() - repairTaskQueue.get(gameId).startTime) / 1000).toFixed(1);
+    const existingTask = repairTaskQueue.get(gameId);
+    const duration = ((Date.now() - existingTask.startTime) / 1000).toFixed(1);
     console.log(`[AI-REPAIR] ✅ 游戏修复完成 (${taskId}): ${game.title}, 耗时 ${duration}s`);
     if (repairSummary) {
       console.log(`[AI-REPAIR] 修复摘要: ${repairSummary.substring(0, 200)}...`);
     }
     
+    // 保留订阅信息，只更新状态
     repairTaskQueue.set(gameId, { 
+      ...existingTask,  // 保留原有字段（包括 subscribeNotify, wechatOpenId, userToken）
       taskId, 
       status: 'completed', 
       repairSummary: repairSummary || '已完成代码分析和修复',
       endTime: Date.now(),
       duration: duration
     });
+    
+    // ===== 发送订阅消息通知（修复完成，基于任务订阅状态） =====
+    // 使用更新后的任务信息（保留了订阅状态）
+    const currentRepairTask = repairTaskQueue.get(gameId);
+    if (currentRepairTask && currentRepairTask.subscribeNotify && currentRepairTask.wechatOpenId) {
+      try {
+        console.log(`[AI-REPAIR] 用户已订阅此任务，准备发送通知`);
+        await wechatUtils.sendGameCreatedNotification({
+          openId: currentRepairTask.wechatOpenId,
+          gameName: game.title || '您的游戏',
+          gameId: gameId,
+          status: '修复完成'
+        });
+        console.log(`[AI-REPAIR] 订阅消息通知发送成功`);
+      } catch (notifyErr) {
+        console.error(`[AI-REPAIR] 发送通知失败:`, notifyErr.message);
+      }
+    } else if (currentRepairTask && !currentRepairTask.subscribeNotify) {
+      console.log(`[AI-REPAIR] 用户未订阅此任务，跳过通知`);
+    }
     
     // 10分钟后清理任务记录
     setTimeout(() => {
@@ -13918,7 +14949,8 @@ ${game.code}
     
   } catch (error) {
     console.error(`[AI-REPAIR] 修复任务异常 (${taskId}):`, error);
-    repairTaskQueue.set(gameId, { taskId, status: 'failed', error: error.message, endTime: Date.now() });
+    const failedTask = repairTaskQueue.get(gameId) || {};
+    repairTaskQueue.set(gameId, { ...failedTask, taskId, status: 'failed', error: error.message, endTime: Date.now() });
   }
 }
 

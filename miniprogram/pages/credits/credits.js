@@ -62,6 +62,7 @@ Page({
     loading: false,
     checkinLoading: false,
     claimLoading: false,
+    logsLoading: false,  // 积分明细加载状态
     
     // 智能贴士（文档6.1节底部设计）
     smartTip: {
@@ -301,6 +302,8 @@ Page({
 
   // 加载积分明细（含统计数据）
   async loadCreditLogs() {
+    this.setData({ logsLoading: true });
+    
     try {
       const result = await app.request('/api/credits/logs', {
         data: { limit: 20, include_stats: 1 }
@@ -316,6 +319,8 @@ Page({
       }
     } catch (err) {
       console.error('加载积分明细失败:', err);
+    } finally {
+      this.setData({ logsLoading: false });
     }
   },
 
@@ -359,8 +364,8 @@ Page({
           confirmText: '太棒了'
         });
         
-        // 刷新数据
-        this.loadCreditLogs();
+        // 刷新数据（使用await确保加载完成）
+        await this.loadCreditLogs();
       } else {
         app.showToast(result?.error || '签到失败');
       }
@@ -436,7 +441,7 @@ Page({
         });
         
         await this.loadAchievements();
-        this.loadCreditLogs();
+        await this.loadCreditLogs();
       } else {
         app.showToast(result?.error || '领取失败');
       }
@@ -464,7 +469,7 @@ Page({
         });
         
         await this.loadActionRewards();
-        this.loadCreditLogs();
+        await this.loadCreditLogs();
       } else {
         app.showToast(result?.error || '领取失败');
       }
@@ -478,6 +483,11 @@ Page({
   switchTab(e) {
     const tab = e.currentTarget.dataset.tab;
     this.setData({ currentTab: tab });
+    
+    // 切换到明细Tab时，主动刷新最新数据
+    if (tab === 'logs') {
+      this.loadCreditLogs();
+    }
   },
 
   // 去网站做任务（复制带邀请码的链接）

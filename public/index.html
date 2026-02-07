@@ -1293,6 +1293,13 @@
             <button class="chip-large" onclick="setCreatePrompt('跑酷游戏')">🏃 跑酷</button>
           </div>
         </div>
+        <!-- 订阅通知状态 -->
+        <div id="create-subscribe-section" class="create-subscribe-info" style="display:none;">
+          <span class="subscribe-icon">🔔</span>
+          <span>订阅通知 <strong id="create-subscribe-count">0</strong> 次</span>
+          <span id="create-subscribe-status" class="subscribe-status"></span>
+          <a href="javascript:showSubscribeGuide()">获取更多</a>
+        </div>
         <div class="create-credits-info">
           <span class="credits-icon">💎</span>
           <span>剩余 <strong id="create-credits-count">0</strong> 次生成机会</span>
@@ -1671,6 +1678,15 @@
         <div class="generating-tips-box" id="generating-tips-box">
           <div class="tips-icon">💡</div>
           <div class="tips-text" id="generating-tips-text">提示：添加具体的游戏玩法描述，效果会更好哦！</div>
+        </div>
+        
+        <!-- 订阅通知区域 -->
+        <div class="generating-subscribe-section" id="generating-subscribe-section">
+          <button class="btn-subscribe-notify" id="btn-subscribe-notify" onclick="subscribeNotifyFromWeb()">
+            <span class="subscribe-icon">🔔</span>
+            <span class="subscribe-text">订阅完成通知</span>
+          </button>
+          <span class="subscribe-hint" id="subscribe-hint">可用 <strong id="generating-subscribe-count">0</strong>/10 次</span>
         </div>
         
         <!-- 切换模型区域（始终显示） -->

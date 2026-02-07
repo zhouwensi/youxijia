@@ -7,11 +7,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#1a1a2e">
-  <meta name="description" content="开心泡泡堂 - AI一句话生成的游戏">
-  <meta property="og:title" content="开心泡泡堂 - AI游戏">
+  <meta name="description" content="想做一款大富翁的游戏总共有5颗骰子，首先选择顺时针走还是逆时针走，选完之后摇5颗骰子，首先摇到几从几开始走，然后再走对应摇到几的步数，最终停到几就是几。下面是环形地图数字，10；17；12；15；14；13；16；11；18；9；20；7；22；5；24；29；26；27；28；25；30；23；6；21；8；19； - AI一句话生成的游戏">
+  <meta property="og:title" content="大富翁骰子游戏 - AI游戏">
   <meta property="og:description" content="这个游戏由AI一句话生成！关注公众号「游戏开发技术教程」，你也可以免费生成游戏！">
   <meta property="og:type" content="website">
-  <title>开心泡泡堂 - AI游戏</title>
+  <title>大富翁骰子游戏 - AI游戏</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
   <!-- 引用主站CSS样式 -->
   <link rel="stylesheet" href="/css/style.css">
@@ -1055,66 +1055,201 @@ body {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            touch-action: manipulation;
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
         }
         
         body {
-            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            background: linear-gradient(135deg, #1a2980, #26d0ce);
             min-height: 100vh;
-            color: white;
-            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             padding: 20px;
+            color: #333;
         }
         
         .game-container {
-            position: relative;
             width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        
-        #gameCanvas {
-            display: block;
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            margin: 0 auto;
-            width: 100%;
-            max-width: 800px;
-            height: 500px;
-        }
-        
-        .game-header {
-            text-align: center;
-            margin-bottom: 20px;
-            width: 100%;
-            max-width: 800px;
+            max-width: 900px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            padding: 25px;
         }
         
         h1 {
-            font-size: 2.8rem;
-            margin-bottom: 10px;
-            text-shadow: 3px 3px 0 #ff6b6b, 6px 6px 0 rgba(0, 0, 0, 0.2);
-            color: #FFEB3B;
-            letter-spacing: 2px;
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
         }
         
-        .game-info {
+        .game-area {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        .map-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            background-color: #f8f9fa;
+            border-radius: 15px;
+            border: 3px solid #3498db;
+            overflow: hidden;
+        }
+        
+        .map {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .player {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #e74c3c;
+            border: 3px solid #c0392b;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            transition: all 0.5s ease;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .player-label {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #2c3e50;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        
+        .dice-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            background-color: #ecf0f1;
+            padding: 20px;
+            border-radius: 15px;
+        }
+        
+        .dice-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .dice {
+            width: 60px;
+            height: 60px;
+            background-color: white;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border: 2px solid #7f8c8d;
+            transition: transform 0.3s ease;
+        }
+        
+        .dice.rolling {
+            animation: shake 0.5s infinite;
+        }
+        
+        @keyframes shake {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(10deg); }
+            50% { transform: rotate(0deg); }
+            75% { transform: rotate(-10deg); }
+            100% { transform: rotate(0deg); }
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        button {
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .direction-btn {
+            background-color: #3498db;
+            color: white;
+            min-width: 150px;
+        }
+        
+        .direction-btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-3px);
+        }
+        
+        .direction-btn.selected {
+            background-color: #2c3e50;
+            transform: scale(1.05);
+        }
+        
+        .roll-btn {
+            background-color: #2ecc71;
+            color: white;
+            min-width: 180px;
+        }
+        
+        .roll-btn:hover:not(:disabled) {
+            background-color: #27ae60;
+            transform: translateY(-3px);
+        }
+        
+        .roll-btn:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        .reset-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .reset-btn:hover {
+            background-color: #c0392b;
+            transform: translateY(-3px);
+        }
+        
+        .info-panel {
             display: flex;
             justify-content: space-between;
-            background-color: rgba(0, 0, 0, 0.3);
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            font-size: 1.2rem;
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 15px;
+            margin-top: 10px;
         }
         
-        .score-container, .level-container, .lives-container {
+        .info-item {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -1127,185 +1262,50 @@ body {
         }
         
         .info-value {
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: #FFEB3B;
-        }
-        
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-        
-        button {
-            background: linear-gradient(to bottom, #FF9800, #F57C00);
-            border: none;
-            border-radius: 50px;
-            color: white;
-            font-size: 1.1rem;
-            font-weight: bold;
-            padding: 12px 25px;
-            cursor: pointer;
-            box-shadow: 0 5px 0 #E65100;
-            transition: all 0.1s;
-            min-width: 140px;
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 7px 0 #E65100;
-        }
-        
-        button:active {
-            transform: translateY(3px);
-            box-shadow: 0 2px 0 #E65100;
-        }
-        
-        .mobile-controls {
-            display: none;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(2, 1fr);
-            gap: 10px;
-            margin-top: 20px;
-            width: 100%;
-            max-width: 300px;
-        }
-        
-        .mobile-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            border-radius: 10px;
-            color: white;
             font-size: 1.5rem;
-            height: 70px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            user-select: none;
+            font-weight: bold;
         }
         
-        .mobile-btn:active {
-            background: rgba(255, 255, 255, 0.4);
-        }
-        
-        .up-btn {
-            grid-column: 2;
-            grid-row: 1;
-        }
-        
-        .left-btn {
-            grid-column: 1;
-            grid-row: 2;
-        }
-        
-        .down-btn {
-            grid-column: 2;
-            grid-row: 2;
-        }
-        
-        .right-btn {
-            grid-column: 3;
-            grid-row: 2;
-        }
-        
-        .bubble-btn {
-            grid-column: 1 / span 3;
-            grid-row: 3;
-            background: linear-gradient(to bottom, #FF4081, #F50057);
+        .status {
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #2c3e50;
+            min-height: 30px;
+            margin-top: 10px;
         }
         
         .instructions {
-            background-color: rgba(0, 0, 0, 0.3);
+            background-color: #f1c40f;
+            color: #2c3e50;
             padding: 15px;
             border-radius: 10px;
             margin-top: 20px;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             line-height: 1.5;
-            max-width: 800px;
-        }
-        
-        .instructions h3 {
-            color: #FFEB3B;
-            margin-bottom: 10px;
-        }
-        
-        .instructions ul {
-            padding-left: 20px;
-        }
-        
-        .instructions li {
-            margin-bottom: 5px;
-        }
-        
-        .game-over {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.85);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            border-radius: 15px;
-            z-index: 10;
-            display: none;
-        }
-        
-        .game-over h2 {
-            font-size: 3rem;
-            color: #FFEB3B;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 0 #ff6b6b;
-        }
-        
-        .final-score {
-            font-size: 2rem;
-            margin-bottom: 30px;
         }
         
         @media (max-width: 768px) {
+            .game-container {
+                padding: 15px;
+            }
+            
             h1 {
                 font-size: 2rem;
             }
             
-            #gameCanvas {
-                height: 400px;
+            .info-panel {
+                flex-direction: column;
+                gap: 15px;
             }
             
-            .mobile-controls {
-                display: grid;
-            }
-            
-            .controls {
-                margin-top: 10px;
-            }
-            
-            .game-info {
-                font-size: 1rem;
-            }
-            
-            .info-value {
-                font-size: 1.5rem;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            #gameCanvas {
-                height: 350px;
-            }
-            
-            h1 {
-                font-size: 1.8rem;
+            .dice {
+                width: 50px;
+                height: 50px;
+                font-size: 24px;
             }
             
             button {
-                min-width: 120px;
                 padding: 10px 20px;
                 font-size: 1rem;
             }
@@ -1316,876 +1316,421 @@ body {
 <body>
   <!-- 原游戏body内容 -->
   
-
-
-
     <div class="game-container">
-        <div class="game-header">
-            <h1>开心泡泡堂</h1>
-            <div class="game-info">
-                <div class="score-container">
-                    <div class="info-label">得分</div>
-                    <div class="info-value" id="score">0</div>
-                </div>
-                <div class="level-container">
-                    <div class="info-label">关卡</div>
-                    <div class="info-value" id="level">1</div>
-                </div>
-                <div class="lives-container">
-                    <div class="info-label">生命</div>
-                    <div class="info-value" id="lives">3</div>
+        <h1>大富翁骰子游戏</h1>
+        
+        <div class="game-area">
+            <div class="map-container">
+                <div class="map" id="map"></div>
+                <div class="player" id="player">
+                    <div class="player-label">玩家</div>
                 </div>
             </div>
-        </div>
-        
-        <canvas id="gameCanvas" width="800" height="500"></canvas>
-        
-        <div class="mobile-controls">
-            <div class="mobile-btn up-btn" id="upBtn">↑</div>
-            <div class="mobile-btn left-btn" id="leftBtn">←</div>
-            <div class="mobile-btn down-btn" id="downBtn">↓</div>
-            <div class="mobile-btn right-btn" id="rightBtn">→</div>
-            <div class="mobile-btn bubble-btn" id="mobileBubbleBtn">放置泡泡</div>
-        </div>
-        
-        <div class="controls">
-            <button id="startBtn">开始游戏</button>
-            <button id="pauseBtn">暂停游戏</button>
-            <button id="restartBtn">重新开始</button>
-        </div>
-        
-        <div class="instructions">
-            <h3>游戏说明</h3>
-            <ul>
-                <li>使用方向键或WASD移动角色</li>
-                <li>按空格键或B键放置泡泡</li>
-                <li>泡泡会在2秒后爆炸，摧毁周围的障碍物和敌人</li>
-                <li>避开泡泡爆炸范围，否则会失去生命</li>
-                <li>摧毁所有敌人进入下一关</li>
-                <li>每关敌人数量和速度会增加</li>
-            </ul>
-        </div>
-        
-        <div class="game-over" id="gameOverScreen">
-            <h2 id="gameOverTitle">游戏结束</h2>
-            <div class="final-score">最终得分: <span id="finalScore">0</span></div>
-            <button id="playAgainBtn">再玩一次</button>
+            
+            <div class="dice-section">
+                <div class="dice-container" id="diceContainer">
+                    <!-- 骰子将通过JS动态生成 -->
+                </div>
+                
+                <div class="status" id="status">请选择行走方向</div>
+                
+                <div class="controls">
+                    <button class="direction-btn" id="clockwiseBtn">顺时针</button>
+                    <button class="direction-btn" id="counterclockwiseBtn">逆时针</button>
+                    <button class="roll-btn" id="rollBtn" disabled>摇骰子</button>
+                    <button class="reset-btn" id="resetBtn">重新开始</button>
+                </div>
+            </div>
+            
+            <div class="info-panel">
+                <div class="info-item">
+                    <div class="info-label">当前位置</div>
+                    <div class="info-value" id="currentPosition">0</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">起始点数</div>
+                    <div class="info-value" id="startNumber">0</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">行走步数</div>
+                    <div class="info-value" id="steps">0</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">最终点数</div>
+                    <div class="info-value" id="finalNumber">0</div>
+                </div>
+            </div>
+            
+            <div class="instructions">
+                <strong>游戏规则：</strong> 首先选择顺时针或逆时针方向，然后摇5颗骰子。第一个骰子点数决定起始位置，第二个骰子点数决定行走步数。最终停在的位置就是你的得分。地图上的数字是：10, 17, 12, 15, 14, 13, 16, 11, 18, 9, 20, 7, 22, 5, 24, 29, 26, 27, 28, 25, 30, 23, 6, 21, 8, 19。
+            </div>
         </div>
     </div>
 
     <script>
-        // 游戏变量
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreElement = document.getElementById('score');
-        const levelElement = document.getElementById('level');
-        const livesElement = document.getElementById('lives');
-        const startBtn = document.getElementById('startBtn');
-        const pauseBtn = document.getElementById('pauseBtn');
-        const restartBtn = document.getElementById('restartBtn');
-        const gameOverScreen = document.getElementById('gameOverScreen');
-        const finalScoreElement = document.getElementById('finalScore');
-        const playAgainBtn = document.getElementById('playAgainBtn');
-        const gameOverTitle = document.getElementById('gameOverTitle');
-        
-        // 移动控制按钮
-        const upBtn = document.getElementById('upBtn');
-        const downBtn = document.getElementById('downBtn');
-        const leftBtn = document.getElementById('leftBtn');
-        const rightBtn = document.getElementById('rightBtn');
-        const mobileBubbleBtn = document.getElementById('mobileBubbleBtn');
-        
-        // 游戏状态
-        let gameRunning = false;
-        let gamePaused = false;
-        let score = 0;
-        let level = 1;
-        let lives = 3;
-        let gameTime = 0;
-        
-        // 玩家属性
-        const player = {
-            x: 100,
-            y: 100,
-            width: 30,
-            height: 30,
-            speed: 5,
-            color: '#4CAF50',
-            direction: 'down',
-            canPlaceBubble: true,
-            bubbleCooldown: 0
+        // 游戏数据
+        const gameData = {
+            // 地图数字（环形）
+            mapNumbers: [10, 17, 12, 15, 14, 13, 16, 11, 18, 9, 20, 7, 22, 5, 24, 29, 26, 27, 28, 25, 30, 23, 6, 21, 8, 19],
+            // 当前玩家位置索引
+            currentPosition: 0,
+            // 起始骰子点数
+            startDiceValue: 0,
+            // 步数骰子点数
+            stepsDiceValue: 0,
+            // 行走方向 (1: 顺时针, -1: 逆时针)
+            direction: 0,
+            // 游戏状态
+            gameState: 'selectingDirection', // selectingDirection, rollingStart, rollingSteps, moving, finished
+            // 骰子值
+            diceValues: [0, 0, 0, 0, 0],
+            // 当前骰子索引
+            currentDiceIndex: 0
         };
-        
-        // 泡泡数组
-        let bubbles = [];
-        
-        // 敌人数组
-        let enemies = [];
-        
-        // 障碍物数组
-        let obstacles = [];
-        
-        // 爆炸数组
-        let explosions = [];
-        
-        // 按键状态
-        const keys = {
-            up: false,
-            down: false,
-            left: false,
-            right: false,
-            space: false,
-            b: false
-        };
-        
+
+        // DOM元素
+        const mapElement = document.getElementById('map');
+        const playerElement = document.getElementById('player');
+        const diceContainer = document.getElementById('diceContainer');
+        const statusElement = document.getElementById('status');
+        const currentPositionElement = document.getElementById('currentPosition');
+        const startNumberElement = document.getElementById('startNumber');
+        const stepsElement = document.getElementById('steps');
+        const finalNumberElement = document.getElementById('finalNumber');
+        const clockwiseBtn = document.getElementById('clockwiseBtn');
+        const counterclockwiseBtn = document.getElementById('counterclockwiseBtn');
+        const rollBtn = document.getElementById('rollBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
         // 初始化游戏
         function initGame() {
-            // 重置游戏状态
-            score = 0;
-            level = 1;
-            lives = 3;
-            gameTime = 0;
-            
-            // 清空数组
-            bubbles = [];
-            enemies = [];
-            obstacles = [];
-            explosions = [];
-            
-            // 重置玩家位置
-            player.x = 100;
-            player.y = 100;
-            player.direction = 'down';
-            player.canPlaceBubble = true;
-            player.bubbleCooldown = 0;
-            
-            // 生成障碍物
-            generateObstacles();
-            
-            // 生成敌人
-            generateEnemies();
+            // 重置游戏数据
+            gameData.currentPosition = 0;
+            gameData.startDiceValue = 0;
+            gameData.stepsDiceValue = 0;
+            gameData.direction = 0;
+            gameData.gameState = 'selectingDirection';
+            gameData.diceValues = [0, 0, 0, 0, 0];
+            gameData.currentDiceIndex = 0;
             
             // 更新UI
             updateUI();
             
-            // 隐藏游戏结束屏幕
-            gameOverScreen.style.display = 'none';
+            // 创建骰子
+            createDice();
             
-            // 开始游戏循环
-            if (!gameRunning) {
-                gameRunning = true;
-                gamePaused = false;
-                gameLoop();
-            }
-        }
-        
-        // 生成障碍物
-        function generateObstacles() {
-            obstacles = [];
-            
-            // 创建一些随机障碍物
-            for (let i = 0; i < 15 + level * 2; i++) {
-                let obstacle;
-                let validPosition = false;
-                
-                // 确保障碍物不会生成在玩家起始位置
-                while (!validPosition) {
-                    obstacle = {
-                        x: Math.floor(Math.random() * (canvas.width - 60)) + 30,
-                        y: Math.floor(Math.random() * (canvas.height - 60)) + 30,
-                        width: 40,
-                        height: 40,
-                        color: '#795548'
-                    };
-                    
-                    // 检查是否与玩家位置重叠
-                    if (distance(obstacle.x, obstacle.y, player.x, player.y) > 100) {
-                        validPosition = true;
-                        
-                        // 检查是否与其他障碍物重叠
-                        for (let j = 0; j < obstacles.length; j++) {
-                            if (rectCollision(obstacle, obstacles[j])) {
-                                validPosition = false;
-                                break;
-                            }
-                        }
-                    }
-                }
-                
-                obstacles.push(obstacle);
-            }
-        }
-        
-        // 生成敌人
-        function generateEnemies() {
-            enemies = [];
-            
-            // 根据关卡生成敌人
-            const enemyCount = 3 + level;
-            
-            for (let i = 0; i < enemyCount; i++) {
-                let enemy;
-                let validPosition = false;
-                
-                // 确保敌人不会生成在玩家起始位置
-                while (!validPosition) {
-                    enemy = {
-                        x: Math.floor(Math.random() * (canvas.width - 40)) + 20,
-                        y: Math.floor(Math.random() * (canvas.height - 40)) + 20,
-                        width: 25,
-                        height: 25,
-                        color: '#F44336',
-                        speed: 1 + level * 0.2,
-                        direction: Math.random() * Math.PI * 2,
-                        changeDirectionTime: 0
-                    };
-                    
-                    // 检查是否与玩家位置重叠
-                    if (distance(enemy.x, enemy.y, player.x, player.y) > 150) {
-                        validPosition = true;
-                        
-                        // 检查是否与障碍物重叠
-                        for (let j = 0; j < obstacles.length; j++) {
-                            if (rectCollision(enemy, obstacles[j])) {
-                                validPosition = false;
-                                break;
-                            }
-                        }
-                    }
-                }
-                
-                enemies.push(enemy);
-            }
-        }
-        
-        // 放置泡泡
-        function placeBubble() {
-            if (!player.canPlaceBubble) return;
-            
-            // 创建泡泡
-            const bubble = {
-                x: Math.floor(player.x / 40) * 40 + 20,
-                y: Math.floor(player.y / 40) * 40 + 20,
-                radius: 15,
-                color: '#00BCD4',
-                timer: 120, // 2秒后爆炸 (60fps * 2)
-                exploded: false
-            };
-            
-            bubbles.push(bubble);
-            
-            // 设置冷却时间
-            player.canPlaceBubble = false;
-            player.bubbleCooldown = 30; // 0.5秒冷却
-        }
-        
-        // 爆炸泡泡
-        function explodeBubble(bubble) {
-            bubble.exploded = true;
-            
-            // 创建爆炸效果
-            const explosion = {
-                x: bubble.x,
-                y: bubble.y,
-                radius: 0,
-                maxRadius: 80,
-                color: '#FF9800',
-                alpha: 1,
-                growing: true
-            };
-            
-            explosions.push(explosion);
-            
-            // 检查爆炸是否击中敌人
-            for (let i = enemies.length - 1; i >= 0; i--) {
-                const enemy = enemies[i];
-                const dist = distance(bubble.x, bubble.y, enemy.x, enemy.y);
-                
-                if (dist < explosion.maxRadius) {
-                    // 敌人被消灭
-                    enemies.splice(i, 1);
-                    score += 100;
-                    
-                    // 添加得分效果
-                    createScoreEffect(enemy.x, enemy.y, 100);
-                }
-            }
-            
-            // 检查爆炸是否击中障碍物
-            for (let i = obstacles.length - 1; i >= 0; i--) {
-                const obstacle = obstacles[i];
-                const dist = distance(bubble.x, bubble.y, 
-                                     obstacle.x + obstacle.width/2, 
-                                     obstacle.y + obstacle.height/2);
-                
-                if (dist < explosion.maxRadius) {
-                    // 障碍物被摧毁
-                    obstacles.splice(i, 1);
-                    score += 50;
-                    
-                    // 添加得分效果
-                    createScoreEffect(obstacle.x + obstacle.width/2, 
-                                     obstacle.y + obstacle.height/2, 50);
-                }
-            }
-            
-            // 检查爆炸是否击中玩家
-            const playerDist = distance(bubble.x, bubble.y, player.x, player.y);
-            if (playerDist < explosion.maxRadius) {
-                loseLife();
-            }
-            
-            // 检查是否所有敌人都被消灭
-            if (enemies.length === 0) {
-                levelUp();
-            }
-            
-            updateUI();
-        }
-        
-        // 创建得分效果
-        function createScoreEffect(x, y, points) {
-            // 创建漂浮的得分文本
-            const scoreEffect = {
-                x: x,
-                y: y,
-                text: `+${points}`,
-                color: '#FFEB3B',
-                alpha: 1,
-                vy: -2,
-                timer: 60
-            };
-            
-            // 添加到爆炸数组（重用）
-            explosions.push(scoreEffect);
-        }
-        
-        // 升级关卡
-        function levelUp() {
-            level++;
-            score += 500; // 关卡完成奖励
-            
-            // 生成新的障碍物和敌人
-            generateObstacles();
-            generateEnemies();
-            
-            // 更新UI
-            updateUI();
-            
-            // 显示关卡升级消息
-            const levelUpEffect = {
-                x: canvas.width / 2,
-                y: canvas.height / 2,
-                text: `关卡 ${level}`,
-                color: '#FF4081',
-                alpha: 1,
-                vy: 0,
-                timer: 90,
-                fontSize: 40
-            };
-            
-            explosions.push(levelUpEffect);
-        }
-        
-        // 失去生命
-        function loseLife() {
-            lives--;
-            updateUI();
-            
-            if (lives <= 0) {
-                gameOver();
-            } else {
-                // 玩家闪烁效果
-                const blinkEffect = {
-                    x: player.x,
-                    y: player.y,
-                    width: player.width,
-                    height: player.height,
-                    color: '#FF0000',
-                    alpha: 0.7,
-                    timer: 120
-                };
-                
-                explosions.push(blinkEffect);
-                
-                // 短暂无敌时间
-                player.canPlaceBubble = false;
-                player.bubbleCooldown = 180; // 3秒无敌时间
-            }
-        }
-        
-        // 游戏结束
-        function gameOver() {
-            gameRunning = false;
-            finalScoreElement.textContent = score;
-            gameOverTitle.textContent = score > 1000 ? "太棒了！" : "游戏结束";
-            gameOverScreen.style.display = 'flex';
-        }
-        
-        // 更新UI
-        function updateUI() {
-            scoreElement.textContent = score;
-            levelElement.textContent = level;
-            livesElement.textContent = lives;
-        }
-        
-        // 游戏主循环
-        function gameLoop() {
-            if (!gameRunning || gamePaused) return;
-            
-            // 清除画布
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // 更新游戏时间
-            gameTime++;
-            
-            // 更新玩家
-            updatePlayer();
-            
-            // 更新泡泡
-            updateBubbles();
-            
-            // 更新敌人
-            updateEnemies();
-            
-            // 更新爆炸效果
-            updateExplosions();
-            
-            // 绘制游戏元素
-            drawGame();
-            
-            // 继续游戏循环
-            requestAnimationFrame(gameLoop);
-        }
-        
-        // 更新玩家
-        function updatePlayer() {
-            // 处理移动
-            let moveX = 0;
-            let moveY = 0;
-            
-            if (keys.up || keys.w) {
-                moveY -= player.speed;
-                player.direction = 'up';
-            }
-            if (keys.down || keys.s) {
-                moveY += player.speed;
-                player.direction = 'down';
-            }
-            if (keys.left || keys.a) {
-                moveX -= player.speed;
-                player.direction = 'left';
-            }
-            if (keys.right || keys.d) {
-                moveX += player.speed;
-                player.direction = 'right';
-            }
-            
-            // 对角线移动速度修正
-            if (moveX !== 0 && moveY !== 0) {
-                moveX *= 0.7071; // 1/√2
-                moveY *= 0.7071;
-            }
-            
-            // 计算新位置
-            let newX = player.x + moveX;
-            let newY = player.y + moveY;
-            
-            // 边界检查
-            if (newX - player.width/2 < 0) newX = player.width/2;
-            if (newX + player.width/2 > canvas.width) newX = canvas.width - player.width/2;
-            if (newY - player.height/2 < 0) newY = player.height/2;
-            if (newY + player.height/2 > canvas.height) newY = canvas.height - player.height/2;
-            
-            // 障碍物碰撞检查
-            let canMove = true;
-            const playerRect = {
-                x: newX - player.width/2,
-                y: newY - player.height/2,
-                width: player.width,
-                height: player.height
-            };
-            
-            for (const obstacle of obstacles) {
-                if (rectCollision(playerRect, obstacle)) {
-                    canMove = false;
-                    break;
-                }
-            }
-            
-            // 泡泡碰撞检查（只检查未爆炸的泡泡）
-            for (const bubble of bubbles) {
-                if (!bubble.exploded) {
-                    const bubbleRect = {
-                        x: bubble.x - bubble.radius,
-                        y: bubble.y - bubble.radius,
-                        width: bubble.radius * 2,
-                        height: bubble.radius * 2
-                    };
-                    
-                    if (rectCollision(playerRect, bubbleRect)) {
-                        canMove = false;
-                        break;
-                    }
-                }
-            }
+            // 绘制地图
+            drawMap();
             
             // 更新玩家位置
-            if (canMove) {
-                player.x = newX;
-                player.y = newY;
-            }
+            updatePlayerPosition();
             
-            // 更新泡泡冷却时间
-            if (player.bubbleCooldown > 0) {
-                player.bubbleCooldown--;
-                
-                if (player.bubbleCooldown <= 0) {
-                    player.canPlaceBubble = true;
-                }
-            }
+            // 设置状态文本
+            statusElement.textContent = '请选择行走方向';
             
-            // 检查放置泡泡
-            if ((keys.space || keys.b) && player.canPlaceBubble) {
-                placeBubble();
-                keys.space = false;
-                keys.b = false;
+            // 启用方向按钮，禁用摇骰子按钮
+            clockwiseBtn.disabled = false;
+            counterclockwiseBtn.disabled = false;
+            clockwiseBtn.classList.remove('selected');
+            counterclockwiseBtn.classList.remove('selected');
+            rollBtn.disabled = true;
+        }
+
+        // 创建骰子元素
+        function createDice() {
+            diceContainer.innerHTML = '';
+            
+            for (let i = 0; i < 5; i++) {
+                const dice = document.createElement('div');
+                dice.className = 'dice';
+                dice.id = `dice${i}`;
+                dice.textContent = gameData.diceValues[i] || '?';
+                diceContainer.appendChild(dice);
             }
         }
-        
-        // 更新泡泡
-        function updateBubbles() {
-            for (let i = bubbles.length - 1; i >= 0; i--) {
-                const bubble = bubbles[i];
+
+        // 绘制地图
+        function drawMap() {
+            mapElement.innerHTML = '';
+            
+            const mapNumbers = gameData.mapNumbers;
+            const totalPositions = mapNumbers.length;
+            const centerX = mapElement.offsetWidth / 2;
+            const centerY = mapElement.offsetHeight / 2;
+            const radius = Math.min(centerX, centerY) * 0.8;
+            
+            // 绘制环形地图
+            for (let i = 0; i < totalPositions; i++) {
+                const angle = (i / totalPositions) * 2 * Math.PI;
+                const x = centerX + radius * Math.cos(angle);
+                const y = centerY + radius * Math.sin(angle);
                 
-                // 减少计时器
-                bubble.timer--;
+                // 创建位置点
+                const positionElement = document.createElement('div');
+                positionElement.className = 'map-position';
+                positionElement.style.position = 'absolute';
+                positionElement.style.left = `${x}px`;
+                positionElement.style.top = `${y}px`;
+                positionElement.style.width = '40px';
+                positionElement.style.height = '40px';
+                positionElement.style.backgroundColor = '#3498db';
+                positionElement.style.borderRadius = '50%';
+                positionElement.style.display = 'flex';
+                positionElement.style.justifyContent = 'center';
+                positionElement.style.alignItems = 'center';
+                positionElement.style.color = 'white';
+                positionElement.style.fontWeight = 'bold';
+                positionElement.style.transform = 'translate(-50%, -50%)';
+                positionElement.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.2)';
+                positionElement.textContent = mapNumbers[i];
                 
-                // 泡泡闪烁效果（最后1秒）
-                if (bubble.timer < 60) {
-                    bubble.color = bubble.timer % 10 < 5 ? '#FF5722' : '#00BCD4';
-                }
+                // 添加位置索引标签
+                const indexLabel = document.createElement('div');
+                indexLabel.style.position = 'absolute';
+                indexLabel.style.top = '-20px';
+                indexLabel.style.left = '50%';
+                indexLabel.style.transform = 'translateX(-50%)';
+                indexLabel.style.fontSize = '12px';
+                indexLabel.style.color = '#7f8c8d';
+                indexLabel.textContent = i + 1;
+                positionElement.appendChild(indexLabel);
                 
-                // 检查是否爆炸
-                if (bubble.timer <= 0 && !bubble.exploded) {
-                    explodeBubble(bubble);
-                }
-                
-                // 移除已爆炸的泡泡
-                if (bubble.exploded) {
-                    bubbles.splice(i, 1);
-                }
+                mapElement.appendChild(positionElement);
             }
         }
-        
-        // 更新敌人
-        function updateEnemies() {
-            for (const enemy of enemies) {
-                // 更新方向变化时间
-                enemy.changeDirectionTime--;
+
+        // 更新玩家位置
+        function updatePlayerPosition() {
+            const mapNumbers = gameData.mapNumbers;
+            const totalPositions = mapNumbers.length;
+            const centerX = mapElement.offsetWidth / 2;
+            const centerY = mapElement.offsetHeight / 2;
+            const radius = Math.min(centerX, centerY) * 0.8;
+            
+            // 计算玩家位置角度（稍微偏移一点，让玩家显示在位置点旁边）
+            const angle = (gameData.currentPosition / totalPositions) * 2 * Math.PI;
+            const offsetAngle = angle + 0.2; // 稍微偏移一点角度
+            const x = centerX + (radius + 30) * Math.cos(offsetAngle);
+            const y = centerY + (radius + 30) * Math.sin(offsetAngle);
+            
+            playerElement.style.left = `${x}px`;
+            playerElement.style.top = `${y}px`;
+            
+            // 更新位置显示
+            currentPositionElement.textContent = gameData.currentPosition + 1;
+            finalNumberElement.textContent = mapNumbers[gameData.currentPosition];
+        }
+
+        // 更新UI
+        function updateUI() {
+            // 更新信息面板
+            startNumberElement.textContent = gameData.startDiceValue || '0';
+            stepsElement.textContent = gameData.stepsDiceValue || '0';
+            
+            // 根据游戏状态更新按钮状态
+            if (gameData.gameState === 'selectingDirection') {
+                statusElement.textContent = '请选择行走方向';
+                rollBtn.disabled = true;
+            } else if (gameData.gameState === 'rollingStart') {
+                statusElement.textContent = '摇第一个骰子决定起始位置';
+                rollBtn.disabled = false;
+            } else if (gameData.gameState === 'rollingSteps') {
+                statusElement.textContent = '摇第二个骰子决定行走步数';
+                rollBtn.disabled = false;
+            } else if (gameData.gameState === 'moving') {
+                statusElement.textContent = '正在移动...';
+                rollBtn.disabled = true;
+            } else if (gameData.gameState === 'finished') {
+                statusElement.textContent = `游戏结束！最终得分：${gameData.mapNumbers[gameData.currentPosition]}`;
+                rollBtn.disabled = true;
+            }
+        }
+
+        // 选择方向
+        function selectDirection(direction) {
+            if (gameData.gameState !== 'selectingDirection') return;
+            
+            gameData.direction = direction;
+            gameData.gameState = 'rollingStart';
+            
+            // 更新按钮样式
+            if (direction === 1) {
+                clockwiseBtn.classList.add('selected');
+                counterclockwiseBtn.classList.remove('selected');
+            } else {
+                counterclockwiseBtn.classList.add('selected');
+                clockwiseBtn.classList.remove('selected');
+            }
+            
+            // 禁用方向按钮，启用摇骰子按钮
+            clockwiseBtn.disabled = true;
+            counterclockwiseBtn.disabled = true;
+            rollBtn.disabled = false;
+            
+            updateUI();
+        }
+
+        // 摇骰子
+        function rollDice() {
+            if (gameData.gameState !== 'rollingStart' && gameData.gameState !== 'rollingSteps') return;
+            
+            // 禁用摇骰子按钮
+            rollBtn.disabled = true;
+            
+            // 确定要摇哪个骰子
+            const diceIndex = gameData.currentDiceIndex;
+            const diceElement = document.getElementById(`dice${diceIndex}`);
+            
+            // 添加摇动动画
+            diceElement.classList.add('rolling');
+            
+            // 模拟摇骰子过程
+            let rollCount = 0;
+            const maxRolls = 10;
+            const rollInterval = setInterval(() => {
+                // 随机显示一个数字
+                diceElement.textContent = Math.floor(Math.random() * 6) + 1;
+                rollCount++;
                 
-                // 随机改变方向
-                if (enemy.changeDirectionTime <= 0 || 
-                    enemy.x < 20 || enemy.x > canvas.width - 20 ||
-                    enemy.y < 20 || enemy.y > canvas.height - 20) {
+                if (rollCount >= maxRolls) {
+                    clearInterval(rollInterval);
                     
-                    enemy.direction = Math.random() * Math.PI * 2;
-                    enemy.changeDirectionTime = Math.floor(Math.random() * 60) + 30;
-                }
-                
-                // 计算移动
-                const moveX = Math.cos(enemy.direction) * enemy.speed;
-                const moveY = Math.sin(enemy.direction) * enemy.speed;
-                
-                // 计算新位置
-                let newX = enemy.x + moveX;
-                let newY = enemy.y + moveY;
-                
-                // 边界检查
-                if (newX - enemy.width/2 < 0) {
-                    newX = enemy.width/2;
-                    enemy.direction = Math.PI - enemy.direction;
-                }
-                if (newX + enemy.width/2 > canvas.width) {
-                    newX = canvas.width - enemy.width/2;
-                    enemy.direction = Math.PI - enemy.direction;
-                }
-                if (newY - enemy.height/2 < 0) {
-                    newY = enemy.height/2;
-                    enemy.direction = -enemy.direction;
-                }
-                if (newY + enemy.height/2 > canvas.height) {
-                    newY = canvas.height - enemy.height/2;
-                    enemy.direction = -enemy.direction;
-                }
-                
-                // 障碍物碰撞检查
-                let canMove = true;
-                const enemyRect = {
-                    x: newX - enemy.width/2,
-                    y: newY - enemy.height/2,
-                    width: enemy.width,
-                    height: enemy.height
-                };
-                
-                for (const obstacle of obstacles) {
-                    if (rectCollision(enemyRect, obstacle)) {
-                        canMove = false;
-                        enemy.direction += Math.PI / 2; // 改变方向
-                        break;
-                    }
-                }
-                
-                // 更新敌人位置
-                if (canMove) {
-                    enemy.x = newX;
-                    enemy.y = newY;
-                }
-                
-                // 检查敌人是否碰到玩家
-                if (distance(enemy.x, enemy.y, player.x, player.y) < 30) {
-                    loseLife();
-                }
-            }
-        }
-        
-        // 更新爆炸效果
-        function updateExplosions() {
-            for (let i = explosions.length - 1; i >= 0; i--) {
-                const effect = explosions[i];
-                
-                // 减少计时器
-                if (effect.timer) effect.timer--;
-                
-                // 处理不同类型的爆炸效果
-                if (effect.growing !== undefined) {
-                    // 爆炸效果
-                    if (effect.growing) {
-                        effect.radius += 3;
-                        if (effect.radius >= effect.maxRadius) {
-                            effect.growing = false;
-                        }
-                    } else {
-                        effect.alpha -= 0.03;
-                    }
-                } else if (effect.vy !== undefined) {
-                    // 得分漂浮效果
-                    effect.y += effect.vy;
-                    effect.alpha -= 0.02;
-                } else if (effect.width !== undefined) {
-                    // 闪烁效果
-                    effect.alpha -= 0.02;
-                }
-                
-                // 移除效果
-                if (effect.alpha <= 0 || (effect.timer && effect.timer <= 0)) {
-                    explosions.splice(i, 1);
-                }
-            }
-        }
-        
-        // 绘制游戏
-        function drawGame() {
-            // 绘制背景网格
-            drawGrid();
-            
-            // 绘制障碍物
-            for (const obstacle of obstacles) {
-                ctx.fillStyle = obstacle.color;
-                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-                
-                // 添加纹理
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-                ctx.fillRect(obstacle.x + 5, obstacle.y + 5, obstacle.width - 10, obstacle.height - 10);
-            }
-            
-            // 绘制泡泡
-            for (const bubble of bubbles) {
-                ctx.fillStyle = bubble.color;
-                ctx.beginPath();
-                ctx.arc(bubble.x, bubble.y, bubble.radius, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // 添加高光
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-                ctx.beginPath();
-                ctx.arc(bubble.x - bubble.radius/3, bubble.y - bubble.radius/3, bubble.radius/3, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            
-            // 绘制爆炸效果
-            for (const effect of explosions) {
-                ctx.save();
-                ctx.globalAlpha = effect.alpha;
-                
-                if (effect.radius !== undefined) {
-                    // 绘制爆炸
-                    ctx.fillStyle = effect.color;
-                    ctx.beginPath();
-                    ctx.arc(effect.x, effect.y, effect.radius, 0, Math.PI * 2);
-                    ctx.fill();
+                    // 确定最终点数
+                    const finalValue = Math.floor(Math.random() * 6) + 1;
+                    gameData.diceValues[diceIndex] = finalValue;
+                    diceElement.textContent = finalValue;
                     
-                    // 爆炸内圈
-                    ctx.fillStyle = '#FFEB3B';
-                    ctx.beginPath();
-                    ctx.arc(effect.x, effect.y, effect.radius * 0.7, 0, Math.PI * 2);
-                    ctx.fill();
-                } else if (effect.text !== undefined) {
-                    // 绘制文本效果
-                    ctx.fillStyle = effect.color;
-                    ctx.font = `${effect.fontSize || 24}px Arial`;
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(effect.text, effect.x, effect.y);
-                } else if (effect.width !== undefined) {
-                    // 绘制闪烁效果
-                    ctx.fillStyle = effect.color;
-                    ctx.fillRect(effect.x - effect.width/2, effect.y - effect.height/2, 
-                                effect.width, effect.height);
+                    // 移除摇动动画
+                    diceElement.classList.remove('rolling');
+                    
+                    // 处理摇骰子结果
+                    processDiceResult(finalValue, diceIndex);
+                }
+            }, 100);
+        }
+
+        // 处理骰子结果
+        function processDiceResult(value, diceIndex) {
+            if (gameData.gameState === 'rollingStart') {
+                // 第一个骰子：决定起始位置
+                gameData.startDiceValue = value;
+                
+                // 计算起始位置（骰子点数对地图长度取模）
+                const mapLength = gameData.mapNumbers.length;
+                gameData.currentPosition = (value - 1) % mapLength;
+                
+                // 更新玩家位置
+                updatePlayerPosition();
+                
+                // 进入下一步：摇第二个骰子
+                gameData.gameState = 'rollingSteps';
+                gameData.currentDiceIndex = 1;
+                
+                // 更新UI
+                updateUI();
+                
+                // 启用摇骰子按钮
+                rollBtn.disabled = false;
+                
+            } else if (gameData.gameState === 'rollingSteps') {
+                // 第二个骰子：决定行走步数
+                gameData.stepsDiceValue = value;
+                
+                // 进入移动状态
+                gameData.gameState = 'moving';
+                updateUI();
+                
+                // 开始移动
+                startMovement(value);
+            }
+        }
+
+        // 开始移动
+        function startMovement(steps) {
+            const mapLength = gameData.mapNumbers.length;
+            let stepsRemaining = steps;
+            const moveInterval = setInterval(() => {
+                if (stepsRemaining <= 0) {
+                    clearInterval(moveInterval);
+                    
+                    // 移动完成，游戏结束
+                    gameData.gameState = 'finished';
+                    updateUI();
+                    return;
                 }
                 
-                ctx.restore();
-            }
-            
-            // 绘制敌人
-            for (const enemy of enemies) {
-                ctx.fillStyle = enemy.color;
-                ctx.beginPath();
-                ctx.arc(enemy.x, enemy.y, enemy.width/2, 0, Math.PI * 2);
-                ctx.fill();
+                // 根据方向移动一步
+                if (gameData.direction === 1) {
+                    // 顺时针
+                    gameData.currentPosition = (gameData.currentPosition + 1) % mapLength;
+                } else {
+                    // 逆时针
+                    gameData.currentPosition = (gameData.currentPosition - 1 + mapLength) % mapLength;
+                }
                 
-                // 添加眼睛
-                ctx.fillStyle = 'white';
-                ctx.beginPath();
-                ctx.arc(enemy.x - 5, enemy.y - 3, 3, 0, Math.PI * 2);
-                ctx.arc(enemy.x + 5, enemy.y - 3, 3, 0, Math.PI * 2);
-                ctx.fill();
+                // 更新玩家位置
+                updatePlayerPosition();
                 
-                // 添加瞳孔
-                ctx.fillStyle = 'black';
-                ctx.beginPath();
-                ctx.arc(enemy.x - 5, enemy.y - 3, 1.5, 0, Math.PI * 2);
-                ctx.arc(enemy.x + 5, enemy.y - 3, 1.5, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // 添加嘴巴
-                ctx.strokeStyle = 'black';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.arc(enemy.x, enemy.y + 5, 5, 0.2, Math.PI - 0.2);
-                ctx.stroke();
-            }
-            
-            // 绘制玩家
-            drawPlayer();
-            
-            // 绘制冷却指示器
-            if (!player.canPlaceBubble) {
-                const cooldownPercent = player.bubbleCooldown / 30;
-                const radius = 20;
-                const x = canvas.width - 40;
-                const y = 40;
-                
-                // 背景圆
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-                ctx.beginPath();
-                ctx.arc(x, y, radius, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // 冷却进度
-                ctx.fillStyle = '#00BCD4';
-                ctx.beginPath();
-                ctx.moveTo(x, y);
-                ctx.arc(x, y, radius - 2, -Math.PI/2, -Math.PI/2 + (Math.PI * 2 * (1 - cooldownPercent)));
-                ctx.closePath();
-                ctx.fill();
-                
-                // 泡泡图标
-                ctx.fillStyle = 'white';
-                ctx.font = '16px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('💣', x, y);
-            }
+                stepsRemaining--;
+            }, 500);
         }
+
+        // 事件监听器
+        clockwiseBtn.addEventListener('click', () => selectDirection(1));
+        counterclockwiseBtn.addEventListener('click', () => selectDirection(-1));
+        rollBtn.addEventListener('click', rollDice);
+        resetBtn.addEventListener('click', initGame);
+
+        // 触摸事件支持
+        clockwiseBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            selectDirection(1);
+        });
         
-        // 绘制背景网格
-        function drawGrid() {
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-            ctx.lineWidth = 1;
-            
-            // 垂直线
-            for (let x = 0; x < canvas.width; x += 40) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, canvas.height);
-                ctx.stroke();
+        counterclockwiseBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            selectDirection(-1);
+        });
+        
+        rollBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!rollBtn.disabled) rollDice();
+        });
+        
+        resetBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            initGame();
+        });
+
+        // 键盘控制支持
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '1' || e.key === 'c' || e.key === 'C') {
+                // 选择顺时针
+                selectDirection(1);
+            } else if (e.key === '2' || e.key === 'v' || e.key === 'V') {
+                // 选择逆时针
+                selectDirection(-1);
+            } else if (e.key === ' ' || e.key === 'r' || e.key === 'R') {
+                // 摇骰子
+                if (!rollBtn.disabled) rollDice();
+            } else if (e.key === 'Escape' || e.key === 'n' || e.key === 'N') {
+                // 重新开始
+                initGame();
             }
-            
-            // 水平线
-            for (let y = 0; y < canvas.height; y += 40) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(canvas.width, y);
-                ctx.stroke();
-            }
-        }
-        
-        // 绘制玩家
-        function drawPlayer() {
-            // 绘制玩家身体
-            ctx.fillStyle = player.color;
-            ctx.fillRect(player.x - player.width/2, player.y - player.height/2, 
-                        player.width, player.height);
-            
-            // 添加圆角
-            ctx.fillStyle = '#388E3C';
-            ctx.beginPath();
-            ctx.roundRect(player.x - player.width/2 + 3, player.y - player.height/2 + 3, 
-                         player.width - 6, player.height - 6, 5);
-            ctx.fill();
-            
-            // 绘制方向指示器
-            ctx.fillStyle = '#FFEB3B';
-            if (player.direction === 'up') {
-                ctx.fillRect(player.x - 5, player.y - player.height/2 - 10, 10, 10);
-            } else if (player.direction === 'down') {
-                ctx.fillRect(player.x - 5, player.y + player.height/2, 10, 10);
-            } else if (player.direction === 'left') {
-                ctx.fillRect(player.x - player.width/2 - 10, player.y - 5, 10, 10);
-            } else if (player.direction === 'right') {
-                ctx.fillRect(player.x + player.width/2, player.y - 5, 10, 10);
-            }
-            
-            // 绘制玩家眼睛
-            ctx.fillStyle = 'white';
-            ctx.beginPath();
-            ctx.arc(player.x - 6, player.y - 5, 4, 0, Math.PI * 2);
-            ctx.arc(player.x + 6, player.y - 5, 4, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // 绘制玩家瞳孔
-            ctx.fillStyle = 'black';
-            ctx.beginPath();
-            ctx.arc(player.x - 6, player.y - 5, 2, 0, Math.PI * 2);
-            ctx.arc(player.x + 6, player.y - 5, 2, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // 绘制玩家嘴巴
-            ctx.fillStyle = '#E91E63';
-            ctx.beginPath();
-            ctx.arc(player.x, player.y + 5, 6, 0.2, Math.PI - 0.2);
-            ctx.fill();
-        }
-        
-        // 工具函数：计算两点间距离
-        function distance(x1, y1, x2, y2) {
-            return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-        }
-        
-        // 工具函数：矩形碰撞检测
-        function rectCollision(rect1, rect2) {
-            return rect1.x < rect2.x +
+        });
+
+        // 窗口大小变化时重新绘制地图
+        window.addEventListener('resize', () => {
+            drawMap();
+            updatePlayerPosition();
+        });
+
+        // 初始化游戏
+        window.addEventListener('load', () => {
+            initGame();
+        });
+    </script>
+
   <!-- YXJ-PLATFORM-UI-START -->
   
 <!-- 游戏家顶部导航 - 返回按钮 -->
@@ -2200,11 +1745,11 @@ body {
     <div class="tiktok-author-details" style="display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;min-height:32px!important;gap:2px!important;">
       <div class="tiktok-author-name-row" style="display:flex!important;flex-direction:row!important;align-items:center!important;gap:10px!important;">
         <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">游戏家用户</span>
-        <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="3cf96fcf-9deb-49d0-82c4-17fdc994d75f" onclick="toggleFollow()">
+        <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="f98d834a-717a-4b16-8150-be0a92c9953d" onclick="toggleFollow()">
           <span class="follow-icon">+</span> 关注
         </button>
       </div>
-      <span class="tiktok-publish-time" style="display:block!important;margin:0!important;padding:0!important;">发布于 2026年2月5日</span>
+      <span class="tiktok-publish-time" style="display:block!important;margin:0!important;padding:0!important;">发布于 2026年2月6日</span>
     </div>
   </div>
 </div>
@@ -2330,9 +1875,9 @@ body {
 
 <script>
 // 获取游戏ID和作者信息
-const gameId = 'd26d097c-c506-4e0d-bf6d-ca42cc518a90';
-const gameTitle = '开心泡泡堂';
-const authorToken = '3cf96fcf-9deb-49d0-82c4-17fdc994d75f';
+const gameId = 'ae2e86b2-30da-4506-91c8-cdb3c87c07d8';
+const gameTitle = '大富翁骰子游戏';
+const authorToken = 'f98d834a-717a-4b16-8150-be0a92c9953d';
 const authorName = '游戏家用户';
 const API_BASE = '/api/games';
 

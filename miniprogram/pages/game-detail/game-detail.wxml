@@ -86,16 +86,10 @@
       </button>
     </view>
 
-    <!-- 作者操作按钮 (仅作者可见) -->
-    <view class="owner-actions" wx:if="{{isOwner}}">
-      <view class="owner-action-btn repair-btn {{repairing ? 'loading' : ''}}" bindtap="handleRepair">
-        <text class="owner-action-icon">🔧</text>
-        <text class="owner-action-text">{{repairing ? '修复中...' : 'AI修复'}}</text>
-      </view>
-      <view class="owner-action-btn edit-btn" bindtap="handleEdit">
-        <text class="owner-action-icon">✏️</text>
-        <text class="owner-action-text">编辑</text>
-      </view>
+    <!-- 作者提示信息 (仅作者可见) -->
+    <view class="tip-card" wx:if="{{isOwner}}">
+      <text class="tip-icon">✏️</text>
+      <text class="tip-text">AI修复和编辑功能请前往网页版使用</text>
     </view>
 
     <!-- 评论区：评论功能禁用时完全隐藏 -->

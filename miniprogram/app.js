@@ -60,11 +60,17 @@ App({
         this.globalData.miniprogramCommentDisabled = result.miniprogramCommentDisabled === true;
         this.globalData.miniprogramLLMDisabled = result.miniprogramLLMDisabled === true;
         
+        // 订阅消息模板ID
+        if (result.wxSubscribeTmplId) {
+          this.globalData.config.wxSubscribeTmplId = result.wxSubscribeTmplId;
+        }
+        
         this.globalData.siteConfigLoaded = true;
         console.log('站点配置加载成功:', this.globalData.config.miniprogramName);
         console.log('小程序功能开关:', { 
           commentDisabled: this.globalData.miniprogramCommentDisabled,
-          llmDisabled: this.globalData.miniprogramLLMDisabled 
+          llmDisabled: this.globalData.miniprogramLLMDisabled,
+          wxSubscribeTmplId: this.globalData.config.wxSubscribeTmplId ? '已配置' : '未配置'
         });
       }
     } catch (err) {

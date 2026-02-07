@@ -18,6 +18,13 @@ Page({
       followers: 0
     },
     
+    // 订阅通知
+    subscribeCount: 0,
+    subscribing: false,
+    
+    // 创作中的任务
+    creatingTasks: [],
+    
     // Tab切换
     currentTab: 'games', // games / likes / favorites
     tabs: [
@@ -74,6 +81,86 @@ Page({
     if (app.globalData.isLoggedIn) {
       this.loadUserData();
       this.loadListData();
+      
+      // 启动草稿状态轮询（检测创作中游戏是否完成）
+      this.startDraftPolling();
+    }
+  },
+
+  onHide() {
+    // 停止轮询
+    this.stopDraftPolling();
+  },
+
+  onUnload() {
+    // 停止轮询
+    this.stopDraftPolling();
+  },
+
+  // 启动草稿状态轮询
+  startDraftPolling() {
+    // 先停止旧的轮询
+    this.stopDraftPolling();
+    
+    // 每5秒检查一次是否有草稿状态变化
+    this._draftPollTimer = setInterval(() => {
+      this.checkDraftStatus();
+    }, 5000);
+  },
+
+  // 停止草稿状态轮询
+  stopDraftPolling() {
+    if (this._draftPollTimer) {
+      clearInterval(this._draftPollTimer);
+      this._draftPollTimer = null;
+    }
+  },
+
+  // 检查草稿状态是否有变化
+  async checkDraftStatus() {
+    const listData = this.data.listData || [];
+    const hasDraft = listData.some(item => item.status === 'draft');
+    
+    // 如果没有草稿，不需要轮询
+    if (!hasDraft) {
+      this.stopDraftPolling();
+      return;
+    }
+    
+    try {
+      // 重新加载列表数据
+      const result = await app.request('/api/my-games', {
+        data: { page: 1, limit: 20 }
+      });
+      
+      if (result.success) {
+        const newData = result.data || result.games || [];
+        const oldDraftIds = listData.filter(item => item.status === 'draft').map(item => item.id);
+        const newDraftIds = newData.filter(item => item.status === 'draft').map(item => item.id);
+        
+        // 检查是否有草稿状态变化（草稿变成已发布）
+        const hasChange = oldDraftIds.some(id => !newDraftIds.includes(id));
+        
+        if (hasChange) {
+          console.log('[草稿轮询] 检测到状态变化，刷新列表');
+          this.setData({
+            listData: newData,
+            hasMore: newData.length >= 20
+          });
+          
+          // 刷新用户数据（作品数量可能变了）
+          this.loadUserData();
+          
+          // 显示提示
+          wx.showToast({
+            title: '游戏创作完成！',
+            icon: 'success',
+            duration: 2000
+          });
+        }
+      }
+    } catch (err) {
+      console.error('[草稿轮询] 检查失败:', err);
     }
   },
 
@@ -96,7 +183,8 @@ Page({
       // 并行请求
       const requests = [
         app.request('/api/credits'),
-        app.request('/api/account')
+        app.request('/api/account'),
+        app.request('/api/user/subscribe-count')
       ];
       
       // 如果有token，请求关注统计
@@ -104,7 +192,7 @@ Page({
         requests.push(app.request(`/api/users/${myToken}/follow-stats`));
       }
 
-      const [creditsResult, accountResult, statsResult] = await Promise.all(requests);
+      const [creditsResult, accountResult, subscribeResult, statsResult] = await Promise.all(requests);
 
       console.log('我的页面数据:', { creditsResult, accountResult, statsResult });
 
@@ -126,6 +214,10 @@ Page({
           app.globalData.userInfo = account;
           wx.setStorageSync('userInfo', account);
         }
+      }
+
+      if (subscribeResult && subscribeResult.success !== false) {
+        updates.subscribeCount = subscribeResult.subscribeCount || 0;
       }
 
       if (statsResult && statsResult.success !== false) {
@@ -181,6 +273,11 @@ Page({
           break;
       }
 
+      // 如果是"我的作品"tab且第一页，同时加载创作中的任务
+      if (currentTab === 'games' && !isLoadMore) {
+        this.loadCreatingTasks();
+      }
+
       const result = await app.request(url, {
         data: { page, limit: pageSize }
       });
@@ -199,6 +296,21 @@ Page({
       console.error('加载列表失败:', err);
     } finally {
       this.setData({ loading: false });
+    }
+  },
+
+  // 加载创作中的任务
+  async loadCreatingTasks() {
+    try {
+      const result = await app.request('/api/user/creating-tasks');
+      if (result && result.success) {
+        this.setData({
+          creatingTasks: result.tasks || []
+        });
+        console.log('[创作中任务] 加载到', result.tasks?.length || 0, '个任务');
+      }
+    } catch (err) {
+      console.error('[创作中任务] 加载失败:', err);
     }
   },
 
@@ -406,6 +518,101 @@ Page({
       showCancel: false,
       confirmText: '知道了'
     });
+  },
+
+  // 处理草稿游戏点击
+  handleDraftTap(e) {
+    const game = e.currentTarget.dataset.game;
+    if (!game) return;
+    
+    wx.showModal({
+      title: '🎮 游戏创作中',
+      content: `"${game.title || '新游戏'}" 正在由AI创作中...\n\n您可以：\n• 点击🔔订阅完成通知\n• 稍后刷新页面查看`,
+      confirmText: '订阅通知',
+      cancelText: '知道了',
+      success: (res) => {
+        if (res.confirm) {
+          // 触发草稿订阅
+          this.handleDraftSubscribe({ currentTarget: { dataset: { game } } });
+        }
+      }
+    });
+  },
+
+  // 处理草稿游戏的订阅（找到对应的创作中任务并订阅）
+  async handleDraftSubscribe(e) {
+    const game = e.currentTarget.dataset.game;
+    if (!game) {
+      app.showToast('游戏信息无效');
+      return;
+    }
+    
+    // 先刷新创作中任务列表，确保数据最新
+    await this.loadCreatingTasks();
+    
+    // 在创作中任务列表中查找对应的任务
+    const { creatingTasks } = this.data;
+    let matchedTask = null;
+    
+    // 匹配策略：
+    // 1. 通过 prompt 匹配（草稿游戏的 prompt 和创作任务的 prompt 应该一致）
+    // 2. 通过标题匹配（草稿游戏的 title 通常是 prompt 的前50字符）
+    if (game.prompt) {
+      matchedTask = creatingTasks.find(t => t.prompt === game.prompt);
+    }
+    if (!matchedTask && game.title) {
+      matchedTask = creatingTasks.find(t => 
+        t.prompt && (t.prompt === game.title || t.prompt.startsWith(game.title))
+      );
+    }
+    // 3. 通过 gameId 匹配（编辑/修复任务有 gameId）
+    if (!matchedTask && game.id) {
+      matchedTask = creatingTasks.find(t => t.gameId === game.id);
+    }
+    
+    if (matchedTask) {
+      // 找到对应任务，检查是否已订阅
+      if (matchedTask.subscribed) {
+        app.showToast('已订阅此任务');
+        return;
+      }
+      console.log('[草稿订阅] 找到匹配任务:', matchedTask.taskId);
+      this.handleTaskSubscribe({ currentTarget: { dataset: { task: matchedTask } } });
+    } else {
+      // 没有找到对应任务（可能任务已完成或内存已清理）
+      console.log('[草稿订阅] 未找到匹配任务，creatingTasks:', creatingTasks.length, '游戏:', game.title);
+      
+      // 可能游戏已完成或任务过期，给用户选择
+      wx.showModal({
+        title: '创作任务已结束',
+        content: '该游戏的创作任务可能已完成或已过期。\n\n建议刷新页面查看最新状态，或删除此草稿重新创作。',
+        confirmText: '刷新页面',
+        cancelText: '删除草稿',
+        success: async (res) => {
+          if (res.confirm) {
+            // 刷新页面
+            this.loadUserData();
+            this.loadListData();
+          } else if (res.cancel && game.id) {
+            // 用户选择删除草稿
+            try {
+              const deleteResult = await app.request(`/api/games/${game.id}`, {
+                method: 'DELETE'
+              });
+              if (deleteResult && deleteResult.success) {
+                app.showToast('草稿已删除', 'success');
+                this.loadListData();
+              } else {
+                app.showToast('删除失败');
+              }
+            } catch (err) {
+              console.error('删除草稿失败:', err);
+              app.showToast('删除失败');
+            }
+          }
+        }
+      });
+    }
   },
 
   // 去网页创作
@@ -633,6 +840,117 @@ Page({
       wx.hideLoading();
       console.error('生成激活链接失败:', err);
       app.showToast('生成失败，请重试');
+    }
+  },
+
+  // 处理任务订阅通知（订阅特定的创作中任务）
+  async handleTaskSubscribe(e) {
+    const task = e.currentTarget.dataset.task;
+    if (!task || !task.taskId) {
+      app.showToast('任务信息无效');
+      return;
+    }
+    
+    // 检查是否已订阅
+    if (task.subscribed) {
+      app.showToast('已订阅此任务');
+      return;
+    }
+    
+    if (this.data.subscribing) return;
+    
+    this.setData({ subscribing: true });
+    
+    try {
+      // 获取订阅消息模板ID（从配置中读取）
+      const tmplId = app.globalData.config?.wxSubscribeTmplId;
+      
+      if (!tmplId) {
+        app.showToast('订阅功能暂未配置');
+        console.error('[订阅] 未配置订阅消息模板ID');
+        return;
+      }
+      
+      // 调用微信订阅消息API
+      const subscribeResult = await new Promise((resolve, reject) => {
+        wx.requestSubscribeMessage({
+          tmplIds: [tmplId],
+          success: resolve,
+          fail: reject
+        });
+      });
+      
+      console.log('[订阅] 订阅结果:', subscribeResult);
+      
+      // 检查用户是否同意订阅
+      if (subscribeResult[tmplId] === 'accept') {
+        // 调用后端接口订阅特定任务
+        const result = await app.request(`/api/task/${task.taskId}/subscribe`, {
+          method: 'POST'
+        });
+        
+        if (result && result.success) {
+          // 更新任务的订阅状态
+          const tasks = this.data.creatingTasks.map(t => {
+            if (t.taskId === task.taskId) {
+              return { ...t, subscribed: true };
+            }
+            return t;
+          });
+          this.setData({ creatingTasks: tasks });
+          
+          // 显示订阅成功提示（含积分奖励）
+          const reward = result.creditsReward || 0;
+          if (reward > 0) {
+            app.showToast(`订阅成功！+${reward}积分`, 'success');
+            // 刷新积分显示
+            this.loadUserData();
+          } else {
+            app.showToast('订阅成功', 'success');
+          }
+        } else if (result && result.alreadySubscribed) {
+          app.showToast('已订阅此任务');
+          // 同步状态
+          const tasks = this.data.creatingTasks.map(t => {
+            if (t.taskId === task.taskId) {
+              return { ...t, subscribed: true };
+            }
+            return t;
+          });
+          this.setData({ creatingTasks: tasks });
+        } else {
+          app.showToast(result?.error || '订阅失败');
+        }
+      } else if (subscribeResult[tmplId] === 'reject') {
+        app.showToast('您拒绝了订阅');
+      } else {
+        // ban 或其他状态
+        console.log('[订阅] 用户选择了其他:', subscribeResult[tmplId]);
+      }
+      
+    } catch (err) {
+      console.error('[订阅] 订阅失败:', err);
+      
+      // 处理用户取消的情况
+      if (err.errCode === 10001) {
+        app.showToast('请在设置中开启订阅消息权限');
+      } else if (err.errCode === 20004) {
+        app.showToast('请先登录微信');
+      } else {
+        app.showToast('订阅失败，请重试');
+      }
+    } finally {
+      this.setData({ subscribing: false });
+    }
+  },
+
+  // 兼容旧的通用订阅（仍可用于草稿游戏，但引导去任务列表订阅）
+  handleSubscribe() {
+    // 如果有创作中的任务，引导用户去任务上订阅
+    if (this.data.creatingTasks && this.data.creatingTasks.length > 0) {
+      app.showToast('请在上方创作中的任务上点击🔔订阅');
+    } else {
+      app.showToast('暂无创作中的任务');
     }
   }
 });

@@ -767,12 +767,16 @@ async function recoverAccount(accountId, password = null) {
       // 保存恢复的 token
       saveUserToken(data.userToken);
       
-      // 更新状态
+      // 清除用户主动退出标记
+      localStorage.removeItem('aigame-logged-out');
+      
+      // 更新状态 - 注意要设置 loggedIn = true
       state.account = {
         accountId: data.account.accountId,
         nickname: data.account.nickname || '',
         hasPassword: data.account.hasPassword,
-        loaded: true
+        loaded: true,
+        loggedIn: true  // 关键：设置登录状态为true
       };
 
       // 如果有警告（如未设置密码），显示提示
@@ -782,14 +786,14 @@ async function recoverAccount(accountId, password = null) {
         showToast('账号恢复成功！', 'success');
       }
 
-      // 重新加载数据
+      // 重新加载数据（不调用 loadGames 避免可能的页面跳转）
       await initCredits();
-      await loadGames();
-      // 重新加载关注统计和我的页面数据
+      // 重新加载关注统计
       loadUserFollowStats();
-      loadProfilePageData();
       // 刷新游客模式信息
       loadTrialInfo();
+      
+      // 注意：loadProfilePageData 由 doRecover 在关闭弹窗后调用
 
       return true;
     } else {
@@ -1933,8 +1937,15 @@ async function doRecover() {
   const success = await recoverAccount(accountId);
   if (success) {
     closeLoginDialog();
-    // 刷新页面显示
-    updateProfileUI();
+    // 刷新页面显示 - 更新所有需要刷新的UI
+    updateAccountIdDisplay();
+    updateCreditsDisplay();
+    // 如果在个人主页，刷新个人主页数据
+    if (document.getElementById('profile-page')?.classList.contains('active')) {
+      loadProfilePageData();
+    }
+    // 移除 modal-open 类
+    document.body.classList.remove('modal-open');
   }
 }
 
@@ -3148,6 +3159,8 @@ function switchBottomNav(navName) {
     updateCreateModelDisplay();
     // 初始化Tips滚动
     initCreateTips();
+    // 加载并显示订阅次数
+    loadAndShowSubscribeCount();
     if (settingsBtn) settingsBtn.classList.remove('visible');
   } else if (navName === 'profile') {
     document.getElementById('profile-page').classList.add('active');
@@ -3234,6 +3247,117 @@ function initCreateTips() {
     }, 300);
   }, 5000);
 }
+
+// ==================== 订阅通知管理（创作页面） ====================
+
+// 加载并显示订阅次数
+async function loadAndShowSubscribeCount() {
+  const subscribeSection = document.getElementById('create-subscribe-section');
+  if (!subscribeSection) return;
+  
+  const userToken = getUserToken();
+  if (!userToken) {
+    // 未登录时隐藏订阅区域
+    subscribeSection.style.display = 'none';
+    return;
+  }
+  
+  try {
+    const response = await fetch('/api/user/subscribe-count', {
+      headers: { 'X-User-Token': userToken }
+    });
+    const data = await response.json();
+    
+    if (data.success) {
+      const count = data.subscribeCount || 0;
+      const countEl = document.getElementById('create-subscribe-count');
+      const statusEl = document.getElementById('create-subscribe-status');
+      
+      if (countEl) countEl.textContent = count;
+      
+      if (statusEl) {
+        if (count > 0) {
+          statusEl.textContent = '游戏完成后将收到微信通知';
+          statusEl.className = 'subscribe-status enabled';
+        } else {
+          statusEl.textContent = '订阅通知次数已用完';
+          statusEl.className = 'subscribe-status disabled';
+        }
+      }
+      
+      subscribeSection.style.display = 'flex';
+    } else {
+      subscribeSection.style.display = 'none';
+    }
+  } catch (error) {
+    console.error('加载订阅次数失败:', error);
+    subscribeSection.style.display = 'none';
+  }
+}
+
+// 显示小程序引导弹窗获取更多订阅次数
+function showSubscribeGuide() {
+  const mpName = state.siteConfig?.miniprogram?.name || '游戏家';
+  showMiniprogramGuide('订阅更多通知', '/pages/mine/mine');
+}
+
+// 网站端订阅通知（在生成弹窗中使用）
+// 网站端订阅通知 - 统一引导去小程序
+// 说明：微信订阅消息API只能在小程序环境中调用，网站端无法直接订阅
+// 用户需要先在小程序中订阅，积累订阅次数后，游戏创建完成时才会发送通知
+function subscribeNotifyFromWeb() {
+  // 直接引导去小程序订阅
+  showMiniprogramGuide('订阅通知', '/pages/mine/mine');
+}
+
+// 更新生成弹窗中的订阅状态
+async function updateGeneratingSubscribeStatus() {
+  const section = document.getElementById('generating-subscribe-section');
+  const countEl = document.getElementById('generating-subscribe-count');
+  const btn = document.getElementById('btn-subscribe-notify');
+  
+  if (!section) return;
+  
+  const userToken = getUserToken();
+  if (!userToken) {
+    section.style.display = 'none';
+    return;
+  }
+  
+  try {
+    const response = await fetch('/api/user/subscribe-count', {
+      headers: { 'X-User-Token': userToken }
+    });
+    const data = await response.json();
+    
+    if (data.success) {
+      const count = data.subscribeCount || 0;
+      const maxCount = 10;
+      if (countEl) countEl.textContent = count;
+      
+      // 重置按钮状态（移除积分奖励提示）
+      if (btn) {
+        btn.classList.remove('subscribed');
+        btn.innerHTML = '<span class="subscribe-icon">🔔</span><span class="subscribe-text">订阅完成通知</span>';
+        btn.disabled = count >= maxCount;
+      }
+      
+      // 重置订阅状态
+      state.currentTaskSubscribed = false;
+      
+      section.style.display = 'flex';
+    } else {
+      section.style.display = 'none';
+    }
+  } catch (error) {
+    console.error('获取订阅状态失败:', error);
+    section.style.display = 'none';
+  }
+}
+
+// 将订阅函数暴露到全局，供HTML onclick调用
+window.subscribeNotifyFromWeb = subscribeNotifyFromWeb;
+window.updateGeneratingSubscribeStatus = updateGeneratingSubscribeStatus;
 
 // 获取模型显示名称
 function getModelDisplayName(modelId) {
@@ -3492,9 +3616,8 @@ async function loadProfilePageData() {
     accountIdEl.textContent = `ID: ${accountId}`;
   }
 
-  // 加载积分
-  const creditsEl = document.getElementById('profile-page-credits');
-  if (creditsEl) creditsEl.textContent = formatCredits(state.credits || 0);
+  // 加载积分（从服务器获取最新积分，而不是使用 localStorage 的旧值）
+  await loadCredits();
 
   // 加载游戏统计
   try {
@@ -3901,6 +4024,7 @@ function renderHorizontalCard(game, enableLongPress = true) {
         <div class="card-draft-status">
           <span class="draft-dots">正在生成<span class="dots"></span></span>
         </div>
+        <button class="card-subscribe-btn" onclick="event.stopPropagation(); showMiniprogramGuide('订阅通知', '/pages/mine/mine');" title="订阅完成通知">🔔</button>
       ` : `
         <div class="card-stats">
           <span class="card-stat">
@@ -3955,8 +4079,16 @@ function showDraftInProgressModal(draftId, title) {
         <div class="draft-progress-loader" style="margin: 20px auto;">
           <div class="progress-spinner"></div>
         </div>
-        <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 16px;">
-          💡 生成完成后会自动通知您，也可稍后刷新页面查看
+        <div class="draft-subscribe-section" style="margin: 16px 0; padding: 16px; background: linear-gradient(135deg, rgba(255,193,7,0.15), rgba(255,152,0,0.1)); border-radius: 12px; border: 1px solid rgba(255,193,7,0.3);">
+          <p style="color: #ffc107; font-size: 0.9rem; margin-bottom: 10px; font-weight: 500;">
+            🔔 订阅完成通知
+          </p>
+          <button class="btn" style="background: linear-gradient(135deg, #ffc107, #ff9800); color: #1a1a2e; border: none; padding: 10px 24px; border-radius: 20px; font-weight: 600; font-size: 0.9rem;" onclick="showMiniprogramGuide('订阅通知', '/pages/mine/mine'); closeDraftProgressModal();">
+            去小程序订阅
+          </button>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 8px;">
+          💡 也可稍后刷新页面查看生成结果
         </p>
       </div>
       <div class="modal-footer" style="justify-content: center; gap: 12px;">
@@ -5771,6 +5903,9 @@ function showGeneratingOverlay() {
     overlay.classList.add('active');
   }
   document.body.classList.add('overlay-open');
+  
+  // 更新订阅通知区域状态
+  updateGeneratingSubscribeStatus();
 }
 
 // 隐藏生成遮罩
@@ -11987,7 +12122,7 @@ function updateEditorSendButton(isProcessing) {
   }
 }
 
-// 发送编辑消息
+// 发送编辑消息（使用异步API + 轮询机制，解决Cloudflare超时问题）
 async function sendEditMessage() {
   const input = document.getElementById('editor-input');
   const message = input?.value?.trim();
@@ -12048,90 +12183,182 @@ async function sendEditMessage() {
   const loadingEl = document.getElementById('editor-preview-loading');
   if (loadingEl) loadingEl.style.display = 'flex';
   
-  // 添加 AI 思考中提示
-  const thinkingMsgId = appendEditorMessage('assistant', '🤔 AI 正在分析并修改游戏代码...');
+  // 添加 AI 思考中提示（会实时更新进度）
+  const thinkingMsgId = appendEditorMessage('assistant', '🤔 任务已创建，等待处理...');
   
-  // 标记正在处理中，并创建 AbortController
+  // 标记正在处理中
   editSession.isProcessing = true;
-  editSession.abortController = new AbortController();
+  editSession.editTaskId = null;  // 存储任务ID
+  editSession.editPollTimer = null;  // 轮询定时器
   
   // 更新发送按钮为取消按钮
   updateEditorSendButton(true);
   
   try {
-    const response = await fetch(`/api/games/${editSession.gameId}/edit`, {
+    // 步骤1：提交异步编辑任务
+    const submitResponse = await fetch(`/api/games/${editSession.gameId}/edit-async`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-User-Token': getUserToken()
       },
       body: JSON.stringify({
-        action: 'message',
         sessionId: editSession.sessionId,
         message: message,
         llmConfig: llmConfig
-      }),
-      signal: editSession.abortController.signal
+      })
     });
     
-    const data = await response.json();
+    const submitData = await submitResponse.json();
     
-    // 移除思考中提示
-    removeEditorMessage(thinkingMsgId);
-    
-    if (data.success) {
-      // 更新当前代码
-      editSession.currentCode = data.code;
-      editSession.hasUnsavedChanges = true;  // 标记有未保存的修改
-      
-      // 更新预览
-      updateEditorPreview(data.code);
-      
-      // 显示 AI 回复
-      let replyContent = `✅ ${data.message || '修改完成！'}`;
-      if (data.changes && data.changes.length > 0) {
-        replyContent += '\n\n修改内容：\n' + data.changes.map(c => `• ${c}`).join('\n');
-      }
-      appendEditorMessage('assistant', replyContent);
-      
-      // 编辑成功后，刷新积分并更新提示
-      if (creditCostThisTime > 0) {
-        state.credits = Math.max(0, state.credits - creditCostThisTime);
-        updateCreditsDisplay();
-        updateEditorCreditNotice();
-        showCreditsChangeToast(-creditCostThisTime, '编辑游戏');
-      }
-      
-      // 检查是否启用了自动保存
-      if (editorSettings.autoSave) {
-        autoSaveEditorGame();
-      }
-      
-    } else {
-      appendEditorMessage('assistant', `❌ ${data.error || '修改失败，请重试'}`);
+    if (!submitData.success || !submitData.taskId) {
+      removeEditorMessage(thinkingMsgId);
+      appendEditorMessage('assistant', `❌ ${submitData.error || '提交编辑任务失败'}`);
+      return;
     }
+    
+    const taskId = submitData.taskId;
+    editSession.editTaskId = taskId;
+    console.log(`[编辑] 异步任务已创建: ${taskId}`);
+    
+    // 步骤2：轮询任务状态
+    const pollInterval = 2000; // 每2秒轮询一次
+    const maxPollTime = 10 * 60 * 1000; // 最长等待10分钟
+    const startTime = Date.now();
+    
+    const pollStatus = async () => {
+      // 检查是否超时
+      if (Date.now() - startTime > maxPollTime) {
+        removeEditorMessage(thinkingMsgId);
+        appendEditorMessage('assistant', '❌ 编辑超时，请重试');
+        cleanupEditTask();
+        return;
+      }
+      
+      // 检查是否被取消
+      if (!editSession.isProcessing || editSession.editTaskId !== taskId) {
+        console.log('[编辑] 任务已被取消或替换');
+        cleanupEditTask();
+        return;
+      }
+      
+      try {
+        const statusResponse = await fetch(`/api/games/${editSession.gameId}/edit-status/${taskId}`, {
+          headers: { 'X-User-Token': getUserToken() }
+        });
+        
+        const statusData = await statusResponse.json();
+        
+        if (!statusData.success && statusData.status === 'not_found') {
+          removeEditorMessage(thinkingMsgId);
+          appendEditorMessage('assistant', '❌ 任务已过期，请重试');
+          cleanupEditTask();
+          return;
+        }
+        
+        // 更新进度提示
+        updateEditorMessage(thinkingMsgId, `🤔 ${statusData.progressText || 'AI正在处理中...'} (${statusData.progress || 0}%)`);
+        
+        if (statusData.status === 'completed' && statusData.result) {
+          // 任务完成
+          removeEditorMessage(thinkingMsgId);
+          const data = statusData.result;
+          handleEditSuccess(data, creditCostThisTime);
+          cleanupEditTask();
+          
+        } else if (statusData.status === 'failed') {
+          // 任务失败
+          removeEditorMessage(thinkingMsgId);
+          appendEditorMessage('assistant', `❌ ${statusData.error || '编辑失败，请重试'}`);
+          cleanupEditTask();
+          
+        } else {
+          // 继续轮询
+          editSession.editPollTimer = setTimeout(pollStatus, pollInterval);
+        }
+        
+      } catch (pollError) {
+        console.error('[编辑] 轮询状态失败:', pollError);
+        // 网络错误时继续重试
+        editSession.editPollTimer = setTimeout(pollStatus, pollInterval);
+      }
+    };
+    
+    // 开始轮询
+    editSession.editPollTimer = setTimeout(pollStatus, pollInterval);
     
   } catch (error) {
-    // 检查是否是用户主动取消
-    if (error.name === 'AbortError') {
-      console.log('编辑请求已被用户取消');
-      removeEditorMessage(thinkingMsgId);
-      // 不显示错误消息，因为是用户主动取消的
-    } else {
-      console.error('发送编辑消息失败:', error);
-      removeEditorMessage(thinkingMsgId);
-      appendEditorMessage('assistant', '❌ 网络错误，请检查网络后重试');
-    }
-  } finally {
-    // 标记处理完成，清理 AbortController
+    console.error('发送编辑消息失败:', error);
+    removeEditorMessage(thinkingMsgId);
+    appendEditorMessage('assistant', '❌ 网络错误，请检查网络后重试');
+    cleanupEditTask();
+  }
+  
+  // 清理编辑任务状态
+  function cleanupEditTask() {
     editSession.isProcessing = false;
-    editSession.abortController = null;
-    
-    // 恢复发送按钮状态
+    editSession.editTaskId = null;
+    if (editSession.editPollTimer) {
+      clearTimeout(editSession.editPollTimer);
+      editSession.editPollTimer = null;
+    }
     updateEditorSendButton(false);
-    
     if (loadingEl) loadingEl.style.display = 'none';
   }
+  
+  // 处理编辑成功
+  function handleEditSuccess(data, creditCostThisTime) {
+    // 更新当前代码
+    editSession.currentCode = data.code;
+    editSession.hasUnsavedChanges = true;  // 标记有未保存的修改
+    
+    // 更新预览
+    updateEditorPreview(data.code);
+    
+    // 显示 AI 回复
+    let replyContent = `✅ ${data.message || '修改完成！'}`;
+    if (data.changes && data.changes.length > 0) {
+      replyContent += '\n\n修改内容：\n' + data.changes.map(c => `• ${c}`).join('\n');
+    }
+    appendEditorMessage('assistant', replyContent);
+    
+    // 编辑成功后，刷新积分并更新提示
+    if (creditCostThisTime > 0) {
+      state.credits = Math.max(0, state.credits - creditCostThisTime);
+      updateCreditsDisplay();
+      updateEditorCreditNotice();
+      showCreditsChangeToast(-creditCostThisTime, '编辑游戏');
+    }
+    
+    // 检查是否启用了自动保存
+    if (editorSettings.autoSave) {
+      autoSaveEditorGame();
+    }
+  }
+}
+
+// 更新编辑器消息内容（用于显示进度）
+function updateEditorMessage(msgId, content) {
+  if (!msgId) return;
+  const msgEl = document.getElementById(msgId);
+  if (msgEl) {
+    const bubble = msgEl.querySelector('.chat-bubble');
+    if (bubble) {
+      bubble.innerHTML = escapeHtml(content).replace(/\n/g, '<br>');
+    }
+  }
+}
+
+// 取消编辑任务
+function cancelEditTask() {
+  if (editSession.editPollTimer) {
+    clearTimeout(editSession.editPollTimer);
+    editSession.editPollTimer = null;
+  }
+  editSession.isProcessing = false;
+  editSession.editTaskId = null;
+  updateEditorSendButton(false);
+  showToast('已取消编辑', 'info');
 }
 
 // 添加编辑器消息
