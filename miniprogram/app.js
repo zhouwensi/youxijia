@@ -278,5 +278,23 @@ App({
         });
       }
     });
+  },
+
+  /**
+   * 格式化积分显示，保留最多1位小数，避免浮点数精度问题
+   * @param {number} credits - 积分数值
+   * @returns {string} 格式化后的积分字符串
+   */
+  formatCredits(credits) {
+    if (typeof credits !== 'number' || isNaN(credits)) {
+      return '0';
+    }
+    // 使用 Math.round 解决浮点数精度问题，保留1位小数
+    const rounded = Math.round(credits * 10) / 10;
+    // 如果是整数，不显示小数点
+    if (Number.isInteger(rounded)) {
+      return rounded.toString();
+    }
+    return rounded.toFixed(1);
   }
 });

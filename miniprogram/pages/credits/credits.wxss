@@ -2,7 +2,7 @@
 .credits-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding-bottom: 40rpx;
+  padding-bottom: 160rpx; /* 增加底部间距，避免被智能贴士bar遮挡 */
 }
 
 /* 积分卡片 */
@@ -93,6 +93,168 @@
 .action-btn.disabled {
   background: #e0e0e0;
   color: #999;
+}
+
+/* 公众号互动区域 */
+.wechat-actions-section {
+  margin: 0 30rpx 20rpx;
+}
+
+.wechat-action-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16rpx;
+  margin-bottom: 16rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.wechat-action-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx;
+}
+
+.wechat-action-left {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.wechat-action-icon {
+  font-size: 40rpx;
+}
+
+.wechat-action-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.wechat-action-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.wechat-action-desc {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.wechat-action-right {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.wechat-action-reward {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #667eea;
+}
+
+.wechat-action-reward.claimed {
+  color: #999;
+  text-decoration: line-through;
+}
+
+.wechat-action-progress {
+  font-size: 22rpx;
+  color: #999;
+  background: #f5f5f5;
+  padding: 4rpx 12rpx;
+  border-radius: 20rpx;
+}
+
+.wechat-action-arrow {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.wechat-verify-section {
+  padding: 0 24rpx 24rpx;
+  border-top: 1rpx solid #f0f0f0;
+  background: #fafafa;
+}
+
+.verify-tip {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  padding: 16rpx 0;
+  font-size: 24rpx;
+  color: #666;
+  line-height: 1.6;
+}
+
+.verify-hint {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 22rpx;
+  color: #999;
+  text-align: center;
+}
+
+.verify-input-row {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+
+.verify-input {
+  flex: 1;
+  height: 72rpx;
+  padding: 0 24rpx;
+  background: #f5f5f7;
+  border: 2rpx solid #d0d0d0;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.verify-input::placeholder {
+  color: #999;
+}
+
+.verify-btn {
+  min-width: 140rpx;
+  height: 72rpx;
+  line-height: 72rpx;
+  padding: 0 32rpx;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  font-size: 28rpx;
+  border-radius: 12rpx;
+  text-align: center;
+  border: none;
+}
+
+.verify-btn.loading {
+  opacity: 0.7;
+}
+
+.verify-btn[disabled] {
+  background: #ccc;
+}
+
+.wechat-verify-done {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  padding: 16rpx 24rpx;
+  background: #f0fff4;
+  border-top: 1rpx solid #c6f6d5;
+}
+
+.done-icon {
+  font-size: 32rpx;
+}
+
+.done-text {
+  font-size: 26rpx;
+  color: #38a169;
 }
 
 /* 签到连续提示区域（文档6.1节设计） */

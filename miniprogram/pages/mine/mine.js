@@ -199,9 +199,9 @@ Page({
       const updates = {};
 
       if (creditsResult && creditsResult.success !== false) {
-        // 格式化积分，保留1位小数
+        // 使用全局格式化函数处理积分显示
         const credits = creditsResult.credits || 0;
-        updates['stats.credits'] = Number.isInteger(credits) ? credits : parseFloat(credits.toFixed(1));
+        updates['stats.credits'] = app.formatCredits(credits);
       }
 
       if (accountResult && accountResult.success !== false) {
@@ -725,7 +725,18 @@ Page({
         app.globalData.userInfo = updatedUserInfo;
         wx.setStorageSync('userInfo', updatedUserInfo);
 
-        app.showToast('昵称已更新', 'success');
+        // 检查是否获得积分奖励
+        if (result.creditsEarned && result.creditsEarned > 0) {
+          // 显示积分奖励提示
+          wx.showModal({
+            title: '🎉 恭喜获得奖励',
+            content: result.rewardMessage || `设置昵称成功！获得${result.creditsEarned}积分奖励`,
+            showCancel: false,
+            confirmText: '太棒了'
+          });
+        } else {
+          app.showToast('昵称已更新', 'success');
+        }
       } else {
         app.showToast(result.error || '保存失败');
       }

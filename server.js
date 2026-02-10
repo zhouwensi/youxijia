@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 // ==================== 安全模块引入 ====================
 const security = require('./security');
@@ -3752,6 +3753,158 @@ const CREDITS_CONFIG = {
   dailyLogin: 1,           // 每日登录奖励（无积分时）
 };
 
+/**
+ * 格式化积分值，解决浮点数精度问题
+ * 保留最多1位小数，整数不显示小数点
+ * @param {number} credits - 积分数值
+ * @returns {number} 格式化后的积分数值
+ */
+function formatCreditsValue(credits) {
+  if (typeof credits !== 'number' || isNaN(credits)) {
+    return 0;
+  }
+  return Math.round(credits * 10) / 10;
+}
+
+// ==================== 邮件发送服务 ====================
+
+/**
+ * 获取 SMTP 配置
+ * @returns {Object|null} SMTP 配置对象，未配置时返回 null
+ */
+function getSmtpConfig() {
+  const host = getConfig('smtp_host', '');
+  const user = getConfig('smtp_user', '');
+  const pass = getConfig('smtp_pass', '');
+  
+  if (!host || !user || !pass) {
+    return null;
+  }
+  
+  return {
+    host: host,
+    port: parseInt(getConfig('smtp_port', '465')),
+    secure: getConfig('smtp_secure', 'true') === 'true',
+    auth: {
+      user: user,
+      pass: pass
+    }
+  };
+}
+
+/**
+ * 发送邮件
+ * @param {string} to - 收件人邮箱
+ * @param {string} subject - 邮件主题
+ * @param {string} html - 邮件HTML内容
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+async function sendEmail(to, subject, html) {
+  const smtpConfig = getSmtpConfig();
+  
+  if (!smtpConfig) {
+    console.error('[EMAIL] SMTP未配置');
+    return { success: false, error: '邮件服务未配置，请联系管理员' };
+  }
+  
+  const fromName = getConfig('smtp_from_name', '一句话游戏');
+  const fromEmail = getConfig('smtp_from_email', smtpConfig.auth.user);
+  
+  try {
+    const transporter = nodemailer.createTransport(smtpConfig);
+    
+    const info = await transporter.sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
+      to: to,
+      subject: subject,
+      html: html
+    });
+    
+    console.log('[EMAIL] 邮件发送成功:', info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('[EMAIL] 邮件发送失败:', error.message);
+    return { success: false, error: '邮件发送失败，请稍后重试' };
+  }
+}
+
+/**
+ * 生成6位数字验证码
+ * @returns {string}
+ */
+function generateEmailCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+/**
+ * 生成邮箱验证码邮件HTML
+ * @param {string} code - 验证码
+ * @param {string} type - 类型：verify（验证邮箱）/ reset（重置密码）
+ * @returns {string}
+ */
+function generateEmailCodeHtml(code, type = 'verify') {
+  const siteName = getConfig('site_name', '一句话游戏');
+  const expireMinutes = parseInt(getConfig('email_code_expire_minutes', '10'));
+  
+  const title = type === 'reset' ? '重置密码验证码' : '邮箱验证码';
+  const description = type === 'reset' 
+    ? '您正在重置账号密码' 
+    : '您正在验证邮箱，验证成功后可用于找回密码';
+  
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    <div style="background: #fff; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden;">
+      <!-- Header -->
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
+        <h1 style="margin: 0; color: #fff; font-size: 24px;">${siteName}</h1>
+        <p style="margin: 10px 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">${title}</p>
+      </div>
+      
+      <!-- Content -->
+      <div style="padding: 40px 30px;">
+        <p style="margin: 0 0 20px; color: #333; font-size: 16px;">您好！</p>
+        <p style="margin: 0 0 30px; color: #666; font-size: 14px; line-height: 1.6;">${description}。请使用以下验证码完成操作：</p>
+        
+        <!-- Code Box -->
+        <div style="background: #f8f9fa; border-radius: 12px; padding: 25px; text-align: center; margin-bottom: 30px;">
+          <span style="font-size: 36px; font-weight: bold; color: #667eea; letter-spacing: 8px;">${code}</span>
+        </div>
+        
+        <p style="margin: 0 0 10px; color: #999; font-size: 13px;">⏰ 验证码有效期 ${expireMinutes} 分钟，请尽快使用</p>
+        <p style="margin: 0; color: #999; font-size: 13px;">⚠️ 如非本人操作，请忽略此邮件</p>
+      </div>
+      
+      <!-- Footer -->
+      <div style="background: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #eee;">
+        <p style="margin: 0; color: #999; font-size: 12px;">此邮件由系统自动发送，请勿回复</p>
+        <p style="margin: 8px 0 0; color: #bbb; font-size: 12px;">© ${new Date().getFullYear()} ${siteName}</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+}
+
+/**
+ * 验证邮箱格式
+ * @param {string} email 
+ * @returns {boolean}
+ */
+function isValidEmail(email) {
+  if (!email || typeof email !== 'string') return false;
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return emailRegex.test(email.trim());
+}
+
 // 敏感词列表（可从数据库或文件加载）
 const SENSITIVE_WORDS = [
   // 政治敏感
@@ -4438,6 +4591,46 @@ try {
   // 字段已存在，忽略
 }
 
+// 添加 email 字段（如果不存在）
+try {
+  db.exec(`ALTER TABLE user_accounts ADD COLUMN email TEXT`);
+  console.log('[DB] 添加 email 字段成功');
+} catch (e) {
+  // 字段已存在，忽略
+}
+
+// 添加 email_verified 字段（如果不存在）
+try {
+  db.exec(`ALTER TABLE user_accounts ADD COLUMN email_verified INTEGER DEFAULT 0`);
+  console.log('[DB] 添加 email_verified 字段成功');
+} catch (e) {
+  // 字段已存在，忽略
+}
+
+// ==================== 邮箱验证码表 ====================
+db.exec(`
+  CREATE TABLE IF NOT EXISTS email_verify_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL,
+    user_token TEXT NOT NULL,
+    email TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'verify',
+    expires_at DATETIME NOT NULL,
+    used INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(code, email, type)
+  )
+`);
+console.log('[DB] 邮箱验证码表初始化完成');
+
+// 创建邮箱验证码索引
+try {
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_email_verify_codes_email ON email_verify_codes(email)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_email_verify_codes_user ON email_verify_codes(user_token)`);
+} catch (e) {
+  // 索引已存在，忽略
+}
+
 // 添加 is_admin 字段（如果不存在）- 标识管理员用户
 try {
   db.exec(`ALTER TABLE user_accounts ADD COLUMN is_admin INTEGER DEFAULT 0`);
@@ -4717,6 +4910,18 @@ const defaultConfigs = [
   { key: 'web_create_disabled', value: 'false', description: '禁用网站创作功能' },
   { key: 'web_edit_disabled', value: 'false', description: '禁用网站编辑/修复功能' },
   { key: 'web_interact_disabled', value: 'false', description: '禁用网站互动功能' },
+  // ==================== 邮箱功能配置 ====================
+  { key: 'smtp_host', value: '', description: 'SMTP服务器地址' },
+  { key: 'smtp_port', value: '465', description: 'SMTP端口（465为SSL，587为TLS）' },
+  { key: 'smtp_secure', value: 'true', description: 'SMTP是否使用SSL（465端口设为true）' },
+  { key: 'smtp_user', value: '', description: 'SMTP用户名（通常是邮箱地址）' },
+  { key: 'smtp_pass', value: '', description: 'SMTP密码或授权码' },
+  { key: 'smtp_from_name', value: '一句话游戏', description: '发件人名称' },
+  { key: 'smtp_from_email', value: '', description: '发件人邮箱地址' },
+  { key: 'credits_verify_email', value: '3', description: '验证邮箱奖励积分' },
+  { key: 'email_code_expire_minutes', value: '10', description: '邮箱验证码有效期（分钟）' },
+  // ==================== 昵称奖励配置 ====================
+  { key: 'credits_set_nickname', value: '3', description: '设置昵称奖励积分（首次从默认昵称修改为自定义昵称）' },
 ];
 
 // 【重要】强制修复功能开关配置：确保网站创作功能默认开放
@@ -4792,6 +4997,20 @@ try {
 }
 try {
   db.exec('ALTER TABLE user_credits ADD COLUMN daily_login_claimed INTEGER DEFAULT 0');
+} catch (e) {
+  // 字段已存在，忽略
+}
+
+// 添加 email_verified 字段（邮箱验证状态）
+try {
+  db.exec('ALTER TABLE user_credits ADD COLUMN email_verified INTEGER DEFAULT 0');
+} catch (e) {
+  // 字段已存在，忽略
+}
+
+// 添加 nickname_rewarded 字段（昵称奖励是否已领取）
+try {
+  db.exec('ALTER TABLE user_credits ADD COLUMN nickname_rewarded INTEGER DEFAULT 0');
 } catch (e) {
   // 字段已存在，忽略
 }
@@ -5468,6 +5687,22 @@ app.put('/api/account/nickname', (req, res) => {
       return res.status(400).json({ success: false, error: '该昵称已被其他用户使用' });
     }
     
+    // 获取用户当前账号信息（用于判断是否是默认昵称）
+    const account = db.prepare('SELECT nickname, account_id FROM user_accounts WHERE user_token = ?').get(userToken);
+    const oldNickname = account?.nickname || '';
+    const accountId = account?.account_id || '';
+    
+    // 判断当前昵称是否是默认值
+    const isDefaultNickname = !oldNickname ||
+      oldNickname === '微信用户' ||
+      oldNickname === '游戏玩家' ||
+      oldNickname === accountId;
+    
+    // 判断新昵称是否是自定义昵称（不是默认值）
+    const isCustomNickname = trimmedNickname !== '微信用户' &&
+      trimmedNickname !== '游戏玩家' &&
+      trimmedNickname !== accountId;
+    
     // 更新用户账号表中的昵称
     db.prepare('UPDATE user_accounts SET nickname = ?, updated_at = CURRENT_TIMESTAMP WHERE user_token = ?')
       .run(trimmedNickname, userToken);
@@ -5477,6 +5712,42 @@ app.put('/api/account/nickname', (req, res) => {
       .run(trimmedNickname, userToken);
     
     console.log(`[INFO] 更新昵称成功: ${trimmedNickname}, 同步更新了 ${updateResult.changes} 个游戏的作者名`);
+    
+    // ==================== 昵称奖励逻辑 ====================
+    let creditsEarned = 0;
+    let rewardMessage = '';
+    
+    // 判断是否满足奖励条件：从默认昵称改为自定义昵称，且未领取过奖励
+    if (isDefaultNickname && isCustomNickname) {
+      // 检查是否已领取过昵称奖励
+      const userCredits = db.prepare('SELECT nickname_rewarded FROM user_credits WHERE user_token = ?').get(userToken);
+      const hasRewarded = userCredits && userCredits.nickname_rewarded === 1;
+      
+      if (!hasRewarded) {
+        // 获取昵称奖励积分配置
+        creditsEarned = parseFloat(getConfig('credits_set_nickname', '3'));
+        
+        // 发放积分奖励
+        db.prepare(`
+          INSERT INTO user_credits (user_token, credits, total_earned, nickname_rewarded)
+          VALUES (?, ?, ?, 1)
+          ON CONFLICT(user_token) DO UPDATE SET
+            credits = credits + ?,
+            total_earned = total_earned + ?,
+            nickname_rewarded = 1,
+            updated_at = CURRENT_TIMESTAMP
+        `).run(userToken, creditsEarned, creditsEarned, creditsEarned, creditsEarned);
+        
+        // 记录积分历史
+        db.prepare(`
+          INSERT INTO credit_history (user_token, change_type, amount, description)
+          VALUES (?, 'nickname_reward', ?, '设置昵称奖励')
+        `).run(userToken, creditsEarned);
+        
+        rewardMessage = `设置昵称成功！获得${creditsEarned}积分奖励`;
+        console.log(`[NICKNAME] 昵称奖励发放: ${trimmedNickname}, 积分: ${creditsEarned}`);
+      }
+    }
     
     // 重新生成该用户所有游戏的静态文件（更新游戏页面中的作者名显示）
     if (updateResult.changes > 0) {
@@ -5506,7 +5777,13 @@ app.put('/api/account/nickname', (req, res) => {
       }
     }
     
-    res.json({ success: true, nickname: trimmedNickname, updatedGamesCount: updateResult.changes });
+    res.json({
+      success: true,
+      nickname: trimmedNickname,
+      updatedGamesCount: updateResult.changes,
+      creditsEarned: creditsEarned,
+      rewardMessage: rewardMessage
+    });
   } catch (error) {
     console.error('[ERROR] 更新昵称失败:', error);
     res.status(500).json({ success: false, error: '服务器错误' });
@@ -5605,8 +5882,405 @@ app.post('/api/account/change-password', (req, res) => {
   }
 });
 
+// ==================== 邮箱绑定与验证 API ====================
+
+// 发送邮箱验证码（绑定邮箱用）
+app.post('/api/account/send-email-code', async (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    const { email, type = 'verify' } = req.body;
+    
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '请先登录' });
+    }
+    
+    if (!email || !isValidEmail(email)) {
+      return res.status(400).json({ success: false, error: '请输入有效的邮箱地址' });
+    }
+    
+    // 检查 SMTP 是否配置
+    if (!getSmtpConfig()) {
+      return res.status(503).json({ success: false, error: '邮件服务暂未开放' });
+    }
+    
+    const normalizedEmail = email.trim().toLowerCase();
+    
+    // 检查是否60秒内已发送过（限流）
+    const recentCode = db.prepare(`
+      SELECT * FROM email_verify_codes 
+      WHERE email = ? AND type = ? AND created_at > datetime('now', '-60 seconds')
+      ORDER BY created_at DESC LIMIT 1
+    `).get(normalizedEmail, type);
+    
+    if (recentCode) {
+      return res.status(429).json({ success: false, error: '请60秒后再试' });
+    }
+    
+    // 如果是绑定邮箱，检查邮箱是否已被其他账号绑定
+    if (type === 'verify') {
+      const existingAccount = db.prepare(`
+        SELECT * FROM user_accounts 
+        WHERE email = ? AND email_verified = 1 AND user_token != ?
+      `).get(normalizedEmail, userToken);
+      
+      if (existingAccount) {
+        return res.status(400).json({ success: false, error: '该邮箱已被其他账号绑定' });
+      }
+      
+      // 检查用户是否已验证过邮箱
+      const userCredits = db.prepare('SELECT email_verified FROM user_credits WHERE user_token = ?').get(userToken);
+      if (userCredits && userCredits.email_verified === 1) {
+        return res.status(400).json({ success: false, error: '您已验证过邮箱' });
+      }
+    }
+    
+    // 生成验证码
+    const code = generateEmailCode();
+    const expireMinutes = parseInt(getConfig('email_code_expire_minutes', '10'));
+    const expiresAt = new Date(Date.now() + expireMinutes * 60 * 1000).toISOString();
+    
+    // 保存验证码到数据库
+    db.prepare(`
+      INSERT INTO email_verify_codes (code, user_token, email, type, expires_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(code, userToken, normalizedEmail, type, expiresAt);
+    
+    // 发送邮件
+    const siteName = getConfig('site_name', '一句话游戏');
+    const subject = type === 'reset' 
+      ? `【${siteName}】重置密码验证码`
+      : `【${siteName}】邮箱验证码`;
+    const html = generateEmailCodeHtml(code, type);
+    
+    const emailResult = await sendEmail(normalizedEmail, subject, html);
+    
+    if (!emailResult.success) {
+      return res.status(500).json({ success: false, error: emailResult.error || '邮件发送失败' });
+    }
+    
+    console.log('[EMAIL] 验证码已发送:', { email: normalizedEmail, type });
+    res.json({ 
+      success: true, 
+      message: '验证码已发送',
+      expireMinutes: expireMinutes
+    });
+    
+  } catch (error) {
+    console.error('[ERROR] 发送邮箱验证码失败:', error);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
+// 验证邮箱验证码并绑定邮箱
+app.post('/api/account/verify-email', async (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    const { email, code } = req.body;
+    
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '请先登录' });
+    }
+    
+    if (!email || !code) {
+      return res.status(400).json({ success: false, error: '请输入邮箱和验证码' });
+    }
+    
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedCode = code.trim();
+    
+    // 查找有效的验证码
+    const verifyCode = db.prepare(`
+      SELECT * FROM email_verify_codes 
+      WHERE email = ? AND code = ? AND type = 'verify' AND used = 0 
+        AND expires_at > datetime('now')
+      ORDER BY created_at DESC LIMIT 1
+    `).get(normalizedEmail, normalizedCode);
+    
+    if (!verifyCode) {
+      return res.status(400).json({ success: false, error: '验证码无效或已过期' });
+    }
+    
+    // 检查验证码是否属于当前用户
+    if (verifyCode.user_token !== userToken) {
+      return res.status(400).json({ success: false, error: '验证码不匹配' });
+    }
+    
+    // 检查用户是否已验证过邮箱（防止重复领取积分）
+    const userCredits = db.prepare('SELECT email_verified FROM user_credits WHERE user_token = ?').get(userToken);
+    const isFirstVerify = !userCredits || userCredits.email_verified !== 1;
+    
+    // 标记验证码已使用
+    db.prepare('UPDATE email_verify_codes SET used = 1 WHERE id = ?').run(verifyCode.id);
+    
+    // 更新账号邮箱信息
+    db.prepare(`
+      UPDATE user_accounts 
+      SET email = ?, email_verified = 1, updated_at = CURRENT_TIMESTAMP 
+      WHERE user_token = ?
+    `).run(normalizedEmail, userToken);
+    
+    // 更新积分表的邮箱验证状态
+    db.prepare(`
+      UPDATE user_credits SET email_verified = 1, updated_at = CURRENT_TIMESTAMP 
+      WHERE user_token = ?
+    `).run(userToken);
+    
+    let creditsEarned = 0;
+    
+    // 首次验证给积分
+    if (isFirstVerify) {
+      creditsEarned = parseFloat(getConfig('credits_verify_email', '3'));
+      
+      db.prepare(`
+        UPDATE user_credits 
+        SET credits = credits + ?, total_earned = total_earned + ?, updated_at = CURRENT_TIMESTAMP 
+        WHERE user_token = ?
+      `).run(creditsEarned, creditsEarned, userToken);
+      
+      // 记录积分日志
+      db.prepare(`
+        INSERT INTO credit_logs (user_token, type, amount, description)
+        VALUES (?, 'email_verify', ?, '验证邮箱奖励')
+      `).run(userToken, creditsEarned);
+      
+      console.log('[EMAIL] 邮箱验证成功，奖励积分:', { email: normalizedEmail, credits: creditsEarned });
+    } else {
+      console.log('[EMAIL] 邮箱验证成功（已验证过，不重复奖励）:', { email: normalizedEmail });
+    }
+    
+    // 获取最新积分
+    const updatedCredits = db.prepare('SELECT credits FROM user_credits WHERE user_token = ?').get(userToken);
+    
+    res.json({ 
+      success: true, 
+      message: isFirstVerify ? `验证成功，获得${creditsEarned}积分！` : '邮箱验证成功',
+      creditsEarned: creditsEarned,
+      totalCredits: formatCreditsValue(updatedCredits?.credits || 0)
+    });
+    
+  } catch (error) {
+    console.error('[ERROR] 验证邮箱失败:', error);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
+// 找回密码 - 发送重置验证码
+app.post('/api/account/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email || !isValidEmail(email)) {
+      return res.status(400).json({ success: false, error: '请输入有效的邮箱地址' });
+    }
+    
+    // 检查 SMTP 是否配置
+    if (!getSmtpConfig()) {
+      return res.status(503).json({ success: false, error: '邮件服务暂未开放' });
+    }
+    
+    const normalizedEmail = email.trim().toLowerCase();
+    
+    // 查找绑定了该邮箱的账号
+    const account = db.prepare(`
+      SELECT * FROM user_accounts WHERE email = ? AND email_verified = 1
+    `).get(normalizedEmail);
+    
+    if (!account) {
+      // 为了安全，不透露邮箱是否存在
+      return res.json({ success: true, message: '如果该邮箱已绑定账号，验证码将发送到该邮箱' });
+    }
+    
+    // 检查是否60秒内已发送过（限流）
+    const recentCode = db.prepare(`
+      SELECT * FROM email_verify_codes 
+      WHERE email = ? AND type = 'reset' AND created_at > datetime('now', '-60 seconds')
+      ORDER BY created_at DESC LIMIT 1
+    `).get(normalizedEmail);
+    
+    if (recentCode) {
+      return res.status(429).json({ success: false, error: '请60秒后再试' });
+    }
+    
+    // 生成验证码
+    const code = generateEmailCode();
+    const expireMinutes = parseInt(getConfig('email_code_expire_minutes', '10'));
+    const expiresAt = new Date(Date.now() + expireMinutes * 60 * 1000).toISOString();
+    
+    // 保存验证码到数据库
+    db.prepare(`
+      INSERT INTO email_verify_codes (code, user_token, email, type, expires_at)
+      VALUES (?, ?, ?, 'reset', ?)
+    `).run(code, account.user_token, normalizedEmail, expiresAt);
+    
+    // 发送邮件
+    const siteName = getConfig('site_name', '一句话游戏');
+    const subject = `【${siteName}】重置密码验证码`;
+    const html = generateEmailCodeHtml(code, 'reset');
+    
+    const emailResult = await sendEmail(normalizedEmail, subject, html);
+    
+    if (!emailResult.success) {
+      console.error('[EMAIL] 发送重置密码验证码失败:', emailResult.error);
+    }
+    
+    console.log('[EMAIL] 重置密码验证码已发送:', { email: normalizedEmail });
+    res.json({ 
+      success: true, 
+      message: '验证码已发送到邮箱',
+      expireMinutes: expireMinutes
+    });
+    
+  } catch (error) {
+    console.error('[ERROR] 发送重置密码验证码失败:', error);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
+// 通过邮箱验证码重置密码
+app.post('/api/account/reset-password-by-email', async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body;
+    
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({ success: false, error: '请填写完整信息' });
+    }
+    
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, error: '新密码至少6位' });
+    }
+    
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedCode = code.trim();
+    
+    // 查找有效的重置验证码
+    const verifyCode = db.prepare(`
+      SELECT * FROM email_verify_codes 
+      WHERE email = ? AND code = ? AND type = 'reset' AND used = 0 
+        AND expires_at > datetime('now')
+      ORDER BY created_at DESC LIMIT 1
+    `).get(normalizedEmail, normalizedCode);
+    
+    if (!verifyCode) {
+      return res.status(400).json({ success: false, error: '验证码无效或已过期' });
+    }
+    
+    // 查找对应的账号
+    const account = db.prepare(`
+      SELECT * FROM user_accounts WHERE email = ? AND email_verified = 1
+    `).get(normalizedEmail);
+    
+    if (!account) {
+      return res.status(400).json({ success: false, error: '账号不存在' });
+    }
+    
+    // 标记验证码已使用
+    db.prepare('UPDATE email_verify_codes SET used = 1 WHERE id = ?').run(verifyCode.id);
+    
+    // 重置密码
+    const newPasswordHash = hashPassword(newPassword);
+    db.prepare(`
+      UPDATE user_accounts 
+      SET password_hash = ?, has_password = 1, updated_at = CURRENT_TIMESTAMP 
+      WHERE user_token = ?
+    `).run(newPasswordHash, account.user_token);
+    
+    console.log('[ACCOUNT] 密码重置成功:', { account_id: account.account_id });
+    res.json({ success: true, message: '密码重置成功，请使用新密码登录' });
+    
+  } catch (error) {
+    console.error('[ERROR] 重置密码失败:', error);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
+// 获取邮箱验证状态
+app.get('/api/account/email-status', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '请先登录' });
+    }
+    
+    const account = db.prepare(`
+      SELECT email, email_verified FROM user_accounts WHERE user_token = ?
+    `).get(userToken);
+    
+    if (!account) {
+      return res.status(404).json({ success: false, error: '账号不存在' });
+    }
+    
+    const smtpConfigured = !!getSmtpConfig();
+    const verifyEmailCredits = parseFloat(getConfig('credits_verify_email', '3'));
+    
+    res.json({
+      success: true,
+      email: account.email || null,
+      emailVerified: account.email_verified === 1,
+      smtpConfigured: smtpConfigured,
+      verifyEmailCredits: verifyEmailCredits
+    });
+    
+  } catch (error) {
+    console.error('[ERROR] 获取邮箱状态失败:', error);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
+// 获取昵称奖励状态
+app.get('/api/account/nickname-status', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '请先登录' });
+    }
+    
+    // 获取用户账号信息
+    const account = db.prepare(`
+      SELECT nickname, account_id FROM user_accounts WHERE user_token = ?
+    `).get(userToken);
+    
+    if (!account) {
+      return res.status(404).json({ success: false, error: '账号不存在' });
+    }
+    
+    // 获取用户积分信息（包含昵称奖励状态）
+    const userCredits = db.prepare(`
+      SELECT nickname_rewarded FROM user_credits WHERE user_token = ?
+    `).get(userToken);
+    
+    const nicknameRewarded = userCredits && userCredits.nickname_rewarded === 1;
+    const nicknameCredits = parseFloat(getConfig('credits_set_nickname', '3'));
+    
+    // 判断当前昵称是否是默认值
+    const currentNickname = account.nickname || '';
+    const accountId = account.account_id || '';
+    const isDefaultNickname = !currentNickname ||
+      currentNickname === '微信用户' ||
+      currentNickname === '游戏玩家' ||
+      currentNickname === accountId;
+    
+    // 是否可以领取奖励：使用默认昵称且未领取过奖励
+    const canClaimReward = isDefaultNickname && !nicknameRewarded;
+    
+    res.json({
+      success: true,
+      nickname: currentNickname,
+      isDefaultNickname: isDefaultNickname,
+      nicknameRewarded: nicknameRewarded,
+      canClaimReward: canClaimReward,
+      nicknameCredits: nicknameCredits
+    });
+    
+  } catch (error) {
+    console.error('[ERROR] 获取昵称状态失败:', error);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
 // 账号登录（用账号ID/昵称 + 密码换取 userToken）
-app.post('/api/account/login', (req, res) => {
+app.post('/api/account/login', async (req, res) => {
   try {
     const { accountId, password } = req.body;
     
@@ -5652,17 +6326,17 @@ app.post('/api/account/login', (req, res) => {
     
     if (!account.has_password || !account.password_hash) {
       console.log('[DEBUG] 密码未设置');
-      return res.status(400).json({ success: false, error: '该账号未设置密码，无法登录' });
+      return res.status(400).json({ success: false, error: '该账号未设置密码，请先在小程序中绑定网站账号' });
     }
     
-    const inputHash = hashPassword(password);
+    // 使用异步密码验证（支持bcrypt和旧版SHA256格式）
+    const passwordMatch = await verifyPasswordAsync(password, account.password_hash);
     console.log('[DEBUG] 密码验证:', { 
-      inputHash: inputHash.substring(0, 10) + '...', 
-      storedHash: account.password_hash.substring(0, 10) + '...',
-      match: inputHash === account.password_hash
+      storedHashPrefix: account.password_hash.substring(0, 10) + '...',
+      match: passwordMatch
     });
     
-    if (inputHash !== account.password_hash) {
+    if (!passwordMatch) {
       return res.status(400).json({ success: false, error: '密码错误' });
     }
     
@@ -6319,9 +6993,9 @@ app.get('/api/credits', (req, res) => {
     
     res.json({
       success: true,
-      credits: user.credits,
-      totalEarned: user.total_earned,
-      totalUsed: user.total_used,
+      credits: formatCreditsValue(user.credits),
+      totalEarned: formatCreditsValue(user.total_earned),
+      totalUsed: formatCreditsValue(user.total_used),
       followedWechat: user.followed_wechat === 1,
       adCountToday: user.ad_count_today,
       dailyCounts,
@@ -7934,11 +8608,11 @@ app.post('/api/user/checkin', (req, res) => {
     res.json({
       success: true,
       data: {
-        credits_earned: rewardCredits,
-        bonus_credits: bonusCredits,
-        total_earned: totalCredits,
+        credits_earned: formatCreditsValue(rewardCredits),
+        bonus_credits: formatCreditsValue(bonusCredits),
+        total_earned: formatCreditsValue(totalCredits),
         streak_days: streakDays,
-        total_credits: userCredits?.credits || 0,
+        total_credits: formatCreditsValue(userCredits?.credits || 0),
         next_bonus: getNextStreakBonus(streakDays)
       }
     });
@@ -8405,8 +9079,8 @@ app.post('/api/achievements/:id/claim', (req, res) => {
       success: true,
       data: {
         achievement_name: achievement.name,
-        credits_earned: achievement.reward_credits,
-        total_credits: userCredits?.credits || 0
+        credits_earned: formatCreditsValue(achievement.reward_credits),
+        total_credits: formatCreditsValue(userCredits?.credits || 0)
       }
     });
   } catch (error) {
@@ -8504,8 +9178,8 @@ app.post('/api/achievements/claim-all', (req, res) => {
       data: {
         claimed_count: claimedList.length,
         claimed_list: claimedList,
-        total_credits_earned: totalCredits,
-        total_credits: userCredits?.credits || 0
+        total_credits_earned: formatCreditsValue(totalCredits),
+        total_credits: formatCreditsValue(userCredits?.credits || 0)
       }
     });
   } catch (error) {
@@ -8681,8 +9355,8 @@ app.post('/api/user/action-rewards/:type/claim', (req, res) => {
         action_type: actionType,
         action_name: config.name,
         claimed_count: canClaimCount,
-        credits_earned: creditsToAdd,
-        total_credits: userCredits?.credits || 0
+        credits_earned: formatCreditsValue(creditsToAdd),
+        total_credits: formatCreditsValue(userCredits?.credits || 0)
       }
     });
   } catch (error) {
@@ -13374,7 +14048,7 @@ app.get('/api/trial/status', (req, res) => {
     perUserLimit: TRIAL_CONFIG.perUserLimit,
     reason: quota.reason,
     // 积分系统信息
-    credits: userCredits?.credits || 0,
+    credits: formatCreditsValue(userCredits?.credits || 0),
     firstGenUsed: userCredits?.first_gen_used || 0,
     isFreeFirst: quota.isFreeFirst || false
   });
@@ -14442,6 +15116,64 @@ app.put('/api/admin/config', (req, res) => {
     res.json({ success: true, message: '配置已更新' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 测试 SMTP 配置 - 发送测试邮件
+app.post('/api/admin/test-smtp', async (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { testEmail } = req.body;
+    
+    if (!testEmail) {
+      return res.status(400).json({ success: false, error: '请提供测试邮箱地址' });
+    }
+    
+    // 获取 SMTP 配置
+    const smtpConfig = getSmtpConfig();
+    if (!smtpConfig) {
+      return res.status(400).json({ success: false, error: 'SMTP 未配置，请先填写 SMTP 服务器信息' });
+    }
+    
+    // 生成测试邮件内容
+    const testHtml = `
+      <div style="max-width: 500px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+          <h1 style="color: #fff; margin: 0; font-size: 24px;">📧 SMTP 配置测试</h1>
+        </div>
+        <div style="background: #fff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+          <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+            ✅ 恭喜！您的 SMTP 邮件服务配置正确。
+          </p>
+          <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 20px 0;">
+            如果您收到了这封邮件，说明邮件发送功能已经可以正常使用。
+          </p>
+          <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="color: #374151; font-size: 13px; margin: 0;">
+              <strong>SMTP 服务器:</strong> ${smtpConfig.host}:${smtpConfig.port}<br>
+              <strong>发件人:</strong> ${smtpConfig.from || smtpConfig.auth.user}<br>
+              <strong>发送时间:</strong> ${new Date().toLocaleString('zh-CN')}
+            </p>
+          </div>
+          <p style="color: #9ca3af; font-size: 12px; margin: 20px 0 0 0; text-align: center;">
+            此邮件由一句话游戏系统自动发送，请勿回复。
+          </p>
+        </div>
+      </div>
+    `;
+    
+    // 发送测试邮件
+    await sendEmail(testEmail, '【一句话游戏】SMTP 配置测试成功', testHtml);
+    
+    console.log(`[SMTP] 测试邮件已发送到: ${testEmail}`);
+    res.json({ success: true, message: '测试邮件已发送' });
+  } catch (error) {
+    console.error('[ERROR] SMTP 测试失败:', error.message);
+    res.status(500).json({ success: false, error: '发送失败: ' + error.message });
   }
 });
 

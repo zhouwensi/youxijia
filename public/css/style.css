@@ -4090,6 +4090,34 @@ body.modal-open .modal-content {
   border-top-right-radius: 0;
 }
 
+/* 积分弹窗中的入口样式 */
+.credits-modal-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.credits-modal-entry:last-child {
+  border-bottom: none;
+}
+
+.credits-modal-entry:hover {
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.credits-modal-entry.completed {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.credits-modal-entry.completed:hover {
+  background: transparent;
+}
+
 .invite-section h4 {
   margin-bottom: 0.75rem;
   color: var(--primary-color);

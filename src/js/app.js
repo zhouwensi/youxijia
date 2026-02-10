@@ -1805,47 +1805,227 @@ async function loginWithAccount(accountId, password) {
   }
 }
 
-// 显示恢复账号对话框
-function showLoginDialog() {
+// 显示统一登录弹窗（包含"新用户"和"已有账号"两个Tab）
+function showLoginDialog(defaultTab = 'new') {
   // 移除旧的对话框（如果有）
   const oldDialog = document.getElementById('login-dialog');
   if (oldDialog) oldDialog.remove();
+  
+  const mpName = state.siteConfig?.miniprogram?.name || '一句话游戏';
+  const qrcodeUrl = '/images/miniprogram.png';
   
   const dialog = document.createElement('div');
   dialog.className = 'modal active';
   dialog.id = 'login-dialog';
   dialog.onclick = (e) => { if (e.target === dialog) closeLoginDialog(); };
   dialog.innerHTML = `
-    <div class="modal-content modal-small">
-      <div class="modal-header">
-        <h3>📲 恢复账号</h3>
+    <div class="modal-content" style="max-width: 420px;">
+      <div class="modal-header" style="padding-bottom: 0; border-bottom: none;">
+        <h3 style="margin: 0;">🔐 登录</h3>
         <button class="btn btn-icon btn-close" onclick="closeLoginDialog()">×</button>
       </div>
-      <div class="modal-body">
-        <p style="color: var(--text-muted); font-size: 0.8125rem; margin-bottom: 1rem; text-align: center;">
-          换设备了？输入之前的账号ID或昵称即可恢复数据
-        </p>
-        <div class="form-group">
-          <label>账号ID 或 昵称</label>
-          <input type="text" id="login-account-id" placeholder="例如: player_a3x9k2 或 MarsZhou">
-        </div>
-        <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.5rem;">
-          💡 提示：账号ID可在「我的」页面查看并复制
-        </p>
+      
+      <!-- Tab 切换 -->
+      <div class="login-tabs" style="display: flex; border-bottom: 1px solid var(--border-color); margin: 0 1.5rem;">
+        <button class="login-tab ${defaultTab === 'new' ? 'active' : ''}" data-tab="new" onclick="switchLoginTab('new')" style="
+          flex: 1; padding: 0.75rem; background: none; border: none; cursor: pointer;
+          color: ${defaultTab === 'new' ? 'var(--accent-primary)' : 'var(--text-muted)'};
+          border-bottom: 2px solid ${defaultTab === 'new' ? 'var(--accent-primary)' : 'transparent'};
+          font-weight: ${defaultTab === 'new' ? '600' : '400'};
+          transition: all 0.2s;
+        ">📱 新用户</button>
+        <button class="login-tab ${defaultTab === 'existing' ? 'active' : ''}" data-tab="existing" onclick="switchLoginTab('existing')" style="
+          flex: 1; padding: 0.75rem; background: none; border: none; cursor: pointer;
+          color: ${defaultTab === 'existing' ? 'var(--accent-primary)' : 'var(--text-muted)'};
+          border-bottom: 2px solid ${defaultTab === 'existing' ? 'var(--accent-primary)' : 'transparent'};
+          font-weight: ${defaultTab === 'existing' ? '600' : '400'};
+          transition: all 0.2s;
+        ">🔑 已有账号</button>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeLoginDialog()">取消</button>
-        <button class="btn btn-primary" onclick="doRecover()">恢复</button>
+      
+      <!-- 新用户 Tab 内容 -->
+      <div id="login-tab-new" class="login-tab-content" style="display: ${defaultTab === 'new' ? 'block' : 'none'}; padding: 1.5rem;">
+        <div style="text-align: center;">
+          <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1rem;">
+            请在微信小程序中注册账号
+          </p>
+          
+          <!-- 小程序二维码 -->
+          <div id="login-qrcode-container" style="
+            width: 160px; height: 160px; margin: 0 auto 1rem;
+            background: #fff; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden; border: 1px solid var(--border-color);
+          ">
+            <img src="${qrcodeUrl}" style="width: 100%; height: 100%; object-fit: contain;"
+              onerror="this.parentElement.innerHTML='<div style=\\'text-align:center;padding:1rem;color:#666;\\'><div style=\\'font-size:2rem;margin-bottom:0.5rem;\\'>🔍</div><p style=\\'font-size:0.75rem;\\'>微信搜索</p><p style=\\'font-size:0.875rem;font-weight:600;color:#333;\\'>${mpName}</p></div>'"
+              alt="小程序二维码">
+          </div>
+          
+          <p style="color: var(--accent-primary); font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">
+            ${mpName}
+          </p>
+          <p style="color: var(--text-muted); font-size: 0.75rem; margin-bottom: 1.25rem;">
+            微信扫一扫 或 搜索「${mpName}」
+          </p>
+          
+          <!-- 注册流程说明 -->
+          <div style="text-align: left; background: var(--bg-secondary); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+            <p style="color: var(--text-secondary); font-size: 0.8125rem; font-weight: 600; margin-bottom: 0.75rem;">📋 注册流程：</p>
+            <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.8;">
+              <p style="margin: 0;"><span style="color: var(--accent-primary);">①</span> 微信扫码打开小程序</p>
+              <p style="margin: 0;"><span style="color: var(--accent-primary);">②</span> 点击「微信登录」获取账号</p>
+              <p style="margin: 0;"><span style="color: var(--accent-primary);">③</span> 进入 设置 → 绑定网站账号</p>
+              <p style="margin: 0;"><span style="color: var(--accent-primary);">④</span> 复制链接到浏览器设置密码</p>
+              <p style="margin: 0;"><span style="color: var(--accent-primary);">⑤</span> 返回此页面登录</p>
+            </div>
+          </div>
+          
+          <p style="color: var(--text-muted); font-size: 0.75rem;">
+            已有账号？<a href="javascript:void(0)" onclick="switchLoginTab('existing')" style="color: var(--accent-primary);">点击登录</a>
+          </p>
+        </div>
+      </div>
+      
+      <!-- 已有账号 Tab 内容 -->
+      <div id="login-tab-existing" class="login-tab-content" style="display: ${defaultTab === 'existing' ? 'block' : 'none'}; padding: 1.5rem;">
+        <p style="color: var(--text-muted); font-size: 0.8125rem; margin-bottom: 1rem; text-align: center;">
+          使用账号ID和密码登录
+        </p>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">账号ID 或 昵称</label>
+          <input type="text" id="login-account-id" placeholder="例如: WXA1B2C3 或 你的昵称" style="
+            width: 100%; padding: 0.75rem; border: 1px solid var(--border-color);
+            border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);
+            font-size: 0.875rem;
+          ">
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">密码</label>
+          <input type="password" id="login-password" placeholder="请输入密码" style="
+            width: 100%; padding: 0.75rem; border: 1px solid var(--border-color);
+            border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);
+            font-size: 0.875rem;
+          ">
+        </div>
+        <div id="login-error" style="display: none; color: #ef4444; font-size: 0.8125rem; margin-bottom: 1rem; text-align: center;"></div>
+        <button class="btn btn-primary" onclick="doLogin()" style="width: 100%; padding: 0.75rem; font-size: 0.9375rem;">
+          登录
+        </button>
+        <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 1rem; text-align: center;">
+          没有账号？<a href="javascript:void(0)" onclick="switchLoginTab('new')" style="color: var(--accent-primary);">去注册</a>
+          &nbsp;|&nbsp;
+          <a href="javascript:void(0)" onclick="showForgotPasswordDialog()" style="color: var(--accent-primary);">忘记密码？</a>
+        </p>
+        <p style="color: var(--text-muted); font-size: 0.7rem; margin-top: 0.5rem; text-align: center;">
+          💡 密码在小程序「设置 → 绑定网站账号」中设置
+        </p>
       </div>
     </div>
   `;
   document.body.appendChild(dialog);
   document.body.classList.add('modal-open');
   
-  // 聚焦账号输入框
+  // 聚焦对应输入框
   setTimeout(() => {
-    document.getElementById('login-account-id')?.focus();
+    if (defaultTab === 'existing') {
+      document.getElementById('login-account-id')?.focus();
+    }
   }, 100);
+}
+
+// 切换登录Tab
+function switchLoginTab(tab) {
+  const newTab = document.getElementById('login-tab-new');
+  const existingTab = document.getElementById('login-tab-existing');
+  const tabs = document.querySelectorAll('.login-tab');
+  
+  tabs.forEach(t => {
+    const isActive = t.dataset.tab === tab;
+    t.style.color = isActive ? 'var(--accent-primary)' : 'var(--text-muted)';
+    t.style.borderBottom = isActive ? '2px solid var(--accent-primary)' : '2px solid transparent';
+    t.style.fontWeight = isActive ? '600' : '400';
+    t.classList.toggle('active', isActive);
+  });
+  
+  if (tab === 'new') {
+    newTab.style.display = 'block';
+    existingTab.style.display = 'none';
+  } else {
+    newTab.style.display = 'none';
+    existingTab.style.display = 'block';
+    setTimeout(() => {
+      document.getElementById('login-account-id')?.focus();
+    }, 100);
+  }
+}
+
+// 执行登录（账号密码登录）
+async function doLogin() {
+  const accountId = document.getElementById('login-account-id').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errorEl = document.getElementById('login-error');
+  
+  // 隐藏之前的错误
+  errorEl.style.display = 'none';
+  
+  if (!accountId) {
+    errorEl.textContent = '请输入账号ID或昵称';
+    errorEl.style.display = 'block';
+    return;
+  }
+  
+  if (!password) {
+    errorEl.textContent = '请输入密码';
+    errorEl.style.display = 'block';
+    return;
+  }
+  
+  try {
+    const response = await fetch('/api/account/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accountId, password })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // 保存登录信息
+      saveUserToken(data.userToken);
+      
+      // 更新状态
+      state.account = {
+        accountId: data.account.accountId,
+        nickname: data.account.nickname || '',
+        hasPassword: data.account.hasPassword,
+        loaded: true,
+        loggedIn: true
+      };
+      
+      // 关闭弹窗
+      closeLoginDialog();
+      
+      // 刷新UI
+      updateAccountIdDisplay();
+      updateCreditsDisplay();
+      loadCredits();
+      
+      // 如果在个人主页，刷新数据
+      if (document.getElementById('profile-page')?.classList.contains('active')) {
+        loadProfilePageData();
+      }
+      
+      showToast('登录成功', 'success');
+    } else {
+      errorEl.textContent = data.error || '登录失败';
+      errorEl.style.display = 'block';
+    }
+  } catch (error) {
+    console.error('[ERROR] 登录失败:', error);
+    errorEl.textContent = '网络错误，请重试';
+    errorEl.style.display = 'block';
+  }
 }
 
 // 关闭登录对话框
@@ -1949,10 +2129,6 @@ async function doRecover() {
   }
 }
 
-// 兼容旧的 doLogin 函数
-async function doLogin() {
-  return doRecover();
-}
 
 // 检查是否有足够积分或是否为免费操作
 function checkCreditsForGeneration() {
@@ -2065,6 +2241,107 @@ async function showInsufficientCreditsModal(requiredCredits = 1, mode = 'insuffi
           </div>
         </div>
         
+        <!-- 公众号互动区域 -->
+        <div id="credits-modal-wechat" style="margin-bottom: 1rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+            <span style="font-size: 1rem;">📱</span>
+            <span style="font-size: 0.875rem; font-weight: 600; color: var(--text-primary);">公众号福利</span>
+          </div>
+          <div style="border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden;">
+            <!-- 关注公众号 -->
+            <div id="wechat-follow-entry" class="credits-modal-entry" onclick="toggleCreditsModalWechatVerify()">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span>📱</span>
+                <span style="font-size: 0.8125rem;">关注公众号</span>
+                <span id="wechat-follow-status" style="font-size: 0.75rem; color: var(--text-muted);"></span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span id="wechat-follow-reward" style="font-size: 0.75rem; color: #10b981; font-weight: 600;">+3积分</span>
+                <span style="color: var(--text-muted);">›</span>
+              </div>
+            </div>
+            <div id="credits-modal-wechat-verify" style="display: none; padding: 0.75rem; background: rgba(99,102,241,0.05); border-top: 1px solid var(--border-color);">
+              <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                关注公众号【<strong>游戏开发技术教程</strong>】，回复"<strong>积分</strong>"获取验证码
+              </p>
+              <div style="display: flex; gap: 0.5rem;">
+                <input type="text" id="credits-modal-wechat-code" placeholder="输入验证码" maxlength="20" style="flex:1; font-size: 0.8125rem; padding: 0.5rem;">
+                <button class="btn btn-primary btn-small" onclick="verifyWechatInCreditsModal()">验证</button>
+              </div>
+            </div>
+            
+            <!-- 文章找码 -->
+            <div id="article-code-entry" class="credits-modal-entry" onclick="toggleCreditsModalArticleCode()">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span>📖</span>
+                <span style="font-size: 0.8125rem;">文章阅读福利</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span id="article-code-reward" style="font-size: 0.75rem; color: #10b981; font-weight: 600;">+1积分</span>
+                <span id="article-code-progress" style="font-size: 0.75rem; color: var(--text-muted);">0/3</span>
+                <span style="color: var(--text-muted);">›</span>
+              </div>
+            </div>
+            <div id="credits-modal-article-code" style="display: none; padding: 0.75rem; background: rgba(99,102,241,0.05); border-top: 1px solid var(--border-color);">
+              <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                阅读公众号文章，在留言区获取验证码，每日最多3次
+              </p>
+              <div style="display: flex; gap: 0.5rem;">
+                <input type="text" id="credits-modal-article-code-input" placeholder="输入文章验证码" maxlength="20" style="flex:1; font-size: 0.8125rem; padding: 0.5rem;">
+                <button class="btn btn-primary btn-small" onclick="redeemArticleInCreditsModal()">兑换</button>
+              </div>
+            </div>
+            
+            <!-- 验证邮箱 -->
+            <div id="email-verify-entry" class="credits-modal-entry" style="display: none;" onclick="toggleCreditsModalEmailVerify()">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span>📧</span>
+                <span style="font-size: 0.8125rem;">验证邮箱</span>
+                <span id="email-verify-status" style="font-size: 0.75rem; color: var(--text-muted);"></span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span id="email-verify-reward" style="font-size: 0.75rem; color: #10b981; font-weight: 600;">+3积分</span>
+                <span style="color: var(--text-muted);">›</span>
+              </div>
+            </div>
+            <div id="credits-modal-email-verify" style="display: none; padding: 0.75rem; background: rgba(99,102,241,0.05); border-top: 1px solid var(--border-color);">
+              <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                绑定邮箱，可用于找回密码
+              </p>
+              <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <input type="email" id="credits-modal-email-input" placeholder="输入邮箱地址" style="flex:1; font-size: 0.8125rem; padding: 0.5rem;">
+                <button class="btn btn-secondary btn-small" id="credits-modal-send-email-btn" onclick="sendEmailCodeInCreditsModal()">发送验证码</button>
+              </div>
+              <div style="display: flex; gap: 0.5rem;">
+                <input type="text" id="credits-modal-email-code" placeholder="输入验证码" maxlength="6" style="flex:1; font-size: 0.8125rem; padding: 0.5rem;">
+                <button class="btn btn-primary btn-small" onclick="verifyEmailInCreditsModal()">验证</button>
+              </div>
+            </div>
+            
+            <!-- 设置昵称 -->
+            <div id="nickname-set-entry" class="credits-modal-entry" style="display: none;" onclick="toggleCreditsModalNickname()">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span>✏️</span>
+                <span style="font-size: 0.8125rem;">设置昵称</span>
+                <span id="nickname-set-status" style="font-size: 0.75rem; color: var(--text-muted);"></span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span id="nickname-set-reward" style="font-size: 0.75rem; color: #10b981; font-weight: 600;">+3积分</span>
+                <span style="color: var(--text-muted);">›</span>
+              </div>
+            </div>
+            <div id="credits-modal-nickname-set" style="display: none; padding: 0.75rem; background: rgba(99,102,241,0.05); border-top: 1px solid var(--border-color);">
+              <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                设置一个个性化昵称，让大家认识你
+              </p>
+              <div style="display: flex; gap: 0.5rem;">
+                <input type="text" id="credits-modal-nickname-input" placeholder="输入你的昵称" maxlength="20" style="flex:1; font-size: 0.8125rem; padding: 0.5rem;">
+                <button class="btn btn-primary btn-small" onclick="saveNicknameInCreditsModal()">保存</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <!-- 底部智能贴士 -->
         <div id="credits-tips-container">
           <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); 
@@ -2087,6 +2364,12 @@ async function showInsufficientCreditsModal(requiredCredits = 1, mode = 'insuffi
   
   // 异步加载可领取成就（按分类显示）
   loadClaimableAchievementsByCategory();
+  
+  // 加载邮箱验证状态
+  loadEmailStatus();
+  
+  // 更新公众号/邮箱入口状态
+  updateCreditsModalEntryStatus();
 }
 
 // 点击可领取条目时显示去小程序领取的提示
@@ -2762,9 +3045,9 @@ function directSwitchToTab(tabName) {
     if (settingsBtn) settingsBtn.classList.remove('visible');
   } else if (tabName === 'create') {
     document.getElementById('create-page').classList.add('active');
-    // 更新积分显示
+    // 更新积分显示（次数取整）
     const creditsEl = document.getElementById('create-credits-count');
-    if (creditsEl) creditsEl.textContent = formatCredits(state.credits || 0);
+    if (creditsEl) creditsEl.textContent = Math.floor(state.credits || 0);
     // 更新当前模型显示
     updateCreateModelDisplay();
     // 初始化Tips滚动
@@ -3152,15 +3435,13 @@ function switchBottomNav(navName) {
     if (settingsBtn) settingsBtn.classList.remove('visible');
   } else if (navName === 'create') {
     document.getElementById('create-page').classList.add('active');
-    // 更新积分显示
+    // 更新积分显示（次数取整）
     const creditsEl = document.getElementById('create-credits-count');
-    if (creditsEl) creditsEl.textContent = formatCredits(state.credits || 0);
+    if (creditsEl) creditsEl.textContent = Math.floor(state.credits || 0);
     // 更新当前模型显示
     updateCreateModelDisplay();
     // 初始化Tips滚动
     initCreateTips();
-    // 加载并显示订阅次数
-    loadAndShowSubscribeCount();
     if (settingsBtn) settingsBtn.classList.remove('visible');
   } else if (navName === 'profile') {
     document.getElementById('profile-page').classList.add('active');
@@ -3247,117 +3528,6 @@ function initCreateTips() {
     }, 300);
   }, 5000);
 }
-
-// ==================== 订阅通知管理（创作页面） ====================
-
-// 加载并显示订阅次数
-async function loadAndShowSubscribeCount() {
-  const subscribeSection = document.getElementById('create-subscribe-section');
-  if (!subscribeSection) return;
-  
-  const userToken = getUserToken();
-  if (!userToken) {
-    // 未登录时隐藏订阅区域
-    subscribeSection.style.display = 'none';
-    return;
-  }
-  
-  try {
-    const response = await fetch('/api/user/subscribe-count', {
-      headers: { 'X-User-Token': userToken }
-    });
-    const data = await response.json();
-    
-    if (data.success) {
-      const count = data.subscribeCount || 0;
-      const countEl = document.getElementById('create-subscribe-count');
-      const statusEl = document.getElementById('create-subscribe-status');
-      
-      if (countEl) countEl.textContent = count;
-      
-      if (statusEl) {
-        if (count > 0) {
-          statusEl.textContent = '游戏完成后将收到微信通知';
-          statusEl.className = 'subscribe-status enabled';
-        } else {
-          statusEl.textContent = '订阅通知次数已用完';
-          statusEl.className = 'subscribe-status disabled';
-        }
-      }
-      
-      subscribeSection.style.display = 'flex';
-    } else {
-      subscribeSection.style.display = 'none';
-    }
-  } catch (error) {
-    console.error('加载订阅次数失败:', error);
-    subscribeSection.style.display = 'none';
-  }
-}
-
-// 显示小程序引导弹窗获取更多订阅次数
-function showSubscribeGuide() {
-  const mpName = state.siteConfig?.miniprogram?.name || '游戏家';
-  showMiniprogramGuide('订阅更多通知', '/pages/mine/mine');
-}
-
-// 网站端订阅通知（在生成弹窗中使用）
-// 网站端订阅通知 - 统一引导去小程序
-// 说明：微信订阅消息API只能在小程序环境中调用，网站端无法直接订阅
-// 用户需要先在小程序中订阅，积累订阅次数后，游戏创建完成时才会发送通知
-function subscribeNotifyFromWeb() {
-  // 直接引导去小程序订阅
-  showMiniprogramGuide('订阅通知', '/pages/mine/mine');
-}
-
-// 更新生成弹窗中的订阅状态
-async function updateGeneratingSubscribeStatus() {
-  const section = document.getElementById('generating-subscribe-section');
-  const countEl = document.getElementById('generating-subscribe-count');
-  const btn = document.getElementById('btn-subscribe-notify');
-  
-  if (!section) return;
-  
-  const userToken = getUserToken();
-  if (!userToken) {
-    section.style.display = 'none';
-    return;
-  }
-  
-  try {
-    const response = await fetch('/api/user/subscribe-count', {
-      headers: { 'X-User-Token': userToken }
-    });
-    const data = await response.json();
-    
-    if (data.success) {
-      const count = data.subscribeCount || 0;
-      const maxCount = 10;
-      if (countEl) countEl.textContent = count;
-      
-      // 重置按钮状态（移除积分奖励提示）
-      if (btn) {
-        btn.classList.remove('subscribed');
-        btn.innerHTML = '<span class="subscribe-icon">🔔</span><span class="subscribe-text">订阅完成通知</span>';
-        btn.disabled = count >= maxCount;
-      }
-      
-      // 重置订阅状态
-      state.currentTaskSubscribed = false;
-      
-      section.style.display = 'flex';
-    } else {
-      section.style.display = 'none';
-    }
-  } catch (error) {
-    console.error('获取订阅状态失败:', error);
-    section.style.display = 'none';
-  }
-}
-
-// 将订阅函数暴露到全局，供HTML onclick调用
-window.subscribeNotifyFromWeb = subscribeNotifyFromWeb;
-window.updateGeneratingSubscribeStatus = updateGeneratingSubscribeStatus;
 
 // 获取模型显示名称
 function getModelDisplayName(modelId) {
@@ -4762,10 +4932,10 @@ async function openSettings(preSelectModelId = null) {
   page.classList.add('active');
   document.body.classList.add('modal-open');
   
-  // 显示当前账号ID
+  // 显示当前账号ID（使用短ID）
   const accountIdEl = document.getElementById('settings-account-id');
   if (accountIdEl) {
-    accountIdEl.textContent = state.account.visibleId || state.account.visibleToken || getUserToken() || '未登录';
+    accountIdEl.textContent = state.account.accountId || '未登录';
   }
   
   // 更新密码按钮文字
@@ -5903,9 +6073,6 @@ function showGeneratingOverlay() {
     overlay.classList.add('active');
   }
   document.body.classList.add('overlay-open');
-  
-  // 更新订阅通知区域状态
-  updateGeneratingSubscribeStatus();
 }
 
 // 隐藏生成遮罩
@@ -6157,12 +6324,10 @@ async function generateGame(advancedSettings = null) {
     return;
   }
   
-  // 确保账号已初始化
-  if (!state.account.loaded || !getUserToken()) {
-    showToast('账号正在初始化，请稍候...', 'info');
-    // 尝试重新初始化
-    await initAccount();
-    updateAccountIdDisplay();
+  // 确保用户已登录
+  if (!state.account.loggedIn || !getUserToken()) {
+    // 弹出统一登录弹窗
+    showLoginDialog();
     return;
   }
   
@@ -8312,9 +8477,9 @@ function updateCreditsDisplay() {
   const modalCount = document.getElementById('credits-count');
   if (modalCount) modalCount.textContent = formattedCredits;
   
-  // 创作页面积分
+  // 创作页面积分（次数取整）
   const createCount = document.getElementById('create-credits-count');
-  if (createCount) createCount.textContent = formattedCredits;
+  if (createCount) createCount.textContent = Math.floor(state.credits || 0);
   
   // 个人中心积分
   const profileCredits = document.getElementById('profile-page-credits');
@@ -8385,6 +8550,8 @@ function openCreditsModal() {
   loadCredits().then(() => {
     // 复用积分弹窗，传入 'view' 模式显示"我的积分"界面
     showInsufficientCreditsModal(0, 'view');
+    // 加载邮箱验证状态
+    loadEmailStatus();
   });
 }
 
@@ -8783,6 +8950,915 @@ async function checkArticlePromoFromURL() {
       console.error('文章福利领取失败:', error);
     }
   }, 1500);
+}
+
+// ==================== 邮箱验证功能 ====================
+
+// 邮箱验证状态
+let emailVerifyState = {
+  email: '',
+  emailVerified: false,
+  smtpConfigured: false,
+  verifyEmailCredits: 3,
+  cooldown: 0,
+  cooldownTimer: null,
+  forgotEmail: ''  // 找回密码时使用的邮箱
+};
+
+// 切换邮箱验证区域展开/收起
+function toggleEmailVerifySection() {
+  const section = document.getElementById('email-verify-section');
+  if (!section) return;
+  
+  // 如果已验证，不展开
+  if (emailVerifyState.emailVerified) {
+    showToast('您已验证过邮箱', 'info');
+    return;
+  }
+  
+  if (section.style.display === 'none') {
+    // 收起其他展开的区域
+    document.querySelectorAll('.credit-way-expand').forEach(el => {
+      if (el.id !== 'email-verify-section') {
+        el.style.display = 'none';
+      }
+    });
+    section.style.display = 'block';
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+// 发送邮箱验证码
+async function sendEmailVerifyCode() {
+  const emailInput = document.getElementById('email-input');
+  const email = emailInput?.value?.trim();
+  
+  if (!email) {
+    showToast('请输入邮箱地址', 'error');
+    return;
+  }
+  
+  // 简单的邮箱格式验证
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(email)) {
+    showToast('请输入有效的邮箱地址', 'error');
+    return;
+  }
+  
+  const btn = document.getElementById('send-email-code-btn');
+  if (btn) btn.disabled = true;
+  
+  try {
+    const response = await fetch('/api/account/send-email-code', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Token': getUserToken()
+      },
+      body: JSON.stringify({ email, type: 'verify' })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      showToast('验证码已发送', 'success');
+      
+      // 显示验证码输入区域
+      document.getElementById('email-input-step').style.display = 'none';
+      document.getElementById('email-code-step').style.display = 'flex';
+      document.getElementById('email-verify-code')?.focus();
+      
+      // 保存邮箱
+      emailVerifyState.email = email;
+      
+      // 更新提示
+      const hint = document.getElementById('email-hint');
+      if (hint) {
+        hint.innerHTML = `💡 验证码已发送到 ${email}，${data.expireMinutes || 10}分钟内有效`;
+      }
+    } else {
+      showToast(data.error || '发送失败', 'error');
+      if (btn) btn.disabled = false;
+      
+      // 如果是限流，开始倒计时
+      if (response.status === 429) {
+        startEmailCooldown(60);
+      }
+    }
+  } catch (error) {
+    console.error('发送邮箱验证码失败:', error);
+    showToast('发送失败，请重试', 'error');
+    if (btn) btn.disabled = false;
+  }
+}
+
+// 验证邮箱验证码
+async function verifyEmailCode() {
+  const codeInput = document.getElementById('email-verify-code');
+  const code = codeInput?.value?.trim();
+  
+  if (!code) {
+    showToast('请输入验证码', 'error');
+    return;
+  }
+  
+  if (!emailVerifyState.email) {
+    showToast('请先发送验证码', 'error');
+    return;
+  }
+  
+  try {
+    const response = await fetch('/api/account/verify-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Token': getUserToken()
+      },
+      body: JSON.stringify({ 
+        email: emailVerifyState.email, 
+        code 
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      showToast(data.message || '验证成功', 'success');
+      
+      // 更新状态
+      emailVerifyState.emailVerified = true;
+      state.credits = data.totalCredits;
+      updateCreditsDisplay();
+      
+      // 更新 UI
+      updateEmailWayUI(true);
+      
+      // 收起区域
+      document.getElementById('email-verify-section').style.display = 'none';
+      
+      // 刷新积分弹窗数据
+      loadClaimableAchievementsByCategory();
+    } else {
+      showToast(data.error || '验证失败', 'error');
+    }
+  } catch (error) {
+    console.error('验证邮箱失败:', error);
+    showToast('验证失败，请重试', 'error');
+  }
+}
+
+// 开始发送验证码倒计时
+function startEmailCooldown(seconds) {
+  emailVerifyState.cooldown = seconds;
+  const btn = document.getElementById('send-email-code-btn');
+  
+  if (emailVerifyState.cooldownTimer) {
+    clearInterval(emailVerifyState.cooldownTimer);
+  }
+  
+  emailVerifyState.cooldownTimer = setInterval(() => {
+    emailVerifyState.cooldown--;
+    if (btn) {
+      if (emailVerifyState.cooldown > 0) {
+        btn.textContent = `${emailVerifyState.cooldown}秒后重试`;
+        btn.disabled = true;
+      } else {
+        btn.textContent = '发送验证码';
+        btn.disabled = false;
+        clearInterval(emailVerifyState.cooldownTimer);
+        emailVerifyState.cooldownTimer = null;
+      }
+    }
+  }, 1000);
+}
+
+// 更新邮箱验证入口 UI
+function updateEmailWayUI(verified) {
+  const wrapper = document.getElementById('way-email-wrapper');
+  const way = document.getElementById('way-email');
+  const desc = document.getElementById('way-email-desc');
+  const reward = document.getElementById('way-email-reward');
+  const badge = document.getElementById('way-email-badge');
+  
+  if (verified) {
+    if (way) way.classList.add('completed');
+    if (desc) desc.textContent = '已验证邮箱';
+    if (reward) reward.textContent = '已完成';
+    if (badge) badge.style.display = 'none';
+  }
+}
+
+// 加载邮箱验证状态
+async function loadEmailStatus() {
+  try {
+    const response = await fetch('/api/account/email-status', {
+      headers: { 'X-User-Token': getUserToken() }
+    });
+    
+    if (!response.ok) return;
+    
+    const data = await response.json();
+    if (data.success) {
+      emailVerifyState.email = data.email || '';
+      emailVerifyState.emailVerified = data.emailVerified;
+      emailVerifyState.smtpConfigured = data.smtpConfigured;
+      emailVerifyState.verifyEmailCredits = data.verifyEmailCredits || 3;
+      
+      // 更新 UI
+      const wrapper = document.getElementById('way-email-wrapper');
+      if (wrapper && data.smtpConfigured) {
+        // 只有配置了 SMTP 才显示邮箱入口
+        wrapper.style.display = 'block';
+        
+        const reward = document.getElementById('way-email-reward');
+        if (reward) reward.textContent = `+${data.verifyEmailCredits}积分`;
+        
+        if (data.emailVerified) {
+          updateEmailWayUI(true);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('加载邮箱状态失败:', error);
+  }
+}
+
+// ==================== 积分弹窗中的公众号/邮箱入口函数 ====================
+
+// 切换积分弹窗中的公众号验证区域
+function toggleCreditsModalWechatVerify() {
+  const entry = document.getElementById('wechat-follow-entry');
+  const section = document.getElementById('credits-modal-wechat-verify');
+  const articleSection = document.getElementById('credits-modal-article-code');
+  const emailSection = document.getElementById('credits-modal-email-verify');
+  
+  if (entry && entry.classList.contains('completed')) {
+    showToast('已领取过公众号关注奖励', 'info');
+    return;
+  }
+  
+  // 关闭其他区域
+  if (articleSection) articleSection.style.display = 'none';
+  if (emailSection) emailSection.style.display = 'none';
+  
+  // 切换当前区域
+  if (section) {
+    section.style.display = section.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
+// 积分弹窗中验证公众号关注
+async function verifyWechatInCreditsModal() {
+  const code = document.getElementById('credits-modal-wechat-code')?.value?.trim();
+  
+  if (!code) {
+    showToast('请输入验证码', 'error');
+    return;
+  }
+  
+  try {
+    const response = await fetch('/api/credits/follow-wechat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Token': getUserToken()
+      },
+      body: JSON.stringify({ verifyCode: code })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      showToast(data.message || '验证成功！', 'success');
+      state.credits = data.credits;
+      updateCreditsDisplay();
+      
+      // 更新入口状态
+      const entry = document.getElementById('wechat-follow-entry');
+      const status = document.getElementById('wechat-follow-status');
+      const reward = document.getElementById('wechat-follow-reward');
+      if (entry) entry.classList.add('completed');
+      if (status) status.textContent = '(已完成)';
+      if (reward) reward.textContent = '已领取';
+      
+      // 收起区域
+      const section = document.getElementById('credits-modal-wechat-verify');
+      if (section) section.style.display = 'none';
+      
+      // 刷新数据
+      loadClaimableAchievementsByCategory();
+    } else {
+      showToast(data.error || '验证失败', 'error');
+    }
+  } catch (error) {
+    console.error('验证公众号失败:', error);
+    showToast('验证失败，请重试', 'error');
+  }
+}
+
+// 切换积分弹窗中的文章验证码区域
+function toggleCreditsModalArticleCode() {
+  const section = document.getElementById('credits-modal-article-code');
+  const wechatSection = document.getElementById('credits-modal-wechat-verify');
+  const emailSection = document.getElementById('credits-modal-email-verify');
+  
+  // 关闭其他区域
+  if (wechatSection) wechatSection.style.display = 'none';
+  if (emailSection) emailSection.style.display = 'none';
+  
+  // 切换当前区域
+  if (section) {
+    section.style.display = section.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
+// 积分弹窗中兑换文章验证码
+async function redeemArticleInCreditsModal() {
+  const code = document.getElementById('credits-modal-article-code-input')?.value?.trim();
+  
+  if (!code) {
+    showToast('请输入验证码', 'error');
+    return;
+  }
+  
+  try {
+    const response = await fetch('/api/credits/redeem-code', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Token': getUserToken()
+      },
+      body: JSON.stringify({ code })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      showToast(data.message || '兑换成功！', 'success');
+      state.credits = data.credits;
+      updateCreditsDisplay();
+      
+      // 清空输入框
+      const input = document.getElementById('credits-modal-article-code-input');
+      if (input) input.value = '';
+      
+      // 更新进度
+      const progress = document.getElementById('article-code-progress');
+      if (progress && data.todayCount !== undefined && data.dailyLimit !== undefined) {
+        progress.textContent = `${data.todayCount}/${data.dailyLimit}`;
+      }
+      
+      // 刷新数据
+      loadClaimableAchievementsByCategory();
+    } else {
+      showToast(data.error || '兑换失败', 'error');
+    }
+  } catch (error) {
+    console.error('兑换文章验证码失败:', error);
+    showToast('兑换失败，请重试', 'error');
+  }
+}
+
+// 切换积分弹窗中的邮箱验证区域
+function toggleCreditsModalEmailVerify() {
+  const entry = document.getElementById('email-verify-entry');
+  const section = document.getElementById('credits-modal-email-verify');
+  const wechatSection = document.getElementById('credits-modal-wechat-verify');
+  const articleSection = document.getElementById('credits-modal-article-code');
+  
+  if (entry && entry.classList.contains('completed')) {
+    showToast('您已验证过邮箱', 'info');
+    return;
+  }
+  
+  // 关闭其他区域
+  if (wechatSection) wechatSection.style.display = 'none';
+  if (articleSection) articleSection.style.display = 'none';
+  
+  // 切换当前区域
+  if (section) {
+    section.style.display = section.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
+// 积分弹窗中发送邮箱验证码
+async function sendEmailCodeInCreditsModal() {
+  const emailInput = document.getElementById('credits-modal-email-input');
+  const btn = document.getElementById('credits-modal-send-email-btn');
+  const email = emailInput?.value?.trim();
+  
+  if (!email) {
+    showToast('请输入邮箱地址', 'error');
+    return;
+  }
+  
+  // 简单邮箱格式验证
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(email)) {
+    showToast('请输入有效的邮箱地址', 'error');
+    return;
+  }
+  
+  if (btn) btn.disabled = true;
+  
+  try {
+    const response = await fetch('/api/account/send-email-code', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Token': getUserToken()
+      },
+      body: JSON.stringify({ email, type: 'verify' })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      showToast('验证码已发送到您的邮箱', 'success');
+      // 保存邮箱用于验证
+      emailVerifyState.email = email;
+      
+      // 开始60秒倒计时
+      let countdown = 60;
+      if (btn) {
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        const timer = setInterval(() => {
+          countdown--;
+          if (countdown <= 0) {
+            clearInterval(timer);
+            btn.textContent = originalText;
+            btn.disabled = false;
+          } else {
+            btn.textContent = `${countdown}s`;
+          }
+        }, 1000);
+      }
+    } else {
+      showToast(data.error || '发送失败', 'error');
+      if (btn) btn.disabled = false;
+    }
+  } catch (error) {
+    console.error('发送验证码失败:', error);
+    showToast('发送失败，请重试', 'error');
+    if (btn) btn.disabled = false;
+  }
+}
+
+// 积分弹窗中验证邮箱
+async function verifyEmailInCreditsModal() {
+  const code = document.getElementById('credits-modal-email-code')?.value?.trim();
+  const email = document.getElementById('credits-modal-email-input')?.value?.trim() || emailVerifyState.email;
+  
+  if (!code) {
+    showToast('请输入验证码', 'error');
+    return;
+  }
+  
+  if (!email) {
+    showToast('请先输入邮箱地址', 'error');
+    return;
+  }
+  
+  try {
+    const response = await fetch('/api/account/verify-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Token': getUserToken()
+      },
+      body: JSON.stringify({ email, code })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      showToast(data.message || '邮箱验证成功！', 'success');
+      state.credits = data.totalCredits || state.credits;
+      updateCreditsDisplay();
+      
+      // 更新入口状态
+      const entry = document.getElementById('email-verify-entry');
+      const status = document.getElementById('email-verify-status');
+      const reward = document.getElementById('email-verify-reward');
+      if (entry) entry.classList.add('completed');
+      if (status) status.textContent = '(已验证)';
+      if (reward) reward.textContent = '已完成';
+      
+      // 收起区域
+      const section = document.getElementById('credits-modal-email-verify');
+      if (section) section.style.display = 'none';
+      
+      // 刷新数据
+      loadClaimableAchievementsByCategory();
+    } else {
+      showToast(data.error || '验证失败', 'error');
+    }
+  } catch (error) {
+    console.error('验证邮箱失败:', error);
+    showToast('验证失败，请重试', 'error');
+  }
+}
+
+// ==================== 积分弹窗中的昵称设置函数 ====================
+
+// 切换积分弹窗中的昵称设置区域
+function toggleCreditsModalNickname() {
+  const entry = document.getElementById('nickname-set-entry');
+  const section = document.getElementById('credits-modal-nickname-set');
+  
+  if (!entry || !section) return;
+  
+  // 如果已完成，不展开
+  if (entry.classList.contains('completed')) {
+    showToast('您已设置过昵称', 'info');
+    return;
+  }
+  
+  const isExpanded = section.style.display !== 'none';
+  
+  // 收起其他区域
+  ['credits-modal-wechat-verify', 'credits-modal-article-code', 'credits-modal-email-verify'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  
+  section.style.display = isExpanded ? 'none' : 'block';
+  
+  if (!isExpanded) {
+    // 预填当前昵称（如果不是默认值）
+    const nicknameInput = document.getElementById('credits-modal-nickname-input');
+    const currentNickname = state.account?.nickname || '';
+    const accountId = state.account?.accountId || '';
+    const isDefaultNickname = !currentNickname ||
+      currentNickname === '微信用户' ||
+      currentNickname === '游戏玩家' ||
+      currentNickname === accountId;
+    
+    if (nicknameInput) {
+      nicknameInput.value = isDefaultNickname ? '' : currentNickname;
+      nicknameInput.focus();
+    }
+  }
+}
+
+// 积分弹窗中保存昵称
+async function saveNicknameInCreditsModal() {
+  const nicknameInput = document.getElementById('credits-modal-nickname-input');
+  const nickname = nicknameInput?.value?.trim();
+  
+  if (!nickname) {
+    showToast('请输入昵称', 'error');
+    return;
+  }
+  
+  if (nickname.length > 20) {
+    showToast('昵称不能超过20个字符', 'error');
+    return;
+  }
+  
+  // 检查是否是默认昵称
+  const accountId = state.account?.accountId || '';
+  if (nickname === '微信用户' || nickname === '游戏玩家' || nickname === accountId) {
+    showToast('请设置一个个性化的昵称', 'error');
+    return;
+  }
+  
+  try {
+    const userToken = getUserToken();
+    const response = await fetch('/api/account/nickname', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Token': userToken
+      },
+      body: JSON.stringify({ nickname })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // 更新本地状态
+      state.account.nickname = nickname;
+      state.settings.authorName = nickname;
+      localStorage.setItem('aigame-author-name', nickname);
+      
+      // 显示奖励提示
+      if (data.creditsEarned > 0) {
+        showToast(`🎉 ${data.rewardMessage || '设置昵称成功，获得' + data.creditsEarned + '积分！'}`, 'success');
+        state.credits = (state.credits || 0) + data.creditsEarned;
+        updateCreditsDisplay();
+        
+        // 更新入口状态为已完成
+        const entry = document.getElementById('nickname-set-entry');
+        const status = document.getElementById('nickname-set-status');
+        const reward = document.getElementById('nickname-set-reward');
+        if (entry) entry.classList.add('completed');
+        if (status) status.textContent = '(已完成)';
+        if (reward) reward.textContent = '已领取';
+      } else {
+        showToast('昵称更新成功', 'success');
+      }
+      
+      // 收起区域
+      const section = document.getElementById('credits-modal-nickname-set');
+      if (section) section.style.display = 'none';
+      
+      // 更新页面上的用户名显示
+      const usernameEl = document.getElementById('profile-page-username');
+      if (usernameEl) usernameEl.textContent = nickname;
+      
+      // 刷新数据
+      loadClaimableAchievementsByCategory();
+    } else {
+      showToast(data.error || '保存失败', 'error');
+    }
+  } catch (error) {
+    console.error('保存昵称失败:', error);
+    showToast('保存失败，请重试', 'error');
+  }
+}
+
+// 更新积分弹窗中的公众号/邮箱入口状态
+async function updateCreditsModalEntryStatus() {
+  try {
+    const userToken = getUserToken();
+    if (!userToken) return;
+    
+    // 获取公众号状态
+    const creditsResponse = await fetch('/api/credits', {
+      headers: { 'X-User-Token': userToken }
+    });
+    const creditsData = await creditsResponse.json();
+    
+    // 更新公众号关注状态
+    if (creditsData.followedWechat) {
+      const entry = document.getElementById('wechat-follow-entry');
+      const status = document.getElementById('wechat-follow-status');
+      const reward = document.getElementById('wechat-follow-reward');
+      if (entry) entry.classList.add('completed');
+      if (status) status.textContent = '(已完成)';
+      if (reward) reward.textContent = '已领取';
+    }
+    
+    // 更新文章验证码进度
+    if (creditsData.dailyCounts?.article !== undefined) {
+      const progress = document.getElementById('article-code-progress');
+      const limit = creditsData.extraConfig?.article?.dailyLimit || 3;
+      if (progress) progress.textContent = `${creditsData.dailyCounts.article}/${limit}`;
+    }
+    
+    // 获取邮箱状态
+    const emailResponse = await fetch('/api/account/email-status', {
+      headers: { 'X-User-Token': userToken }
+    });
+    const emailData = await emailResponse.json();
+    
+    if (emailData.success) {
+      // 显示邮箱入口（如果SMTP已配置）
+      const emailEntry = document.getElementById('email-verify-entry');
+      if (emailEntry && emailData.smtpConfigured) {
+        emailEntry.style.display = 'flex';
+        
+        // 更新奖励显示
+        const emailReward = document.getElementById('email-verify-reward');
+        if (emailReward) emailReward.textContent = `+${emailData.verifyEmailCredits || 3}积分`;
+        
+        // 如果已验证
+        if (emailData.emailVerified) {
+          const status = document.getElementById('email-verify-status');
+          const reward = document.getElementById('email-verify-reward');
+          emailEntry.classList.add('completed');
+          if (status) status.textContent = '(已验证)';
+          if (reward) reward.textContent = '已完成';
+        }
+      }
+    }
+    
+    // 获取昵称奖励状态
+    const nicknameResponse = await fetch('/api/account/nickname-status', {
+      headers: { 'X-User-Token': userToken }
+    });
+    const nicknameData = await nicknameResponse.json();
+    
+    if (nicknameData.success) {
+      const nicknameEntry = document.getElementById('nickname-set-entry');
+      
+      if (nicknameEntry) {
+        // 只有当用户使用默认昵称且未领取过奖励时才显示入口
+        if (nicknameData.canClaimReward) {
+          nicknameEntry.style.display = 'flex';
+          
+          // 更新奖励显示
+          const nicknameReward = document.getElementById('nickname-set-reward');
+          if (nicknameReward) nicknameReward.textContent = `+${nicknameData.nicknameCredits || 3}积分`;
+        } else if (nicknameData.nicknameRewarded) {
+          // 已领取过奖励，显示为已完成状态
+          nicknameEntry.style.display = 'flex';
+          nicknameEntry.classList.add('completed');
+          const status = document.getElementById('nickname-set-status');
+          const reward = document.getElementById('nickname-set-reward');
+          if (status) status.textContent = '(已完成)';
+          if (reward) reward.textContent = '已领取';
+        }
+        // 如果已设置自定义昵称但未领取过奖励（可能是老用户），则不显示入口
+      }
+    }
+  } catch (error) {
+    console.error('更新入口状态失败:', error);
+  }
+}
+
+// 显示忘记密码弹窗
+function showForgotPasswordDialog() {
+  // 关闭登录弹窗
+  closeLoginDialog();
+  
+  const dialog = document.createElement('div');
+  dialog.className = 'modal active';
+  dialog.id = 'forgot-password-dialog';
+  dialog.onclick = (e) => { if (e.target === dialog) closeForgotPasswordDialog(); };
+  dialog.innerHTML = `
+    <div class="modal-content" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3>🔑 找回密码</h3>
+        <button class="btn btn-icon btn-close" onclick="closeForgotPasswordDialog()">×</button>
+      </div>
+      <div class="modal-body" style="padding: 1.5rem;">
+        <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1rem; text-align: center;">
+          请输入已绑定的邮箱地址
+        </p>
+        
+        <!-- Step 1: 输入邮箱 -->
+        <div id="forgot-step-1">
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <input type="email" id="forgot-email" placeholder="请输入邮箱地址" style="
+              width: 100%; padding: 0.75rem; border: 1px solid var(--border-color);
+              border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);
+            ">
+          </div>
+          <button class="btn btn-primary" id="forgot-send-btn" onclick="sendForgotPasswordCode()" style="width: 100%;">
+            发送验证码
+          </button>
+        </div>
+        
+        <!-- Step 2: 输入验证码和新密码 -->
+        <div id="forgot-step-2" style="display: none;">
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">验证码</label>
+            <input type="text" id="forgot-code" placeholder="输入6位验证码" maxlength="6" style="
+              width: 100%; padding: 0.75rem; border: 1px solid var(--border-color);
+              border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);
+            ">
+          </div>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">新密码</label>
+            <input type="password" id="forgot-new-password" placeholder="请输入新密码（至少6位）" style="
+              width: 100%; padding: 0.75rem; border: 1px solid var(--border-color);
+              border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);
+            ">
+          </div>
+          <button class="btn btn-primary" onclick="resetPasswordByEmail()" style="width: 100%;">
+            重置密码
+          </button>
+        </div>
+        
+        <div id="forgot-error" style="display: none; color: #ef4444; font-size: 0.8125rem; margin-top: 1rem; text-align: center;"></div>
+        
+        <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 1rem; text-align: center;">
+          <a href="javascript:void(0)" onclick="closeForgotPasswordDialog(); showLoginDialog('existing');" style="color: var(--accent-primary);">返回登录</a>
+        </p>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+  document.body.classList.add('modal-open');
+  
+  setTimeout(() => {
+    document.getElementById('forgot-email')?.focus();
+  }, 100);
+}
+
+// 关闭忘记密码弹窗
+function closeForgotPasswordDialog() {
+  const dialog = document.getElementById('forgot-password-dialog');
+  if (dialog) dialog.remove();
+  document.body.classList.remove('modal-open');
+}
+
+// 发送找回密码验证码
+async function sendForgotPasswordCode() {
+  const emailInput = document.getElementById('forgot-email');
+  const email = emailInput?.value?.trim();
+  const errorDiv = document.getElementById('forgot-error');
+  const btn = document.getElementById('forgot-send-btn');
+  
+  if (!email) {
+    if (errorDiv) {
+      errorDiv.textContent = '请输入邮箱地址';
+      errorDiv.style.display = 'block';
+    }
+    return;
+  }
+  
+  if (btn) btn.disabled = true;
+  if (errorDiv) errorDiv.style.display = 'none';
+  
+  try {
+    const response = await fetch('/api/account/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      showToast(data.message || '验证码已发送', 'success');
+      
+      // 显示第二步
+      document.getElementById('forgot-step-1').style.display = 'none';
+      document.getElementById('forgot-step-2').style.display = 'block';
+      document.getElementById('forgot-code')?.focus();
+      
+      // 保存邮箱用于重置
+      emailVerifyState.forgotEmail = email;
+    } else {
+      if (errorDiv) {
+        errorDiv.textContent = data.error || '发送失败';
+        errorDiv.style.display = 'block';
+      }
+      if (btn) btn.disabled = false;
+    }
+  } catch (error) {
+    console.error('发送验证码失败:', error);
+    if (errorDiv) {
+      errorDiv.textContent = '发送失败，请重试';
+      errorDiv.style.display = 'block';
+    }
+    if (btn) btn.disabled = false;
+  }
+}
+
+// 通过邮箱重置密码
+async function resetPasswordByEmail() {
+  const code = document.getElementById('forgot-code')?.value?.trim();
+  const newPassword = document.getElementById('forgot-new-password')?.value;
+  const errorDiv = document.getElementById('forgot-error');
+  
+  if (!code || !newPassword) {
+    if (errorDiv) {
+      errorDiv.textContent = '请填写完整信息';
+      errorDiv.style.display = 'block';
+    }
+    return;
+  }
+  
+  if (newPassword.length < 6) {
+    if (errorDiv) {
+      errorDiv.textContent = '密码至少6位';
+      errorDiv.style.display = 'block';
+    }
+    return;
+  }
+  
+  if (errorDiv) errorDiv.style.display = 'none';
+  
+  try {
+    const response = await fetch('/api/account/reset-password-by-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        email: emailVerifyState.forgotEmail, 
+        code, 
+        newPassword 
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      showToast(data.message || '密码重置成功', 'success');
+      closeForgotPasswordDialog();
+      
+      // 显示登录弹窗
+      setTimeout(() => {
+        showLoginDialog('existing');
+      }, 500);
+    } else {
+      if (errorDiv) {
+        errorDiv.textContent = data.error || '重置失败';
+        errorDiv.style.display = 'block';
+      }
+    }
+  } catch (error) {
+    console.error('重置密码失败:', error);
+    if (errorDiv) {
+      errorDiv.textContent = '重置失败，请重试';
+      errorDiv.style.display = 'block';
+    }
+  }
 }
 
 // ==================== 个人中心 ====================

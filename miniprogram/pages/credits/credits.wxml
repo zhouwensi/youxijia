@@ -47,6 +47,142 @@
     </view>
   </view>
 
+  <!-- 公众号互动区域 -->
+  <view class="wechat-actions-section">
+    <!-- 关注公众号 -->
+    <view class="wechat-action-card">
+      <view class="wechat-action-header" bindtap="toggleWechatVerify">
+        <view class="wechat-action-left">
+          <text class="wechat-action-icon">📱</text>
+          <view class="wechat-action-info">
+            <text class="wechat-action-title">关注公众号</text>
+            <text class="wechat-action-desc">{{wechatStatus.followed ? '已领取' : '关注后输入验证码领取'}}</text>
+          </view>
+        </view>
+        <view class="wechat-action-right">
+          <text class="wechat-action-reward {{wechatStatus.followed ? 'claimed' : ''}}">+{{wechatReward}}积分</text>
+          <text class="wechat-action-arrow">{{showWechatVerify ? '∧' : '∨'}}</text>
+        </view>
+      </view>
+      <!-- 展开的验证区域 -->
+      <view class="wechat-verify-section" wx:if="{{showWechatVerify && !wechatStatus.followed}}">
+        <view class="verify-tip">
+          <text>1. 微信搜索关注公众号「{{wechatOfficialName}}」</text>
+          <text>2. 在公众号回复「积分」获取验证码</text>
+          <text>3. 输入验证码领取积分</text>
+        </view>
+        <view class="verify-input-row">
+          <input class="verify-input" type="text" placeholder="输入验证码" 
+                 value="{{wechatVerifyCode}}" bindinput="onWechatCodeInput" maxlength="10"/>
+          <button class="verify-btn {{wechatVerifyLoading ? 'loading' : ''}}" 
+                  bindtap="verifyWechatFollow" disabled="{{wechatVerifyLoading}}">
+            {{wechatVerifyLoading ? '验证中...' : '验证'}}
+          </button>
+        </view>
+      </view>
+      <view class="wechat-verify-done" wx:if="{{wechatStatus.followed}}">
+        <text class="done-icon">✅</text>
+        <text class="done-text">已关注并领取奖励</text>
+      </view>
+    </view>
+
+    <!-- 阅读文章找码 -->
+    <view class="wechat-action-card">
+      <view class="wechat-action-header" bindtap="toggleArticleCode">
+        <view class="wechat-action-left">
+          <text class="wechat-action-icon">📖</text>
+          <view class="wechat-action-info">
+            <text class="wechat-action-title">阅读文章找码</text>
+            <text class="wechat-action-desc">在公众号文章中获取验证码</text>
+          </view>
+        </view>
+        <view class="wechat-action-right">
+          <text class="wechat-action-reward">+{{articleReward}}积分</text>
+          <text class="wechat-action-progress">{{articleStatus.usedToday}}/{{articleStatus.dailyLimit}}</text>
+          <text class="wechat-action-arrow">{{showArticleCode ? '∧' : '∨'}}</text>
+        </view>
+      </view>
+      <!-- 展开的兑换区域 -->
+      <view class="wechat-verify-section" wx:if="{{showArticleCode}}">
+        <view class="verify-tip">
+          <text>阅读公众号文章，在文章中找到隐藏验证码</text>
+          <text>每篇文章的验证码仅可使用一次</text>
+        </view>
+        <view class="verify-input-row">
+          <input class="verify-input" type="text" placeholder="输入文章验证码" 
+                 value="{{articleCode}}" bindinput="onArticleCodeInput" maxlength="20"/>
+          <button class="verify-btn {{articleRedeemLoading ? 'loading' : ''}}" 
+                  bindtap="redeemArticleCode" disabled="{{articleRedeemLoading || articleStatus.usedToday >= articleStatus.dailyLimit}}">
+            {{articleRedeemLoading ? '兑换中...' : (articleStatus.usedToday >= articleStatus.dailyLimit ? '今日已满' : '兑换')}}
+          </button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 验证邮箱入口（仅SMTP已配置且未验证时显示） -->
+    <view class="wechat-action-card" wx:if="{{emailConfig.smtpConfigured && !emailStatus.verified}}">
+      <view class="wechat-action-header" bindtap="toggleEmailVerify">
+        <view class="wechat-action-left">
+          <text class="wechat-action-icon">📧</text>
+          <view class="wechat-action-info">
+            <text class="wechat-action-title">验证邮箱</text>
+            <text class="wechat-action-desc">绑定邮箱可用于找回密码</text>
+          </view>
+        </view>
+        <view class="wechat-action-right">
+          <text class="wechat-action-reward">+{{emailConfig.verifyCredits}}积分</text>
+          <text class="wechat-action-progress" style="font-size: 20rpx; color: #999;">一次性</text>
+          <text class="wechat-action-arrow">{{showEmailVerify ? '∧' : '∨'}}</text>
+        </view>
+      </view>
+      <!-- 展开的邮箱验证区域 -->
+      <view class="wechat-verify-section" wx:if="{{showEmailVerify}}">
+        <view class="verify-tip">
+          <text>验证邮箱后可用于找回密码</text>
+          <text>首次验证成功可获得积分奖励</text>
+        </view>
+        <!-- Step 1: 输入邮箱 -->
+        <view class="verify-input-row" wx:if="{{!emailCodeSent}}">
+          <input class="verify-input" type="text" placeholder="请输入邮箱地址" 
+                 value="{{emailInput}}" bindinput="onEmailInput" maxlength="100"/>
+          <button class="verify-btn {{emailSending ? 'loading' : ''}}" 
+                  bindtap="sendEmailCode" disabled="{{emailSending}}">
+            {{emailSending ? '发送中...' : (emailCooldown > 0 ? emailCooldown + 's' : '发送验证码')}}
+          </button>
+        </view>
+        <!-- Step 2: 输入验证码 -->
+        <view class="verify-input-row" wx:if="{{emailCodeSent}}">
+          <input class="verify-input" type="number" placeholder="输入6位验证码" 
+                 value="{{emailVerifyCode}}" bindinput="onEmailCodeInput" maxlength="6"/>
+          <button class="verify-btn {{emailVerifying ? 'loading' : ''}}" 
+                  bindtap="verifyEmail" disabled="{{emailVerifying}}">
+            {{emailVerifying ? '验证中...' : '验证'}}
+          </button>
+        </view>
+        <text class="verify-hint" wx:if="{{emailCodeSent}}">验证码已发送到 {{emailInput}}，10分钟内有效</text>
+      </view>
+    </view>
+    
+    <!-- 已验证邮箱状态 -->
+    <view class="wechat-action-card" wx:if="{{emailConfig.smtpConfigured && emailStatus.verified}}">
+      <view class="wechat-action-header">
+        <view class="wechat-action-left">
+          <text class="wechat-action-icon">📧</text>
+          <view class="wechat-action-info">
+            <text class="wechat-action-title">验证邮箱</text>
+            <text class="wechat-action-desc">{{emailStatus.email || '已验证'}}</text>
+          </view>
+        </view>
+        <view class="wechat-action-right">
+          <view class="wechat-verify-done">
+            <text class="done-icon">✅</text>
+            <text class="done-text">已完成</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
   <!-- 签到连续提示（简化：不重复显示签到按钮，只显示连续签到加成信息） -->
   <view class="streak-section" wx:if="{{checkinStatus.checkedInToday && checkinStatus.streakDays > 0}}">
     <view class="streak-card">

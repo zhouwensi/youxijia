@@ -626,9 +626,22 @@
             <label>关注验证码</label>
             <input type="text" id="config-wechat_verify_code" placeholder="2026">
           </div>
+          <div class="config-item">
+            <label>关注公众号奖励积分</label>
+            <input type="number" id="config-credits_follow_wechat" placeholder="3" min="0" max="100">
+          </div>
+          <div class="config-item">
+            <label>文章验证码奖励积分</label>
+            <input type="number" id="config-credits_article" placeholder="1" min="0" max="100">
+          </div>
+          <div class="config-item">
+            <label>文章验证码每日限制</label>
+            <input type="number" id="config-credits_article_daily_limit" placeholder="3" min="1" max="20">
+          </div>
         </div>
         <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.75rem;">
-          💡 用户关注公众号后，输入此验证码可领取积分。建议在公众号后台设置关键词自动回复。
+          💡 用户关注公众号后，输入此验证码可领取积分。建议在公众号后台设置关键词自动回复。<br>
+          文章验证码可在下方"推广验证码"中生成，放在公众号文章留言区供用户兑换。
         </p>
       </div>
 
@@ -663,6 +676,50 @@
         </div>
         <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.75rem;">
           💡 可任意添加测试账号，用于测试关注、粉丝等功能。账号间可以互相关注。
+        </p>
+      </div>
+
+      <div class="config-section">
+        <h2>📧 邮件服务配置 (SMTP)</h2>
+        <div class="config-grid">
+          <div class="config-item">
+            <label>SMTP 服务器</label>
+            <input type="text" id="config-smtp_host" placeholder="smtp.qq.com">
+          </div>
+          <div class="config-item">
+            <label>SMTP 端口</label>
+            <input type="number" id="config-smtp_port" placeholder="465" min="1" max="65535">
+          </div>
+          <div class="config-item">
+            <label>发件人邮箱</label>
+            <input type="text" id="config-smtp_user" placeholder="your-email@qq.com">
+          </div>
+          <div class="config-item">
+            <label>SMTP 密码/授权码</label>
+            <input type="password" id="config-smtp_pass" placeholder="授权码（非邮箱密码）">
+          </div>
+          <div class="config-item">
+            <label>发件人名称</label>
+            <input type="text" id="config-smtp_from_name" placeholder="一句话游戏">
+          </div>
+          <div class="config-item">
+            <label>发件人邮箱地址</label>
+            <input type="text" id="config-smtp_from_email" placeholder="留空则使用SMTP账号">
+          </div>
+          <div class="config-item">
+            <label>验证邮箱奖励积分</label>
+            <input type="number" id="config-credits_verify_email" placeholder="3" min="0" max="100">
+          </div>
+        </div>
+        <div style="margin-top: 1rem;">
+          <button class="btn-save" onclick="testSmtpConfig()" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">
+            📤 测试发送
+          </button>
+          <span id="smtp-test-result" style="margin-left: 1rem; font-size: 0.85rem;"></span>
+        </div>
+        <p style="color: #64748b; font-size: 0.8rem; margin-top: 0.75rem;">
+          💡 配置SMTP后，用户可通过邮箱验证获得积分，也可通过邮箱找回密码。<br>
+          QQ邮箱需在设置中开启SMTP服务并获取授权码。端口通常为 465(SSL) 或 587(TLS)。
         </p>
       </div>
 
@@ -2340,12 +2397,73 @@
       }
     }
 
+    // 测试 SMTP 配置
+    async function testSmtpConfig() {
+      const resultEl = document.getElementById('smtp-test-result');
+      const host = document.getElementById('config-smtp_host')?.value;
+      const port = document.getElementById('config-smtp_port')?.value;
+      const user = document.getElementById('config-smtp_user')?.value;
+      const pass = document.getElementById('config-smtp_pass')?.value;
+      
+      if (!host || !port || !user || !pass) {
+        if (resultEl) {
+          resultEl.textContent = '❌ 请先填写完整的 SMTP 配置';
+          resultEl.style.color = '#ef4444';
+        }
+        return;
+      }
+      
+      if (resultEl) {
+        resultEl.textContent = '⏳ 正在发送测试邮件...';
+        resultEl.style.color = '#94a3b8';
+      }
+      
+      try {
+        // 先保存配置
+        await saveConfig();
+        
+        // 然后发送测试邮件
+        const response = await fetch('/api/admin/test-smtp', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({ testEmail: user })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          if (resultEl) {
+            resultEl.textContent = '✅ 测试邮件已发送到 ' + user;
+            resultEl.style.color = '#10b981';
+          }
+          showToast('测试邮件发送成功', 'success');
+        } else {
+          if (resultEl) {
+            resultEl.textContent = '❌ ' + (data.error || '发送失败');
+            resultEl.style.color = '#ef4444';
+          }
+          showToast(data.error || '测试失败', 'error');
+        }
+      } catch (error) {
+        if (resultEl) {
+          resultEl.textContent = '❌ 网络错误: ' + error.message;
+          resultEl.style.color = '#ef4444';
+        }
+        showToast('测试失败', 'error');
+      }
+    }
+
     // 保存配置
     async function saveConfig() {
       const configKeys = [
         'wechat_verify_code',
         'credits_initial',
         'credits_follow_wechat',
+        'credits_article',
+        'credits_article_daily_limit',
         'credits_watch_ad',
         'credits_daily_ad_limit',
         'credits_share_game',
@@ -2361,7 +2479,15 @@
         // 小程序配置
         'miniprogram_name',
         'miniprogram_appid',
-        'miniprogram_default_path'
+        'miniprogram_default_path',
+        // SMTP 邮件服务配置
+        'smtp_host',
+        'smtp_port',
+        'smtp_user',
+        'smtp_pass',
+        'smtp_from_name',
+        'smtp_from_email',
+        'credits_verify_email'
       ];
       
       // 复选框类型的配置项

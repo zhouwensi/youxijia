@@ -68,6 +68,42 @@ Page({
     smartTip: {
       show: false,
       text: ''
+    },
+    
+    // 公众号互动相关
+    showWechatVerify: false,       // 是否展开公众号验证区域
+    showArticleCode: false,        // 是否展开文章验证码区域
+    wechatOfficialName: '一句话游戏',  // 公众号名称（从配置加载）
+    wechatReward: 3,              // 关注公众号奖励积分
+    articleReward: 1,             // 文章验证码奖励积分
+    wechatVerifyCode: '',         // 公众号验证码输入
+    articleCode: '',              // 文章验证码输入
+    wechatVerifyLoading: false,   // 验证公众号loading
+    articleRedeemLoading: false,  // 兑换文章码loading
+    wechatStatus: {
+      followed: false             // 是否已关注公众号并领取
+    },
+    articleStatus: {
+      usedToday: 0,               // 今日已使用次数
+      dailyLimit: 3               // 每日限制次数
+    },
+    
+    // 邮箱验证相关
+    showEmailVerify: false,        // 是否展开邮箱验证区域
+    emailInput: '',                // 邮箱输入
+    emailVerifyCode: '',           // 邮箱验证码输入
+    emailCodeSent: false,          // 验证码是否已发送
+    emailSending: false,           // 发送验证码loading
+    emailVerifying: false,         // 验证loading
+    emailCooldown: 0,              // 发送冷却倒计时
+    emailCooldownTimer: null,      // 冷却倒计时定时器
+    emailConfig: {
+      smtpConfigured: false,       // SMTP是否已配置
+      verifyCredits: 3             // 验证邮箱奖励积分
+    },
+    emailStatus: {
+      verified: false,             // 是否已验证邮箱
+      email: ''                    // 已验证的邮箱地址
     }
   },
 
@@ -114,6 +150,14 @@ Page({
     this.loadAllData();
   },
 
+  onUnload() {
+    // 清理邮箱验证倒计时定时器
+    if (this.data.emailCooldownTimer) {
+      clearInterval(this.data.emailCooldownTimer);
+      this.setData({ emailCooldownTimer: null, emailCooldown: 0 });
+    }
+  },
+
   onPullDownRefresh() {
     this.loadAllData().then(() => {
       wx.stopPullDownRefresh();
@@ -132,7 +176,8 @@ Page({
         this.loadActionRewards(),
         this.loadCreditLogs(),
         this.loadInviteCode(),  // 加载邀请码
-        this.loadInviteConfig()  // 加载邀请配置
+        this.loadInviteConfig(),  // 加载邀请配置
+        this.loadWechatStatus()  // 加载公众号互动状态
       ]);
     } catch (err) {
       console.error('加载数据失败:', err);
@@ -183,8 +228,8 @@ Page({
       const result = await app.request('/api/credits');
       if (result && result.success !== false) {
         this.setData({
-          credits: result.credits || 0,
-          totalEarned: result.total_earned || 0
+          credits: app.formatCredits(result.credits || 0),
+          totalEarned: app.formatCredits(result.total_earned || 0)
         });
       }
     } catch (err) {
@@ -554,5 +599,346 @@ Page({
       title: '来游戏家签到领积分，积分可以生成游戏哦~',
       path: path
     };
+  },
+
+  // ==================== 公众号互动相关方法 ====================
+
+  // 切换公众号验证区域展开/收起
+  toggleWechatVerify() {
+    if (this.data.wechatStatus.followed) {
+      // 已关注，不需要展开
+      return;
+    }
+    this.setData({
+      showWechatVerify: !this.data.showWechatVerify,
+      showArticleCode: false  // 收起另一个
+    });
+  },
+
+  // 切换文章验证码区域展开/收起
+  toggleArticleCode() {
+    this.setData({
+      showArticleCode: !this.data.showArticleCode,
+      showWechatVerify: false  // 收起另一个
+    });
+  },
+
+  // 公众号验证码输入
+  onWechatCodeInput(e) {
+    this.setData({
+      wechatVerifyCode: e.detail.value
+    });
+  },
+
+  // 文章验证码输入
+  onArticleCodeInput(e) {
+    this.setData({
+      articleCode: e.detail.value
+    });
+  },
+
+  // 验证公众号关注并领取积分
+  async verifyWechatFollow() {
+    const code = this.data.wechatVerifyCode.trim();
+    if (!code) {
+      app.showToast('请输入验证码');
+      return;
+    }
+
+    if (this.data.wechatVerifyLoading) return;
+    this.setData({ wechatVerifyLoading: true });
+
+    try {
+      const result = await app.request('/api/credits/follow-wechat', {
+        method: 'POST',
+        data: { verifyCode: code }
+      });
+
+      if (result && result.success) {
+        // 验证成功
+        this.setData({
+          'wechatStatus.followed': true,
+          showWechatVerify: false,
+          wechatVerifyCode: ''
+        });
+
+        wx.showModal({
+          title: '🎉 领取成功',
+          content: `感谢关注公众号！\n\n获得 ${result.credits || this.data.wechatReward} 积分`,
+          showCancel: false,
+          confirmText: '太棒了'
+        });
+
+        // 刷新积分
+        this.loadCredits();
+        this.loadCreditLogs();
+      } else {
+        app.showToast(result?.error || '验证失败');
+      }
+    } catch (err) {
+      console.error('验证公众号关注失败:', err);
+      app.showToast('验证失败，请重试');
+    } finally {
+      this.setData({ wechatVerifyLoading: false });
+    }
+  },
+
+  // 兑换文章验证码领取积分
+  async redeemArticleCode() {
+    const code = this.data.articleCode.trim();
+    if (!code) {
+      app.showToast('请输入验证码');
+      return;
+    }
+
+    if (this.data.articleStatus.usedToday >= this.data.articleStatus.dailyLimit) {
+      app.showToast('今日兑换次数已用完');
+      return;
+    }
+
+    if (this.data.articleRedeemLoading) return;
+    this.setData({ articleRedeemLoading: true });
+
+    try {
+      const result = await app.request('/api/credits/redeem-code', {
+        method: 'POST',
+        data: { code: code }
+      });
+
+      if (result && result.success) {
+        // 兑换成功
+        this.setData({
+          articleCode: '',
+          'articleStatus.usedToday': this.data.articleStatus.usedToday + 1
+        });
+
+        app.showToast(`+${result.credits || this.data.articleReward}积分`, 'success');
+
+        // 刷新积分
+        this.loadCredits();
+        this.loadCreditLogs();
+      } else {
+        app.showToast(result?.error || '兑换失败');
+      }
+    } catch (err) {
+      console.error('兑换文章验证码失败:', err);
+      app.showToast('兑换失败，请重试');
+    } finally {
+      this.setData({ articleRedeemLoading: false });
+    }
+  },
+
+  // 加载公众号互动状态（在 loadAllData 中调用）
+  async loadWechatStatus() {
+    try {
+      const result = await app.request('/api/credits');
+      if (result && result.success !== false) {
+        this.setData({
+          'wechatStatus.followed': result.followedWechat === true,
+          wechatReward: result.extraConfig?.followWechat?.credits || this.data.wechatReward,
+          articleReward: result.extraConfig?.article?.credits || this.data.articleReward,
+          'articleStatus.dailyLimit': result.extraConfig?.article?.dailyLimit || 3,
+          'articleStatus.usedToday': result.dailyCounts?.article || 0
+        });
+        
+        // 加载公众号名称
+        if (app.globalData.config?.wechatOfficialName) {
+          this.setData({
+            wechatOfficialName: app.globalData.config.wechatOfficialName
+          });
+        }
+      }
+    } catch (err) {
+      console.error('加载公众号状态失败:', err);
+    }
+    
+    // 加载邮箱验证状态
+    await this.loadEmailStatus();
+  },
+
+  // ==================== 邮箱验证相关方法 ====================
+
+  // 切换邮箱验证区域展开/收起
+  toggleEmailVerify() {
+    if (this.data.emailStatus.verified) {
+      app.showToast('您已验证过邮箱');
+      return;
+    }
+    this.setData({
+      showEmailVerify: !this.data.showEmailVerify,
+      showWechatVerify: false,
+      showArticleCode: false
+    });
+  },
+
+  // 邮箱输入
+  onEmailInput(e) {
+    this.setData({
+      emailInput: e.detail.value
+    });
+  },
+
+  // 邮箱验证码输入
+  onEmailCodeInput(e) {
+    this.setData({
+      emailVerifyCode: e.detail.value
+    });
+  },
+
+  // 发送邮箱验证码
+  async sendEmailCode() {
+    const email = this.data.emailInput.trim();
+    
+    if (!email) {
+      app.showToast('请输入邮箱地址');
+      return;
+    }
+    
+    // 简单的邮箱格式验证
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      app.showToast('请输入有效的邮箱地址');
+      return;
+    }
+    
+    if (this.data.emailSending || this.data.emailCooldown > 0) return;
+    
+    this.setData({ emailSending: true });
+    
+    try {
+      const result = await app.request('/api/account/send-email-code', {
+        method: 'POST',
+        data: { email: email, type: 'verify' }
+      });
+      
+      if (result && result.success) {
+        app.showToast('验证码已发送', 'success');
+        
+        this.setData({
+          emailCodeSent: true
+        });
+        
+        // 开始60秒倒计时
+        this.startEmailCooldown(60);
+      } else {
+        app.showToast(result?.error || '发送失败');
+        
+        // 如果是限流，也开始倒计时
+        if (result?.error?.includes('60秒')) {
+          this.startEmailCooldown(60);
+        }
+      }
+    } catch (err) {
+      console.error('发送邮箱验证码失败:', err);
+      app.showToast('发送失败，请重试');
+    } finally {
+      this.setData({ emailSending: false });
+    }
+  },
+
+  // 开始发送验证码倒计时
+  startEmailCooldown(seconds) {
+    this.setData({ emailCooldown: seconds });
+    
+    // 清除已有的定时器
+    if (this.data.emailCooldownTimer) {
+      clearInterval(this.data.emailCooldownTimer);
+    }
+    
+    const timer = setInterval(() => {
+      const newCooldown = this.data.emailCooldown - 1;
+      if (newCooldown <= 0) {
+        clearInterval(timer);
+        this.setData({ 
+          emailCooldown: 0,
+          emailCooldownTimer: null
+        });
+      } else {
+        this.setData({ emailCooldown: newCooldown });
+      }
+    }, 1000);
+    
+    this.setData({ emailCooldownTimer: timer });
+  },
+
+  // 验证邮箱
+  async verifyEmail() {
+    const code = this.data.emailVerifyCode.trim();
+    const email = this.data.emailInput.trim();
+    
+    if (!code) {
+      app.showToast('请输入验证码');
+      return;
+    }
+    
+    if (!email) {
+      app.showToast('请先输入邮箱地址');
+      return;
+    }
+    
+    if (this.data.emailVerifying) return;
+    
+    this.setData({ emailVerifying: true });
+    
+    try {
+      const result = await app.request('/api/account/verify-email', {
+        method: 'POST',
+        data: { email: email, code: code }
+      });
+      
+      if (result && result.success) {
+        // 验证成功
+        this.setData({
+          'emailStatus.verified': true,
+          'emailStatus.email': email,
+          showEmailVerify: false,
+          emailCodeSent: false,
+          emailInput: '',
+          emailVerifyCode: ''
+        });
+        
+        // 清除倒计时
+        if (this.data.emailCooldownTimer) {
+          clearInterval(this.data.emailCooldownTimer);
+          this.setData({ emailCooldown: 0, emailCooldownTimer: null });
+        }
+        
+        wx.showModal({
+          title: '🎉 验证成功',
+          content: result.message || `邮箱验证成功！\n\n获得 ${result.creditsEarned || this.data.emailConfig.verifyCredits} 积分`,
+          showCancel: false,
+          confirmText: '太棒了'
+        });
+        
+        // 刷新积分
+        this.loadCredits();
+        this.loadCreditLogs();
+      } else {
+        app.showToast(result?.error || '验证失败');
+      }
+    } catch (err) {
+      console.error('验证邮箱失败:', err);
+      app.showToast('验证失败，请重试');
+    } finally {
+      this.setData({ emailVerifying: false });
+    }
+  },
+
+  // 加载邮箱验证状态
+  async loadEmailStatus() {
+    try {
+      const result = await app.request('/api/account/email-status');
+      
+      if (result && result.success) {
+        this.setData({
+          'emailConfig.smtpConfigured': result.smtpConfigured === true,
+          'emailConfig.verifyCredits': result.verifyEmailCredits || 3,
+          'emailStatus.verified': result.emailVerified === true,
+          'emailStatus.email': result.email || ''
+        });
+      }
+    } catch (err) {
+      console.error('加载邮箱状态失败:', err);
+    }
   }
 });

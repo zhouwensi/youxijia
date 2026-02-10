@@ -1293,13 +1293,6 @@
             <button class="chip-large" onclick="setCreatePrompt('跑酷游戏')">🏃 跑酷</button>
           </div>
         </div>
-        <!-- 订阅通知状态 -->
-        <div id="create-subscribe-section" class="create-subscribe-info" style="display:none;">
-          <span class="subscribe-icon">🔔</span>
-          <span>订阅通知 <strong id="create-subscribe-count">0</strong> 次</span>
-          <span id="create-subscribe-status" class="subscribe-status"></span>
-          <a href="javascript:showSubscribeGuide()">获取更多</a>
-        </div>
         <div class="create-credits-info">
           <span class="credits-icon">💎</span>
           <span>剩余 <strong id="create-credits-count">0</strong> 次生成机会</span>
@@ -1680,15 +1673,6 @@
           <div class="tips-text" id="generating-tips-text">提示：添加具体的游戏玩法描述，效果会更好哦！</div>
         </div>
         
-        <!-- 订阅通知区域 -->
-        <div class="generating-subscribe-section" id="generating-subscribe-section">
-          <button class="btn-subscribe-notify" id="btn-subscribe-notify" onclick="subscribeNotifyFromWeb()">
-            <span class="subscribe-icon">🔔</span>
-            <span class="subscribe-text">订阅完成通知</span>
-          </button>
-          <span class="subscribe-hint" id="subscribe-hint">可用 <strong id="generating-subscribe-count">0</strong>/10 次</span>
-        </div>
-        
         <!-- 切换模型区域（始终显示） -->
         <div class="model-switch-section" id="model-switch-section">
           <div class="model-switch-tip">💡 不同模型的生成速度和效果不同</div>
@@ -1949,6 +1933,38 @@
                 </div>
                 <p class="form-hint" style="margin-top:0.5rem;">
                   💡 每个验证码只能使用一次
+                </p>
+              </div>
+            </div>
+
+            <!-- 验证邮箱入口 -->
+            <div class="credit-way-wrapper" id="way-email-wrapper" style="display:none;">
+              <div class="credit-way" id="way-email" onclick="toggleEmailVerifySection()">
+                <div class="credit-way-icon">📧</div>
+                <div class="credit-way-info">
+                  <div class="credit-way-title">验证邮箱</div>
+                  <div class="credit-way-desc" id="way-email-desc">绑定邮箱，可用于找回密码</div>
+                </div>
+                <div class="credit-way-status">
+                  <div class="credit-way-reward" id="way-email-reward">+3积分</div>
+                  <div class="credit-way-badge" id="way-email-badge" style="display:none;">一次性</div>
+                </div>
+              </div>
+              <div class="email-verify-section credit-way-expand" id="email-verify-section" style="display:none;">
+                <h4>📧 验证邮箱领积分</h4>
+                <p style="color:#666; font-size:0.9rem; margin-bottom:0.8rem;">
+                  绑定邮箱后可用于找回密码，首次验证奖励积分
+                </p>
+                <div class="verify-input" id="email-input-step">
+                  <input type="email" id="email-input" placeholder="请输入邮箱地址" maxlength="100">
+                  <button class="btn btn-primary" id="send-email-code-btn" onclick="sendEmailVerifyCode()">发送验证码</button>
+                </div>
+                <div class="verify-input" id="email-code-step" style="display:none; margin-top:0.8rem;">
+                  <input type="text" id="email-verify-code" placeholder="输入6位验证码" maxlength="6">
+                  <button class="btn btn-primary" onclick="verifyEmailCode()">验证</button>
+                </div>
+                <p class="form-hint" style="margin-top:0.5rem;" id="email-hint">
+                  💡 验证码10分钟内有效
                 </p>
               </div>
             </div>
