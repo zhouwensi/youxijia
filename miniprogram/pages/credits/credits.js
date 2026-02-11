@@ -104,7 +104,19 @@ Page({
     emailStatus: {
       verified: false,             // 是否已验证邮箱
       email: ''                    // 已验证的邮箱地址
-    }
+    },
+    
+    // 昵称设置奖励相关
+    nicknameConfig: {
+      nicknameCredits: 3           // 设置昵称奖励积分
+    },
+    nicknameStatus: {
+      rewarded: false,             // 是否已领取昵称奖励
+      nickname: '',                // 当前昵称
+      isDefaultNickname: true,     // 是否是默认昵称
+      canClaimReward: false        // 是否可以领取奖励（老用户情况）
+    },
+    nicknameClaimLoading: false    // 领取昵称奖励loading
   },
 
   onLoad(options) {
@@ -939,6 +951,105 @@ Page({
       }
     } catch (err) {
       console.error('加载邮箱状态失败:', err);
+    }
+    
+    // 加载昵称奖励状态
+    await this.loadNicknameStatus();
+  },
+
+  // 加载昵称奖励状态
+  async loadNicknameStatus() {
+    try {
+      const result = await app.request('/api/account/nickname-status');
+      
+      if (result && result.success) {
+        // 计算是否可以直接领取奖励（已设置自定义昵称但未领取奖励，针对老用户）
+        const hasCustomNickname = !result.isDefaultNickname;
+        const notRewarded = !result.nicknameRewarded;
+        const canClaimDirectly = hasCustomNickname && notRewarded;
+        
+        this.setData({
+          'nicknameConfig.nicknameCredits': result.nicknameCredits || 3,
+          'nicknameStatus.rewarded': result.nicknameRewarded === true,
+          'nicknameStatus.nickname': result.nickname || '',
+          'nicknameStatus.isDefaultNickname': result.isDefaultNickname === true,
+          'nicknameStatus.canClaimReward': canClaimDirectly
+        });
+      }
+    } catch (err) {
+      console.error('加载昵称状态失败:', err);
+    }
+  },
+
+  // 跳转到我的页面设置昵称
+  goToSetNickname() {
+    wx.switchTab({
+      url: '/pages/mine/mine',
+      success: () => {
+        // 延迟调用打开昵称编辑弹窗
+        setTimeout(() => {
+          const pages = getCurrentPages();
+          const minePage = pages[pages.length - 1];
+          if (minePage && minePage.showNicknameEditor) {
+            minePage.showNicknameEditor();
+          }
+        }, 300);
+      }
+    });
+  },
+
+  // 直接领取昵称奖励（老用户已设置昵称但未领取奖励的情况）
+  async claimNicknameReward() {
+    if (this.data.nicknameClaimLoading) return;
+    
+    const currentNickname = this.data.nicknameStatus.nickname;
+    if (!currentNickname) {
+      app.showToast('请先设置昵称');
+      return;
+    }
+    
+    this.setData({ nicknameClaimLoading: true });
+    
+    try {
+      // 使用专用的昵称奖励领取接口
+      const result = await app.request('/api/account/claim-nickname-reward', {
+        method: 'POST'
+      });
+      
+      if (result && result.success) {
+        if (result.creditsEarned && result.creditsEarned > 0) {
+          // 领取成功
+          this.setData({
+            'nicknameStatus.rewarded': true,
+            'nicknameStatus.canClaimReward': false
+          });
+          
+          wx.showModal({
+            title: '🎉 领取成功',
+            content: result.rewardMessage || `设置昵称奖励已领取！\n\n获得 ${result.creditsEarned} 积分`,
+            showCancel: false,
+            confirmText: '太棒了'
+          });
+          
+          // 刷新积分
+          this.loadCredits();
+          this.loadCreditLogs();
+        } else {
+          // 没有获得积分，可能已经领取过
+          this.setData({
+            'nicknameStatus.rewarded': true,
+            'nicknameStatus.canClaimReward': false
+          });
+          app.showToast('奖励已领取过');
+        }
+      } else {
+        app.showToast(result?.error || '领取失败');
+      }
+    } catch (err) {
+      console.error('领取昵称奖励失败:', err);
+      app.showToast('领取失败，请重试');
+    } finally {
+      this.setData({ nicknameClaimLoading: false });
     }
   }
 });

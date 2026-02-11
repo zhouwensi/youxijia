@@ -181,6 +181,60 @@
         </view>
       </view>
     </view>
+
+    <!-- 设置昵称入口（未设置昵称，点击跳转设置） -->
+    <view class="wechat-action-card" wx:if="{{!nicknameStatus.rewarded && nicknameStatus.isDefaultNickname}}" bindtap="goToSetNickname">
+      <view class="wechat-action-header">
+        <view class="wechat-action-left">
+          <text class="wechat-action-icon">✏️</text>
+          <view class="wechat-action-info">
+            <text class="wechat-action-title">设置昵称</text>
+            <text class="wechat-action-desc">设置个性昵称，让大家认识你</text>
+          </view>
+        </view>
+        <view class="wechat-action-right">
+          <text class="wechat-action-reward">+{{nicknameConfig.nicknameCredits}}积分</text>
+          <text class="wechat-action-arrow">›</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 已设置昵称但未领取奖励（老用户情况，点击直接领取） -->
+    <view class="wechat-action-card" wx:if="{{nicknameStatus.canClaimReward}}" bindtap="claimNicknameReward">
+      <view class="wechat-action-header">
+        <view class="wechat-action-left">
+          <text class="wechat-action-icon">✏️</text>
+          <view class="wechat-action-info">
+            <text class="wechat-action-title">设置昵称</text>
+            <text class="wechat-action-desc">{{nicknameStatus.nickname}}</text>
+          </view>
+        </view>
+        <view class="wechat-action-right">
+          <button class="nickname-claim-btn {{nicknameClaimLoading ? 'loading' : ''}}">
+            {{nicknameClaimLoading ? '领取中...' : '领取 +' + nicknameConfig.nicknameCredits + '积分'}}
+          </button>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 已设置昵称且已领取奖励 -->
+    <view class="wechat-action-card" wx:if="{{nicknameStatus.rewarded}}" bindtap="goToSetNickname">
+      <view class="wechat-action-header">
+        <view class="wechat-action-left">
+          <text class="wechat-action-icon">✏️</text>
+          <view class="wechat-action-info">
+            <text class="wechat-action-title">设置昵称</text>
+            <text class="wechat-action-desc">{{nicknameStatus.nickname || '已设置'}}</text>
+          </view>
+        </view>
+        <view class="wechat-action-right">
+          <view class="wechat-verify-done">
+            <text class="done-icon">✅</text>
+            <text class="done-text">已完成</text>
+          </view>
+        </view>
+      </view>
+    </view>
   </view>
 
   <!-- 签到连续提示（简化：不重复显示签到按钮，只显示连续签到加成信息） -->

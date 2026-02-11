@@ -5718,36 +5718,40 @@ app.put('/api/account/nickname', (req, res) => {
     let creditsEarned = 0;
     let rewardMessage = '';
     
-    // 判断是否满足奖励条件：从默认昵称改为自定义昵称，且未领取过奖励
-    if (isDefaultNickname && isCustomNickname) {
-      // 检查是否已领取过昵称奖励
-      const userCredits = db.prepare('SELECT nickname_rewarded FROM user_credits WHERE user_token = ?').get(userToken);
-      const hasRewarded = userCredits && userCredits.nickname_rewarded === 1;
+    // 检查是否已领取过昵称奖励
+    const userCredits = db.prepare('SELECT nickname_rewarded FROM user_credits WHERE user_token = ?').get(userToken);
+    const hasRewarded = userCredits && userCredits.nickname_rewarded === 1;
+    
+    // 判断是否满足奖励条件：
+    // 1. 从默认昵称改为自定义昵称，且未领取过奖励
+    // 2. 老用户已经是自定义昵称，但未领取过奖励（补领场景）
+    const shouldReward = !hasRewarded && isCustomNickname;
+    
+    if (shouldReward) {
+      // 获取昵称奖励积分配置
+      creditsEarned = parseFloat(getConfig('credits_set_nickname', '3'));
       
-      if (!hasRewarded) {
-        // 获取昵称奖励积分配置
-        creditsEarned = parseFloat(getConfig('credits_set_nickname', '3'));
-        
-        // 发放积分奖励
-        db.prepare(`
-          INSERT INTO user_credits (user_token, credits, total_earned, nickname_rewarded)
-          VALUES (?, ?, ?, 1)
-          ON CONFLICT(user_token) DO UPDATE SET
-            credits = credits + ?,
-            total_earned = total_earned + ?,
-            nickname_rewarded = 1,
-            updated_at = CURRENT_TIMESTAMP
-        `).run(userToken, creditsEarned, creditsEarned, creditsEarned, creditsEarned);
-        
-        // 记录积分历史
-        db.prepare(`
-          INSERT INTO credit_history (user_token, change_type, amount, description)
-          VALUES (?, 'nickname_reward', ?, '设置昵称奖励')
-        `).run(userToken, creditsEarned);
-        
-        rewardMessage = `设置昵称成功！获得${creditsEarned}积分奖励`;
-        console.log(`[NICKNAME] 昵称奖励发放: ${trimmedNickname}, 积分: ${creditsEarned}`);
-      }
+      // 发放积分奖励
+      db.prepare(`
+        INSERT INTO user_credits (user_token, credits, total_earned, nickname_rewarded)
+        VALUES (?, ?, ?, 1)
+        ON CONFLICT(user_token) DO UPDATE SET
+          credits = credits + ?,
+          total_earned = total_earned + ?,
+          nickname_rewarded = 1,
+          updated_at = CURRENT_TIMESTAMP
+      `).run(userToken, creditsEarned, creditsEarned, creditsEarned, creditsEarned);
+      
+      // 记录积分历史
+      db.prepare(`
+        INSERT INTO credit_history (user_token, change_type, amount, description)
+        VALUES (?, 'nickname_reward', ?, '设置昵称奖励')
+      `).run(userToken, creditsEarned);
+      
+      rewardMessage = isDefaultNickname 
+        ? `设置昵称成功！获得${creditsEarned}积分奖励` 
+        : `昵称奖励已补领！获得${creditsEarned}积分`;
+      console.log(`[NICKNAME] 昵称奖励发放: ${trimmedNickname}, 积分: ${creditsEarned}, 补领: ${!isDefaultNickname}`);
     }
     
     // 重新生成该用户所有游戏的静态文件（更新游戏页面中的作者名显示）
@@ -6276,6 +6280,87 @@ app.get('/api/account/nickname-status', (req, res) => {
     
   } catch (error) {
     console.error('[ERROR] 获取昵称状态失败:', error);
+    res.status(500).json({ success: false, error: '服务器错误' });
+  }
+});
+
+// 领取昵称奖励（专门用于小程序老用户补领）
+app.post('/api/account/claim-nickname-reward', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '请先登录' });
+    }
+    
+    // 检查是否已领取过昵称奖励
+    const userCredits = db.prepare('SELECT nickname_rewarded, credits FROM user_credits WHERE user_token = ?').get(userToken);
+    const hasRewarded = userCredits && userCredits.nickname_rewarded === 1;
+    
+    if (hasRewarded) {
+      return res.json({ 
+        success: true, 
+        creditsEarned: 0, 
+        message: '昵称奖励已领取过',
+        alreadyClaimed: true
+      });
+    }
+    
+    // 获取用户昵称（优先从 user_accounts，其次从其他途径）
+    let currentNickname = '';
+    const account = db.prepare('SELECT nickname, account_id FROM user_accounts WHERE user_token = ?').get(userToken);
+    
+    if (account) {
+      currentNickname = account.nickname || '';
+    }
+    
+    // 判断是否是自定义昵称
+    const accountId = account?.account_id || '';
+    const isCustomNickname = currentNickname && 
+      currentNickname !== '微信用户' &&
+      currentNickname !== '游戏玩家' &&
+      currentNickname !== accountId;
+    
+    if (!isCustomNickname) {
+      return res.status(400).json({ 
+        success: false, 
+        error: '请先设置一个自定义昵称' 
+      });
+    }
+    
+    // 发放积分奖励
+    const creditsEarned = parseFloat(getConfig('credits_set_nickname', '3'));
+    
+    db.prepare(`
+      INSERT INTO user_credits (user_token, credits, total_earned, nickname_rewarded)
+      VALUES (?, ?, ?, 1)
+      ON CONFLICT(user_token) DO UPDATE SET
+        credits = credits + ?,
+        total_earned = total_earned + ?,
+        nickname_rewarded = 1,
+        updated_at = CURRENT_TIMESTAMP
+    `).run(userToken, creditsEarned, creditsEarned, creditsEarned, creditsEarned);
+    
+    // 记录积分历史
+    db.prepare(`
+      INSERT INTO credit_history (user_token, change_type, amount, description)
+      VALUES (?, 'nickname_reward', ?, '设置昵称奖励')
+    `).run(userToken, creditsEarned);
+    
+    console.log(`[NICKNAME] 昵称奖励补领成功: ${currentNickname}, 积分: ${creditsEarned}`);
+    
+    // 获取更新后的积分
+    const updatedCredits = db.prepare('SELECT credits FROM user_credits WHERE user_token = ?').get(userToken);
+    
+    res.json({
+      success: true,
+      creditsEarned: creditsEarned,
+      totalCredits: updatedCredits?.credits || creditsEarned,
+      rewardMessage: `昵称奖励已领取！获得${creditsEarned}积分`
+    });
+    
+  } catch (error) {
+    console.error('[ERROR] 领取昵称奖励失败:', error);
     res.status(500).json({ success: false, error: '服务器错误' });
   }
 });
