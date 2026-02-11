@@ -2319,7 +2319,7 @@ async function showInsufficientCreditsModal(requiredCredits = 1, mode = 'insuffi
             </div>
             
             <!-- 设置昵称 -->
-            <div id="nickname-set-entry" class="credits-modal-entry" style="display: none;" onclick="toggleCreditsModalNickname()">
+            <div id="nickname-set-entry" class="credits-modal-entry" onclick="toggleCreditsModalNickname()">
               <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <span>✏️</span>
                 <span style="font-size: 0.8125rem;">设置昵称</span>
@@ -9644,25 +9644,22 @@ async function updateCreditsModalEntryStatus() {
     
     if (nicknameData.success) {
       const nicknameEntry = document.getElementById('nickname-set-entry');
+      const nicknameStatus = document.getElementById('nickname-set-status');
+      const nicknameReward = document.getElementById('nickname-set-reward');
       
       if (nicknameEntry) {
-        // 只有当用户使用默认昵称且未领取过奖励时才显示入口
-        if (nicknameData.canClaimReward) {
-          nicknameEntry.style.display = 'flex';
-          
-          // 更新奖励显示
-          const nicknameReward = document.getElementById('nickname-set-reward');
-          if (nicknameReward) nicknameReward.textContent = `+${nicknameData.nicknameCredits || 3}积分`;
-        } else if (nicknameData.nicknameRewarded) {
+        // 始终显示设置昵称入口（参考公众号关注奖励的展示方式）
+        if (nicknameData.nicknameRewarded) {
           // 已领取过奖励，显示为已完成状态
-          nicknameEntry.style.display = 'flex';
           nicknameEntry.classList.add('completed');
-          const status = document.getElementById('nickname-set-status');
-          const reward = document.getElementById('nickname-set-reward');
-          if (status) status.textContent = '(已完成)';
-          if (reward) reward.textContent = '已领取';
+          if (nicknameStatus) nicknameStatus.textContent = '(已完成)';
+          if (nicknameReward) nicknameReward.textContent = '已领取';
+        } else {
+          // 未领取奖励，显示可领取的积分数
+          nicknameEntry.classList.remove('completed');
+          if (nicknameStatus) nicknameStatus.textContent = '';
+          if (nicknameReward) nicknameReward.textContent = `+${nicknameData.nicknameCredits || 3}积分`;
         }
-        // 如果已设置自定义昵称但未领取过奖励（可能是老用户），则不显示入口
       }
     }
   } catch (error) {

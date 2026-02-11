@@ -1494,7 +1494,7 @@
       <!-- 用户搜索 -->
       <div class="config-section" style="margin-bottom: 1rem; padding: 1rem;">
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
-          <input type="text" id="user-search-input" placeholder="搜索昵称、账号ID或Token..." 
+          <input type="text" id="user-search-input" placeholder="搜索昵称、账号ID、Token或邮箱..." 
             style="flex: 1; min-width: 200px; padding: 0.6rem 1rem; border-radius: 6px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 0.9rem;">
           <button class="btn-save" onclick="searchUsers()" style="background: linear-gradient(135deg, #6366f1, #4f46e5); padding: 0.6rem 1.2rem;">
             🔍 搜索
@@ -1505,12 +1505,29 @@
         </div>
       </div>
       
+      <!-- 批量操作栏 -->
+      <div id="users-batch-actions" class="config-section" style="margin-bottom: 1rem; padding: 0.75rem 1rem; display: none; background: rgba(99,102,241,0.15);">
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+          <span style="color: #e2e8f0; font-size: 0.9rem;">
+            已选择 <strong id="users-selected-count" style="color: #6366f1;">0</strong> 个用户
+          </span>
+          <button class="btn-save" onclick="showBatchEmailDialog()" style="background: linear-gradient(135deg, #10b981, #059669); padding: 0.5rem 1rem; font-size: 0.85rem;">
+            📧 发送邮件
+          </button>
+          <button class="btn-save" onclick="clearUserSelection()" style="background: linear-gradient(135deg, #64748b, #475569); padding: 0.5rem 1rem; font-size: 0.85rem;">
+            ✕ 取消选择
+          </button>
+        </div>
+      </div>
+      
       <div class="table-container">
         <table class="users-table">
           <thead>
             <tr>
+              <th style="width: 40px;"><input type="checkbox" id="users-select-all" onchange="toggleSelectAllUsers(this.checked)" title="全选当前页"></th>
               <th>用户Token</th>
               <th>昵称/账号</th>
+              <th>邮箱</th>
               <th>当前积分</th>
               <th>累计获得</th>
               <th>累计使用</th>
@@ -1521,7 +1538,7 @@
             </tr>
           </thead>
           <tbody id="users-table-body">
-            <tr><td colspan="9" style="text-align: center; color: #64748b;">加载中...</td></tr>
+            <tr><td colspan="11" style="text-align: center; color: #64748b;">加载中...</td></tr>
           </tbody>
         </table>
       </div>
@@ -2981,11 +2998,19 @@
       }
     }
 
+    // 用户选择状态
+    let selectedUserTokens = new Set();
+    
     // 渲染用户表格
     function renderUsersTable(users) {
+      // 清除全选复选框
+      const selectAllCheckbox = document.getElementById('users-select-all');
+      if (selectAllCheckbox) selectAllCheckbox.checked = false;
+      
       if (users.length === 0) {
         document.getElementById('users-table-body').innerHTML = 
-          '<tr><td colspan="10" style="text-align: center; color: #64748b; padding: 2rem;">暂无用户</td></tr>';
+          '<tr><td colspan="11" style="text-align: center; color: #64748b; padding: 2rem;">暂无用户</td></tr>';
+        updateBatchActionsBar();
         return;
       }
       
@@ -2994,9 +3019,26 @@
         const nickname = user.nickname || '-';
         const displayName = nickname !== '-' && nickname !== '游戏玩家' ? nickname : accountId;
         const isAdmin = user.is_admin === 1;
+        const hasEmail = user.email && user.email.trim();
+        const emailVerified = user.email_verified === 1;
+        const isSelected = selectedUserTokens.has(user.user_token);
+        
+        // 邮箱显示：有邮箱则显示，已验证显示绿色，未验证显示黄色
+        let emailDisplay = '-';
+        if (hasEmail) {
+          if (emailVerified) {
+            emailDisplay = `<span style="color: #10b981;" title="已验证">✅ ${user.email}</span>`;
+          } else {
+            emailDisplay = `<span style="color: #f59e0b;" title="未验证">⏳ ${user.email}</span>`;
+          }
+        }
         
         return `
         <tr>
+          <td style="text-align: center;">
+            <input type="checkbox" class="user-select-checkbox" data-user-token="${user.user_token}" 
+              ${isSelected ? 'checked' : ''} onchange="toggleUserSelection('${user.user_token}', this.checked)">
+          </td>
           <td class="token-short" title="${user.user_token}">${user.user_token.substring(0, 16)}...</td>
           <td>
             <div style="line-height: 1.3;">
@@ -3007,6 +3049,7 @@
               <div style="font-size: 11px; color: #94a3b8;">@${accountId}</div>
             </div>
           </td>
+          <td style="font-size: 12px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${user.email || ''}">${emailDisplay}</td>
           <td style="color: #6366f1; font-weight: bold;">${user.credits}</td>
           <td>${user.total_earned}</td>
           <td>${user.total_used}</td>
@@ -3026,6 +3069,255 @@
       `}).join('');
       
       document.getElementById('users-table-body').innerHTML = html;
+      updateBatchActionsBar();
+    }
+    
+    // 切换单个用户选择
+    function toggleUserSelection(userToken, isSelected) {
+      if (isSelected) {
+        selectedUserTokens.add(userToken);
+      } else {
+        selectedUserTokens.delete(userToken);
+      }
+      updateBatchActionsBar();
+      updateSelectAllCheckbox();
+    }
+    
+    // 全选/取消全选当前页用户
+    function toggleSelectAllUsers(selectAll) {
+      const checkboxes = document.querySelectorAll('.user-select-checkbox');
+      checkboxes.forEach(cb => {
+        const userToken = cb.dataset.userToken;
+        if (selectAll) {
+          selectedUserTokens.add(userToken);
+          cb.checked = true;
+        } else {
+          selectedUserTokens.delete(userToken);
+          cb.checked = false;
+        }
+      });
+      updateBatchActionsBar();
+    }
+    
+    // 更新全选复选框状态
+    function updateSelectAllCheckbox() {
+      const selectAllCheckbox = document.getElementById('users-select-all');
+      const checkboxes = document.querySelectorAll('.user-select-checkbox');
+      if (!selectAllCheckbox || checkboxes.length === 0) return;
+      
+      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+      const someChecked = Array.from(checkboxes).some(cb => cb.checked);
+      
+      selectAllCheckbox.checked = allChecked;
+      selectAllCheckbox.indeterminate = someChecked && !allChecked;
+    }
+    
+    // 更新批量操作栏
+    function updateBatchActionsBar() {
+      const bar = document.getElementById('users-batch-actions');
+      const countEl = document.getElementById('users-selected-count');
+      if (!bar || !countEl) return;
+      
+      const count = selectedUserTokens.size;
+      countEl.textContent = count;
+      bar.style.display = count > 0 ? 'block' : 'none';
+    }
+    
+    // 清除用户选择
+    function clearUserSelection() {
+      selectedUserTokens.clear();
+      const checkboxes = document.querySelectorAll('.user-select-checkbox');
+      checkboxes.forEach(cb => cb.checked = false);
+      const selectAllCheckbox = document.getElementById('users-select-all');
+      if (selectAllCheckbox) selectAllCheckbox.checked = false;
+      updateBatchActionsBar();
+    }
+    
+    // 显示批量发送邮件弹窗
+    function showBatchEmailDialog() {
+      if (selectedUserTokens.size === 0) {
+        showToast('请先选择用户', 'error');
+        return;
+      }
+      
+      // 移除已存在的对话框
+      const oldDialog = document.getElementById('batch-email-dialog');
+      if (oldDialog) oldDialog.remove();
+      
+      const dialog = document.createElement('div');
+      dialog.id = 'batch-email-dialog';
+      dialog.style.cssText = `
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center;
+        z-index: 10000; padding: 1rem;
+      `;
+      dialog.innerHTML = `
+        <div style="background: #1e293b; border-radius: 12px; width: 100%; max-width: 700px; max-height: 90vh; overflow-y: auto; border: 1px solid #334155;">
+          <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; color: #e2e8f0; font-size: 1.1rem;">📧 批量发送邮件</h3>
+            <button onclick="closeBatchEmailDialog()" style="background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; line-height: 1;">&times;</button>
+          </div>
+          
+          <div style="padding: 1.5rem;">
+            <!-- 收件人信息 -->
+            <div style="margin-bottom: 1.25rem; padding: 1rem; background: rgba(99,102,241,0.1); border-radius: 8px; border: 1px solid rgba(99,102,241,0.3);">
+              <p style="margin: 0; color: #94a3b8; font-size: 0.9rem;">
+                📬 已选择 <strong style="color: #6366f1;">${selectedUserTokens.size}</strong> 个用户
+                <span style="color: #64748b;">（仅向已验证邮箱的用户发送）</span>
+              </p>
+            </div>
+            
+            <!-- 邮件主题 -->
+            <div style="margin-bottom: 1rem;">
+              <label style="color: #94a3b8; font-size: 0.85rem; display: block; margin-bottom: 0.5rem;">邮件主题 <span style="color: #ef4444;">*</span></label>
+              <input type="text" id="batch-email-subject" placeholder="请输入邮件主题" maxlength="200"
+                style="width: 100%; padding: 0.75rem 1rem; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid #334155; color: #fff; font-size: 0.95rem; box-sizing: border-box;">
+            </div>
+            
+            <!-- 邮件内容 - 富文本工具栏 -->
+            <div style="margin-bottom: 0.5rem;">
+              <label style="color: #94a3b8; font-size: 0.85rem; display: block; margin-bottom: 0.5rem;">邮件内容 <span style="color: #ef4444;">*</span></label>
+              <div style="background: #0f172a; border: 1px solid #334155; border-bottom: none; border-radius: 8px 8px 0 0; padding: 0.5rem; display: flex; gap: 0.25rem; flex-wrap: wrap;">
+                <button type="button" onclick="execEmailCmd('bold')" title="加粗" style="padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.1); border: none; border-radius: 4px; color: #e2e8f0; cursor: pointer; font-weight: bold;">B</button>
+                <button type="button" onclick="execEmailCmd('italic')" title="斜体" style="padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.1); border: none; border-radius: 4px; color: #e2e8f0; cursor: pointer; font-style: italic;">I</button>
+                <button type="button" onclick="execEmailCmd('underline')" title="下划线" style="padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.1); border: none; border-radius: 4px; color: #e2e8f0; cursor: pointer; text-decoration: underline;">U</button>
+                <span style="width: 1px; background: #334155; margin: 0 0.25rem;"></span>
+                <button type="button" onclick="execEmailCmd('insertUnorderedList')" title="无序列表" style="padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.1); border: none; border-radius: 4px; color: #e2e8f0; cursor: pointer;">• 列表</button>
+                <button type="button" onclick="execEmailCmd('insertOrderedList')" title="有序列表" style="padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.1); border: none; border-radius: 4px; color: #e2e8f0; cursor: pointer;">1. 列表</button>
+                <span style="width: 1px; background: #334155; margin: 0 0.25rem;"></span>
+                <button type="button" onclick="insertEmailLink()" title="插入链接" style="padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.1); border: none; border-radius: 4px; color: #e2e8f0; cursor: pointer;">🔗 链接</button>
+                <button type="button" onclick="insertEmailImage()" title="插入图片" style="padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.1); border: none; border-radius: 4px; color: #e2e8f0; cursor: pointer;">🖼️ 图片</button>
+                <span style="width: 1px; background: #334155; margin: 0 0.25rem;"></span>
+                <select onchange="execEmailCmd('formatBlock', this.value); this.value='';" style="padding: 0.4rem 0.5rem; background: rgba(255,255,255,0.1); border: none; border-radius: 4px; color: #e2e8f0; cursor: pointer; font-size: 0.85rem;">
+                  <option value="">标题</option>
+                  <option value="h1">大标题</option>
+                  <option value="h2">中标题</option>
+                  <option value="h3">小标题</option>
+                  <option value="p">正文</option>
+                </select>
+                <select onchange="execEmailCmd('foreColor', this.value); this.value='';" style="padding: 0.4rem 0.5rem; background: rgba(255,255,255,0.1); border: none; border-radius: 4px; color: #e2e8f0; cursor: pointer; font-size: 0.85rem;">
+                  <option value="">颜色</option>
+                  <option value="#ef4444" style="color:#ef4444;">红色</option>
+                  <option value="#f97316" style="color:#f97316;">橙色</option>
+                  <option value="#eab308" style="color:#eab308;">黄色</option>
+                  <option value="#22c55e" style="color:#22c55e;">绿色</option>
+                  <option value="#3b82f6" style="color:#3b82f6;">蓝色</option>
+                  <option value="#8b5cf6" style="color:#8b5cf6;">紫色</option>
+                  <option value="#333333">黑色</option>
+                </select>
+              </div>
+              <div id="batch-email-content" contenteditable="true" 
+                style="width: 100%; min-height: 200px; padding: 1rem; border-radius: 0 0 8px 8px; background: #0f172a; border: 1px solid #334155; border-top: none; color: #e2e8f0; font-size: 0.95rem; line-height: 1.6; box-sizing: border-box; outline: none;"
+                placeholder="请输入邮件内容..."></div>
+            </div>
+            
+            <!-- 提示 -->
+            <p style="margin: 0.75rem 0 0; color: #64748b; font-size: 0.8rem;">
+              💡 提示：邮件将以 HTML 格式发送，您可以使用工具栏设置文字格式、插入链接和图片。
+            </p>
+          </div>
+          
+          <div style="padding: 1rem 1.5rem; border-top: 1px solid #334155; display: flex; gap: 0.75rem; justify-content: flex-end;">
+            <button onclick="closeBatchEmailDialog()" style="padding: 0.6rem 1.25rem; border-radius: 8px; background: #475569; color: white; border: none; cursor: pointer; font-size: 0.9rem;">取消</button>
+            <button onclick="sendBatchEmail()" id="batch-email-send-btn" style="padding: 0.6rem 1.25rem; border-radius: 8px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; cursor: pointer; font-size: 0.9rem;">📧 发送邮件</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(dialog);
+      
+      // 点击背景关闭
+      dialog.addEventListener('click', (e) => {
+        if (e.target === dialog) closeBatchEmailDialog();
+      });
+      
+      // 聚焦到主题输入框
+      setTimeout(() => {
+        document.getElementById('batch-email-subject')?.focus();
+      }, 100);
+    }
+    
+    // 关闭批量发送邮件弹窗
+    function closeBatchEmailDialog() {
+      const dialog = document.getElementById('batch-email-dialog');
+      if (dialog) dialog.remove();
+    }
+    
+    // 富文本编辑器命令
+    function execEmailCmd(cmd, value = null) {
+      document.execCommand(cmd, false, value);
+      document.getElementById('batch-email-content')?.focus();
+    }
+    
+    // 插入链接
+    function insertEmailLink() {
+      const url = prompt('请输入链接地址：', 'https://');
+      if (url) {
+        const text = window.getSelection().toString() || url;
+        document.execCommand('insertHTML', false, `<a href="${url}" style="color: #6366f1;">${text}</a>`);
+      }
+    }
+    
+    // 插入图片
+    function insertEmailImage() {
+      const url = prompt('请输入图片地址：', 'https://');
+      if (url) {
+        document.execCommand('insertHTML', false, `<img src="${url}" style="max-width: 100%; height: auto; margin: 0.5rem 0;">`);
+      }
+    }
+    
+    // 发送批量邮件
+    async function sendBatchEmail() {
+      const subject = document.getElementById('batch-email-subject')?.value?.trim();
+      const contentEl = document.getElementById('batch-email-content');
+      const content = contentEl?.innerHTML?.trim();
+      
+      if (!subject) {
+        showToast('请输入邮件主题', 'error');
+        return;
+      }
+      
+      if (!content || content === '<br>' || content === '<div><br></div>') {
+        showToast('请输入邮件内容', 'error');
+        return;
+      }
+      
+      const sendBtn = document.getElementById('batch-email-send-btn');
+      if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.textContent = '发送中...';
+      }
+      
+      try {
+        const response = await fetch('/api/admin/send-batch-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({
+            userTokens: Array.from(selectedUserTokens),
+            subject,
+            content
+          })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          showToast(data.message, 'success');
+          closeBatchEmailDialog();
+          clearUserSelection();
+        } else {
+          showToast(data.error || '发送失败', 'error');
+        }
+      } catch (error) {
+        console.error('发送批量邮件失败:', error);
+        showToast('发送失败，请重试', 'error');
+      } finally {
+        if (sendBtn) {
+          sendBtn.disabled = false;
+          sendBtn.textContent = '📧 发送邮件';
+        }
+      }
     }
     
     // 切换用户管理员状态

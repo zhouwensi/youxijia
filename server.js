@@ -3808,7 +3808,8 @@ async function sendEmail(to, subject, html) {
   }
   
   const fromName = getConfig('smtp_from_name', '一句话游戏');
-  const fromEmail = getConfig('smtp_from_email', smtpConfig.auth.user);
+  // 强制使用SMTP认证用户作为发件人邮箱（很多SMTP服务器要求发件人地址必须与认证账号一致）
+  const fromEmail = smtpConfig.auth.user;
   
   try {
     const transporter = nodemailer.createTransport(smtpConfig);
@@ -15896,7 +15897,7 @@ app.get('/api/admin/users', (req, res) => {
     let total, users;
     
     if (search) {
-      // 搜索模式：按昵称、账号ID或Token搜索
+      // 搜索模式：按昵称、账号ID、Token或邮箱搜索
       const searchPattern = `%${search}%`;
       
       total = db.prepare(`
@@ -15906,20 +15907,22 @@ app.get('/api/admin/users', (req, res) => {
         WHERE uc.user_token LIKE ? 
            OR ua.account_id LIKE ? 
            OR ua.nickname LIKE ?
-      `).get(searchPattern, searchPattern, searchPattern).count;
+           OR ua.email LIKE ?
+      `).get(searchPattern, searchPattern, searchPattern, searchPattern).count;
       
       users = db.prepare(`
         SELECT uc.user_token, uc.credits, uc.total_earned, uc.total_used, uc.followed_wechat, 
                uc.ad_count_today, uc.created_at, uc.updated_at,
-               ua.account_id, ua.nickname, ua.is_admin
+               ua.account_id, ua.nickname, ua.is_admin, ua.email, ua.email_verified
         FROM user_credits uc
         LEFT JOIN user_accounts ua ON uc.user_token = ua.user_token
         WHERE uc.user_token LIKE ? 
            OR ua.account_id LIKE ? 
            OR ua.nickname LIKE ?
+           OR ua.email LIKE ?
         ORDER BY uc.created_at DESC 
         LIMIT ? OFFSET ?
-      `).all(searchPattern, searchPattern, searchPattern, limit, offset);
+      `).all(searchPattern, searchPattern, searchPattern, searchPattern, limit, offset);
     } else {
       // 正常模式
       total = db.prepare('SELECT COUNT(*) as count FROM user_credits').get().count;
@@ -15927,7 +15930,7 @@ app.get('/api/admin/users', (req, res) => {
       users = db.prepare(`
         SELECT uc.user_token, uc.credits, uc.total_earned, uc.total_used, uc.followed_wechat, 
                uc.ad_count_today, uc.created_at, uc.updated_at,
-               ua.account_id, ua.nickname, ua.is_admin
+               ua.account_id, ua.nickname, ua.is_admin, ua.email, ua.email_verified
         FROM user_credits uc
         LEFT JOIN user_accounts ua ON uc.user_token = ua.user_token
         ORDER BY uc.created_at DESC 
@@ -16030,6 +16033,136 @@ app.post('/api/admin/users/:userToken/reset-password', (req, res) => {
     });
   } catch (error) {
     console.error('[管理员重置密码] 错误:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 批量发送邮件给用户（管理员）
+app.post('/api/admin/send-batch-email', async (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+  
+  try {
+    const { userTokens, subject, content } = req.body;
+    
+    // 参数验证
+    if (!userTokens || !Array.isArray(userTokens) || userTokens.length === 0) {
+      return res.status(400).json({ success: false, error: '请选择至少一个用户' });
+    }
+    
+    if (!subject || !subject.trim()) {
+      return res.status(400).json({ success: false, error: '请输入邮件主题' });
+    }
+    
+    if (!content || !content.trim()) {
+      return res.status(400).json({ success: false, error: '请输入邮件内容' });
+    }
+    
+    // 限制一次发送的最大数量
+    const maxBatch = 50;
+    if (userTokens.length > maxBatch) {
+      return res.status(400).json({ success: false, error: `单次最多发送 ${maxBatch} 封邮件` });
+    }
+    
+    // 查询用户邮箱（仅已验证的邮箱）
+    const placeholders = userTokens.map(() => '?').join(',');
+    const users = db.prepare(`
+      SELECT user_token, account_id, nickname, email
+      FROM user_accounts
+      WHERE user_token IN (${placeholders})
+        AND email IS NOT NULL AND email != ''
+        AND email_verified = 1
+    `).all(...userTokens);
+    
+    if (users.length === 0) {
+      return res.status(400).json({ success: false, error: '所选用户中没有已验证邮箱的用户' });
+    }
+    
+    // 生成邮件HTML模板
+    const siteName = getConfig('site_name', '一句话游戏');
+    const generateEmailHtml = (userContent) => {
+      return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject.trim()}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    <div style="background: #fff; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden;">
+      <!-- Header -->
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
+        <h1 style="margin: 0; color: #fff; font-size: 24px;">${siteName}</h1>
+      </div>
+      
+      <!-- Content -->
+      <div style="padding: 40px 30px;">
+        ${userContent}
+      </div>
+      
+      <!-- Footer -->
+      <div style="background: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #eee;">
+        <p style="margin: 0; color: #999; font-size: 12px;">此邮件由管理员发送</p>
+        <p style="margin: 8px 0 0; color: #bbb; font-size: 12px;">© ${new Date().getFullYear()} ${siteName}</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+    };
+    
+    // 批量发送邮件
+    const results = {
+      total: users.length,
+      success: 0,
+      failed: 0,
+      failures: []
+    };
+    
+    const emailHtml = generateEmailHtml(content.trim());
+    
+    for (const user of users) {
+      try {
+        const result = await sendEmail(user.email, subject.trim(), emailHtml);
+        if (result.success) {
+          results.success++;
+          console.log(`[BATCH-EMAIL] 发送成功: ${user.email}`);
+        } else {
+          results.failed++;
+          results.failures.push({
+            email: user.email,
+            nickname: user.nickname || user.account_id,
+            error: result.error
+          });
+          console.log(`[BATCH-EMAIL] 发送失败: ${user.email} - ${result.error}`);
+        }
+      } catch (error) {
+        results.failed++;
+        results.failures.push({
+          email: user.email,
+          nickname: user.nickname || user.account_id,
+          error: error.message
+        });
+        console.error(`[BATCH-EMAIL] 发送异常: ${user.email} - ${error.message}`);
+      }
+      
+      // 避免发送过快被限制，每封邮件间隔 100ms
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    console.log(`[BATCH-EMAIL] 批量发送完成: 成功 ${results.success}/${results.total}`);
+    
+    res.json({
+      success: true,
+      message: `发送完成：成功 ${results.success} 封，失败 ${results.failed} 封`,
+      results
+    });
+  } catch (error) {
+    console.error('[批量发送邮件] 错误:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
