@@ -328,6 +328,8 @@ async function loadSiteConfig() {
           appId: data.miniprogramAppId || '',
           defaultPath: data.miniprogramPath || '/pages/create/create'
         },
+        // 保存 extraConfig（包含广告配置等）
+        extraConfig: data.extraConfig || {},
         loaded: true
       };
       console.log('[SiteConfig] 配置已加载:', state.siteConfig);
@@ -504,6 +506,82 @@ function showQrcodeError() {
  */
 function closeMiniprogramGuide() {
   const modal = document.getElementById('miniprogram-guide-modal');
+  if (modal) {
+    modal.remove();
+    document.body.classList.remove('modal-open');
+  }
+}
+
+/**
+ * 显示小程序观看广告提示
+ */
+function showMiniprogramAdPrompt() {
+  const mpName = state.siteConfig.miniprogram?.name || '一句话游戏';
+  
+  // 移除旧的弹窗
+  const oldModal = document.getElementById('miniprogram-ad-modal');
+  if (oldModal) oldModal.remove();
+  
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.id = 'miniprogram-ad-modal';
+  modal.onclick = (e) => { if (e.target === modal) closeMiniprogramAdPrompt(); };
+  
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 380px;">
+      <div class="modal-header">
+        <h3>🎬 看视频广告领积分</h3>
+        <button class="btn btn-icon btn-close" onclick="closeMiniprogramAdPrompt()">×</button>
+      </div>
+      <div class="modal-body" style="text-align: center; padding: 1.5rem;">
+        <div style="margin-bottom: 1rem;">
+          <span style="font-size: 3rem;">📱</span>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.9375rem; margin-bottom: 1rem;">
+          观看视频广告功能已在小程序中开放
+        </p>
+        <p style="color: var(--text-muted); font-size: 0.8125rem; margin-bottom: 1.5rem;">
+          请前往小程序观看完整视频广告，即可获得积分奖励
+        </p>
+        
+        <div style="
+          background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%);
+          border: 1px solid rgba(255, 193, 7, 0.3);
+          border-radius: 12px;
+          padding: 1rem;
+          margin-bottom: 1.5rem;
+        ">
+          <p style="color: var(--accent-primary); font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">
+            💰 奖励说明
+          </p>
+          <p style="color: var(--text-secondary); font-size: 0.8125rem; margin: 0;">
+            每次观看完整广告可获得 <strong style="color: #ffc107;">3积分</strong><br>
+            每日最多可观看 <strong style="color: #ffc107;">30次</strong>
+          </p>
+        </div>
+        
+        <p style="color: var(--accent-primary); font-size: 0.875rem; font-weight: 600;">
+          ${mpName} 小程序
+        </p>
+        <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.5rem;">
+          微信搜索「${mpName}」即可找到
+        </p>
+      </div>
+      <div class="modal-footer" style="justify-content: center;">
+        <button class="btn btn-primary" onclick="closeMiniprogramAdPrompt()">我知道了</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  document.body.classList.add('modal-open');
+}
+
+/**
+ * 关闭小程序广告提示弹窗
+ */
+function closeMiniprogramAdPrompt() {
+  const modal = document.getElementById('miniprogram-ad-modal');
   if (modal) {
     modal.remove();
     document.body.classList.remove('modal-open');
@@ -2156,6 +2234,11 @@ async function showInsufficientCreditsModal(requiredCredits = 1, mode = 'insuffi
   const existingModal = document.getElementById('insufficient-credits-modal');
   if (existingModal) existingModal.remove();
   
+  // 确保站点配置已加载（包含广告配置）
+  if (!state.siteConfig.loaded || !state.siteConfig.extraConfig) {
+    await loadSiteConfig();
+  }
+  
   const miniprogramName = state.siteConfig?.miniprogram?.name || '游戏家';
   const qrcodeUrl = '/images/miniprogram.png';
   
@@ -2167,6 +2250,14 @@ async function showInsufficientCreditsModal(requiredCredits = 1, mode = 'insuffi
   const topContent = isViewMode 
     ? `当前积分: <strong>${formatCredits(state.credits)}</strong>`
     : `当前积分: <strong>${formatCredits(state.credits)}</strong> &nbsp;&nbsp; 需要: <strong>${requiredCredits}</strong> 积分`;
+  
+  // 检查广告配置（从 siteConfig.extraConfig 中获取）
+  const adConfig = state.siteConfig?.extraConfig?.ad;
+  const adEnabled = adConfig?.enabled === true;
+  const adReward = adConfig?.reward || 3;
+  const adDisplayText = adEnabled 
+    ? `<strong style="color: #10b981;">+${adReward}</strong>` 
+    : `<span style="color: #94a3b8;">即将开放</span>`;
   
   // 创建弹窗
   const modal = document.createElement('div');
@@ -2205,7 +2296,7 @@ async function showInsufficientCreditsModal(requiredCredits = 1, mode = 'insuffi
               <div style="font-size: 0.75rem; color: var(--text-muted);">📅 签到 <strong style="color: #10b981;">+1</strong></div>
               <div style="font-size: 0.75rem; color: var(--text-muted);">🏆 领成就 <strong style="color: #10b981;">+N</strong></div>
               <div style="font-size: 0.75rem; color: var(--text-muted);">👥 邀请 <strong style="color: #10b981;">+5</strong></div>
-              <div style="font-size: 0.75rem; color: var(--text-muted);">🎬 广告 <span style="color: #94a3b8;">即将开放</span></div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">🎬 广告 ${adDisplayText}</div>
             </div>
           </div>
         </div>
@@ -2420,7 +2511,7 @@ async function loadClaimableAchievementsByCategory() {
       return;
     }
     
-    const { checkin, action_progress, claimable_achievements, in_progress_achievements, summary, tips } = data.data;
+    const { checkin, action_progress, claimable_achievements, in_progress_achievements, ad_progress, summary, tips } = data.data;
     
     // 更新总可领取积分
     if (totalCreditsEl) {
@@ -2506,6 +2597,18 @@ async function loadClaimableAchievementsByCategory() {
     
     // ========== 进行中区域（带进度条） ==========
     let inprogressHtml = '';
+    
+    // 视频广告进度（功能启用且当天有剩余次数时显示）
+    if (ad_progress && ad_progress.enabled && ad_progress.remainingToday > 0) {
+      const adItem = renderProgressItem(
+        '看广告领积分',
+        ad_progress.todayCount,
+        ad_progress.dailyLimit,
+        ad_progress.progress,
+        ad_progress.reward
+      );
+      inprogressHtml += renderCategory('🎬', '今日看广告', adItem);
+    }
     
     // 互动进度（显示所有未完成的互动类型，包括 current=0 的情况）
     let actionProgressItems = '';
@@ -8407,6 +8510,28 @@ function updateCreditWaysStatus(creditsData) {
     updateExtraWayStatus('invite', dailyCounts.invite, extraConfig.inviteFriend);
     // 阅读文章
     updateExtraWayStatus('article', dailyCounts.article, extraConfig.article);
+    
+    // 更新广告入口状态
+    const wayAd = document.getElementById('way-ad');
+    if (wayAd && extraConfig.ad) {
+      const adConfig = extraConfig.ad;
+      const adReward = document.getElementById('way-ad-reward');
+      const adDesc = document.getElementById('way-ad-desc');
+      
+      if (adConfig.enabled) {
+        wayAd.style.display = 'flex';
+        if (adReward) {
+          adReward.textContent = `+${adConfig.reward || 3}积分`;
+        }
+        if (adDesc) {
+          adDesc.textContent = `观看完整视频广告获得积分（每日最多${adConfig.dailyLimit || 30}次）`;
+        }
+      } else {
+        wayAd.style.display = 'none';
+      }
+    } else if (wayAd) {
+      wayAd.style.display = 'none';
+    }
   }
 }
 

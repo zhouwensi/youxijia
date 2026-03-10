@@ -207,7 +207,7 @@
         <view class="nickname-input-wrap">
           <input 
             class="nickname-input" 
-            type="nickname"
+            type="text"
             placeholder="请输入昵称"
             value="{{nicknameInput}}"
             bindinput="onNicknameInput"
@@ -216,7 +216,7 @@
           />
         </view>
         <view class="nickname-tip">
-          <text>💡 点击输入框可使用微信昵称</text>
+          <text>💡 昵称长度1-20个字符</text>
         </view>
         <view class="nickname-actions">
           <button class="btn-cancel" bindtap="closeNicknameModal">取消</button>

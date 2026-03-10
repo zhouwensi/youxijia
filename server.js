@@ -1785,6 +1785,13 @@ function loadCreditsModalData() {
       // 构建进行中区域HTML
       var inprogressHtml = '';
       
+      // 视频广告进度（功能启用且当天有剩余次数时显示）
+      var adProgress = result.ad_progress;
+      if (adProgress && adProgress.enabled && adProgress.remainingToday > 0) {
+        var adItem = renderCreditsProgressItem('看广告领积分', adProgress.todayCount, adProgress.dailyLimit, adProgress.progress, adProgress.reward);
+        inprogressHtml += renderCreditsCategory('🎬', '今日看广告', adItem);
+      }
+      
       // 互动进度（显示所有未完成的互动类型）
       var actionProgressItems = '';
       actionProgress.forEach(function(action) {
@@ -4887,10 +4894,11 @@ const defaultConfigs = [
   { key: 'credits_edit_game_threshold', value: '2', description: '编辑游戏N次可领取' },
   { key: 'credits_edit_game_reward', value: '1', description: '编辑游戏领取积分' },
   { key: 'credits_edit_game_daily_limit', value: '1', description: '编辑游戏每日领取上限' },
-  // 激励视频广告配置（预留）
+  // 激励视频广告配置
   { key: 'credits_ad_reward', value: '3', description: '激励视频广告奖励' },
-  { key: 'credits_ad_daily_limit', value: '10', description: '激励广告每日上限' },
+  { key: 'credits_ad_daily_limit', value: '30', description: '激励广告每日上限' },
   { key: 'credits_ad_enabled', value: 'false', description: '激励广告功能是否启用' },
+  { key: 'rewarded_video_ad_unit_id', value: '', description: '激励视频广告单元ID' },
   // 邀请好友配置（小程序端）
   { key: 'credits_mp_invite', value: '5', description: '小程序邀请好友奖励（好友首次创作后双方得）' },
   { key: 'site_name', value: '一句话游戏', description: '网站名称' },
@@ -6880,6 +6888,21 @@ app.get('/api/site-config', (req, res) => {
     // 微信订阅消息模板ID（从环境变量读取）
     const wxSubscribeTmplId = process.env.WX_SUBSCRIBE_TMPL_GAME_CREATED || '';
     
+    // 激励视频广告单元ID
+    const rewardedVideoAdUnitId = getConfig('rewarded_video_ad_unit_id', '');
+    
+    // 积分配置（供小程序使用）
+    const extraConfig = {
+      ad: {
+        reward: parseFloat(getConfig('credits_ad_reward', '3')),
+        dailyLimit: parseInt(getConfig('credits_ad_daily_limit', '30')),
+        enabled: getConfig('credits_ad_enabled', 'false') === 'true'
+      },
+      ads: {
+        rewardedVideoAdUnitId: rewardedVideoAdUnitId
+      }
+    };
+    
     res.json({
       success: true,
       // 直接返回字段（供前端页面使用）
@@ -6898,6 +6921,10 @@ app.get('/api/site-config', (req, res) => {
       inviteReward: inviteReward,
       // 微信订阅消息模板ID
       wxSubscribeTmplId: wxSubscribeTmplId,
+      // 激励视频广告单元ID
+      rewardedVideoAdUnitId: rewardedVideoAdUnitId,
+      // 积分配置（供小程序使用）
+      extraConfig: extraConfig,
       // 同时返回 config 对象（兼容旧版）
       config: {
         webWriteDisabled: webWriteDisabled,
@@ -7317,10 +7344,15 @@ app.post('/api/credits/follow-wechat', (req, res) => {
 app.post('/api/credits/watch-ad', (req, res) => {
   try {
     const userToken = req.headers['x-user-token'];
-    const { adId } = req.body;
     
     if (!userToken) {
       return res.status(400).json({ success: false, error: '缺少用户标识' });
+    }
+    
+    // 从数据库读取广告功能开关
+    const adEnabled = getConfig('credits_ad_enabled', 'false') === 'true';
+    if (!adEnabled) {
+      return res.status(200).json({ success: false, error: '激励视频广告功能暂未启用', featureDisabled: true });
     }
     
     const user = db.prepare('SELECT * FROM user_credits WHERE user_token = ?').get(userToken);
@@ -7337,14 +7369,21 @@ app.post('/api/credits/watch-ad', (req, res) => {
       adCountToday = 0;
     }
     
-    if (adCountToday >= CREDITS_CONFIG.dailyLimit) {
-      return res.status(400).json({ success: false, error: '今日观看次数已达上限' });
+    // 从数据库读取每日上限和奖励积分
+    const dailyLimit = parseInt(getConfig('credits_ad_daily_limit', '30')) || 30;
+    const reward = parseFloat(getConfig('credits_ad_reward', '3')) || 3;
+    
+    if (adCountToday >= dailyLimit) {
+      return res.status(200).json({ 
+        success: false, 
+        error: `今日观看次数已达上限（${dailyLimit}次）`,
+        todayCount: adCountToday,
+        remainingToday: 0,
+        dailyLimit
+      });
     }
     
-    // TODO: 验证广告是否真的观看完成（需要接入广告SDK）
-    
     // 增加积分
-    const reward = CREDITS_CONFIG.watchAd;
     db.prepare(`
       UPDATE user_credits 
       SET credits = credits + ?, total_earned = total_earned + ?, 
@@ -7355,18 +7394,58 @@ app.post('/api/credits/watch-ad', (req, res) => {
     // 记录日志
     db.prepare(`
       INSERT INTO credit_logs (user_token, amount, type, description)
-      VALUES (?, ?, 'watch_ad', '观看广告奖励')
+      VALUES (?, ?, 'watch_ad', '观看激励视频广告')
     `).run(userToken, reward);
     
     const updated = db.prepare('SELECT credits, ad_count_today FROM user_credits WHERE user_token = ?').get(userToken);
     
+    const newTodayCount = updated.ad_count_today;
+    const remainingToday = Math.max(0, dailyLimit - newTodayCount);
+    
     res.json({ 
       success: true, 
-      credits: updated.credits, 
-      earned: reward,
-      adCountToday: updated.ad_count_today,
-      dailyLimit: CREDITS_CONFIG.dailyLimit,
-      message: `获得 ${reward} 次生成机会！`
+      credits: updated.credits,
+      creditsAwarded: reward,
+      todayCount: newTodayCount,
+      remainingToday: remainingToday,
+      dailyLimit: dailyLimit,
+      message: `恭喜获得 ${reward} 积分！`
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 获取广告状态（今日观看次数和剩余次数）
+app.get('/api/credits/ad-status', (req, res) => {
+  try {
+    const userToken = req.headers['x-user-token'];
+    if (!userToken) {
+      return res.status(401).json({ success: false, error: '请先登录' });
+    }
+    
+    const user = db.prepare('SELECT ad_count_today, last_ad_date FROM user_credits WHERE user_token = ?').get(userToken);
+    
+    if (!user) {
+      return res.status(400).json({ success: false, error: '用户不存在' });
+    }
+    
+    const today = new Date().toISOString().split('T')[0];
+    let todayCount = user.ad_count_today || 0;
+    
+    // 如果上次观看日期不是今天，重置为0
+    if (user.last_ad_date !== today) {
+      todayCount = 0;
+    }
+    
+    const dailyLimit = parseInt(getConfig('credits_ad_daily_limit', '30')) || 30;
+    const remainingToday = Math.max(0, dailyLimit - todayCount);
+    
+    res.json({
+      success: true,
+      todayCount,
+      remainingToday,
+      dailyLimit
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -7958,11 +8037,12 @@ app.get('/api/admin/credits-all-config', (req, res) => {
         editReward: parseFloat(getConfig('credits_edit_game_reward', '1')),
         editDailyLimit: parseInt(getConfig('credits_edit_game_daily_limit', '1'))
       },
-      // 激励视频广告配置（预留）
+      // 激励视频广告配置
       ad: {
         reward: parseFloat(getConfig('credits_ad_reward', '3')),
-        dailyLimit: parseInt(getConfig('credits_ad_daily_limit', '10')),
-        enabled: getConfig('credits_ad_enabled', 'false') === 'true'
+        dailyLimit: parseInt(getConfig('credits_ad_daily_limit', '30')),
+        enabled: getConfig('credits_ad_enabled', 'false') === 'true',
+        rewardedVideoAdUnitId: getConfig('rewarded_video_ad_unit_id', '')
       },
       // 邀请好友配置（小程序端）
       invite: {
@@ -8069,6 +8149,7 @@ app.put('/api/admin/credits-all-config', (req, res) => {
       if (ad.reward !== undefined) setConfig('credits_ad_reward', String(ad.reward));
       if (ad.dailyLimit !== undefined) setConfig('credits_ad_daily_limit', String(ad.dailyLimit));
       if (ad.enabled !== undefined) setConfig('credits_ad_enabled', String(ad.enabled));
+      if (ad.rewardedVideoAdUnitId !== undefined) setConfig('rewarded_video_ad_unit_id', String(ad.rewardedVideoAdUnitId));
     }
     
     // 邀请配置
@@ -9584,13 +9665,35 @@ app.get('/api/user/credits-progress', (req, res) => {
       }
     }
     
-    // 5. 计算可领取总积分
+    // 5. 获取广告观看进度
+    const adEnabled = getConfig('credits_ad_enabled', 'false') === 'true';
+    let adProgress = null;
+    if (adEnabled) {
+      const userAdData = db.prepare('SELECT ad_count_today, last_ad_date FROM user_credits WHERE user_token = ?').get(userToken);
+      const todayStr = new Date().toISOString().split('T')[0];
+      let adTodayCount = userAdData?.ad_count_today || 0;
+      if (userAdData?.last_ad_date !== todayStr) {
+        adTodayCount = 0;
+      }
+      const adDailyLimit = parseInt(getConfig('credits_ad_daily_limit', '30')) || 30;
+      const adReward = parseFloat(getConfig('credits_ad_reward', '3')) || 3;
+      adProgress = {
+        enabled: true,
+        todayCount: adTodayCount,
+        dailyLimit: adDailyLimit,
+        reward: adReward,
+        remainingToday: Math.max(0, adDailyLimit - adTodayCount),
+        progress: Math.round((adTodayCount / adDailyLimit) * 100)
+      };
+    }
+    
+    // 6. 计算可领取总积分
     const actionClaimableCredits = actionProgress.reduce((sum, a) => sum + a.can_claim_credits, 0);
     const achievementClaimableCredits = claimableAchievements.reduce((sum, a) => sum + a.reward, 0);
     const checkinClaimableCredits = checkin.can_claim ? 1 : 0;
     const totalClaimableCredits = actionClaimableCredits + achievementClaimableCredits + checkinClaimableCredits;
     
-    // 6. 生成智能提示（找到最接近完成的任务）
+    // 7. 生成智能提示（找到最接近完成的任务）
     const tips = [];
     
     // 找最接近完成的互动积分
@@ -9625,6 +9728,7 @@ app.get('/api/user/credits-progress', (req, res) => {
         action_progress: actionProgress,
         claimable_achievements: claimableAchievements,
         in_progress_achievements: inProgressAchievements,
+        ad_progress: adProgress,
         summary: {
           action_claimable: actionClaimableCredits,
           achievement_claimable: achievementClaimableCredits,

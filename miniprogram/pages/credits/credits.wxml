@@ -21,12 +21,16 @@
         <text>{{checkinStatus.checkedInToday ? '已签到 ✅' : '签到'}}</text>
       </view>
     </view>
-    <view class="action-item disabled">
+    <view class="action-item {{!adConfig.enabled || adStatus.remainingToday <= 0 ? 'disabled' : ''}}" bindtap="handleWatchAd">
       <text class="action-icon">🎬</text>
       <text class="action-title">看广告</text>
-      <text class="action-reward">即将开放</text>
-      <view class="action-btn disabled">
-        <text>敬请期待</text>
+      <text class="action-reward" wx:if="{{adConfig.enabled}}">+{{adConfig.reward}}积分</text>
+      <text class="action-reward" wx:else>即将开放</text>
+      <view class="action-btn {{!adConfig.enabled || adStatus.remainingToday <= 0 || adLoading ? 'disabled' : ''}}">
+        <text wx:if="{{adLoading}}">加载中...</text>
+        <text wx:elif="{{!adConfig.enabled}}">敬请期待</text>
+        <text wx:elif="{{adStatus.remainingToday <= 0}}">今日已领完</text>
+        <text wx:else>观看 ({{adStatus.remainingToday}}/{{adConfig.dailyLimit}})</text>
       </view>
     </view>
     <view class="action-item" bindtap="handleInvite">
@@ -407,6 +411,23 @@
       <view class="section-title">
         <text class="title-text">📈 进行中</text>
         <text class="title-tip">继续努力即可领取</text>
+      </view>
+      
+      <!-- 视频广告进度（功能启用时显示） -->
+      <view class="progress-category" wx:if="{{adConfig.enabled && adStatus.remainingToday > 0}}">
+        <view class="category-header">🎬 今日看广告</view>
+        <view class="progress-list">
+          <view class="progress-item">
+            <text class="progress-name">看广告领积分</text>
+            <view class="progress-bar-wrapper">
+              <view class="progress-bar-full">
+                <view class="progress-bar-fill" style="width: {{adConfig.dailyLimit > 0 ? (adStatus.todayCount / adConfig.dailyLimit) * 100 : 0}}%"></view>
+              </view>
+              <text class="progress-percent">{{adStatus.todayCount}}/{{adConfig.dailyLimit}}</text>
+            </view>
+            <text class="progress-reward">+{{adConfig.reward}}</text>
+          </view>
+        </view>
       </view>
       
       <!-- 互动进度 -->

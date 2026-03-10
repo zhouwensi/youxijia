@@ -65,6 +65,18 @@ App({
           this.globalData.config.wxSubscribeTmplId = result.wxSubscribeTmplId;
         }
         
+        // 激励视频广告单元ID
+        if (result.rewardedVideoAdUnitId) {
+          this.globalData.config.rewardedVideoAdUnitId = result.rewardedVideoAdUnitId;
+        }
+        // 也支持从 extraConfig 中读取
+        if (result.extraConfig?.ads?.rewardedVideoAdUnitId) {
+          this.globalData.config.rewardedVideoAdUnitId = result.extraConfig.ads.rewardedVideoAdUnitId;
+        }
+        
+        // 保存完整的站点配置（供其他页面使用）
+        this.globalData.siteConfig = result;
+        
         this.globalData.siteConfigLoaded = true;
         console.log('站点配置加载成功:', this.globalData.config.miniprogramName);
         console.log('小程序功能开关:', { 

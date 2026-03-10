@@ -3712,6 +3712,65 @@ body.modal-open .modal-content {
   margin-bottom: 0;
 }
 
+/* 广告入口特殊样式 - 突出显示 */
+.credit-way-ad {
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.15) 0%, rgba(255, 152, 0, 0.15) 100%) !important;
+  border: 2px solid rgba(255, 193, 7, 0.4) !important;
+  position: relative;
+  overflow: hidden;
+  animation: adPulse 3s ease-in-out infinite;
+}
+
+.credit-way-ad::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: adShine 3s infinite;
+  pointer-events: none;
+}
+
+@keyframes adPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(255, 193, 7, 0);
+  }
+}
+
+@keyframes adShine {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}
+
+.credit-way-ad .credit-way-icon {
+  animation: adIconPulse 2s ease-in-out infinite;
+}
+
+@keyframes adIconPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+.credit-way-ad:hover {
+  border-color: rgba(255, 193, 7, 0.6) !important;
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 152, 0, 0.2) 100%) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+}
+
 /* 已完成的积分方式 - 灰色禁用状态 */
 .credit-way.completed {
   opacity: 0.6;

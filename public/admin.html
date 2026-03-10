@@ -1171,7 +1171,7 @@
                   style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;"> 积分
               </td>
               <td style="padding: 0.75rem;">
-                <input type="number" id="ad-daily-limit" min="0" value="10"
+                <input type="number" id="ad-daily-limit" min="0" value="30"
                   style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 80px;"> 次
               </td>
               <td style="padding: 0.75rem;">
@@ -1182,13 +1182,23 @@
                 </label>
               </td>
             </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <td style="padding: 0.75rem;">🎬 广告单元ID</td>
+              <td colspan="3" style="padding: 0.75rem;">
+                <input type="text" id="rewarded-video-ad-unit-id" placeholder="请输入广告单元ID（adUnitId）"
+                  style="padding: 0.4rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 100%; max-width: 400px;">
+                <p style="color: #64748b; font-size: 0.75rem; margin-top: 0.5rem; margin-bottom: 0;">
+                  💡 在微信公众平台 → 流量主 → 广告管理 → 激励视频广告中申请并获取广告单元ID
+                </p>
+              </td>
+            </tr>
           </tbody>
         </table>
         
         <p style="color: #64748b; font-size: 0.8rem; margin-top: 1rem;">
           💡 <strong>说明：</strong><br>
           • 邀请好友：被邀请者首次创作游戏后，双方各获得积分奖励<br>
-          • 激励视频广告：需达到500UV后申请开通，开通后勾选启用
+          • 激励视频广告：需达到500UV后申请开通，开通后勾选启用，并填写广告单元ID
         </p>
       </div>
       
@@ -4953,13 +4963,21 @@
           const adStatusText = document.getElementById('ad-status-text');
           if (mpInviteReward) mpInviteReward.value = config.invite?.mpReward ?? 5;
           if (adReward) adReward.value = config.ad?.reward ?? 3;
-          if (adDailyLimit) adDailyLimit.value = config.ad?.dailyLimit ?? 10;
+          if (adDailyLimit) adDailyLimit.value = config.ad?.dailyLimit ?? 30;
           if (adEnabled) {
             adEnabled.checked = config.ad?.enabled ?? false;
             if (adStatusText) {
               adStatusText.textContent = config.ad?.enabled ? '✅ 已启用' : '待开通';
               adStatusText.style.color = config.ad?.enabled ? '#10b981' : '#f59e0b';
             }
+          }
+          
+          // 激励视频广告单元ID
+          const rewardedVideoAdUnitId = document.getElementById('rewarded-video-ad-unit-id');
+          if (rewardedVideoAdUnitId) {
+            // 从配置中读取广告单元ID
+            const adUnitId = config.ad?.rewardedVideoAdUnitId || '';
+            rewardedVideoAdUnitId.value = adUnitId;
           }
         }
       } catch (error) {
@@ -5008,8 +5026,9 @@
           },
           ad: {
             reward: parseFloat(document.getElementById('ad-reward')?.value) || 3,
-            dailyLimit: parseInt(document.getElementById('ad-daily-limit')?.value) || 10,
-            enabled: document.getElementById('ad-enabled')?.checked || false
+            dailyLimit: parseInt(document.getElementById('ad-daily-limit')?.value) || 30,
+            enabled: document.getElementById('ad-enabled')?.checked || false,
+            rewardedVideoAdUnitId: document.getElementById('rewarded-video-ad-unit-id')?.value || ''
           },
           invite: {
             mpReward: parseFloat(document.getElementById('mp-invite-reward')?.value) || 5

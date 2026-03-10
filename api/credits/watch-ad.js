@@ -2,24 +2,26 @@
  * 激励视频广告奖励 API
  * POST /api/credits/watch-ad - 观看广告后发放积分奖励
  * 
- * 【预留接口】待 500UV 后启用
- * 启用步骤：
- * 1. 在微信公众平台申请激励视频广告位
- * 2. 获取广告单元ID并配置到 siteConfig.ads.rewardedVideoAdUnitId
- * 3. 将下方 FEATURE_ENABLED 改为 true
- * 4. 在小程序端集成 wx.createRewardedVideoAd API
+ * 配置项：
+ * - credits_ad_enabled: 功能开关（默认false）
+ * - credits_ad_reward: 每次观看奖励积分（默认3）
+ * - credits_ad_daily_limit: 每日观看上限（默认30）
  */
 
 const db = require('../_lib/db');
 
-// 功能开关（待500UV后启用）
-const FEATURE_ENABLED = false;
-
-// 每日观看广告次数限制
-const DAILY_AD_LIMIT = 5;
-
-// 每次观看广告奖励积分
-const AD_REWARD_CREDITS = 2;
+// 从配置读取设置
+function getConfig(key, defaultValue) {
+  try {
+    const result = db.query('SELECT value FROM system_config WHERE key = ?', [key]);
+    if (result.rows && result.rows.length > 0) {
+      return result.rows[0].value;
+    }
+  } catch (error) {
+    console.error(`[Watch Ad API] 读取配置失败 ${key}:`, error);
+  }
+  return defaultValue;
+}
 
 module.exports = async (req, res) => {
   // 设置 CORS 头
@@ -35,13 +37,16 @@ module.exports = async (req, res) => {
     return res.status(405).json({ success: false, error: '方法不允许' });
   }
 
+  // 从配置读取功能开关
+  const featureEnabled = getConfig('credits_ad_enabled', 'false') === 'true';
+  
   // 检查功能是否启用
-  if (!FEATURE_ENABLED) {
+  if (!featureEnabled) {
     return res.status(200).json({ 
       success: false, 
       error: '此功能暂未开放',
       featureDisabled: true,
-      message: '激励视频广告功能将在后续版本开放，敬请期待！'
+      message: '激励视频广告功能暂未启用，请联系管理员'
     });
   }
 
@@ -74,6 +79,10 @@ module.exports = async (req, res) => {
     const accountId = accountResult.rows[0].account_id;
     const today = new Date().toISOString().split('T')[0];
     
+    // 从配置读取奖励积分和每日上限
+    const adReward = parseFloat(getConfig('credits_ad_reward', '3'));
+    const dailyLimit = parseInt(getConfig('credits_ad_daily_limit', '30'));
+    
     // 检查今日观看次数
     const countResult = await db.query(
       `SELECT COUNT(*) as count FROM credit_records 
@@ -83,26 +92,26 @@ module.exports = async (req, res) => {
     
     const todayCount = countResult.rows[0]?.count || 0;
     
-    if (todayCount >= DAILY_AD_LIMIT) {
+    if (todayCount >= dailyLimit) {
       return res.status(200).json({ 
         success: false, 
-        error: `今日观看次数已达上限（${DAILY_AD_LIMIT}次）`,
+        error: `今日观看次数已达上限（${dailyLimit}次）`,
         todayCount,
-        dailyLimit: DAILY_AD_LIMIT
+        dailyLimit: dailyLimit
       });
     }
     
     // 发放积分奖励
     await db.query(
       `UPDATE accounts SET credits = credits + ? WHERE id = ?`,
-      [AD_REWARD_CREDITS, accountId]
+      [adReward, accountId]
     );
     
     // 记录积分变动
     await db.query(
       `INSERT INTO credit_records (account_id, credits, action, description, created_at)
        VALUES (?, ?, 'watch_ad', '观看激励视频广告', NOW())`,
-      [accountId, AD_REWARD_CREDITS]
+      [accountId, adReward]
     );
     
     // 获取最新积分
@@ -115,12 +124,12 @@ module.exports = async (req, res) => {
     
     return res.status(200).json({
       success: true,
-      message: `恭喜获得 ${AD_REWARD_CREDITS} 积分！`,
-      creditsAwarded: AD_REWARD_CREDITS,
+      message: `恭喜获得 ${adReward} 积分！`,
+      creditsAwarded: adReward,
       credits: newCredits,
       todayCount: todayCount + 1,
-      dailyLimit: DAILY_AD_LIMIT,
-      remainingToday: DAILY_AD_LIMIT - todayCount - 1
+      dailyLimit: dailyLimit,
+      remainingToday: dailyLimit - todayCount - 1
     });
     
   } catch (error) {

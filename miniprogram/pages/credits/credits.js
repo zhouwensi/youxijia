@@ -116,7 +116,20 @@ Page({
       isDefaultNickname: true,     // 是否是默认昵称
       canClaimReward: false        // 是否可以领取奖励（老用户情况）
     },
-    nicknameClaimLoading: false    // 领取昵称奖励loading
+    nicknameClaimLoading: false,    // 领取昵称奖励loading
+    
+    // 激励视频广告相关
+    adConfig: {
+      enabled: false,             // 功能是否启用
+      reward: 3,                  // 每次观看奖励积分
+      dailyLimit: 30              // 每日观看上限
+    },
+    adStatus: {
+      todayCount: 0,              // 今日已观看次数
+      remainingToday: 0           // 今日剩余次数
+    },
+    adLoading: false,              // 广告加载状态
+    rewardedVideoAd: null         // 激励视频广告实例
   },
 
   onLoad(options) {
@@ -168,6 +181,12 @@ Page({
       clearInterval(this.data.emailCooldownTimer);
       this.setData({ emailCooldownTimer: null, emailCooldown: 0 });
     }
+    
+    // 销毁广告实例
+    if (this.data.rewardedVideoAd) {
+      this.data.rewardedVideoAd.destroy();
+      this.setData({ rewardedVideoAd: null });
+    }
   },
 
   onPullDownRefresh() {
@@ -189,7 +208,8 @@ Page({
         this.loadCreditLogs(),
         this.loadInviteCode(),  // 加载邀请码
         this.loadInviteConfig(),  // 加载邀请配置
-        this.loadWechatStatus()  // 加载公众号互动状态
+        this.loadWechatStatus(),  // 加载公众号互动状态
+        this.loadAdConfig()  // 加载广告配置
       ]);
     } catch (err) {
       console.error('加载数据失败:', err);
@@ -1050,6 +1070,258 @@ Page({
       app.showToast('领取失败，请重试');
     } finally {
       this.setData({ nicknameClaimLoading: false });
+    }
+  },
+  
+  // ==================== 激励视频广告相关方法 ====================
+  
+  // 加载广告配置
+  async loadAdConfig() {
+    try {
+      const result = await app.request('/api/site-config');
+      if (result && result.extraConfig && result.extraConfig.ad) {
+        const adConfig = result.extraConfig.ad;
+        this.setData({
+          'adConfig.enabled': adConfig.enabled === true,
+          'adConfig.reward': adConfig.reward || 3,
+          'adConfig.dailyLimit': adConfig.dailyLimit || 30
+        });
+        
+        // 如果功能启用，加载今日观看次数
+        if (adConfig.enabled) {
+          await this.loadAdStatus();
+        }
+      }
+    } catch (err) {
+      console.error('加载广告配置失败:', err);
+    }
+  },
+  
+  // 加载广告状态（今日观看次数）
+  async loadAdStatus() {
+    try {
+      // 调用专用接口获取今日观看次数（避免日期格式解析问题）
+      const result = await app.request('/api/credits/ad-status');
+      
+      if (result && result.success) {
+        const dailyLimit = result.dailyLimit || this.data.adConfig.dailyLimit || 30;
+        this.setData({
+          'adStatus.todayCount': result.todayCount || 0,
+          'adStatus.remainingToday': result.remainingToday !== undefined ? result.remainingToday : Math.max(0, dailyLimit - (result.todayCount || 0)),
+          'adConfig.dailyLimit': dailyLimit
+        });
+      }
+    } catch (err) {
+      console.error('加载广告状态失败:', err);
+    }
+  },
+  
+  // 处理观看广告
+  async handleWatchAd() {
+    // 检查功能是否启用
+    if (!this.data.adConfig.enabled) {
+      app.showToast('激励视频广告功能暂未启用');
+      return;
+    }
+    
+    // 检查今日观看次数
+    if (this.data.adStatus.remainingToday <= 0) {
+      app.showToast(`今日观看次数已达上限（${this.data.adConfig.dailyLimit}次）`);
+      return;
+    }
+    
+    // 检查是否正在加载
+    if (this.data.adLoading) {
+      return;
+    }
+    
+    this.setData({ adLoading: true });
+    
+    try {
+      // 获取广告单元ID（从站点配置或全局配置读取）
+      const adUnitId = app.globalData.config?.rewardedVideoAdUnitId || 
+                       app.globalData.siteConfig?.rewardedVideoAdUnitId;
+      
+      if (!adUnitId) {
+        app.showToast('广告配置未完成，请联系管理员');
+        this.setData({ adLoading: false });
+        return;
+      }
+      
+      // 创建或复用广告实例
+      let rewardedVideoAd = this.data.rewardedVideoAd;
+      if (!rewardedVideoAd) {
+        rewardedVideoAd = wx.createRewardedVideoAd({
+          adUnitId: adUnitId
+        });
+        
+        // 监听广告加载成功
+        rewardedVideoAd.onLoad(() => {
+          console.log('激励视频广告加载成功');
+        });
+        
+        // 监听广告加载失败
+        rewardedVideoAd.onError((err) => {
+          console.error('激励视频广告加载失败:', err);
+          this.setData({ adLoading: false });
+          
+          let errorMsg = '广告加载失败，请稍后重试';
+          if (err.errCode === 1004) {
+            errorMsg = '暂无广告可观看，请稍后再试';
+          } else if (err.errCode === 1005) {
+            errorMsg = '广告播放失败，请重试';
+          }
+          
+          // 延迟显示弹窗，避免editor相关错误
+          setTimeout(() => {
+            wx.showModal({
+              title: '提示',
+              content: errorMsg,
+              showCancel: false,
+              confirmText: '知道了'
+            });
+          }, 300);
+        });
+        
+        // 监听广告关闭
+        rewardedVideoAd.onClose((res) => {
+          // 延迟更新状态和后续操作，避免editor相关错误
+          // 给页面足够时间完成广告关闭动画和状态恢复
+          setTimeout(() => {
+            this.setData({ adLoading: false });
+            
+            if (res && res.isEnded) {
+              // 用户完整观看了广告，发放积分
+              // 再次延迟调用，确保页面状态完全稳定
+              setTimeout(() => {
+                this.claimAdReward();
+              }, 200);
+            } else {
+              // 用户提前退出，不发放积分
+              setTimeout(() => {
+                app.showToast('需要完整观看广告才能获得积分');
+              }, 200);
+            }
+          }, 500);
+        });
+        
+        this.setData({ rewardedVideoAd: rewardedVideoAd });
+        
+        // 创建广告实例后立即加载广告
+        rewardedVideoAd.load().catch((loadErr) => {
+          console.error('广告预加载失败:', loadErr);
+          // 预加载失败不影响后续操作，会在 show() 时重试
+        });
+      }
+      
+      // 显示广告前，先确保广告已加载
+      try {
+        // 先尝试加载广告（如果还未加载）
+        await rewardedVideoAd.load();
+      } catch (loadErr) {
+        console.log('广告加载中，继续尝试显示...');
+      }
+      
+      // 显示广告
+      await rewardedVideoAd.show().catch((err) => {
+        console.error('显示广告失败:', err);
+        this.setData({ adLoading: false });
+        
+        // 检查是否是广告未加载的错误
+        const isNotLoaded = err.errCode === 1004 || 
+                           (err.errMsg && err.errMsg.includes('no advertisement data available'));
+        
+        if (isNotLoaded) {
+          // 如果广告未加载，先加载再显示
+          rewardedVideoAd.load()
+            .then(() => {
+              return rewardedVideoAd.show();
+            })
+            .then(() => {
+              // 显示成功，不需要额外处理
+            })
+            .catch((loadErr) => {
+              console.error('加载并显示广告失败:', loadErr);
+              app.showToast('广告加载失败，请稍后重试');
+            });
+        } else {
+          app.showToast('广告播放失败，请重试');
+        }
+      });
+      
+    } catch (err) {
+      console.error('观看广告失败:', err);
+      this.setData({ adLoading: false });
+      app.showToast('观看广告失败，请重试');
+    }
+  },
+  
+  // 领取广告奖励
+  async claimAdReward() {
+    try {
+      const result = await app.request('/api/credits/watch-ad', {
+        method: 'POST'
+      });
+      
+      if (result && result.success) {
+        // 计算剩余次数（优先使用后端返回，否则使用本地计算）
+        const todayCount = result.todayCount !== undefined ? result.todayCount : (this.data.adStatus.todayCount + 1);
+        const dailyLimit = this.data.adConfig.dailyLimit || 30;
+        const remainingToday = result.remainingToday !== undefined ? result.remainingToday : Math.max(0, dailyLimit - todayCount);
+        
+        // 延迟更新状态，确保页面完全稳定后再操作
+        setTimeout(() => {
+          // 更新积分和广告状态
+          this.setData({
+            credits: app.formatCredits(result.credits || 0),
+            'adStatus.todayCount': todayCount,
+            'adStatus.remainingToday': remainingToday
+          });
+          
+          // 再次延迟显示弹窗，避免editor相关错误
+          setTimeout(() => {
+            wx.showModal({
+              title: '🎉 观看成功',
+              content: `恭喜获得 ${result.creditsAwarded || this.data.adConfig.reward} 积分！\n\n今日剩余 ${remainingToday} 次`,
+              showCancel: false,
+              confirmText: '太棒了',
+              success: () => {
+                // 弹窗显示成功后，刷新广告状态（确保数据同步）
+                setTimeout(() => {
+                  this.loadAdStatus().catch(err => {
+                    console.error('刷新广告状态失败:', err);
+                  });
+                }, 100);
+              }
+            });
+          }, 500);
+        }, 300);
+        
+        // 刷新积分明细（异步执行，不阻塞）
+        setTimeout(() => {
+          this.loadCreditLogs().catch(err => {
+            console.error('刷新积分明细失败:', err);
+          });
+        }, 200);
+      } else {
+        app.showToast(result?.error || '领取积分失败');
+        
+        // 如果是因为达到上限，更新状态
+        if (result?.todayCount !== undefined) {
+          const dailyLimit = this.data.adConfig.dailyLimit || 30;
+          const remainingToday = result.remainingToday !== undefined 
+            ? result.remainingToday 
+            : Math.max(0, dailyLimit - result.todayCount);
+          
+          this.setData({
+            'adStatus.todayCount': result.todayCount,
+            'adStatus.remainingToday': remainingToday
+          });
+        }
+      }
+    } catch (err) {
+      console.error('领取广告奖励失败:', err);
+      app.showToast('领取积分失败，请重试');
     }
   }
 });

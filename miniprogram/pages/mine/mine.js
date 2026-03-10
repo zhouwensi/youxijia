@@ -663,10 +663,16 @@ Page({
 
   // 关闭昵称编辑弹窗
   closeNicknameModal() {
+    // 先清空输入，延迟关闭弹窗，避免editor相关错误
     this.setData({
-      showNicknameModal: false,
       nicknameInput: ''
     });
+    // 延迟关闭，确保input组件完全销毁
+    setTimeout(() => {
+      this.setData({
+        showNicknameModal: false
+      });
+    }, 100);
   },
 
   // 昵称输入事件
