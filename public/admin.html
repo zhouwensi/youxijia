@@ -892,6 +892,18 @@
 
     <!-- 积分管理 -->
     <div class="tab-content" id="tab-promo">
+      <!-- 积分途径限制开关（小程序+网站） -->
+      <div class="config-section" style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.3);">
+        <h2>📱 积分途径限制（小程序 + 网站）</h2>
+        <p style="color: #94a3b8; font-size: 0.875rem; margin-bottom: 0.75rem;">
+          开启后，<strong>小程序和网站</strong>仅显示：今日签到、连续签到、看广告、关注公众号；其余途径（邀请好友、阅读文章、验证邮箱、点赞/收藏/评论/分享、创作/编辑游戏、所有成就等）<strong>全部隐藏</strong>，不显示「未开放」等提示。
+        </p>
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+          <input type="checkbox" id="credits-limited-switch" checked style="width: 18px; height: 18px;">
+          <span>仅保留部分积分途径（默认开启，建议保持开启以增加网站收入）</span>
+        </label>
+      </div>
+
       <!-- 📌 基础积分配置 -->
       <div class="config-section" style="margin-bottom: 1.5rem;">
         <h2>📌 基础积分配置</h2>
@@ -4962,6 +4974,8 @@
           const adEnabled = document.getElementById('ad-enabled');
           const adStatusText = document.getElementById('ad-status-text');
           if (mpInviteReward) mpInviteReward.value = config.invite?.mpReward ?? 5;
+          const creditsLimitedSwitch = document.getElementById('credits-limited-switch');
+          if (creditsLimitedSwitch) creditsLimitedSwitch.checked = config.mpCreditsEarningLimited !== false;
           if (adReward) adReward.value = config.ad?.reward ?? 3;
           if (adDailyLimit) adDailyLimit.value = config.ad?.dailyLimit ?? 30;
           if (adEnabled) {
@@ -5032,7 +5046,8 @@
           },
           invite: {
             mpReward: parseFloat(document.getElementById('mp-invite-reward')?.value) || 5
-          }
+          },
+          mpCreditsEarningLimited: document.getElementById('credits-limited-switch')?.checked !== false
         };
         
         const response = await fetch('/api/admin/credits-all-config', {

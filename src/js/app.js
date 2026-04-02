@@ -2292,7 +2292,7 @@ async function showInsufficientCreditsModal(requiredCredits = 1, mode = 'insuffi
                    style="width: 90px; height: 90px; display: block;"
                    onerror="this.parentNode.innerHTML='<div style=\\'text-align:center;padding:1rem;font-size:0.75rem;color:#666\\'>扫码失败<br>请搜索「${miniprogramName}」</div>'">
             </div>
-            <div style="flex: 1; min-width: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+            <div id="credits-modal-preview-grid" style="flex: 1; min-width: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
               <div style="font-size: 0.75rem; color: var(--text-muted);">📅 签到 <strong style="color: #10b981;">+1</strong></div>
               <div style="font-size: 0.75rem; color: var(--text-muted);">🏆 领成就 <strong style="color: #10b981;">+N</strong></div>
               <div style="font-size: 0.75rem; color: var(--text-muted);">👥 邀请 <strong style="color: #10b981;">+5</strong></div>
@@ -2512,16 +2512,22 @@ async function loadClaimableAchievementsByCategory() {
     }
     
     const { checkin, action_progress, claimable_achievements, in_progress_achievements, ad_progress, summary, tips } = data.data;
+    const creditsEarningLimited = data.data.creditsEarningLimited !== false;
     
-    // 更新总可领取积分
+    // 更新总可领取积分（限制模式下只计签到相关）
     if (totalCreditsEl) {
-      totalCreditsEl.textContent = `(共 ${summary.total_claimable || 0} 积分)`;
+      if (creditsEarningLimited) {
+        const limitedTotal = checkin.can_claim ? 1 : 0;
+        totalCreditsEl.textContent = `(共 ${limitedTotal} 积分)`;
+      } else {
+        totalCreditsEl.textContent = `(共 ${summary.total_claimable || 0} 积分)`;
+      }
     }
     
     // ========== 可领取区域（分类显示） ==========
     let claimableHtml = '';
     
-    // 📅 签到分类
+    // 📅 签到分类（保留）
     let checkinItems = '';
     if (!checkin.checked_in_today) {
       checkinItems += renderClaimableItem('今日签到', '+1', '未签到', 'pending');
@@ -2537,60 +2543,59 @@ async function loadClaimableAchievementsByCategory() {
       claimableHtml += renderCategory('📅', '签到', checkinItems);
     }
     
-    // ❤️ 互动积分分类
-    let actionItems = '';
-    action_progress.forEach(action => {
-      if (action.can_claim_count > 0) {
-        // 已完成可领取的
-        for (let i = 0; i < action.can_claim_count; i++) {
-          actionItems += renderClaimableItem(
-            `${action.name}奖励 (${action.target}/${action.target})`, 
-            `+${action.reward}`, 
-            '可领取', 
-            'claimable'
-          );
+    if (!creditsEarningLimited) {
+      // ❤️ 互动积分分类（限制模式下隐藏）
+      let actionItems = '';
+      action_progress.forEach(action => {
+        if (action.can_claim_count > 0) {
+          for (let i = 0; i < action.can_claim_count; i++) {
+            actionItems += renderClaimableItem(
+              `${action.name}奖励 (${action.target}/${action.target})`, 
+              `+${action.reward}`, 
+              '可领取', 
+              'claimable'
+            );
+          }
         }
+      });
+      if (actionItems) {
+        claimableHtml += renderCategory('❤️', '互动积分', actionItems);
       }
-    });
-    if (actionItems) {
-      claimableHtml += renderCategory('❤️', '互动积分', actionItems);
+      
+      // 按成就分类显示（限制模式下隐藏）
+      const achievementsByCategory = {
+        daily: { icon: '🏆', name: '每日成就', items: [] },
+        weekly: { icon: '📅', name: '每周成就', items: [] },
+        monthly: { icon: '📆', name: '每月成就', items: [] },
+        permanent: { icon: '🎖️', name: '永久成就', items: [] }
+      };
+      claimable_achievements.forEach(ach => {
+        const cat = achievementsByCategory[ach.category] || achievementsByCategory.permanent;
+        cat.items.push(ach);
+      });
+      Object.values(achievementsByCategory).forEach(cat => {
+        if (cat.items.length > 0) {
+          let items = '';
+          cat.items.forEach(ach => {
+            const progressText = ach.current !== undefined ? ` (${ach.current}/${ach.target})` : '';
+            items += renderClaimableItem(
+              escapeHtml(ach.name) + progressText,
+              `+${ach.reward}`,
+              '可领取',
+              'claimable'
+            );
+          });
+          claimableHtml += renderCategory(cat.icon, cat.name, items);
+        }
+      });
     }
-    
-    // 按成就分类显示
-    const achievementsByCategory = {
-      daily: { icon: '🏆', name: '每日成就', items: [] },
-      weekly: { icon: '📅', name: '每周成就', items: [] },
-      monthly: { icon: '📆', name: '每月成就', items: [] },
-      permanent: { icon: '🎖️', name: '永久成就', items: [] }
-    };
-    
-    claimable_achievements.forEach(ach => {
-      const cat = achievementsByCategory[ach.category] || achievementsByCategory.permanent;
-      cat.items.push(ach);
-    });
-    
-    Object.values(achievementsByCategory).forEach(cat => {
-      if (cat.items.length > 0) {
-        let items = '';
-        cat.items.forEach(ach => {
-          const progressText = ach.current !== undefined ? ` (${ach.current}/${ach.target})` : '';
-          items += renderClaimableItem(
-            escapeHtml(ach.name) + progressText,
-            `+${ach.reward}`,
-            '可领取',
-            'claimable'
-          );
-        });
-        claimableHtml += renderCategory(cat.icon, cat.name, items);
-      }
-    });
     
     if (claimableHtml) {
       claimableContainer.innerHTML = claimableHtml;
     } else {
       claimableContainer.innerHTML = `
         <div style="text-align: center; padding: 1rem; color: var(--text-muted); font-size: 0.8125rem;">
-          暂无可领取奖励，去小程序签到、互动即可获得
+          ${creditsEarningLimited ? '暂无可领取奖励，去小程序签到、看广告、关注公众号即可获得' : '暂无可领取奖励，去小程序签到、互动即可获得'}
         </div>
       `;
     }
@@ -2598,7 +2603,7 @@ async function loadClaimableAchievementsByCategory() {
     // ========== 进行中区域（带进度条） ==========
     let inprogressHtml = '';
     
-    // 视频广告进度（功能启用且当天有剩余次数时显示）
+    // 视频广告进度（保留）
     if (ad_progress && ad_progress.enabled && ad_progress.remainingToday > 0) {
       const adItem = renderProgressItem(
         '看广告领积分',
@@ -2610,66 +2615,115 @@ async function loadClaimableAchievementsByCategory() {
       inprogressHtml += renderCategory('🎬', '今日看广告', adItem);
     }
     
-    // 互动进度（显示所有未完成的互动类型，包括 current=0 的情况）
-    let actionProgressItems = '';
-    action_progress.filter(a => a.can_claim_count === 0).forEach(action => {
-      // 按文档设计格式：点赞 28/30 93% +1
-      actionProgressItems += renderProgressItem(
-        action.name,
-        action.current,
-        action.target,
-        action.progress,
-        action.reward
-      );
-    });
-    if (actionProgressItems) {
-      inprogressHtml += renderCategory('❤️', '互动进度', actionProgressItems);
+    // 限制模式下仅再显示「关注公众号」进度
+    if (creditsEarningLimited) {
+      const followAction = action_progress.find(a => a.type === 'follow');
+      if (followAction) {
+        const followItem = renderProgressItem(
+          '关注公众号',
+          followAction.current,
+          followAction.target,
+          followAction.progress,
+          followAction.reward
+        );
+        inprogressHtml += renderCategory('👥', '关注公众号', followItem);
+      }
     }
     
-    // 进行中的成就按分类
-    const inProgressByCategory = {
-      daily: { icon: '🏆', name: '每日成就', items: [] },
-      weekly: { icon: '📅', name: '每周成就', items: [] },
-      monthly: { icon: '📆', name: '每月成就', items: [] },
-      permanent: { icon: '🎖️', name: '永久成就', items: [] }
-    };
-    
-    in_progress_achievements.filter(a => a.progress > 0).forEach(ach => {
-      const cat = inProgressByCategory[ach.category] || inProgressByCategory.permanent;
-      cat.items.push(ach);
-    });
-    
-    Object.values(inProgressByCategory).forEach(cat => {
-      if (cat.items.length > 0) {
-        let items = '';
-        cat.items.forEach(ach => {
-          items += renderProgressItem(
-            escapeHtml(ach.name),
-            ach.current,
-            ach.target,
-            ach.progress,
-            ach.reward
-          );
-        });
-        inprogressHtml += renderCategory(cat.icon, cat.name, items);
+    if (!creditsEarningLimited) {
+      // 互动进度（限制模式下隐藏）
+      let actionProgressItems = '';
+      action_progress.filter(a => a.can_claim_count === 0).forEach(action => {
+        actionProgressItems += renderProgressItem(
+          action.name,
+          action.current,
+          action.target,
+          action.progress,
+          action.reward
+        );
+      });
+      if (actionProgressItems) {
+        inprogressHtml += renderCategory('❤️', '互动进度', actionProgressItems);
       }
-    });
+      
+      // 进行中的成就按分类（限制模式下隐藏）
+      const inProgressByCategory = {
+        daily: { icon: '🏆', name: '每日成就', items: [] },
+        weekly: { icon: '📅', name: '每周成就', items: [] },
+        monthly: { icon: '📆', name: '每月成就', items: [] },
+        permanent: { icon: '🎖️', name: '永久成就', items: [] }
+      };
+      in_progress_achievements.filter(a => a.progress > 0).forEach(ach => {
+        const cat = inProgressByCategory[ach.category] || inProgressByCategory.permanent;
+        cat.items.push(ach);
+      });
+      Object.values(inProgressByCategory).forEach(cat => {
+        if (cat.items.length > 0) {
+          let items = '';
+          cat.items.forEach(ach => {
+            items += renderProgressItem(
+              escapeHtml(ach.name),
+              ach.current,
+              ach.target,
+              ach.progress,
+              ach.reward
+            );
+          });
+          inprogressHtml += renderCategory(cat.icon, cat.name, items);
+        }
+      });
+    }
     
     if (inprogressHtml && inprogressContainer && inprogressSection) {
       inprogressContainer.innerHTML = inprogressHtml;
       inprogressSection.style.display = 'block';
+    } else if (inprogressSection) {
+      inprogressSection.style.display = 'none';
     }
     
     // 更新智能提示
-    if (tipsContainer && tips && tips.length > 0) {
-      tipsContainer.innerHTML = `
-        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); 
-                    border-radius: 8px; padding: 0.75rem; text-align: center;">
-          <p style="color: #10b981; font-size: 0.8125rem; margin: 0;">
-            💡 ${tips[0]}
-          </p>
-        </div>
-      `;
+    if (tipsContainer) {
+      if (creditsEarningLimited) {
+        tipsContainer.innerHTML = `
+          <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); 
+                      border-radius: 8px; padding: 0.75rem; text-align: center;">
+            <p style="color: #10b981; font-size: 0.8125rem; margin: 0;">
+              💡 在小程序中签到、看广告、关注公众号即可获得积分
+            </p>
+          </div>
+        `;
+      } else if (tips && tips.length > 0) {
+        tipsContainer.innerHTML = `
+          <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); 
+                      border-radius: 8px; padding: 0.75rem; text-align: center;">
+            <p style="color: #10b981; font-size: 0.8125rem; margin: 0;">
+              💡 ${tips[0]}
+            </p>
+          </div>
+        `;
+      }
+    }
+    
+    // 限制模式下：隐藏公众号福利区内的文章阅读、验证邮箱、设置昵称；预览区只保留签到、广告、关注公众号
+    if (creditsEarningLimited) {
+      const articleEntry = document.getElementById('article-code-entry');
+      const emailEntry = document.getElementById('email-verify-entry');
+      const nicknameEntry = document.getElementById('nickname-set-entry');
+      if (articleEntry) articleEntry.style.display = 'none';
+      if (emailEntry) emailEntry.style.display = 'none';
+      if (nicknameEntry) nicknameEntry.style.display = 'none';
+      const previewGrid = document.getElementById('credits-modal-preview-grid');
+      if (previewGrid) {
+        const adDisplayText = (state.siteConfig?.extraConfig?.ad?.enabled) 
+          ? `<strong style="color: #10b981;">+${state.siteConfig.extraConfig.ad.reward || 3}</strong>` 
+          : '<span style="color: var(--text-muted);">小程序</span>';
+        previewGrid.innerHTML = `
+          <div style="font-size: 0.75rem; color: var(--text-muted);">📅 签到 <strong style="color: #10b981;">+1</strong></div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">🎬 广告 ${adDisplayText}</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">👥 关注公众号 <strong style="color: #10b981;">+N</strong></div>
+        `;
+        previewGrid.style.gridTemplateColumns = '1fr 1fr';
+      }
     }
     
   } catch (error) {
@@ -9258,20 +9312,15 @@ function startEmailCooldown(seconds) {
   }, 1000);
 }
 
-// 更新邮箱验证入口 UI
+// 更新邮箱验证入口 UI（已验证时整条隐藏，不再展示“已验证”文案）
 function updateEmailWayUI(verified) {
   const wrapper = document.getElementById('way-email-wrapper');
-  const way = document.getElementById('way-email');
-  const desc = document.getElementById('way-email-desc');
-  const reward = document.getElementById('way-email-reward');
-  const badge = document.getElementById('way-email-badge');
-  
+  if (!wrapper) return;
   if (verified) {
-    if (way) way.classList.add('completed');
-    if (desc) desc.textContent = '已验证邮箱';
-    if (reward) reward.textContent = '已完成';
-    if (badge) badge.style.display = 'none';
+    wrapper.style.display = 'none';
+    return;
   }
+  wrapper.style.display = 'block';
 }
 
 // 加载邮箱验证状态
@@ -9290,17 +9339,15 @@ async function loadEmailStatus() {
       emailVerifyState.smtpConfigured = data.smtpConfigured;
       emailVerifyState.verifyEmailCredits = data.verifyEmailCredits || 3;
       
-      // 更新 UI
+      // 更新 UI：仅未验证时显示邮箱入口，已验证则整条不展示
       const wrapper = document.getElementById('way-email-wrapper');
       if (wrapper && data.smtpConfigured) {
-        // 只有配置了 SMTP 才显示邮箱入口
-        wrapper.style.display = 'block';
-        
-        const reward = document.getElementById('way-email-reward');
-        if (reward) reward.textContent = `+${data.verifyEmailCredits}积分`;
-        
         if (data.emailVerified) {
-          updateEmailWayUI(true);
+          wrapper.style.display = 'none';
+        } else {
+          wrapper.style.display = 'block';
+          const reward = document.getElementById('way-email-reward');
+          if (reward) reward.textContent = `+${data.verifyEmailCredits}积分`;
         }
       }
     }
@@ -9563,16 +9610,10 @@ async function verifyEmailInCreditsModal() {
       state.credits = data.totalCredits || state.credits;
       updateCreditsDisplay();
       
-      // 更新入口状态
+      // 已验证后直接隐藏整条验证邮箱入口
       const entry = document.getElementById('email-verify-entry');
-      const status = document.getElementById('email-verify-status');
-      const reward = document.getElementById('email-verify-reward');
-      if (entry) entry.classList.add('completed');
-      if (status) status.textContent = '(已验证)';
-      if (reward) reward.textContent = '已完成';
-      
-      // 收起区域
       const section = document.getElementById('credits-modal-email-verify');
+      if (entry) entry.style.display = 'none';
       if (section) section.style.display = 'none';
       
       // 刷新数据
@@ -9741,22 +9782,17 @@ async function updateCreditsModalEntryStatus() {
     const emailData = await emailResponse.json();
     
     if (emailData.success) {
-      // 显示邮箱入口（如果SMTP已配置）
+      // 仅未验证邮箱时显示入口；已验证则整条不展示
       const emailEntry = document.getElementById('email-verify-entry');
+      const emailSection = document.getElementById('credits-modal-email-verify');
       if (emailEntry && emailData.smtpConfigured) {
-        emailEntry.style.display = 'flex';
-        
-        // 更新奖励显示
-        const emailReward = document.getElementById('email-verify-reward');
-        if (emailReward) emailReward.textContent = `+${emailData.verifyEmailCredits || 3}积分`;
-        
-        // 如果已验证
         if (emailData.emailVerified) {
-          const status = document.getElementById('email-verify-status');
-          const reward = document.getElementById('email-verify-reward');
-          emailEntry.classList.add('completed');
-          if (status) status.textContent = '(已验证)';
-          if (reward) reward.textContent = '已完成';
+          emailEntry.style.display = 'none';
+          if (emailSection) emailSection.style.display = 'none';
+        } else {
+          emailEntry.style.display = 'flex';
+          const emailReward = document.getElementById('email-verify-reward');
+          if (emailReward) emailReward.textContent = `+${emailData.verifyEmailCredits || 3}积分`;
         }
       }
     }

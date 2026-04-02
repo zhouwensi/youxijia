@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="description" content="浏览所有AI生成的小游戏">
+  <title>全部游戏 - AI Game Generator</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/security.js"></script>
+  <script src="/js/auth.js"></script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+  <style>
+    /* 页面专属样式 */
+    .games-page {
+      min-height: 100vh;
+      padding-top: 0;
+    }
+    
+    .games-page-header {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+      padding: 2rem 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .games-page-header .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    .games-page-title {
+      font-size: 1.75rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .games-page-title .back-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 1rem;
+      margin-right: 0.5rem;
+    }
+    
+    .games-page-title .back-link:hover {
+      color: var(--primary);
+    }
+    
+    /* 筛选和排序区域 */
+    .filter-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+    
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      flex-wrap: wrap;
+    }
+    
+    .filter-label {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      white-space: nowrap;
+    }
+    
+    .filter-tabs {
+      display: flex;
+      gap: 0.25rem;
+      flex-wrap: wrap;
+    }
+    
+    .filter-tab {
+      padding: 0.5rem 1rem;
+      border-radius: 2rem;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .filter-tab:hover {
+      background: rgba(255,255,255,0.1);
+      color: var(--text-primary);
+    }
+    
+    .filter-tab.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+    
+    /* 游戏网格区域 */
+    .games-page-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+    
+    .games-count {
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+    }
+    
+    .games-grid-large {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+    
+    @media (min-width: 640px) {
+      .games-grid-large {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+    
+    @media (min-width: 1024px) {
+      .games-grid-large {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+      }
+    }
+    
+    @media (min-width: 1280px) {
+      .games-grid-large {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+    }
+    
+    /* 游戏卡片 - 与主页保持一致的横向布局 */
+    .game-card-compact {
+      background: var(--bg-card, rgba(30, 41, 59, 0.5));
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      min-width: 0;
+      overflow: hidden;
+    }
+    
+    .game-card-compact:active {
+      transform: scale(0.98);
+    }
+    
+    .game-card-compact:hover {
+      border-color: var(--primary, #6366f1);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .game-card-compact .card-icon {
+      font-size: 1.5rem;
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+    
+    .game-card-compact .card-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+      overflow: hidden;
+    }
+    
+    .game-card-compact .card-title {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-primary, #f1f5f9);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.3;
+    }
+    
+    .game-card-compact .card-author {
+      font-size: 0.6875rem;
+      color: var(--text-muted, #64748b);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .game-card-compact .card-stats {
+      display: flex;
+      gap: 0.5rem;
+      font-size: 0.625rem;
+      color: var(--text-muted, #64748b);
+      flex-wrap: nowrap;
+    }
+    
+    .game-card-compact .card-stats span {
+      display: flex;
+      align-items: center;
+      gap: 0.125rem;
+      white-space: nowrap;
+    }
+    
+    /* 小屏手机优化 */
+    @media (max-width: 359px) {
+      .games-grid-large {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+      }
+      
+      .game-card-compact {
+        padding: 0.625rem;
+      }
+      
+      .game-card-compact .card-icon {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        font-size: 1.75rem;
+      }
+      
+      .game-card-compact .card-title {
+        font-size: 0.875rem;
+      }
+    }
+    
+    /* 平板优化 */
+    @media (min-width: 640px) {
+      .game-card-compact {
+        padding: 0.625rem;
+      }
+      
+      .game-card-compact .card-icon {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        font-size: 1.75rem;
+      }
+      
+      .game-card-compact .card-title {
+        font-size: 0.875rem;
+      }
+    }
+    
+    /* 桌面端优化 */
+    @media (min-width: 1024px) {
+      .game-card-compact {
+        padding: 0.75rem;
+        gap: 0.75rem;
+      }
+      
+      .game-card-compact .card-icon {
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+        font-size: 2rem;
+      }
+      
+      .game-card-compact .card-title {
+        font-size: 0.9375rem;
+      }
+    }
+    
+    /* 加载更多区域 */
+    .load-more-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 0;
+      gap: 1rem;
+    }
+    
+    .load-more-btn {
+      padding: 0.75rem 2rem;
+    }
+    
+    .loading-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-secondary);
+    }
+    
+    .loading-indicator .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .no-more-text {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+    
+    /* 空状态 */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-secondary);
+    }
+    
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+    
+    .empty-state-text {
+      font-size: 1.125rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .empty-state-hint {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+    
+    /* 滚动到顶部按钮 */
+    .scroll-top-btn {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 1.25rem;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
+      z-index: 100;
+    }
+    
+    .scroll-top-btn.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .scroll-top-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(99, 102, 241, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- 导航栏 -->
+    <nav class="navbar">
+      <div class="nav-brand" onclick="location.href='/'">
+        <span class="logo">🎮</span>
+        <span class="brand-text">游戏开发技术教程</span>
+      </div>
+      <div class="nav-actions">
+        <button class="btn btn-primary btn-sm" onclick="location.href='/'">
+          ✨ 创建游戏
+        </button>
+      </div>
+    </nav>
+
+    <!-- 页面主体 -->
+    <div class="games-page">
+      <!-- 页头：标题和筛选 -->
+      <div class="games-page-header">
+        <div class="container">
+          <h1 class="games-page-title">
+            <a href="/" class="back-link">←</a>
+            <span id="page-title-icon">🎮</span>
+            <span id="page-title-text">全部游戏</span>
+          </h1>
+          
+          <div class="filter-bar">
+            <!-- 游戏分类筛选（合并类型和分类） -->
+            <div class="filter-group">
+              <span class="filter-label">分类：</span>
+              <div class="filter-tabs" id="category-tabs">
+                <button class="filter-tab active" data-category="all">全部</button>
+                <button class="filter-tab" data-category="action">💥 动作</button>
+                <button class="filter-tab" data-category="puzzle">🧩 益智</button>
+                <button class="filter-tab" data-category="arcade">🕹️ 街机</button>
+                <button class="filter-tab" data-category="strategy">♟️ 策略</button>
+                <button class="filter-tab" data-category="adventure">🗺️ 冒险</button>
+                <button class="filter-tab" data-category="sports">⚽ 体育</button>
+                <button class="filter-tab" data-category="shooting">🔫 射击</button>
+                <button class="filter-tab" data-category="card">🃏 卡牌</button>
+                <button class="filter-tab" data-category="casual">🎯 休闲</button>
+              </div>
+            </div>
+            
+            <!-- 排序 -->
+            <div class="filter-group">
+              <span class="filter-label">排序：</span>
+              <div class="filter-tabs" id="sort-tabs">
+                <button class="filter-tab active" data-sort="newest">🕐 最新</button>
+                <button class="filter-tab" data-sort="hot">🔥 热门</button>
+                <button class="filter-tab" data-sort="likes">❤️ 点赞</button>
+                <button class="filter-tab" data-sort="favorites">⭐ 收藏</button>
+                <button class="filter-tab" data-sort="plays">👁️ 游玩</button>
+                <button class="filter-tab" data-sort="comments">💬 评论</button>
+              </div>
+            </div>
+            
+            <!-- 屏幕方向 -->
+            <div class="filter-group">
+              <span class="filter-label">方向：</span>
+              <div class="filter-tabs" id="orientation-tabs">
+                <button class="filter-tab active" data-orientation="all">全部</button>
+                <button class="filter-tab" data-orientation="portrait">📱 竖屏</button>
+                <button class="filter-tab" data-orientation="landscape">🖥️ 横屏</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 游戏列表区域 -->
+      <div class="games-page-content">
+        <div class="games-count" id="games-count">加载中...</div>
+        
+        <div class="games-grid-large" id="games-grid">
+          <!-- 动态加载 -->
+        </div>
+        
+        <!-- 加载更多/到底提示 -->
+        <div class="load-more-area" id="load-more-area">
+          <div class="loading-indicator" id="loading-indicator" style="display:none;">
+            <div class="spinner"></div>
+            <span>加载中...</span>
+          </div>
+          <button class="btn btn-secondary load-more-btn" id="load-more-btn" onclick="loadMoreGames()">
+            加载更多
+          </button>
+          <div class="no-more-text" id="no-more-text" style="display:none;">
+            —— 已经到底啦 ——
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 滚动到顶部按钮 -->
+    <button class="scroll-top-btn" id="scroll-top-btn" onclick="scrollToTop()">↑</button>
+    
+    <!-- Toast提示 -->
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <script>
+    // ==================== 状态管理 ====================
+    let currentSort = 'newest';
+    let currentCategory = 'all';
+    let currentOrientation = 'all';
+    let currentGameType = 'all';
+    let currentOffset = 0;
+    let isLoading = false;
+    let hasMore = true;
+    const PAGE_SIZE = 20;
+    // 保存初始排序方式（用于刚进入页面时的默认排序）
+    let initialSort = 'newest';
+    // 数据来源：all（全部游戏）、my-games（我的作品）、my-likes（我的点赞）、my-favorites（我的收藏）
+    let currentSource = 'all';
+    // 缓存"我的"类数据源的所有游戏（用于前端分页）
+    let cachedSourceGames = null;
+    
+    // 页面标题配置
+    const PAGE_TITLES = {
+      sort: {
+        newest: { icon: '🕐', text: '最新游戏' },
+        hot: { icon: '🔥', text: '热门游戏' },
+        likes: { icon: '❤️', text: '最多点赞' },
+        favorites: { icon: '⭐', text: '最多收藏' },
+        plays: { icon: '👁️', text: '最多游玩' },
+        comments: { icon: '💬', text: '最多评论' },
+        recommended: { icon: '✨', text: '推荐游戏' }
+      },
+      gameType: {
+        action: { icon: '💥', text: '动作游戏' },
+        puzzle: { icon: '🧩', text: '益智游戏' },
+        arcade: { icon: '🕹️', text: '街机游戏' },
+        strategy: { icon: '♟️', text: '策略游戏' },
+        adventure: { icon: '🗺️', text: '冒险游戏' },
+        sports: { icon: '⚽', text: '体育游戏' },
+        shooting: { icon: '🔫', text: '射击游戏' },
+        card: { icon: '🃏', text: '卡牌游戏' }
+      },
+      source: {
+        'all': { icon: '🎮', text: '全部游戏' },
+        'my-games': { icon: '🎨', text: '我的作品' },
+        'my-likes': { icon: '❤️', text: '我的点赞' },
+        'my-favorites': { icon: '⭐', text: '我的收藏' }
+      }
+    };
+    
+    // ==================== Token 管理 ====================
+    // 与 app.js 保持一致的 token key
+    function getAuthorToken() {
+      // 尝试多个可能的 key，与 app.js 保持一致
+      let token = localStorage.getItem('aigame-author-token') || 
+                  localStorage.getItem('authorToken') ||
+                  localStorage.getItem('author_token');
+      // 如果还没有token，不自动创建新的（否则会导致看不到数据）
+      return token || '';
+    }
+    
+    function getUserToken() {
+      // 尝试多个可能的 key，与 app.js 保持一致
+      let token = localStorage.getItem('aigame-user-token') || 
+                  localStorage.getItem('user_token') ||
+                  localStorage.getItem('userToken');
+      // 如果还没有token，不自动创建新的（否则会导致看不到数据）
+      return token || '';
+    }
+    
+    // ==================== 初始化 ====================
+    document.addEventListener('DOMContentLoaded', () => {
+      // 从 URL 参数读取初始状态
+      const urlParams = new URLSearchParams(window.location.search);
+      currentSort = urlParams.get('sort') || 'newest';
+      currentCategory = urlParams.get('category') || 'all';
+      currentOrientation = urlParams.get('orientation') || 'all';
+      currentGameType = urlParams.get('gameType') || 'all';
+      currentSource = urlParams.get('source') || 'all';
+      
+      // 保存初始排序方式
+      initialSort = currentSort;
+      
+      // 更新页面标题（根据数据来源优先设置）
+      updatePageTitle();
+      
+      // 设置初始选中状态
+      updateActiveTab('sort-tabs', currentSort);
+      updateActiveTab('category-tabs', currentCategory);
+      updateActiveTab('orientation-tabs', currentOrientation);
+      updateActiveTab('gameType-tabs', currentGameType);
+      
+      // 绑定筛选事件
+      bindFilterEvents();
+      
+      // 加载游戏
+      loadGames(true);
+      
+      // 绑定滚动事件
+      bindScrollEvents();
+    });
+    
+    // 更新页面标题
+    function updatePageTitle() {
+      const iconEl = document.getElementById('page-title-icon');
+      const textEl = document.getElementById('page-title-text');
+      const backLink = document.querySelector('.back-link');
+      
+      let icon = '🎮';
+      let text = '全部游戏';
+      
+      // 最优先根据数据来源设置标题
+      if (currentSource !== 'all' && PAGE_TITLES.source[currentSource]) {
+        icon = PAGE_TITLES.source[currentSource].icon;
+        text = PAGE_TITLES.source[currentSource].text;
+      }
+      // 其次根据游戏类型设置标题
+      else if (currentGameType !== 'all' && PAGE_TITLES.gameType[currentGameType]) {
+        icon = PAGE_TITLES.gameType[currentGameType].icon;
+        text = PAGE_TITLES.gameType[currentGameType].text;
+      } 
+      // 最后根据排序方式设置标题
+      else if (PAGE_TITLES.sort[currentSort]) {
+        icon = PAGE_TITLES.sort[currentSort].icon;
+        text = PAGE_TITLES.sort[currentSort].text;
+      }
+      
+      if (iconEl) iconEl.textContent = icon;
+      if (textEl) textEl.textContent = text;
+      
+      // 更新返回链接：如果是从"我的"页面进入，返回时应回到"我的"标签页
+      if (backLink) {
+        if (currentSource === 'my-games' || currentSource === 'my-likes' || currentSource === 'my-favorites') {
+          backLink.href = '/?tab=profile';
+        } else {
+          backLink.href = '/';
+        }
+      }
+      
+      // 更新浏览器标题
+      document.title = `${text} - AI Game Generator`;
+    }
+    
+    // ==================== 筛选事件绑定 ====================
+    function bindFilterEvents() {
+      // 排序标签
+      document.querySelectorAll('#sort-tabs .filter-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const sort = tab.dataset.sort;
+          if (sort !== currentSort) {
+            currentSort = sort;
+            updateActiveTab('sort-tabs', sort);
+            updateURL();
+            loadGames(true);
+          }
+        });
+      });
+      
+      // 分类标签
+      document.querySelectorAll('#category-tabs .filter-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const category = tab.dataset.category;
+          if (category !== currentCategory) {
+            currentCategory = category;
+            updateActiveTab('category-tabs', category);
+            updateURL();
+            loadGames(true);
+          }
+        });
+      });
+      
+      // 屏幕方向标签
+      document.querySelectorAll('#orientation-tabs .filter-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const orientation = tab.dataset.orientation;
+          if (orientation !== currentOrientation) {
+            currentOrientation = orientation;
+            updateActiveTab('orientation-tabs', orientation);
+            updateURL();
+            loadGames(true);
+          }
+        });
+      });
+      
+      // 游戏类型标签
+      document.querySelectorAll('#gameType-tabs .filter-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const gameType = tab.dataset.gametype;
+          if (gameType !== currentGameType) {
+            currentGameType = gameType;
+            updateActiveTab('gameType-tabs', gameType);
+            updateURL();
+            loadGames(true);
+          }
+        });
+      });
+    }
+    
+    function updateActiveTab(containerId, value) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      
+      container.querySelectorAll('.filter-tab').forEach(tab => {
+        let dataKey;
+        if (containerId === 'sort-tabs') dataKey = 'sort';
+        else if (containerId === 'category-tabs') dataKey = 'category';
+        else if (containerId === 'orientation-tabs') dataKey = 'orientation';
+        else if (containerId === 'gameType-tabs') dataKey = 'gametype';
+        tab.classList.toggle('active', tab.dataset[dataKey] === value);
+      });
+    }
+    
+    function updateURL() {
+      const url = new URL(window.location);
+      url.searchParams.set('sort', currentSort);
+      url.searchParams.set('category', currentCategory);
+      url.searchParams.set('orientation', currentOrientation);
+      url.searchParams.set('gameType', currentGameType);
+      window.history.replaceState({}, '', url);
+    }
+    
+    // ==================== 加载游戏 ====================
+    async function loadGames(isReset = false) {
+      if (isLoading) return;
+      
+      if (isReset) {
+        currentOffset = 0;
+        hasMore = true;
+        cachedSourceGames = null; // 重置缓存
+        document.getElementById('games-grid').innerHTML = '';
+      }
+      
+      if (!hasMore) return;
+      
+      isLoading = true;
+      updateLoadingUI(true);
+      
+      try {
+        let games = [];
+        
+        // 根据数据来源决定处理方式
+        if (currentSource !== 'all') {
+          // "我的"类数据源：使用缓存或请求API
+          if (cachedSourceGames === null) {
+            let url = '';
+            let headers = {};
+            
+            if (currentSource === 'my-games') {
+              url = '/api/my-games';
+              headers = { 'X-Author-Token': getAuthorToken() };
+            } else if (currentSource === 'my-likes') {
+              url = '/api/my-likes';
+              headers = { 'X-User-Token': getUserToken() };
+            } else if (currentSource === 'my-favorites') {
+              url = '/api/my-favorites';
+              headers = { 'X-User-Token': getUserToken() };
+            }
+            
+            const response = await fetch(url, { headers });
+            const data = await response.json();
+            
+            if (data.success) {
+              cachedSourceGames = data.games || [];
+            } else {
+              cachedSourceGames = [];
+            }
+          }
+          
+          // 前端筛选
+          let filtered = filterGames(cachedSourceGames);
+          // 前端排序
+          filtered = sortGames(filtered);
+          // 前端分页
+          const total = filtered.length;
+          games = filtered.slice(currentOffset, currentOffset + PAGE_SIZE);
+          hasMore = currentOffset + PAGE_SIZE < total;
+          
+          // 更新计数
+          document.getElementById('games-count').textContent = `共 ${total} 个游戏`;
+        } else {
+          // 全部游戏：直接请求后端API
+          const url = `/api/games?sort=${currentSort}&category=${currentCategory}&orientation=${currentOrientation}&gameType=${currentGameType}&limit=${PAGE_SIZE}&offset=${currentOffset}`;
+          const response = await fetch(url);
+          const data = await response.json();
+          
+          if (data.success) {
+            games = data.games || [];
+            hasMore = data.pagination ? data.pagination.hasMore : (games.length >= PAGE_SIZE);
+            if (data.pagination) {
+              document.getElementById('games-count').textContent = `共 ${data.pagination.total} 个游戏`;
+            }
+          }
+        }
+        
+        const grid = document.getElementById('games-grid');
+        
+        if (games.length === 0 && currentOffset === 0) {
+          // 空状态
+          const emptyHint = getEmptyHint();
+          grid.innerHTML = `
+            <div class="empty-state" style="grid-column: 1/-1;">
+              <div class="empty-state-icon">${emptyHint.icon}</div>
+              <div class="empty-state-text">${emptyHint.text}</div>
+              <div class="empty-state-hint">${emptyHint.hint}</div>
+            </div>
+          `;
+          hasMore = false;
+        } else {
+          // 渲染游戏卡片
+          games.forEach(game => {
+            grid.innerHTML += createGameCard(game);
+          });
+          
+          currentOffset += games.length;
+        }
+      } catch (error) {
+        console.error('加载游戏失败:', error);
+        showToast('加载失败，请稍后重试', 'error');
+      } finally {
+        isLoading = false;
+        updateLoadingUI(false);
+      }
+    }
+    
+    // 获取空状态提示
+    function getEmptyHint() {
+      switch(currentSource) {
+        case 'my-games':
+          return { icon: '🎨', text: '暂无作品', hint: '快去创建第一个游戏吧！' };
+        case 'my-likes':
+          return { icon: '❤️', text: '暂无点赞', hint: '去发现好玩的游戏并点赞吧！' };
+        case 'my-favorites':
+          return { icon: '⭐', text: '暂无收藏', hint: '去收藏喜欢的游戏吧！' };
+        default:
+          return { icon: '🎮', text: '暂无游戏', hint: '快去创建第一个游戏吧！' };
+      }
+    }
+    
+    // 前端筛选游戏
+    function filterGames(games) {
+      let filtered = games;
+      
+      // 分类筛选
+      if (currentCategory !== 'all') {
+        filtered = filtered.filter(g => g.category === currentCategory);
+      }
+      
+      // 游戏类型筛选
+      if (currentGameType !== 'all') {
+        filtered = filtered.filter(g => g.game_type === currentGameType || g.type === currentGameType);
+      }
+      
+      // 横竖屏筛选
+      if (currentOrientation !== 'all') {
+        filtered = filtered.filter(g => {
+          const gameOrientation = g.orientation || 'auto';
+          if (currentOrientation === 'portrait') {
+            return gameOrientation === 'portrait' || gameOrientation === 'vertical';
+          } else if (currentOrientation === 'landscape') {
+            return gameOrientation === 'landscape' || gameOrientation === 'horizontal';
+          }
+          return true;
+        });
+      }
+      
+      return filtered;
+    }
+    
+    // 前端排序游戏
+    function sortGames(games) {
+      const sorted = [...games];
+      
+      switch (currentSort) {
+        case 'hot':
+          sorted.sort((a, b) => {
+            const hotA = (a.play_count || 0) + (a.like_count || 0) * 5 + (a.favorite_count || 0) * 3;
+            const hotB = (b.play_count || 0) + (b.like_count || 0) * 5 + (b.favorite_count || 0) * 3;
+            return hotB - hotA;
+          });
+          break;
+        case 'likes':
+          sorted.sort((a, b) => (b.like_count || 0) - (a.like_count || 0));
+          break;
+        case 'favorites':
+          sorted.sort((a, b) => (b.favorite_count || 0) - (a.favorite_count || 0));
+          break;
+        case 'plays':
+          sorted.sort((a, b) => (b.play_count || 0) - (a.play_count || 0));
+          break;
+        case 'comments':
+          sorted.sort((a, b) => (b.comment_count || 0) - (a.comment_count || 0));
+          break;
+        case 'newest':
+        default:
+          sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          break;
+      }
+      
+      return sorted;
+    }
+    
+    function loadMoreGames() {
+      loadGames(false);
+    }
+    
+    function updateLoadingUI(loading) {
+      const loadingIndicator = document.getElementById('loading-indicator');
+      const loadMoreBtn = document.getElementById('load-more-btn');
+      const noMoreText = document.getElementById('no-more-text');
+      
+      if (loading) {
+        loadingIndicator.style.display = 'flex';
+        loadMoreBtn.style.display = 'none';
+        noMoreText.style.display = 'none';
+      } else {
+        loadingIndicator.style.display = 'none';
+        if (hasMore) {
+          loadMoreBtn.style.display = 'inline-flex';
+          noMoreText.style.display = 'none';
+        } else {
+          loadMoreBtn.style.display = 'none';
+          noMoreText.style.display = 'block';
+        }
+      }
+    }
+    
+    // ==================== 滚动事件 ====================
+    function bindScrollEvents() {
+      const scrollTopBtn = document.getElementById('scroll-top-btn');
+      
+      // 滚动检测
+      let ticking = false;
+      window.addEventListener('scroll', () => {
+        if (!ticking) {
+          window.requestAnimationFrame(() => {
+            const scrollY = window.scrollY;
+            
+            // 显示/隐藏滚动到顶部按钮
+            scrollTopBtn.classList.toggle('visible', scrollY > 500);
+            
+            // 无限滚动：接近底部时自动加载
+            if (!isLoading && hasMore) {
+              const scrollHeight = document.documentElement.scrollHeight;
+              const clientHeight = window.innerHeight;
+              if (scrollY + clientHeight >= scrollHeight - 300) {
+                loadGames(false);
+              }
+            }
+            
+            ticking = false;
+          });
+          ticking = true;
+        }
+      });
+    }
+    
+    function scrollToTop() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    // ==================== 游戏卡片 ====================
+    function createGameCard(game) {
+      // 与主页保持一致的横向紧凑布局
+      return `
+        <div class="game-card-compact" onclick="openGame('${game.id}')">
+          <div class="card-icon">🎮</div>
+          <div class="card-info">
+            <div class="card-title">${escapeHtml(game.title)}</div>
+            <div class="card-author">👤 ${escapeHtml(game.author_name || '匿名')}</div>
+            <div class="card-stats">
+              <span>👁 ${game.play_count || 0}</span>
+              <span>❤️ ${game.like_count || 0}</span>
+              <span>💬 ${game.comment_count || 0}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // ==================== 工具函数 ====================
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    function openGame(gameId) {
+      // 跳转到静态游戏页面，这样浏览器返回按钮会回到游戏列表
+      // 静态文件存储在 /g/{前2位字符}/{gameId}.html
+      const subDir = gameId.substring(0, 2);
+      window.location.href = `/g/${subDir}/${gameId}.html`;
+    }
+    
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast show ${type}`;
+      setTimeout(() => {
+        toast.className = 'toast';
+      }, 3000);
+    }
+  </script>
+</body>
+</html>

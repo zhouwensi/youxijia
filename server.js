@@ -4,6 +4,7 @@ const cors = require('cors');
 const Database = require('better-sqlite3');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
+const http = require('http');
 const fs = require('fs');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
@@ -1714,16 +1715,22 @@ function loadCreditsModalData() {
       var inProgressAchievements = result.in_progress_achievements;
       var summary = result.summary;
       var tips = result.tips;
+      var creditsEarningLimited = result.creditsEarningLimited !== false;
       
-      // 更新总积分
+      // 更新总积分（限制模式下只计签到相关可领数）
       if (totalEl) {
-        totalEl.textContent = '(共 ' + (summary.total_claimable || 0) + ' 积分)';
+        if (creditsEarningLimited) {
+          var limitedTotal = (checkin.can_claim ? 1 : 0);
+          totalEl.textContent = '(共 ' + limitedTotal + ' 积分)';
+        } else {
+          totalEl.textContent = '(共 ' + (summary.total_claimable || 0) + ' 积分)';
+        }
       }
       
       // 构建可领取区域HTML
       var claimableHtml = '';
       
-      // 签到
+      // 签到（保留）
       var checkinItems = '';
       if (!checkin.checked_in_today) {
         checkinItems += renderCreditsItem('今日签到', '+1', '未签到', 'pending');
@@ -1738,108 +1745,126 @@ function loadCreditsModalData() {
         claimableHtml += renderCreditsCategory('📅', '签到', checkinItems);
       }
       
-      // 互动积分
-      var actionItems = '';
-      actionProgress.forEach(function(action) {
-        if (action.can_claim_count > 0) {
-          for (var i = 0; i < action.can_claim_count; i++) {
-            actionItems += renderCreditsItem(action.name + '奖励 (' + action.target + '/' + action.target + ')', '+' + action.reward, '可领取', 'claimable');
+      if (!creditsEarningLimited) {
+        // 互动积分（限制模式下隐藏）
+        var actionItems = '';
+        actionProgress.forEach(function(action) {
+          if (action.can_claim_count > 0) {
+            for (var i = 0; i < action.can_claim_count; i++) {
+              actionItems += renderCreditsItem(action.name + '奖励 (' + action.target + '/' + action.target + ')', '+' + action.reward, '可领取', 'claimable');
+            }
           }
+        });
+        if (actionItems) {
+          claimableHtml += renderCreditsCategory('❤️', '互动积分', actionItems);
         }
-      });
-      if (actionItems) {
-        claimableHtml += renderCreditsCategory('❤️', '互动积分', actionItems);
+        
+        // 成就分类（限制模式下隐藏）
+        var achievementsByCategory = {
+          daily: { icon: '🏆', name: '每日成就', items: [] },
+          weekly: { icon: '📅', name: '每周成就', items: [] },
+          monthly: { icon: '📆', name: '每月成就', items: [] },
+          permanent: { icon: '🎖️', name: '永久成就', items: [] }
+        };
+        claimableAchievements.forEach(function(ach) {
+          var cat = achievementsByCategory[ach.category] || achievementsByCategory.permanent;
+          cat.items.push(ach);
+        });
+        Object.keys(achievementsByCategory).forEach(function(key) {
+          var cat = achievementsByCategory[key];
+          if (cat.items.length > 0) {
+            var items = '';
+            cat.items.forEach(function(ach) {
+              var progressText = ach.current !== undefined ? ' (' + ach.current + '/' + ach.target + ')' : '';
+              items += renderCreditsItem(escapeHtmlSimple(ach.name) + progressText, '+' + ach.reward, '可领取', 'claimable');
+            });
+            claimableHtml += renderCreditsCategory(cat.icon, cat.name, items);
+          }
+        });
       }
-      
-      // 成就分类
-      var achievementsByCategory = {
-        daily: { icon: '🏆', name: '每日成就', items: [] },
-        weekly: { icon: '📅', name: '每周成就', items: [] },
-        monthly: { icon: '📆', name: '每月成就', items: [] },
-        permanent: { icon: '🎖️', name: '永久成就', items: [] }
-      };
-      
-      claimableAchievements.forEach(function(ach) {
-        var cat = achievementsByCategory[ach.category] || achievementsByCategory.permanent;
-        cat.items.push(ach);
-      });
-      
-      Object.keys(achievementsByCategory).forEach(function(key) {
-        var cat = achievementsByCategory[key];
-        if (cat.items.length > 0) {
-          var items = '';
-          cat.items.forEach(function(ach) {
-            var progressText = ach.current !== undefined ? ' (' + ach.current + '/' + ach.target + ')' : '';
-            items += renderCreditsItem(escapeHtmlSimple(ach.name) + progressText, '+' + ach.reward, '可领取', 'claimable');
-          });
-          claimableHtml += renderCreditsCategory(cat.icon, cat.name, items);
-        }
-      });
       
       if (claimableHtml) {
         claimableContainer.innerHTML = claimableHtml;
       } else {
-        claimableContainer.innerHTML = '<div style="text-align:center;padding:1rem;color:#94a3b8;font-size:0.8125rem;">暂无可领取奖励，去小程序签到、互动即可获得</div>';
+        claimableContainer.innerHTML = '<div style="text-align:center;padding:1rem;color:#94a3b8;font-size:0.8125rem;">' +
+          (creditsEarningLimited ? '暂无可领取奖励，去小程序签到、看广告、关注公众号即可获得' : '暂无可领取奖励，去小程序签到、互动即可获得') +
+          '</div>';
       }
       
       // 构建进行中区域HTML
       var inprogressHtml = '';
       
-      // 视频广告进度（功能启用且当天有剩余次数时显示）
+      // 视频广告进度（保留）
       var adProgress = result.ad_progress;
       if (adProgress && adProgress.enabled && adProgress.remainingToday > 0) {
         var adItem = renderCreditsProgressItem('看广告领积分', adProgress.todayCount, adProgress.dailyLimit, adProgress.progress, adProgress.reward);
         inprogressHtml += renderCreditsCategory('🎬', '今日看广告', adItem);
       }
       
-      // 互动进度（显示所有未完成的互动类型）
-      var actionProgressItems = '';
-      actionProgress.forEach(function(action) {
-        if (action.can_claim_count === 0) {
-          // 按文档设计格式：点赞 28/30 93% +1
-          actionProgressItems += renderCreditsProgressItem(action.name, action.current, action.target, action.progress, action.reward);
+      // 限制模式下仅再显示「关注公众号」进度（来自互动中的 follow）
+      if (creditsEarningLimited) {
+        var followAction = actionProgress.find(function(a) { return a.type === 'follow'; });
+        if (followAction) {
+          var followItem = renderCreditsProgressItem('关注公众号', followAction.current, followAction.target, followAction.progress, followAction.reward);
+          inprogressHtml += renderCreditsCategory('👥', '关注公众号', followItem);
         }
-      });
-      if (actionProgressItems) {
-        inprogressHtml += renderCreditsCategory('❤️', '互动进度', actionProgressItems);
       }
       
-      // 进行中的成就
-      var inProgressByCategory = {
-        daily: { icon: '🏆', name: '每日成就', items: [] },
-        weekly: { icon: '📅', name: '每周成就', items: [] },
-        monthly: { icon: '📆', name: '每月成就', items: [] },
-        permanent: { icon: '🎖️', name: '永久成就', items: [] }
-      };
-      
-      inProgressAchievements.forEach(function(ach) {
-        if (ach.progress > 0) {
-          var cat = inProgressByCategory[ach.category] || inProgressByCategory.permanent;
-          cat.items.push(ach);
+      if (!creditsEarningLimited) {
+        // 互动进度（限制模式下隐藏）
+        var actionProgressItems = '';
+        actionProgress.forEach(function(action) {
+          if (action.can_claim_count === 0) {
+            actionProgressItems += renderCreditsProgressItem(action.name, action.current, action.target, action.progress, action.reward);
+          }
+        });
+        if (actionProgressItems) {
+          inprogressHtml += renderCreditsCategory('❤️', '互动进度', actionProgressItems);
         }
-      });
-      
-      Object.keys(inProgressByCategory).forEach(function(key) {
-        var cat = inProgressByCategory[key];
-        if (cat.items.length > 0) {
-          var items = '';
-          cat.items.forEach(function(ach) {
-            items += renderCreditsProgressItem(escapeHtmlSimple(ach.name), ach.current, ach.target, ach.progress, ach.reward);
-          });
-          inprogressHtml += renderCreditsCategory(cat.icon, cat.name, items);
-        }
-      });
+        
+        // 进行中的成就（限制模式下隐藏）
+        var inProgressByCategory = {
+          daily: { icon: '🏆', name: '每日成就', items: [] },
+          weekly: { icon: '📅', name: '每周成就', items: [] },
+          monthly: { icon: '📆', name: '每月成就', items: [] },
+          permanent: { icon: '🎖️', name: '永久成就', items: [] }
+        };
+        inProgressAchievements.forEach(function(ach) {
+          if (ach.progress > 0) {
+            var cat = inProgressByCategory[ach.category] || inProgressByCategory.permanent;
+            cat.items.push(ach);
+          }
+        });
+        Object.keys(inProgressByCategory).forEach(function(key) {
+          var cat = inProgressByCategory[key];
+          if (cat.items.length > 0) {
+            var items = '';
+            cat.items.forEach(function(ach) {
+              items += renderCreditsProgressItem(escapeHtmlSimple(ach.name), ach.current, ach.target, ach.progress, ach.reward);
+            });
+            inprogressHtml += renderCreditsCategory(cat.icon, cat.name, items);
+          }
+        });
+      }
       
       if (inprogressHtml && inprogressContainer && inprogressSection) {
         inprogressContainer.innerHTML = inprogressHtml;
         inprogressSection.style.display = 'block';
+      } else if (inprogressSection) {
+        inprogressSection.style.display = 'none';
       }
       
       // 更新智能提示
-      if (tipsEl && tips && tips.length > 0) {
-        tipsEl.innerHTML = '<div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:8px;padding:0.75rem;text-align:center;">' +
-          '<p style="color:#10b981;font-size:0.8125rem;margin:0;">💡 ' + tips[0] + '</p>' +
-        '</div>';
+      if (tipsEl) {
+        if (creditsEarningLimited) {
+          tipsEl.innerHTML = '<div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:8px;padding:0.75rem;text-align:center;">' +
+            '<p style="color:#10b981;font-size:0.8125rem;margin:0;">💡 在小程序中签到、看广告、关注公众号即可获得积分</p>' +
+          '</div>';
+        } else if (tips && tips.length > 0) {
+          tipsEl.innerHTML = '<div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:8px;padding:0.75rem;text-align:center;">' +
+            '<p style="color:#10b981;font-size:0.8125rem;margin:0;">💡 ' + tips[0] + '</p>' +
+          '</div>';
+        }
       }
     })
     .catch(function(err) {
@@ -2087,6 +2112,10 @@ function showInteractionCreditTip(actionType) {
       console.log('[积分提示条] API响应:', result.success ? '成功' : '失败');
       if (!result.success) {
         console.log('[积分提示条] API返回失败，跳过');
+        return;
+      }
+      if (result.data && result.data.creditsEarningLimited) {
+        console.log('[积分提示条] 积分途径已限制，不显示互动类提示');
         return;
       }
       var actionProgress = result.data.action_progress;
@@ -3583,6 +3612,82 @@ const app = express();
 // 设置为 1 表示信任第一个代理，避免 express-rate-limit 警告
 app.set('trust proxy', 1);
 
+// youximudi.com 仍占 80 入口时：按域名反代到本机墓地整站（与 youximudi 仓库 deploy/install-windows.ps1 默认端口一致）
+const YOUXIMUDI_UPSTREAM = process.env.YOUXIMUDI_UPSTREAM || 'http://127.0.0.1:59871';
+function isYouximudiHost(host) {
+  if (!host) return false;
+  const h = String(host).split(':')[0].toLowerCase();
+  return h === 'youximudi.com' || h === 'www.youximudi.com';
+}
+app.use((req, res, next) => {
+  if (!isYouximudiHost(req.headers.host)) return next();
+  let upstream;
+  try {
+    upstream = new URL(YOUXIMUDI_UPSTREAM);
+  } catch (e) {
+    console.error('[youximudi proxy] bad YOUXIMUDI_UPSTREAM', YOUXIMUDI_UPSTREAM);
+    return res.status(500).type('text/plain').send('YOUXIMUDI_UPSTREAM misconfigured');
+  }
+  const port = upstream.port || (upstream.protocol === 'https:' ? 443 : 80);
+  const proxyReq = http.request(
+    {
+      hostname: upstream.hostname,
+      port,
+      path: req.originalUrl || req.url,
+      method: req.method,
+      headers: req.headers,
+    },
+    (proxyRes) => {
+      res.writeHead(proxyRes.statusCode, proxyRes.headers);
+      proxyRes.pipe(res);
+    }
+  );
+  proxyReq.on('error', (err) => {
+    console.error('[youximudi proxy]', err.message);
+    if (!res.headersSent) res.status(502).type('text/plain').send('youximudi upstream unreachable (is full-site on 59871?)');
+  });
+  req.pipe(proxyReq);
+});
+
+// api.artisanalcoding.com：古法编程「星空」API（starfield-proxy，默认本机 3721）
+const STARFIELD_API_UPSTREAM = process.env.STARFIELD_API_UPSTREAM || 'http://127.0.0.1:3721';
+function isStarfieldApiHost(host) {
+  if (!host) return false;
+  const h = String(host).split(':')[0].toLowerCase();
+  return h === 'api.artisanalcoding.com';
+}
+app.use((req, res, next) => {
+  if (!isStarfieldApiHost(req.headers.host)) return next();
+  let upstream;
+  try {
+    upstream = new URL(STARFIELD_API_UPSTREAM);
+  } catch (e) {
+    console.error('[starfield-api proxy] bad STARFIELD_API_UPSTREAM', STARFIELD_API_UPSTREAM);
+    return res.status(500).type('text/plain').send('STARFIELD_API_UPSTREAM misconfigured');
+  }
+  const port = upstream.port || (upstream.protocol === 'https:' ? 443 : 80);
+  const proxyReq = http.request(
+    {
+      hostname: upstream.hostname,
+      port,
+      path: req.originalUrl || req.url,
+      method: req.method,
+      headers: req.headers,
+    },
+    (proxyRes) => {
+      res.writeHead(proxyRes.statusCode, proxyRes.headers);
+      proxyRes.pipe(res);
+    }
+  );
+  proxyReq.on('error', (err) => {
+    console.error('[starfield-api proxy]', err.message);
+    if (!res.headersSent) {
+      res.status(502).type('text/plain').send('starfield-proxy unreachable (is pm2 starfield-proxy on 3721?)');
+    }
+  });
+  req.pipe(proxyReq);
+});
+
 const PORT = process.env.PORT || 80;
 
 // 测试模式：设为 true 将使用本地HTML文件而不调用LLM
@@ -4919,6 +5024,8 @@ const defaultConfigs = [
   { key: 'web_create_disabled', value: 'false', description: '禁用网站创作功能' },
   { key: 'web_edit_disabled', value: 'false', description: '禁用网站编辑/修复功能' },
   { key: 'web_interact_disabled', value: 'false', description: '禁用网站互动功能' },
+  { key: 'mp_credits_earning_hidden', value: 'false', description: '小程序一键隐藏所有积分获得途径（界面完全隐藏）' },
+  { key: 'mp_credits_earning_limited', value: 'true', description: '小程序仅保留部分积分途径（签到、看广告、关注公众号），其余隐藏' },
   // ==================== 邮箱功能配置 ====================
   { key: 'smtp_host', value: '', description: 'SMTP服务器地址' },
   { key: 'smtp_port', value: '465', description: 'SMTP端口（465为SSL，587为TLS）' },
@@ -6881,6 +6988,10 @@ app.get('/api/site-config', (req, res) => {
     // 小程序功能开关配置（仅影响小程序，不影响网站）
     const miniprogramCommentDisabled = getConfig('miniprogram_comment_disabled', 'false') === 'true';
     const miniprogramLLMDisabled = getConfig('miniprogram_llm_disabled', 'false') === 'true';
+    // 一键隐藏小程序内所有积分获得途径（界面完全隐藏，不显示“未开放”等提示）
+    const creditsEarningHidden = getConfig('mp_credits_earning_hidden', 'false') === 'true';
+    // 仅保留部分积分途径（签到、看广告、关注公众号），其余入口隐藏；默认 true
+    const creditsEarningLimited = getConfig('mp_credits_earning_limited', 'true') === 'true';
     
     // 邀请好友积分配置（小程序使用）
     const inviteReward = parseFloat(getConfig('credits_mp_invite', '3')) || 3;
@@ -6917,6 +7028,8 @@ app.get('/api/site-config', (req, res) => {
       // 小程序功能开关（仅小程序使用）
       miniprogramCommentDisabled: miniprogramCommentDisabled,
       miniprogramLLMDisabled: miniprogramLLMDisabled,
+      creditsEarningHidden: creditsEarningHidden,
+      creditsEarningLimited: creditsEarningLimited,
       // 邀请好友积分配置
       inviteReward: inviteReward,
       // 微信订阅消息模板ID
@@ -6926,7 +7039,7 @@ app.get('/api/site-config', (req, res) => {
       // 积分配置（供小程序使用）
       extraConfig: extraConfig,
       // 同时返回 config 对象（兼容旧版）
-      config: {
+        config: {
         webWriteDisabled: webWriteDisabled,
         webCreateDisabled: webCreateDisabled,
         webEditDisabled: webEditDisabled,
@@ -6936,7 +7049,9 @@ app.get('/api/site-config', (req, res) => {
           appId: miniprogramAppId,
           defaultPath: miniprogramPath,
           commentDisabled: miniprogramCommentDisabled,
-          llmDisabled: miniprogramLLMDisabled
+          llmDisabled: miniprogramLLMDisabled,
+          creditsEarningHidden: creditsEarningHidden,
+          creditsEarningLimited: creditsEarningLimited
         }
       }
     });
@@ -8082,7 +8197,9 @@ app.get('/api/admin/credits-all-config', (req, res) => {
           credits: parseFloat(getConfig('credits_article', '1')),
           dailyLimit: parseInt(getConfig('credits_article_daily_limit', '3'))
         }
-      }
+      },
+      // 小程序仅保留部分积分途径（签到、看广告、关注公众号），其余隐藏；默认 true
+      mpCreditsEarningLimited: getConfig('mp_credits_earning_limited', 'true') === 'true'
     };
     
     res.json({ success: true, config });
@@ -8099,7 +8216,12 @@ app.put('/api/admin/credits-all-config', (req, res) => {
   }
   
   try {
-    const { basic, checkin, claim, create, ad, invite, action, extra } = req.body;
+    const { basic, checkin, claim, create, ad, invite, action, extra, mpCreditsEarningLimited } = req.body;
+    
+    // 小程序积分途径限制开关
+    if (mpCreditsEarningLimited !== undefined) {
+      setConfig('mp_credits_earning_limited', mpCreditsEarningLimited ? 'true' : 'false');
+    }
     
     // 基础积分配置
     if (basic) {
@@ -9720,6 +9842,9 @@ app.get('/api/user/credits-progress', (req, res) => {
       tips.push('今日未签到，去小程序签到可得1积分');
     }
     
+    // 积分途径限制开关（与后台一致：仅保留今日签到、连续签到、看广告、关注公众号）
+    const creditsEarningLimited = getConfig('mp_credits_earning_limited', 'true') === 'true';
+    
     res.json({
       success: true,
       data: {
@@ -9729,6 +9854,7 @@ app.get('/api/user/credits-progress', (req, res) => {
         claimable_achievements: claimableAchievements,
         in_progress_achievements: inProgressAchievements,
         ad_progress: adProgress,
+        creditsEarningLimited,
         summary: {
           action_claimable: actionClaimableCredits,
           achievement_claimable: achievementClaimableCredits,

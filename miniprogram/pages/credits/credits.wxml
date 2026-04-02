@@ -33,7 +33,7 @@
         <text wx:else>观看 ({{adStatus.remainingToday}}/{{adConfig.dailyLimit}})</text>
       </view>
     </view>
-    <view class="action-item" bindtap="handleInvite">
+    <view class="action-item" wx:if="{{!creditsEarningLimited}}" bindtap="handleInvite">
       <text class="action-icon">👥</text>
       <text class="action-title">邀请好友</text>
       <text class="action-reward">+{{inviteReward}}积分</text>
@@ -41,7 +41,7 @@
         <text>立即邀请</text>
       </view>
     </view>
-    <view class="action-item" bindtap="goToWebsite">
+    <view class="action-item" wx:if="{{!creditsEarningLimited}}" bindtap="goToWebsite">
       <text class="action-icon">🌐</text>
       <text class="action-title">去网站创作</text>
       <text class="action-reward">消耗积分</text>
@@ -90,8 +90,8 @@
       </view>
     </view>
 
-    <!-- 阅读文章找码 -->
-    <view class="wechat-action-card">
+    <!-- 阅读文章找码（限制模式下隐藏） -->
+    <view class="wechat-action-card" wx:if="{{!creditsEarningLimited}}">
       <view class="wechat-action-header" bindtap="toggleArticleCode">
         <view class="wechat-action-left">
           <text class="wechat-action-icon">📖</text>
@@ -123,8 +123,8 @@
       </view>
     </view>
 
-    <!-- 验证邮箱入口（仅SMTP已配置且未验证时显示） -->
-    <view class="wechat-action-card" wx:if="{{emailConfig.smtpConfigured && !emailStatus.verified}}">
+    <!-- 验证邮箱入口（仅SMTP已配置且未验证时显示；限制模式下隐藏） -->
+    <view class="wechat-action-card" wx:if="{{!creditsEarningLimited && emailConfig.smtpConfigured && !emailStatus.verified}}">
       <view class="wechat-action-header" bindtap="toggleEmailVerify">
         <view class="wechat-action-left">
           <text class="wechat-action-icon">📧</text>
@@ -167,8 +167,8 @@
       </view>
     </view>
     
-    <!-- 已验证邮箱状态 -->
-    <view class="wechat-action-card" wx:if="{{emailConfig.smtpConfigured && emailStatus.verified}}">
+    <!-- 已验证邮箱状态（限制模式下隐藏） -->
+    <view class="wechat-action-card" wx:if="{{!creditsEarningLimited && emailConfig.smtpConfigured && emailStatus.verified}}">
       <view class="wechat-action-header">
         <view class="wechat-action-left">
           <text class="wechat-action-icon">📧</text>
@@ -186,8 +186,8 @@
       </view>
     </view>
 
-    <!-- 设置昵称入口（未设置昵称，点击跳转设置） -->
-    <view class="wechat-action-card" wx:if="{{!nicknameStatus.rewarded && nicknameStatus.isDefaultNickname}}" bindtap="goToSetNickname">
+    <!-- 设置昵称入口（未设置昵称，点击跳转设置；限制模式下隐藏） -->
+    <view class="wechat-action-card" wx:if="{{!creditsEarningLimited && !nicknameStatus.rewarded && nicknameStatus.isDefaultNickname}}" bindtap="goToSetNickname">
       <view class="wechat-action-header">
         <view class="wechat-action-left">
           <text class="wechat-action-icon">✏️</text>
@@ -203,8 +203,8 @@
       </view>
     </view>
     
-    <!-- 已设置昵称但未领取奖励（老用户情况，点击直接领取） -->
-    <view class="wechat-action-card" wx:if="{{nicknameStatus.canClaimReward}}" bindtap="claimNicknameReward">
+    <!-- 已设置昵称但未领取奖励（老用户情况，点击直接领取；限制模式下隐藏） -->
+    <view class="wechat-action-card" wx:if="{{!creditsEarningLimited && nicknameStatus.canClaimReward}}" bindtap="claimNicknameReward">
       <view class="wechat-action-header">
         <view class="wechat-action-left">
           <text class="wechat-action-icon">✏️</text>
@@ -221,8 +221,8 @@
       </view>
     </view>
     
-    <!-- 已设置昵称且已领取奖励 -->
-    <view class="wechat-action-card" wx:if="{{nicknameStatus.rewarded}}" bindtap="goToSetNickname">
+    <!-- 已设置昵称且已领取奖励（限制模式下隐藏） -->
+    <view class="wechat-action-card" wx:if="{{!creditsEarningLimited && nicknameStatus.rewarded}}" bindtap="goToSetNickname">
       <view class="wechat-action-header">
         <view class="wechat-action-left">
           <text class="wechat-action-icon">✏️</text>
@@ -286,11 +286,12 @@
     <view class="tab-item {{currentTab === 'rewards' ? 'active' : ''}}" 
           bindtap="switchTab" data-tab="rewards">
       <text>待领取</text>
-      <view class="badge" wx:if="{{claimableCount + (actionClaimableCredits > 0 ? 1 : 0) > 0}}">
+      <view class="badge" wx:if="{{!creditsEarningLimited && claimableCount + (actionClaimableCredits > 0 ? 1 : 0) > 0}}">
         {{claimableCount + (actionClaimableCredits > 0 ? 1 : 0)}}
       </view>
     </view>
     <view class="tab-item {{currentTab === 'achievements' ? 'active' : ''}}" 
+          wx:if="{{!creditsEarningLimited}}"
           bindtap="switchTab" data-tab="achievements">
       <text>成就</text>
     </view>
@@ -302,8 +303,8 @@
 
   <!-- 待领取奖励 -->
   <view class="tab-content" wx:if="{{currentTab === 'rewards'}}">
-    <!-- 一键领取按钮 -->
-    <view class="claim-all-section" wx:if="{{claimableCredits > 0}}">
+    <!-- 一键领取按钮（限制模式下隐藏） -->
+    <view class="claim-all-section" wx:if="{{!creditsEarningLimited && claimableCredits > 0}}">
       <button class="claim-all-btn" bindtap="claimAllAchievements" loading="{{claimLoading}}">
         一键领取 +{{claimableCredits}}积分
       </button>
@@ -345,8 +346,8 @@
       </view>
     </view>
 
-    <!-- 互动奖励 -->
-    <view class="reward-section">
+    <!-- 互动奖励（限制模式下隐藏） -->
+    <view class="reward-section" wx:if="{{!creditsEarningLimited}}">
       <view class="section-title">
         <text class="title-text">📊 互动奖励</text>
         <text class="title-tip" bindtap="goToWebsite">去网站做任务 ></text>
@@ -372,8 +373,8 @@
       </view>
     </view>
 
-    <!-- 可领取成就 -->
-    <view class="reward-section" wx:if="{{claimableCount > 0}}">
+    <!-- 可领取成就（限制模式下隐藏） -->
+    <view class="reward-section" wx:if="{{!creditsEarningLimited && claimableCount > 0}}">
       <view class="section-title">
         <text class="title-text">🏆 可领取成就</text>
       </view>
@@ -413,7 +414,7 @@
         <text class="title-tip">继续努力即可领取</text>
       </view>
       
-      <!-- 视频广告进度（功能启用时显示） -->
+      <!-- 视频广告进度（功能启用时显示；限制模式也显示） -->
       <view class="progress-category" wx:if="{{adConfig.enabled && adStatus.remainingToday > 0}}">
         <view class="category-header">🎬 今日看广告</view>
         <view class="progress-list">
@@ -430,8 +431,8 @@
         </view>
       </view>
       
-      <!-- 互动进度 -->
-      <view class="progress-category" wx:if="{{actionRewards.length > 0}}">
+      <!-- 互动进度（限制模式下隐藏） -->
+      <view class="progress-category" wx:if="{{!creditsEarningLimited && actionRewards.length > 0}}">
         <view class="category-header">❤️ 互动进度</view>
         <view class="progress-list">
           <view class="progress-item" wx:for="{{actionRewards}}" wx:key="type" wx:if="{{item.can_claim_count === 0}}">
@@ -447,8 +448,8 @@
         </view>
       </view>
       
-      <!-- 每日成就进度 -->
-      <view class="progress-category" wx:if="{{inProgressAchievements.daily.length > 0}}">
+      <!-- 每日成就进度（限制模式下隐藏） -->
+      <view class="progress-category" wx:if="{{!creditsEarningLimited && inProgressAchievements.daily.length > 0}}">
         <view class="category-header">📆 每日成就</view>
         <view class="progress-list">
           <view class="progress-item" wx:for="{{inProgressAchievements.daily}}" wx:key="id">
@@ -464,8 +465,8 @@
         </view>
       </view>
       
-      <!-- 每周成就进度 -->
-      <view class="progress-category" wx:if="{{inProgressAchievements.weekly.length > 0}}">
+      <!-- 每周成就进度（限制模式下隐藏） -->
+      <view class="progress-category" wx:if="{{!creditsEarningLimited && inProgressAchievements.weekly.length > 0}}">
         <view class="category-header">📅 每周成就</view>
         <view class="progress-list">
           <view class="progress-item" wx:for="{{inProgressAchievements.weekly}}" wx:key="id">
@@ -481,8 +482,8 @@
         </view>
       </view>
       
-      <!-- 每月成就进度 -->
-      <view class="progress-category" wx:if="{{inProgressAchievements.monthly.length > 0}}">
+      <!-- 每月成就进度（限制模式下隐藏） -->
+      <view class="progress-category" wx:if="{{!creditsEarningLimited && inProgressAchievements.monthly.length > 0}}">
         <view class="category-header">📆 每月成就</view>
         <view class="progress-list">
           <view class="progress-item" wx:for="{{inProgressAchievements.monthly}}" wx:key="id">
@@ -498,8 +499,8 @@
         </view>
       </view>
       
-      <!-- 永久成就进度 -->
-      <view class="progress-category" wx:if="{{inProgressAchievements.permanent.length > 0}}">
+      <!-- 永久成就进度（限制模式下隐藏） -->
+      <view class="progress-category" wx:if="{{!creditsEarningLimited && inProgressAchievements.permanent.length > 0}}">
         <view class="category-header">🎖️ 永久成就</view>
         <view class="progress-list">
           <view class="progress-item" wx:for="{{inProgressAchievements.permanent}}" wx:key="id">
@@ -520,13 +521,14 @@
     <view class="empty-state" wx:if="{{claimableCount === 0 && actionClaimableCredits === 0 && !hasInProgress}}">
       <text class="empty-icon">🎯</text>
       <text class="empty-text">暂无可领取的奖励</text>
-      <text class="empty-tip">去网站点赞、收藏、评论，完成任务后回来领取</text>
-      <button class="go-website-btn" bindtap="goToWebsite">去网站做任务</button>
+      <text class="empty-tip" wx:if="{{!creditsEarningLimited}}">去网站点赞、收藏、评论，完成任务后回来领取</text>
+      <text class="empty-tip" wx:else>签到、看广告、关注公众号即可获得积分</text>
+      <button class="go-website-btn" wx:if="{{!creditsEarningLimited}}" bindtap="goToWebsite">去网站做任务</button>
     </view>
   </view>
 
-  <!-- 成就列表 -->
-  <view class="tab-content" wx:if="{{currentTab === 'achievements'}}">
+  <!-- 成就列表（限制模式下隐藏） -->
+  <view class="tab-content" wx:if="{{!creditsEarningLimited && currentTab === 'achievements'}}">
     <!-- 每日成就 -->
     <view class="achievement-section">
       <view class="section-header">

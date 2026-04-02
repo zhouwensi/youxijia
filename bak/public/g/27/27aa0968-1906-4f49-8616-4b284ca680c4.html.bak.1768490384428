@@ -1,0 +1,2411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="description" content="流星蝴蝶剑 - AI一句话生成的游戏">
+  <meta property="og:title" content="流星蝴蝶剑 - AI游戏">
+  <meta property="og:description" content="这个游戏由AI一句话生成！关注公众号「游戏开发技术教程」，你也可以免费生成游戏！">
+  <meta property="og:type" content="website">
+  <title>流星蝴蝶剑 - AI游戏</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+  <!-- 推广栏样式 -->
+  <style>
+/* 游戏家推广栏 - 固定在底部 */
+.yxj-promo-bar {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 60px !important;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+  padding: 8px 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  z-index: 999999 !important;
+  box-shadow: 0 -2px 15px rgba(99, 102, 241, 0.4) !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+.yxj-promo-bar.yxj-hidden {
+  display: none !important;
+}
+.yxj-promo-qr {
+  width: 44px !important;
+  height: 44px !important;
+  background: #fff !important;
+  border-radius: 6px !important;
+  padding: 2px !important;
+  flex-shrink: 0 !important;
+}
+.yxj-promo-qr img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+.yxj-promo-info {
+  color: #fff !important;
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+  text-align: left !important;
+}
+.yxj-promo-info strong {
+  display: block !important;
+  font-size: 13px !important;
+  margin-bottom: 2px !important;
+}
+.yxj-promo-info span {
+  opacity: 0.9 !important;
+  font-size: 11px !important;
+}
+.yxj-promo-close {
+  position: absolute !important;
+  right: 6px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  background: rgba(255,255,255,0.2) !important;
+  border: none !important;
+  color: #fff !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+.yxj-promo-home {
+  position: fixed !important;
+  top: 10px !important;
+  left: 10px !important;
+  background: rgba(0,0,0,0.5) !important;
+  color: #fff !important;
+  text-decoration: none !important;
+  padding: 6px 12px !important;
+  border-radius: 20px !important;
+  font-size: 12px !important;
+  z-index: 999998 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+/* TikTok 风格组件 */
+.tiktok-author-info {
+  position: fixed !important;
+  left: 16px !important;
+  bottom: 80px !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  z-index: 999998 !important;
+  padding: 0 !important;
+  pointer-events: auto !important;
+}
+.tiktok-author-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+.tiktok-author-avatar {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.5rem !important;
+  border: 2px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+  cursor: pointer !important;
+  transition: transform 0.2s, box-shadow 0.2s !important;
+  text-decoration: none !important;
+}
+.tiktok-author-avatar:hover {
+  transform: scale(1.05) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}
+.tiktok-author-details {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+.tiktok-author-name {
+  color: white !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8) !important;
+  cursor: pointer !important;
+  transition: opacity 0.2s !important;
+}
+.tiktok-author-name:hover {
+  opacity: 0.8 !important;
+}
+.tiktok-publish-time {
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-size: 0.75rem !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8) !important;
+  margin-top: 2px !important;
+}
+.tiktok-follow-btn {
+  background: #fe2c55 !important;
+  color: white !important;
+  border: none !important;
+  padding: 6px 16px !important;
+  border-radius: 4px !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  transition: all 0.2s ease !important;
+  text-shadow: none !important;
+}
+.tiktok-follow-btn:hover {
+  background: #e6284d !important;
+  transform: scale(1.02) !important;
+}
+.tiktok-follow-btn:active {
+  transform: scale(0.95) !important;
+}
+.tiktok-sidebar {
+  position: fixed !important;
+  right: 8px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  z-index: 999998 !important;
+  pointer-events: auto !important;
+}
+.tiktok-sidebar.comments-open {
+  display: none !important;
+}
+.tiktok-author-info.comments-open {
+  display: none !important;
+}
+.tiktok-action {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 4px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+.tiktok-action:active {
+  transform: scale(0.9) !important;
+}
+.tiktok-icon {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(8px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 18px !important;
+  transition: all 0.2s ease !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  color: #fff !important;
+}
+.tiktok-action:hover .tiktok-icon {
+  transform: scale(1.1) !important;
+  background: rgba(0, 0, 0, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+.tiktok-count {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: #fff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
+  white-space: nowrap !important;
+}
+.tiktok-action.liked .tiktok-icon {
+  background: rgba(239, 68, 68, 0.8) !important;
+  border-color: #ef4444 !important;
+  animation: likePopTiktok 0.3s ease !important;
+}
+@keyframes likePopTiktok {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+.tiktok-action.favorited .tiktok-icon {
+  background: rgba(251, 191, 36, 0.8) !important;
+  border-color: #fbbf24 !important;
+}
+.tiktok-action.tiktok-info-only {
+  cursor: default !important;
+  opacity: 0.7 !important;
+  pointer-events: none !important;
+}
+/* 为推广栏预留底部空间 */
+body {
+  padding-bottom: 65px !important;
+}
+/* ====== 留言板样式 ====== */
+.comments-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  z-index: 999996 !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transition: opacity 0.3s ease, visibility 0.3s ease !important;
+}
+.comments-overlay.visible {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+.game-comments-section {
+  position: fixed !important;
+  bottom: 60px !important;
+  left: 0 !important;
+  right: 0 !important;
+  background: #fff !important;
+  z-index: 999997 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+  transition: max-height 0.3s ease !important;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.15) !important;
+  border-radius: 16px 16px 0 0 !important;
+}
+.game-comments-section.expanded {
+  max-height: 60vh !important;
+}
+.comments-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 12px 16px !important;
+  border-bottom: 1px solid #eee !important;
+  background: #f8f9fa !important;
+}
+.comments-title {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #333 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+.comments-close-btn {
+  background: none !important;
+  border: none !important;
+  font-size: 20px !important;
+  cursor: pointer !important;
+  color: #999 !important;
+  padding: 4px !important;
+}
+.comments-body {
+  max-height: calc(60vh - 120px) !important;
+  overflow-y: auto !important;
+  padding: 12px 16px !important;
+}
+.comment-item {
+  padding: 12px 0 !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+}
+.comment-item:last-child {
+  border-bottom: none !important;
+}
+.comment-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 6px !important;
+}
+.comment-author-info {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+.comment-avatar {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  color: #fff !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.comment-author-name {
+  font-weight: 600 !important;
+  color: #333 !important;
+  font-size: 14px !important;
+}
+.comment-time {
+  color: #999 !important;
+  font-size: 12px !important;
+}
+.comment-content {
+  color: #333 !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  word-break: break-word !important;
+}
+.comment-delete-btn {
+  background: none !important;
+  border: none !important;
+  color: #999 !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+  padding: 2px 8px !important;
+}
+.comment-delete-btn:hover {
+  color: #ef4444 !important;
+}
+.comment-avatar.comment-clickable,
+.comment-author-name.comment-clickable {
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+.comment-avatar.comment-clickable:hover {
+  transform: scale(1.1) !important;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3) !important;
+}
+.comment-author-name.comment-clickable:hover {
+  color: #6366f1 !important;
+  text-decoration: underline !important;
+}
+.comments-input-area {
+  display: flex !important;
+  gap: 8px !important;
+  padding: 12px 16px !important;
+  border-top: 1px solid #eee !important;
+  background: #fff !important;
+}
+.comments-input-area textarea {
+  flex: 1 !important;
+  border: 1px solid #ddd !important;
+  border-radius: 8px !important;
+  padding: 10px 12px !important;
+  font-size: 14px !important;
+  resize: none !important;
+  height: 40px !important;
+  min-height: 40px !important;
+}
+.comments-input-area button {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+}
+.comments-input-area button:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+}
+.comments-login-hint {
+  text-align: center !important;
+  padding: 12px 16px !important;
+  color: #999 !important;
+  font-size: 14px !important;
+  border-top: 1px solid #eee !important;
+}
+#comments-load-more-btn {
+  display: block !important;
+  width: 100% !important;
+  padding: 10px !important;
+  background: #f5f5f5 !important;
+  border: none !important;
+  color: #666 !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  margin-top: 8px !important;
+  border-radius: 8px !important;
+}
+</style>
+  <!-- 原游戏head内容 -->
+  
+    
+    
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0a0a2a 0%, #1a1a40 100%);
+            color: #e0e0ff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            padding: 10px;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            background: #111133;
+            border: 2px solid #4444aa;
+        }
+
+        canvas {
+            display: block;
+            background: #0c0c20;
+            width: 100%;
+            height: auto;
+        }
+
+        #uiOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(10, 10, 40, 0.95);
+            z-index: 10;
+            padding: 20px;
+            text-align: center;
+            transition: opacity 0.5s;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 15px rgba(78, 205, 196, 0.5);
+            letter-spacing: 3px;
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            margin-bottom: 15px;
+            color: #4ecdc4;
+        }
+
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        .highlight {
+            color: #ffd166;
+            font-weight: bold;
+        }
+
+        .controls {
+            display: flex;
+            gap: 30px;
+            margin: 25px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .control-item {
+            background: rgba(30, 30, 70, 0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: 1px solid #4444aa;
+            min-width: 180px;
+        }
+
+        .control-item h3 {
+            color: #ff9e6d;
+            margin-bottom: 8px;
+        }
+
+        .button {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.3rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+            font-weight: bold;
+            letter-spacing: 1px;
+            pointer-events: auto;
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.6);
+        }
+
+        .button:active {
+            transform: translateY(1px);
+        }
+
+        .stats {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(20, 20, 50, 0.8);
+            padding: 12px 20px;
+            border-radius: 10px;
+            border: 1px solid #4444aa;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .stats div {
+            margin: 5px 0;
+            font-size: 1.1rem;
+        }
+
+        .score {
+            color: #ffd166;
+            font-weight: bold;
+            font-size: 1.3rem;
+        }
+
+        .health-bar {
+            width: 200px;
+            height: 20px;
+            background: #333366;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+            border: 2px solid #4444aa;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #ff9e6d);
+            width: 100%;
+            transition: width 0.3s;
+        }
+
+        #mobileControls {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            padding: 0 20px;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .mobile-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(30, 30, 70, 0.8);
+            border: 2px solid #4ecdc4;
+            color: white;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            user-select: none;
+            touch-action: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .mobile-btn:active {
+            background: rgba(78, 205, 196, 0.3);
+            transform: scale(0.95);
+        }
+
+        #attackBtn {
+            border-color: #ff6b6b;
+        }
+
+        #jumpBtn {
+            border-color: #ffd166;
+        }
+
+        #dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 5px;
+            width: 150px;
+            height: 150px;
+            pointer-events: auto;
+        }
+
+        .dpad-btn {
+            background: rgba(30, 30, 70, 0.8);
+            border: 1px solid #4444aa;
+            color: #e0e0ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .dpad-btn:active {
+            background: rgba(78, 205, 196, 0.3);
+        }
+
+        #up {
+            grid-column: 2;
+            grid-row: 1;
+            border-radius: 8px 8px 0 0;
+        }
+
+        #left {
+            grid-column: 1;
+            grid-row: 2;
+            border-radius: 8px 0 0 8px;
+        }
+
+        #right {
+            grid-column: 3;
+            grid-row: 2;
+            border-radius: 0 8px 8px 0;
+        }
+
+        #down {
+            grid-column: 2;
+            grid-row: 3;
+            border-radius: 0 0 8px 8px;
+        }
+
+        #center {
+            grid-column: 2;
+            grid-row: 2;
+            background: rgba(50, 50, 100, 0.5);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            h2 {
+                font-size: 1.8rem;
+            }
+            
+            p {
+                font-size: 1rem;
+            }
+            
+            .control-item {
+                min-width: 140px;
+                padding: 10px 15px;
+            }
+            
+            .mobile-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 1.2rem;
+            }
+            
+            #dpad {
+                width: 130px;
+                height: 130px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .controls {
+                gap: 15px;
+            }
+            
+            .control-item {
+                min-width: 100%;
+            }
+            
+            .mobile-btn {
+                width: 55px;
+                height: 55px;
+            }
+            
+            #dpad {
+                width: 120px;
+                height: 120px;
+            }
+        }
+    </style>
+
+</head>
+<body>
+  <!-- 原游戏body内容 -->
+  
+
+
+
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="uiOverlay">
+            <div class="stats">
+                <div>生命: <span id="healthValue">100</span>/100</div>
+                <div class="health-bar">
+                    <div id="healthFill" class="health-fill"></div>
+                </div>
+                <div>分数: <span id="scoreValue" class="score">0</span></div>
+                <div>连击: <span id="comboValue" class="score">0</span></div>
+            </div>
+            
+            <div id="mobileControls" class="hidden">
+                <div id="dpad">
+                    <div id="up" class="dpad-btn">↑</div>
+                    <div id="left" class="dpad-btn">←</div>
+                    <div id="center" class="dpad-btn"></div>
+                    <div id="right" class="dpad-btn">→</div>
+                    <div id="down" class="dpad-btn">↓</div>
+                </div>
+                <div id="attackBtn" class="mobile-btn">⚔️</div>
+                <div id="jumpBtn" class="mobile-btn">↟</div>
+            </div>
+        </div>
+        
+        <div id="startScreen" class="screen">
+            <h1>流星蝴蝶剑</h1>
+            <p>在流星划过的夜晚，挥舞你的蝴蝶剑，击败来袭的敌人！</p>
+            
+            <div class="controls">
+                <div class="control-item">
+                    <h3>移动控制</h3>
+                    <p>键盘: <span class="highlight">A/D 或 ←/→</span></p>
+                    <p>跳跃: <span class="highlight">W 或 ↑ 或 空格</span></p>
+                    <p>触屏: 使用虚拟方向键</p>
+                </div>
+                <div class="control-item">
+                    <h3>攻击控制</h3>
+                    <p>轻攻击: <span class="highlight">J 键</span></p>
+                    <p>重攻击: <span class="highlight">K 键</span></p>
+                    <p>触屏: 点击攻击按钮</p>
+                </div>
+                <div class="control-item">
+                    <h3>游戏目标</h3>
+                    <p>击败所有敌人</p>
+                    <p>躲避流星攻击</p>
+                    <p>达成最高连击</p>
+                </div>
+            </div>
+            
+            <button id="startButton" class="button">开始游戏</button>
+            <p style="margin-top: 30px; font-size: 0.9rem; color: #8888cc;">适配电脑和手机，自动检测设备显示对应控制方式</p>
+        </div>
+        
+        <div id="gameOverScreen" class="screen hidden">
+            <h2>游戏结束</h2>
+            <p>你的最终得分: <span id="finalScore" class="score">0</span></p>
+            <p>最高连击: <span id="finalCombo" class="score">0</span></p>
+            <p id="gameOverMessage">流星易逝，剑意长存！</p>
+            <button id="restartButton" class="button">再战一场</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 游戏常量
+            const CANVAS_WIDTH = 800;
+            const CANVAS_HEIGHT = 500;
+            const PLAYER_WIDTH = 40;
+            const PLAYER_HEIGHT = 80;
+            const GRAVITY = 0.5;
+            const JUMP_FORCE = -12;
+            const PLAYER_SPEED = 5;
+            
+            // 游戏变量
+            let canvas, ctx;
+            let gameState = 'start'; // start, playing, gameover
+            let score = 0;
+            let combo = 0;
+            let maxCombo = 0;
+            let playerHealth = 100;
+            let playerMaxHealth = 100;
+            let isMobile = false;
+            
+            // 玩家属性
+            let player = {
+                x: 100,
+                y: CANVAS_HEIGHT - PLAYER_HEIGHT - 50,
+                width: PLAYER_WIDTH,
+                height: PLAYER_HEIGHT,
+                velocityX: 0,
+                velocityY: 0,
+                isJumping: false,
+                facing: 1, // 1=右, -1=左
+                attackCooldown: 0,
+                attackType: 0, // 0=无, 1=轻攻击, 2=重攻击
+                attackFrame: 0,
+                invincible: 0
+            };
+            
+            // 敌人数组
+            let enemies = [];
+            // 流星数组
+            let meteors = [];
+            // 攻击效果数组
+            let attacks = [];
+            // 粒子效果数组
+            let particles = [];
+            
+            // 按键状态
+            let keys = {};
+            let touchControls = {
+                left: false,
+                right: false,
+                up: false,
+                attack: false,
+                jump: false
+            };
+            
+            // DOM元素
+            const startScreen = document.getElementById('startScreen');
+            const gameOverScreen = document.getElementById('gameOverScreen');
+            const startButton = document.getElementById('startButton');
+            const restartButton = document.getElementById('restartButton');
+            const healthValue = document.getElementById('healthValue');
+            const healthFill = document.getElementById('healthFill');
+            const scoreValue = document.getElementById('scoreValue');
+            const comboValue = document.getElementById('comboValue');
+            const finalScore = document.getElementById('finalScore');
+            const finalCombo = document.getElementById('finalCombo');
+            const gameOverMessage = document.getElementById('gameOverMessage');
+            const mobileControls = document.getElementById('mobileControls');
+            const gameCanvas = document.getElementById('gameCanvas');
+            
+            // 初始化游戏
+            function init() {
+                canvas = gameCanvas;
+                ctx = canvas.getContext('2d');
+                
+                // 设置画布尺寸
+                canvas.width = CANVAS_WIDTH;
+                canvas.height = CANVAS_HEIGHT;
+                
+                // 检测移动设备
+                isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                if (isMobile) {
+                    mobileControls.classList.remove('hidden');
+                }
+                
+                // 事件监听器
+                startButton.addEventListener('click', startGame);
+                restartButton.addEventListener('click', startGame);
+                
+                // 键盘控制
+                document.addEventListener('keydown', function(e) {
+                    keys[e.key.toLowerCase()] = true;
+                    
+                    // 防止空格键滚动页面
+                    if (e.key === ' ' && gameState === 'playing') {
+                        e.preventDefault();
+                    }
+                });
+                
+                document.addEventListener('keyup', function(e) {
+                    keys[e.key.toLowerCase()] = false;
+                });
+                
+                // 触屏控制
+                const dpadButtons = ['up', 'left', 'right', 'down'];
+                dpadButtons.forEach(id => {
+                    const btn = document.getElementById(id);
+                    btn.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        touchControls[id] = true;
+                    });
+                    
+                    btn.addEventListener('touchend', function(e) {
+                        e.preventDefault();
+                        touchControls[id] = false;
+                    });
+                });
+                
+                document.getElementById('attackBtn').addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    touchControls.attack = true;
+                });
+                
+                document.getElementById('attackBtn').addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    touchControls.attack = false;
+                });
+                
+                document.getElementById('jumpBtn').addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    touchControls.jump = true;
+                });
+                
+                document.getElementById('jumpBtn').addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    touchControls.jump = false;
+                });
+                
+                // 防止画布上的触摸滚动
+                canvas.addEventListener('touchstart', function(e) {
+                    if (gameState === 'playing') {
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+                
+                canvas.addEventListener('touchmove', function(e) {
+                    if (gameState === 'playing') {
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+                
+                // 开始游戏循环
+                requestAnimationFrame(gameLoop);
+                
+                // 初始渲染
+                renderStartScreen();
+            }
+            
+            // 开始游戏
+            function startGame() {
+                gameState = 'playing';
+                startScreen.classList.add('hidden');
+                gameOverScreen.classList.add('hidden');
+                
+                // 重置游戏状态
+                score = 0;
+                combo = 0;
+                maxCombo = 0;
+                playerHealth = playerMaxHealth;
+                
+                // 重置玩家
+                player.x = 100;
+                player.y = CANVAS_HEIGHT - PLAYER_HEIGHT - 50;
+                player.velocityX = 0;
+                player.velocityY = 0;
+                player.isJumping = false;
+                player.facing = 1;
+                player.attackCooldown = 0;
+                player.attackType = 0;
+                player.attackFrame = 0;
+                player.invincible = 0;
+                
+                // 清空数组
+                enemies = [];
+                meteors = [];
+                attacks = [];
+                particles = [];
+                
+                // 初始敌人
+                for (let i = 0; i < 3; i++) {
+                    spawnEnemy();
+                }
+                
+                // 更新UI
+                updateUI();
+            }
+            
+            // 游戏结束
+            function gameOver() {
+                gameState = 'gameover';
+                finalScore.textContent = score;
+                finalCombo.textContent = maxCombo;
+                
+                // 根据分数显示不同消息
+                if (score > 5000) {
+                    gameOverMessage.textContent = "流星剑圣！你的剑法已入化境！";
+                } else if (score > 2000) {
+                    gameOverMessage.textContent = "蝴蝶剑客！你的剑舞令人惊叹！";
+                } else if (score > 1000) {
+                    gameOverMessage.textContent = "剑术高手！继续精进你的剑法！";
+                } else {
+                    gameOverMessage.textContent = "流星易逝，剑意长存！继续修炼！";
+                }
+                
+                gameOverScreen.classList.remove('hidden');
+            }
+            
+            // 生成敌人
+            function spawnEnemy() {
+                const type = Math.random() > 0.7 ? 2 : 1; // 30%几率生成强力敌人
+                const size = type === 1 ? 30 : 45;
+                
+                enemies.push({
+                    x: CANVAS_WIDTH + Math.random() * 100,
+                    y: CANVAS_HEIGHT - size - 50,
+                    width: size,
+                    height: size,
+                    type: type,
+                    health: type === 1 ? 2 : 5,
+                    speed: type === 1 ? 1.5 : 1,
+                    attackCooldown: 0
+                });
+            }
+            
+            // 生成流星
+            function spawnMeteor() {
+                meteors.push({
+                    x: Math.random() * CANVAS_WIDTH,
+                    y: -20,
+                    width: 15 + Math.random() * 20,
+                    height: 15 + Math.random() * 20,
+                    speed: 3 + Math.random() * 4
+                });
+            }
+            
+            // 生成粒子效果
+            function createParticles(x, y, color, count) {
+                for (let i = 0; i < count; i++) {
+                    particles.push({
+                        x: x,
+                        y: y,
+                        size: 2 + Math.random() * 4,
+                        color: color,
+                        velocityX: -3 + Math.random() * 6,
+                        velocityY: -3 + Math.random() * 6,
+                        life: 20 + Math.random() * 20
+                    });
+                }
+            }
+            
+            // 玩家攻击
+            function playerAttack(type) {
+                if (player.attackCooldown > 0) return;
+                
+                player.attackType = type;
+                player.attackFrame = 10;
+                player.attackCooldown = type === 1 ? 15 : 30;
+                
+                // 创建攻击效果
+                const attackWidth = type === 1 ? 60 : 90;
+                const attackHeight = type === 1 ? 30 : 40;
+                const damage = type === 1 ? 1 : 2;
+                
+                attacks.push({
+                    x: player.x + (player.facing === 1 ? player.width : -attackWidth),
+                    y: player.y + player.height / 2 - attackHeight / 2,
+                    width: attackWidth,
+                    height: attackHeight,
+                    damage: damage,
+                    type: type,
+                    life: 8
+                });
+                
+                // 攻击音效视觉反馈
+                createParticles(
+                    player.x + (player.facing === 1 ? player.width + 10 : -10),
+                    player.y + player.height / 2,
+                    type === 1 ? '#4ecdc4' : '#ff6b6b',
+                    type === 1 ? 8 : 15
+                );
+            }
+            
+            // 更新游戏逻辑
+            function update() {
+                if (gameState !== 'playing') return;
+                
+                // 更新玩家无敌时间
+                if (player.invincible > 0) {
+                    player.invincible--;
+                }
+                
+                // 更新攻击冷却
+                if (player.attackCooldown > 0) {
+                    player.attackCooldown--;
+                }
+                
+                // 更新攻击动画
+                if (player.attackFrame > 0) {
+                    player.attackFrame--;
+                    if (player.attackFrame === 0) {
+                        player.attackType = 0;
+                    }
+                }
+                
+                // 玩家移动输入
+                let moveX = 0;
+                
+                // 键盘控制
+                if (keys['a'] || keys['arrowleft']) moveX -= 1;
+                if (keys['d'] || keys['arrowright']) moveX += 1;
+                
+                // 触屏控制
+                if (touchControls.left) moveX -= 1;
+                if (touchControls.right) moveX += 1;
+                
+                player.velocityX = moveX * PLAYER_SPEED;
+                
+                // 更新玩家朝向
+                if (moveX > 0) player.facing = 1;
+                if (moveX < 0) player.facing = -1;
+                
+                // 玩家跳跃
+                if ((keys['w'] || keys['arrowup'] || keys[' '] || touchControls.jump) && !player.isJumping) {
+                    player.velocityY = JUMP_FORCE;
+                    player.isJumping = true;
+                    createParticles(player.x + player.width/2, player.y + player.height, '#ffd166', 5);
+                }
+                
+                // 玩家攻击输入
+                if ((keys['j'] || touchControls.attack) && player.attackCooldown === 0) {
+                    playerAttack(1); // 轻攻击
+                }
+                
+                if (keys['k'] && player.attackCooldown === 0) {
+                    playerAttack(2); // 重攻击
+                }
+                
+                // 应用重力
+                player.velocityY += GRAVITY;
+                
+                // 更新玩家位置
+                player.x += player.velocityX;
+                player.y += player.velocityY;
+                
+                // 边界检查
+                if (player.x < 0) player.x = 0;
+                if (player.x > CANVAS_WIDTH - player.width) player.x = CANVAS_WIDTH - player.width;
+                
+                // 地面检查
+                if (player.y > CANVAS_HEIGHT - player.height - 50) {
+                    player.y = CANVAS_HEIGHT - player.height - 50;
+                    player.velocityY = 0;
+                    player.isJumping = false;
+                }
+                
+                // 随机生成敌人
+                if (Math.random() < 0.01 && enemies.length < 8) {
+                    spawnEnemy();
+                }
+                
+                // 随机生成流星
+                if (Math.random() < 0.02) {
+                    spawnMeteor();
+                }
+                
+                // 更新敌人
+                for (let i = enemies.length - 1; i >= 0; i--) {
+                    const enemy = enemies[i];
+                    
+                    // 敌人移动
+                    enemy.x -= enemy.speed;
+                    
+                    // 敌人攻击冷却
+                    if (enemy.attackCooldown > 0) {
+                        enemy.attackCooldown--;
+                    }
+                    
+                    // 敌人攻击玩家
+                    if (enemy.attackCooldown === 0 && 
+                        Math.abs(enemy.x - player.x) < 50 && 
+                        Math.abs(enemy.y - player.y) < 60) {
+                        
+                        if (player.invincible === 0) {
+                            playerHealth -= enemy.type;
+                            player.invincible = 30;
+                            combo = 0;
+                            updateUI();
+                            
+                            // 受伤效果
+                            createParticles(player.x + player.width/2, player.y + player.height/2, '#ff6b6b', 10);
+                            
+                            if (playerHealth <= 0) {
+                                gameOver();
+                                return;
+                            }
+                        }
+                        
+                        enemy.attackCooldown = 60;
+                    }
+                    
+                    // 移除屏幕外的敌人
+                    if (enemy.x < -enemy.width) {
+                        enemies.splice(i, 1);
+                        // 玩家漏掉敌人扣分
+                        score = Math.max(0, score - 50);
+                        combo = 0;
+                        updateUI();
+                    }
+                }
+                
+                // 更新流星
+                for (let i = meteors.length - 1; i >= 0; i--) {
+                    const meteor = meteors[i];
+                    
+                    meteor.y += meteor.speed;
+                    
+                    // 流星击中玩家
+                    if (player.invincible === 0 &&
+                        meteor.x < player.x + player.width &&
+                        meteor.x + meteor.width > player.x &&
+                        meteor.y < player.y + player.height &&
+                        meteor.y + meteor.height > player.y) {
+                        
+                        playerHealth -= 3;
+                        player.invincible = 30;
+                        combo = 0;
+                        updateUI();
+                        
+                        // 击中效果
+                        createParticles(meteor.x + meteor.width/2, meteor.y + meteor.height/2, '#4ecdc4', 15);
+                        meteors.splice(i, 1);
+                        
+                        if (playerHealth <= 0) {
+                            gameOver();
+                            return;
+                        }
+                    }
+                    
+                    // 移除屏幕外的流星
+                    if (meteor.y > CANVAS_HEIGHT) {
+                        meteors.splice(i, 1);
+                    }
+                }
+                
+                // 更新攻击效果
+                for (let i = attacks.length - 1; i >= 0; i--) {
+                    const attack = attacks[i];
+                    attack.life--;
+                    
+                    // 攻击命中敌人
+                    for (let j = enemies.length - 1; j >= 0; j--) {
+                        const enemy = enemies[j];
+                        
+                        if (attack.x < enemy.x + enemy.width &&
+                            attack.x + attack.width > enemy.x &&
+                            attack.y < enemy.y + enemy.height &&
+                            attack.y + attack.height > enemy.y) {
+                            
+                            enemy.health -= attack.damage;
+                            
+                            // 击中效果
+                            createParticles(
+                                enemy.x + enemy.width/2,
+                                enemy.y + enemy.height/2,
+                                attack.type === 1 ? '#4ecdc4' : '#ff6b6b',
+                                attack.type === 1 ? 10 : 20
+                            );
+                            
+                            if (enemy.health <= 0) {
+                                // 敌人死亡
+                                const points = enemy.type === 1 ? 100 : 250;
+                                score += points;
+                                combo++;
+                                if (combo > maxCombo) maxCombo = combo;
+                                
+                                // 连击奖励
+                                if (combo >= 5) {
+                                    score += 50 * (combo - 4);
+                                }
+                                
+                                // 死亡效果
+                                createParticles(
+                                    enemy.x + enemy.width/2,
+                                    enemy.y + enemy.height/2,
+                                    '#ffd166',
+                                    15
+                                );
+                                
+                                enemies.splice(j, 1);
+                                spawnEnemy(); // 生成新敌人
+                            }
+                            
+                            attacks.splice(i, 1);
+                            updateUI();
+                            break;
+                        }
+                    }
+                    
+                    // 移除过期攻击
+                    if (attack.life <= 0) {
+                        attacks.splice(i, 1);
+                    }
+                }
+                
+                // 更新粒子效果
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const particle = particles[i];
+                    
+                    particle.x += particle.velocityX;
+                    particle.y += particle.velocityY;
+                    particle.life--;
+                    
+                    // 重力影响
+                    particle.velocityY += 0.1;
+                    
+                    // 移除死亡粒子
+                    if (particle.life <= 0) {
+                        particles.splice(i, 1);
+                    }
+                }
+            }
+            
+            // 渲染开始画面
+            function renderStartScreen() {
+                ctx.fillStyle = '#0c0c20';
+                ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+                
+                // 绘制标题
+                ctx.fillStyle = '#4ecdc4';
+                ctx.font = 'bold 48px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('流星蝴蝶剑', CANVAS_WIDTH/2, CANVAS_HEIGHT/2 - 50);
+                
+                // 绘制提示
+                ctx.fillStyle = '#e0e0ff';
+                ctx.font = '20px Arial';
+                ctx.fillText('点击"开始游戏"按钮开始', CANVAS_WIDTH/2, CANVAS_HEIGHT/2 + 30);
+                
+                // 绘制示例玩家
+                drawPlayer(CANVAS_WIDTH/2 - 20, CANVAS_HEIGHT/2 + 80, 1);
+                
+                // 绘制流星背景
+                for (let i = 0; i < 5; i++) {
+                    const x = (Date.now() / 50 + i * 100) % (CANVAS_WIDTH + 100) - 50;
+                    const y = i * 60 + 50;
+                    drawMeteor(x, y, 10 + i * 3);
+                }
+            }
+            
+            // 绘制玩家
+            function drawPlayer(x, y, facing) {
+                // 玩家身体
+                ctx.fillStyle = player.invincible > 0 && Math.floor(player.invincible / 5) % 2 === 0 ? '#ff9e6d' : '#45b7d1';
+                ctx.fillRect(x, y, player.width, player.height);
+                
+                // 玩家头部
+                ctx.fillStyle = player.invincible > 0 && Math.floor(player.invincible / 5) % 2 === 0 ? '#ffd166' : '#ff9e6d';
+                ctx.fillRect(x + 5, y - 15, player.width - 10, 15);
+                
+                // 剑
+                if (player.attackType > 0) {
+                    ctx.strokeStyle = player.attackType === 1 ? '#4ecdc4' : '#ff6b6b';
+                    ctx.lineWidth = player.attackType === 1 ? 3 : 5;
+                    ctx.beginPath();
+                    
+                    const swordLength = player.attackType === 1 ? 40 : 60;
+                    const swordX = facing === 1 ? x + player.width : x;
+                    const swordY = y + player.height / 2;
+                    
+                    ctx.moveTo(swordX, swordY);
+                    ctx.lineTo(swordX + swordLength * facing, swordY);
+                    ctx.stroke();
+                    
+                    // 剑光效果
+                    if (player.attackFrame > 5) {
+                        ctx.strokeStyle = player.attackType === 1 ? '#ffffff' : '#ffd166';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(swordX, swordY);
+                        ctx.lineTo(swordX + swordLength * facing * 1.2, swordY);
+                        ctx.stroke();
+                    }
+                }
+                
+                // 玩家轮廓
+                ctx.strokeStyle = '#e0e0ff';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x, y, player.width, player.height);
+            }
+            
+            // 绘制敌人
+            function drawEnemy(x, y, width, height, type) {
+                // 敌人身体
+                ctx.fillStyle = type === 1 ? '#ff6b6b' : '#8b0000';
+                ctx.fillRect(x, y, width, height);
+                
+                // 敌人眼睛
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(x + 5, y + 5, 8, 8);
+                ctx.fillRect(x + width - 13, y + 5, 8, 8);
+                
+                // 敌人瞳孔
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(x + 7, y + 7, 4, 4);
+                ctx.fillRect(x + width - 11, y + 7, 4, 4);
+                
+                // 敌人轮廓
+                ctx.strokeStyle = '#e0e0ff';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x, y, width, height);
+                
+                // 强力敌人角
+                if (type === 2) {
+                    ctx.fillStyle = '#ffd166';
+                    ctx.beginPath();
+                    ctx.moveTo(x + width/2, y - 10);
+                    ctx.lineTo(x + width/2 - 8, y);
+                    ctx.lineTo(x + width/2 + 8, y);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+            
+            // 绘制流星
+            function drawMeteor(x, y, size) {
+                // 流星核心
+                const gradient = ctx.createRadialGradient(x + size/2, y + size/2, 0, x +
+  <!-- 推广栏 -->
+  
+<!-- 游戏家顶部导航 -->
+<a class="yxj-promo-home" href="/" title="更多游戏">🏠 更多游戏</a>
+
+<!-- 抖音风格左下角作者信息 -->
+<div class="tiktok-author-info" id="tiktok-author-info">
+  <div class="tiktok-author-row">
+    <div class="tiktok-author-avatar" id="author-avatar" onclick="openAuthorProfile()">👤</div>
+    <div class="tiktok-author-details">
+      <div style="display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="tiktok-author-name" id="author-name" onclick="openAuthorProfile()">player_d6eq7s</span>
+          <button class="tiktok-follow-btn" id="tiktok-follow-btn" data-token="cf9ff461-c459-483d-ab6e-03b924b3164e" onclick="toggleFollow()">
+            <span class="follow-icon">+</span> 关注
+          </button>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TikTok风格右侧互动栏 -->
+<div class="tiktok-sidebar">
+  <div class="tiktok-action" id="stat-like-btn" onclick="likeGame()">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+    </div>
+    <span class="tiktok-count" id="stat-likes">0</span>
+  </div>
+  <div class="tiktok-action" id="stat-fav-btn" onclick="toggleFavorite()">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+    </div>
+    <span class="tiktok-count" id="stat-favs">0</span>
+  </div>
+  <div class="tiktok-action" onclick="openSharePanel()">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+    </div>
+  </div>
+  <div class="tiktok-action" id="stat-comment-btn" onclick="toggleCommentsPanel()">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <span class="tiktok-count" id="stat-comments">0</span>
+  </div>
+  <div class="tiktok-action tiktok-info-only" title="游玩次数">
+    <div class="tiktok-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+    </div>
+    <span class="tiktok-count" id="stat-plays">0</span>
+  </div>
+</div>
+
+<!-- 关注弹窗 -->
+<div id="promo-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999999;align-items:center;justify-content:center;" onclick="document.getElementById('promo-modal').style.display='none'">
+  <div style="background:transparent;border-radius:12px;padding:10px;width:90%;max-width:400px;text-align:center;position:relative;" onclick="event.stopPropagation()">
+    <button onclick="document.getElementById('promo-modal').style.display='none'" style="position:absolute;right:0;top:0;border:none;background:rgba(0,0,0,0.5);width:28px;height:28px;border-radius:50%;font-size:18px;cursor:pointer;color:#fff;z-index:1;">×</button>
+    <img src="/images/wechat-qrcode.png" style="width:100%;height:auto;display:block;border-radius:12px;">
+  </div>
+</div>
+
+<!-- 评论蒙版 -->
+<div class="comments-overlay" id="comments-overlay" onclick="toggleCommentsPanel()"></div>
+
+<!-- 评论区域 -->
+<div class="game-comments-section" id="game-comments-section">
+  <div class="comments-header">
+    <span class="comments-title">💬 评论</span>
+    <button class="comments-close-btn" onclick="toggleCommentsPanel()">×</button>
+  </div>
+  <div class="comments-body" id="game-comments-list">
+    <div style="text-align:center;padding:30px;color:#999;">加载中...</div>
+  </div>
+  <button id="comments-load-more-btn" style="display:none;" onclick="loadMoreGameComments()">加载更多</button>
+  <div class="comments-login-hint" id="comment-login-hint" style="display:none;">请登录后发表留言</div>
+  <div class="comments-input-area" id="comment-input-area" style="display:none;">
+    <textarea id="game-comment-input" placeholder="说点什么..." maxlength="500"></textarea>
+    <button id="game-comment-submit" onclick="submitGameComment()">发布</button>
+  </div>
+</div>
+
+<!-- 游戏家推广栏 -->
+<div class="yxj-promo-bar" id="yxj-promo" onclick="showPromoModal()" style="cursor:pointer;">
+  <button class="yxj-promo-close" onclick="event.stopPropagation();document.getElementById('yxj-promo').classList.add('yxj-hidden');document.body.style.paddingBottom='0';">×</button>
+  <div class="yxj-promo-qr">
+    <img src="/images/getqrcode.png" alt="公众号">
+  </div>
+  <div class="yxj-promo-info">
+    <strong>🎮 关注「游戏开发技术教程」</strong>
+    <span>一句话免费生成你的专属游戏！</span>
+  </div>
+</div>
+
+<!-- 分享面板 -->
+<div id="share-panel" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999999;align-items:flex-end;justify-content:center;" onclick="closeSharePanel()">
+  <div style="background:#fff;border-radius:16px 16px 0 0;padding:20px;width:100%;max-width:500px;text-align:center;position:relative;max-height:80vh;overflow-y:auto;" onclick="event.stopPropagation()">
+    <div style="width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 15px;"></div>
+    <h3 style="margin:0 0 15px;font-size:18px;">📤 分享游戏</h3>
+    <div style="background:#f5f5f5;border-radius:8px;padding:12px;margin-bottom:15px;">
+      <textarea id="share-text" readonly style="width:100%;border:none;background:transparent;font-size:14px;resize:none;min-height:80px;outline:none;"></textarea>
+    </div>
+    <button onclick="copyShareText()" style="width:100%;padding:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;margin-bottom:10px;">📋 复制分享内容</button>
+    <button onclick="closeSharePanel()" style="width:100%;padding:12px;background:#f0f0f0;color:#666;border:none;border-radius:8px;font-size:14px;cursor:pointer;">取消</button>
+  </div>
+</div>
+
+<!-- 作者主页弹窗 -->
+<div id="author-profile-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:999999;align-items:center;justify-content:center;" onclick="closeAuthorProfile()">
+  <div style="background:#fff;border-radius:12px;padding:20px;width:90%;max-width:360px;text-align:center;position:relative;" onclick="event.stopPropagation()">
+    <button onclick="closeAuthorProfile()" style="position:absolute;right:10px;top:10px;border:none;background:none;font-size:24px;cursor:pointer;color:#999;">×</button>
+    <div id="author-profile-content" style="min-height:150px;"></div>
+  </div>
+</div>
+
+<script>
+// 获取游戏ID和作者信息
+const gameId = '27aa0968-1906-4f49-8616-4b284ca680c4';
+const gameTitle = '流星蝴蝶剑';
+const authorToken = 'cf9ff461-c459-483d-ab6e-03b924b3164e';
+const authorName = 'player_d6eq7s';
+const API_BASE = '/api/games';
+
+// 调试日志
+console.log('[DEBUG] 游戏页面初始化');
+console.log('[DEBUG] gameId:', gameId);
+console.log('[DEBUG] authorToken:', authorToken);
+console.log('[DEBUG] authorName:', authorName);
+
+// 辅助函数
+function showPromoModal() {
+  console.log('[DEBUG] showPromoModal 被调用');
+  document.getElementById('promo-modal').style.display = 'flex';
+}
+
+function getUserToken() {
+  return localStorage.getItem('aigame-user-token') || '';
+}
+
+function getAuthHeaders() {
+  const headers = { 'Content-Type': 'application/json' };
+  const token = getUserToken();
+  if (token) {
+    headers['X-User-Token'] = token;
+  }
+  return headers;
+}
+
+// 记录游玩
+(function(){
+  try {
+    fetch(API_BASE + '/' + gameId + '/play', { method: 'POST', headers: getAuthHeaders() }).catch(function(){});
+  } catch(e) {}
+})();
+
+// 获取统计数据和用户状态
+function loadStats() {
+  // 获取游戏统计
+  fetch(API_BASE + '/' + gameId, { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        const likesEl = document.getElementById('stat-likes');
+        const count = data.game.likes_count || data.game.like_count || 0;
+        likesEl.innerText = count;
+        document.getElementById('stat-plays').innerText = data.game.play_count || 0;
+        document.getElementById('stat-favs').innerText = data.game.favorite_count || 0;
+        // 更新作者名（从数据库获取最新昵称）
+        if (data.game.author_name) {
+          const authorNameEl = document.getElementById('author-name');
+          if (authorNameEl) authorNameEl.innerText = data.game.author_name;
+        }
+      }
+    })
+    .catch(err => console.error('加载统计失败', err));
+  
+  // 获取作者最新昵称
+  if (authorToken) {
+    fetch('/api/users/' + authorToken + '/profile', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.user && data.user.nickname) {
+          const authorNameEl = document.getElementById('author-name');
+          if (authorNameEl) authorNameEl.innerText = data.user.nickname;
+        }
+      })
+      .catch(() => {});
+  }
+  
+  // 获取用户点赞状态
+  const userToken = getUserToken();
+  if (userToken) {
+    fetch(API_BASE + '/' + gameId + '/like-status', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.liked) {
+          document.getElementById('stat-like-btn').classList.add('liked');
+        }
+      })
+      .catch(() => {});
+    
+    // 获取用户收藏状态
+    fetch(API_BASE + '/' + gameId + '/favorite-status', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.favorited) {
+          document.getElementById('stat-fav-btn').classList.add('favorited');
+        }
+      })
+      .catch(() => {});
+    
+    // 检查关注状态
+    if (authorToken && authorToken !== userToken) {
+      checkFollowStatus();
+    } else if (authorToken === userToken) {
+      // 隐藏自己的关注按钮
+      const followBtn = document.getElementById('tiktok-follow-btn');
+      if (followBtn) followBtn.style.display = 'none';
+    }
+  }
+}
+
+// 点赞（支持取消）
+function likeGame() {
+  const btn = document.getElementById('stat-like-btn');
+  const isLiked = btn.classList.contains('liked');
+  const countEl = document.getElementById('stat-likes');
+  let count = parseInt(countEl.innerText) || 0;
+  
+  // 乐观UI更新
+  if (isLiked) {
+    btn.classList.remove('liked');
+    countEl.innerText = Math.max(0, count - 1);
+  } else {
+    btn.classList.add('liked');
+    countEl.innerText = count + 1;
+  }
+  
+  fetch(API_BASE + '/' + gameId + '/like', { 
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        // 更新实际数量
+        countEl.innerText = data.like_count || data.likeCount || countEl.innerText;
+        if (data.liked !== undefined) {
+          btn.classList.toggle('liked', data.liked);
+        }
+      } else {
+        // 失败回滚
+        btn.classList.toggle('liked', isLiked);
+        countEl.innerText = count;
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      btn.classList.toggle('liked', isLiked);
+      countEl.innerText = count;
+    });
+}
+
+// 收藏
+function toggleFavorite() {
+  const btn = document.getElementById('stat-fav-btn');
+  const countEl = document.getElementById('stat-favs');
+  const isFav = btn.classList.contains('favorited');
+  let count = parseInt(countEl.innerText) || 0;
+  
+  // 乐观UI切换
+  btn.classList.toggle('favorited', !isFav);
+  if (isFav) {
+    countEl.innerText = Math.max(0, count - 1);
+  } else {
+    countEl.innerText = count + 1;
+  }
+  
+  fetch(API_BASE + '/' + gameId + '/favorite', { 
+    method: 'POST', 
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (data.favorited !== undefined) {
+          btn.classList.toggle('favorited', data.favorited);
+        }
+        // 更新实际数量
+        if (data.favorite_count !== undefined) {
+          countEl.innerText = data.favorite_count;
+        }
+      } else {
+        // 失败回滚
+        btn.classList.toggle('favorited', isFav);
+        countEl.innerText = count;
+      }
+    })
+    .catch(() => {
+      // 失败回滚
+      btn.classList.toggle('favorited', isFav);
+      countEl.innerText = count;
+    });
+}
+
+// 打开分享面板
+function openSharePanel() {
+  const url = window.location.href;
+  const shareText = '🎮 我发现了一个有趣的AI游戏：「' + gameTitle + '」\n\n👆 点击链接立即游玩：\n' + url + '\n\n💡 关注公众号「游戏开发技术教程」，一句话免费生成你的专属游戏！';
+  document.getElementById('share-text').value = shareText;
+  document.getElementById('share-panel').style.display = 'flex';
+}
+
+// 关闭分享面板
+function closeSharePanel() {
+  document.getElementById('share-panel').style.display = 'none';
+}
+
+// 复制分享内容
+function copyShareText() {
+  const text = document.getElementById('share-text').value;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('分享内容已复制，快去分享给好友吧！');
+      closeSharePanel();
+    }).catch(() => {
+      fallbackCopy(text);
+    });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textarea);
+  alert('分享内容已复制，快去分享给好友吧！');
+  closeSharePanel();
+}
+
+// 打开作者主页
+function openAuthorProfile() {
+  console.log('[DEBUG] openAuthorProfile 被调用, authorToken:', authorToken);
+  if (!authorToken) {
+    console.log('[DEBUG] authorToken为空，显示推广弹窗');
+    showPromoModal();
+    return;
+  }
+  
+  console.log('[DEBUG] 显示作者主页弹窗');
+  const modal = document.getElementById('author-profile-modal');
+  const content = document.getElementById('author-profile-content');
+  content.innerHTML = '<div style="padding:20px;color:#999;">加载中...</div>';
+  modal.style.display = 'flex';
+  
+  // 加载作者信息
+  Promise.all([
+    fetch('/api/users/' + authorToken + '/profile', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/users/' + authorToken + '/follow-stats', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/users/' + authorToken + '/games?limit=4', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({ games: [] }))
+  ]).then(([profileData, statsData, gamesData]) => {
+    const nickname = (profileData.profile && profileData.profile.nickname) || authorName || '游戏创作者';
+    const accountId = (profileData.profile && profileData.profile.accountId) || '';
+    const followers = statsData.followerCount || statsData.followers || 0;
+    const following = statsData.followingCount || statsData.following || 0;
+    const games = gamesData.games || [];
+    const userToken = getUserToken();
+    const isSelf = authorToken === userToken;
+    
+    let gamesHtml = '';
+    if (games.length > 0) {
+      gamesHtml = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:15px;">' +
+        games.slice(0, 4).map(g => '<a href="/g/' + g.id.substring(0,2) + '/' + g.id + '.html" style="background:#f5f5f5;border-radius:8px;padding:10px;text-decoration:none;color:#333;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎮 ' + (g.title || '未命名').substring(0, 10) + '</a>').join('') +
+        '</div>';
+    }
+    
+    // 账号ID显示（小字、浅色、带@前缀）
+    const accountIdHtml = accountId ? '<div style="font-size:12px;color:#999;margin-top:2px;">@' + accountId + '</div>' : '';
+    
+    // 如果是自己，不显示关注按钮
+    const followBtnHtml = isSelf ? '' : '<button id="profile-follow-btn" onclick="toggleFollowFromProfile()" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>';
+    
+    content.innerHTML = 
+      '<div style="margin-bottom:15px;">' +
+        '<div style="width:60px;height:60px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:28px;">👤</div>' +
+        '<div style="font-size:18px;font-weight:600;color:#333;">' + nickname + '</div>' +
+        accountIdHtml +
+      '</div>' +
+      '<div style="display:flex;justify-content:center;gap:30px;margin-bottom:15px;">' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + following + '</strong><span style="color:#999;font-size:12px;">关注</span></div>' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + followers + '</strong><span style="color:#999;font-size:12px;">粉丝</span></div>' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + games.length + '</strong><span style="color:#999;font-size:12px;">作品</span></div>' +
+      '</div>' +
+      followBtnHtml +
+      gamesHtml;
+    
+    // 检查关注状态（只有不是自己时才检查）
+    if (!isSelf) {
+      checkFollowStatusForProfile();
+    }
+  }).catch(() => {
+    content.innerHTML = '<div style="padding:20px;color:#999;">加载失败</div>';
+  });
+}
+
+// 关闭作者主页
+function closeAuthorProfile() {
+  document.getElementById('author-profile-modal').style.display = 'none';
+}
+
+// 打开评论者主页（用于点击评论头像）
+function openCommentAuthorProfile(commentAuthorToken) {
+  if (!commentAuthorToken) return;
+  
+  const currentUserToken = getUserToken();
+  // 如果是自己的评论，不跳转
+  if (commentAuthorToken === currentUserToken) {
+    alert('这是您自己的评论');
+    return;
+  }
+  
+  // 使用已有的作者主页弹窗展示评论者信息
+  const modal = document.getElementById('author-profile-modal');
+  const content = document.getElementById('author-profile-content');
+  content.innerHTML = '<div style="padding:20px;color:#999;">加载中...</div>';
+  modal.style.display = 'flex';
+  
+  // 加载评论者信息
+  Promise.all([
+    fetch('/api/users/' + commentAuthorToken + '/profile', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/users/' + commentAuthorToken + '/follow-stats', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({})),
+    fetch('/api/users/' + commentAuthorToken + '/games?limit=4', { headers: getAuthHeaders() }).then(r => r.json()).catch(() => ({ games: [] }))
+  ]).then(([profileData, statsData, gamesData]) => {
+    const nickname = (profileData.profile && profileData.profile.nickname) || '游戏玩家';
+    const accountId = (profileData.profile && profileData.profile.accountId) || '';
+    const followers = statsData.followerCount || statsData.followers || 0;
+    const following = statsData.followingCount || statsData.following || 0;
+    const games = gamesData.games || [];
+    
+    let gamesHtml = '';
+    if (games.length > 0) {
+      gamesHtml = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:15px;">' +
+        games.slice(0, 4).map(g => '<a href="/g/' + g.id.substring(0,2) + '/' + g.id + '.html" style="background:#f5f5f5;border-radius:8px;padding:10px;text-decoration:none;color:#333;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎮 ' + (g.title || '未命名').substring(0, 10) + '</a>').join('') +
+        '</div>';
+    }
+    
+    // 账号ID显示（小字、浅色、带@前缀）
+    const accountIdHtml = accountId ? '<div style="font-size:12px;color:#999;margin-top:2px;">@' + accountId + '</div>' : '';
+    
+    content.innerHTML = 
+      '<div style="margin-bottom:15px;">' +
+        '<div style="width:60px;height:60px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:28px;">👤</div>' +
+        '<div style="font-size:18px;font-weight:600;color:#333;">' + nickname + '</div>' +
+        accountIdHtml +
+      '</div>' +
+      '<div style="display:flex;justify-content:center;gap:30px;margin-bottom:15px;">' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + following + '</strong><span style="color:#999;font-size:12px;">关注</span></div>' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + followers + '</strong><span style="color:#999;font-size:12px;">粉丝</span></div>' +
+        '<div style="text-align:center;"><strong style="font-size:20px;color:#333;display:block;">' + games.length + '</strong><span style="color:#999;font-size:12px;">作品</span></div>' +
+      '</div>' +
+      '<button onclick="toggleFollowCommentAuthor(\'' + commentAuthorToken + '\')" id="comment-author-follow-btn" style="width:100%;padding:10px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">+ 关注</button>' +
+      gamesHtml;
+    
+    // 检查是否已关注
+    fetch('/api/users/' + commentAuthorToken + '/follow-status', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.following) {
+          const btn = document.getElementById('comment-author-follow-btn');
+          if (btn) {
+            btn.textContent = '已关注';
+            btn.style.background = '#f5f5f5';
+            btn.style.color = '#999';
+          }
+        }
+      }).catch(() => {});
+  }).catch(() => {
+    content.innerHTML = '<div style="padding:20px;color:#999;">加载失败</div>';
+  });
+}
+
+// 关注/取关评论者
+function toggleFollowCommentAuthor(targetToken) {
+  const userToken = getUserToken();
+  if (!userToken) {
+    alert('请先登录后再关注');
+    return;
+  }
+  
+  const btn = document.getElementById('comment-author-follow-btn');
+  const isFollowing = btn && btn.textContent === '已关注';
+  
+  fetch('/api/users/' + targetToken + '/follow', {
+    method: isFollowing ? 'DELETE' : 'POST',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && btn) {
+        if (isFollowing) {
+          btn.textContent = '+ 关注';
+          btn.style.background = '#fe2c55';
+          btn.style.color = '#fff';
+        } else {
+          btn.textContent = '已关注';
+          btn.style.background = '#f5f5f5';
+          btn.style.color = '#999';
+        }
+      }
+    }).catch(() => {
+      alert('操作失败，请重试');
+    });
+}
+
+// 检查关注状态
+function checkFollowStatus() {
+  if (!authorToken) return;
+  fetch('/api/users/' + authorToken + '/follow-status', { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.following) {
+        const btn = document.getElementById('tiktok-follow-btn');
+        if (btn) {
+          btn.classList.add('following');
+          btn.innerHTML = '✓ 已关注';
+        }
+      }
+    })
+    .catch(() => {});
+}
+
+// 检查关注状态（主页弹窗）
+function checkFollowStatusForProfile() {
+  if (!authorToken) return;
+  fetch('/api/users/' + authorToken + '/follow-status', { headers: getAuthHeaders() })
+    .then(res => res.json())
+    .then(data => {
+      const btn = document.getElementById('profile-follow-btn');
+      if (btn && data.success && data.following) {
+        btn.style.background = '#eee';
+        btn.style.color = '#666';
+        btn.innerHTML = '✓ 已关注';
+      }
+    })
+    .catch(() => {});
+}
+
+// 切换关注状态
+function toggleFollow() {
+  console.log('[DEBUG] toggleFollow 被调用, authorToken:', authorToken);
+  if (!authorToken) {
+    console.log('[DEBUG] authorToken为空，显示推广弹窗');
+    showPromoModal();
+    return;
+  }
+  
+  const userToken = getUserToken();
+  console.log('[DEBUG] userToken:', userToken);
+  if (!userToken) {
+    alert('请先登录');
+    return;
+  }
+  if (authorToken === userToken) {
+    alert('不能关注自己哦');
+    return;
+  }
+  
+  const btn = document.getElementById('tiktok-follow-btn');
+  const isFollowing = btn.classList.contains('following');
+  
+  // 乐观更新
+  if (isFollowing) {
+    btn.classList.remove('following');
+    btn.innerHTML = '<span class="follow-icon">+</span> 关注';
+  } else {
+    btn.classList.add('following');
+    btn.innerHTML = '✓ 已关注';
+  }
+  
+  fetch('/api/users/' + authorToken + '/follow', {
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        btn.classList.toggle('following', data.following);
+        btn.innerHTML = data.following ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+      } else {
+        // 回滚
+        btn.classList.toggle('following', isFollowing);
+        btn.innerHTML = isFollowing ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+      }
+    })
+    .catch(() => {
+      btn.classList.toggle('following', isFollowing);
+      btn.innerHTML = isFollowing ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+    });
+}
+
+// 从主页弹窗切换关注
+function toggleFollowFromProfile() {
+  if (!authorToken) return;
+  
+  const userToken = getUserToken();
+  if (!userToken) {
+    alert('请先登录');
+    return;
+  }
+  
+  if (authorToken === userToken) {
+    alert('不能关注自己哦');
+    return;
+  }
+  
+  const btn = document.getElementById('profile-follow-btn');
+  const isFollowing = btn.innerHTML.includes('已关注');
+  
+  // 乐观更新
+  if (isFollowing) {
+    btn.style.background = '#fe2c55';
+    btn.style.color = '#fff';
+    btn.innerHTML = '+ 关注';
+  } else {
+    btn.style.background = '#eee';
+    btn.style.color = '#666';
+    btn.innerHTML = '✓ 已关注';
+  }
+  
+  fetch('/api/users/' + authorToken + '/follow', {
+    method: 'POST',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (data.following) {
+          btn.style.background = '#eee';
+          btn.style.color = '#666';
+          btn.innerHTML = '✓ 已关注';
+        } else {
+          btn.style.background = '#fe2c55';
+          btn.style.color = '#fff';
+          btn.innerHTML = '+ 关注';
+        }
+        // 同步更新底部的关注按钮
+        const tikBtn = document.getElementById('tiktok-follow-btn');
+        if (tikBtn) {
+          tikBtn.classList.toggle('following', data.following);
+          tikBtn.innerHTML = data.following ? '✓ 已关注' : '<span class="follow-icon">+</span> 关注';
+        }
+      }
+    })
+    .catch(() => {});
+}
+
+// ==================== 留言板功能 ====================
+
+// 切换留言板面板
+function toggleCommentsPanel() {
+  const panel = document.getElementById('game-comments-section');
+  const sidebar = document.querySelector('.tiktok-sidebar');
+  const authorInfo = document.getElementById('tiktok-author-info');
+  const overlay = document.getElementById('comments-overlay');
+  if (panel) {
+    const isExpanding = !panel.classList.contains('expanded');
+    panel.classList.toggle('expanded');
+    // 评论面板展开时隐藏右侧按钮和作者信息（使用class覆盖!important）
+    if (sidebar) {
+      sidebar.classList.toggle('comments-open', isExpanding);
+    }
+    if (authorInfo) {
+      authorInfo.classList.toggle('comments-open', isExpanding);
+    }
+    // 控制蒙版显示
+    if (overlay) {
+      overlay.classList.toggle('visible', isExpanding);
+    }
+  }
+}
+
+// 留言板状态
+let commentsData = {
+  comments: [],
+  total: 0,
+  offset: 0,
+  hasMore: false,
+  isLoading: false
+};
+
+// 加载留言列表
+function loadGameComments(isRefresh = true) {
+  if (commentsData.isLoading) return;
+  commentsData.isLoading = true;
+  
+  const limit = 20;
+  const offset = isRefresh ? 0 : commentsData.offset;
+  
+  fetch('/api/games/' + gameId + '/comments?limit=' + limit + '&offset=' + offset, {
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (isRefresh) {
+          commentsData.comments = data.comments;
+          commentsData.offset = data.comments.length;
+        } else {
+          commentsData.comments = commentsData.comments.concat(data.comments);
+          commentsData.offset += data.comments.length;
+        }
+        commentsData.total = data.total;
+        commentsData.hasMore = data.hasMore;
+        renderComments();
+        updateCommentsCount();
+      }
+    })
+    .catch(err => console.error('加载留言失败:', err))
+    .finally(() => { commentsData.isLoading = false; });
+}
+
+// 渲染留言列表
+function renderComments() {
+  const listEl = document.getElementById('game-comments-list');
+  const loadMoreBtn = document.getElementById('comments-load-more-btn');
+  
+  if (!listEl) return;
+  
+  if (commentsData.comments.length === 0) {
+    listEl.innerHTML = '<div style="text-align:center;padding:30px;color:#999;">💬 还没有留言，快来抢沙发！</div>';
+    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+    return;
+  }
+  
+  let html = '';
+  commentsData.comments.forEach(function(comment) {
+    const timeStr = formatCommentTime(comment.created_at);
+    const avatarInitial = comment.author_name ? comment.author_name.charAt(0).toUpperCase() : '?';
+    const currentUserToken = getUserToken();
+    const canDelete = comment.is_mine || (currentUserToken && comment.user_token === currentUserToken);
+    const commentUserToken = comment.user_token || '';
+    const clickableClass = commentUserToken ? 'comment-clickable' : '';
+    const onClickAttr = commentUserToken ? 'onclick="openCommentAuthorProfile(\'' + commentUserToken + '\')"' : '';
+    
+    html += '<div class="comment-item" data-id="' + comment.id + '">' +
+      '<div class="comment-header">' +
+        '<div class="comment-author-info">' +
+          '<div class="comment-avatar ' + clickableClass + '" ' + onClickAttr + '>' + avatarInitial + '</div>' +
+          '<span class="comment-author-name ' + clickableClass + '" ' + onClickAttr + '>' + escapeHtml(comment.author_name) + '</span>' +
+          '<span class="comment-time">' + timeStr + '</span>' +
+        '</div>' +
+        (canDelete ? '<button class="comment-delete-btn" onclick="deleteGameComment(' + comment.id + ')">删除</button>' : '') +
+      '</div>' +
+      '<div class="comment-content">' + escapeHtml(comment.content) + '</div>' +
+    '</div>';
+  });
+  
+  listEl.innerHTML = html;
+  
+  if (loadMoreBtn) {
+    loadMoreBtn.style.display = commentsData.hasMore ? 'block' : 'none';
+  }
+}
+
+// 更新评论数量
+function updateCommentsCount() {
+  const countEl = document.getElementById('stat-comments');
+  if (countEl) countEl.textContent = commentsData.total;
+}
+
+// 格式化留言时间
+function formatCommentTime(dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = now - date;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  
+  if (minutes < 1) return '刚刚';
+  if (minutes < 60) return minutes + '分钟前';
+  if (hours < 24) return hours + '小时前';
+  if (days < 7) return days + '天前';
+  return (date.getMonth() + 1) + '/' + date.getDate();
+}
+
+// HTML转义
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// 发布留言
+function submitGameComment() {
+  const inputEl = document.getElementById('game-comment-input');
+  const submitBtn = document.getElementById('game-comment-submit');
+  
+  if (!inputEl || !submitBtn) return;
+  
+  const content = inputEl.value.trim();
+  if (!content) {
+    alert('请输入留言内容');
+    return;
+  }
+  if (content.length > 500) {
+    alert('留言内容不能超过500字');
+    return;
+  }
+  
+  const userToken = getUserToken();
+  if (!userToken) {
+    alert('请先登录后再留言');
+    return;
+  }
+  
+  submitBtn.disabled = true;
+  submitBtn.textContent = '发布中...';
+  
+  fetch('/api/games/' + gameId + '/comments', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ content: content })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        inputEl.value = '';
+        commentsData.comments.unshift(data.comment);
+        commentsData.total++;
+        renderComments();
+        updateCommentsCount();
+      } else {
+        alert(data.error || '发布失败');
+      }
+    })
+    .catch(err => {
+      console.error('发布留言失败:', err);
+      alert('网络错误，请重试');
+    })
+    .finally(() => {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '发布';
+    });
+}
+
+// 删除留言
+function deleteGameComment(commentId) {
+  if (!confirm('确定要删除这条留言吗？')) return;
+  
+  fetch('/api/games/' + gameId + '/comments/' + commentId, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        commentsData.comments = commentsData.comments.filter(function(c) { return c.id !== commentId; });
+        commentsData.total--;
+        renderComments();
+        updateCommentsCount();
+      } else {
+        alert(data.error || '删除失败');
+      }
+    })
+    .catch(err => {
+      console.error('删除留言失败:', err);
+      alert('网络错误，请重试');
+    });
+}
+
+// 加载更多留言
+function loadMoreGameComments() {
+  if (!commentsData.hasMore || commentsData.isLoading) return;
+  loadGameComments(false);
+}
+
+// 更新留言输入区域显示
+function updateCommentInputUI() {
+  const loginHint = document.getElementById('comment-login-hint');
+  const inputArea = document.getElementById('comment-input-area');
+  const userToken = getUserToken();
+  
+  if (loginHint && inputArea) {
+    if (userToken) {
+      loginHint.style.display = 'none';
+      inputArea.style.display = 'flex';
+    } else {
+      loginHint.style.display = 'block';
+      inputArea.style.display = 'none';
+    }
+  }
+}
+
+// 初始化
+window.addEventListener('load', function() {
+  loadStats();
+  updateCommentInputUI();
+  loadGameComments(true);
+});
+</script>
+
+</body>
+</html>

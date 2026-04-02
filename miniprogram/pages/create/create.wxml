@@ -13,7 +13,7 @@
   </view>
 
   <scroll-view class="main-scroll" scroll-y enhanced show-scrollbar="{{false}}">
-    <view class="credits-section">
+    <view class="credits-section" wx:if="{{!creditsHidden}}">
       <view class="credits-card" bindtap="goToCredits">
         <view class="credits-main">
           <view class="credits-info">
@@ -32,7 +32,7 @@
     </view>
 
     <!-- 签到区域（按文档6.2节优化设计） -->
-    <view class="checkin-section">
+    <view class="checkin-section" wx:if="{{!creditsHidden}}">
       <view class="checkin-card" bindtap="handleCheckin">
         <view class="checkin-left">
           <text class="checkin-icon">{{checkinStatus.checkedInToday ? '✅' : '📅'}}</text>
@@ -59,11 +59,12 @@
           <text class="guide-title">去网站创作游戏</text>
         </view>
         <view class="guide-content">
-          <text class="guide-desc">在网站上使用AI一句话生成游戏，创作完成后回来领取积分奖励</text>
+          <text class="guide-desc" wx:if="{{!creditsHidden}}">在网站上使用AI一句话生成游戏，创作完成后回来领取积分奖励</text>
+          <text class="guide-desc" wx:else>在网站上使用AI一句话生成游戏，创作完成后可同步到小程序</text>
           <view class="guide-steps">
             <view class="step-item"><text class="step-num">1</text><text class="step-text">复制网站链接</text></view>
             <view class="step-item"><text class="step-num">2</text><text class="step-text">浏览器打开创作</text></view>
-            <view class="step-item"><text class="step-num">3</text><text class="step-text">回小程序领积分</text></view>
+            <view class="step-item"><text class="step-num">3</text><text class="step-text" wx:if="{{!creditsHidden}}">回小程序领积分</text><text class="step-text" wx:else>回小程序查看作品</text></view>
           </view>
         </view>
         <view class="guide-actions">
@@ -77,7 +78,7 @@
     </view>
 
     <view class="quick-entry-section">
-      <view class="entry-item" bindtap="goToCredits">
+      <view class="entry-item" bindtap="goToCredits" wx:if="{{!creditsHidden}}">
         <text class="entry-icon">🏆</text>
         <text class="entry-text">领成就</text>
         <view class="entry-badge" wx:if="{{claimableCount > 0}}">{{claimableCount}}</view>

@@ -6,7 +6,7 @@ const app = getApp();
 Page({
   data: {
     appName: '游戏家',
-    
+    creditsHidden: false,  // 从站点配置读取，为 true 时完全隐藏积分相关
     // 用户积分信息
     credits: 0,
     
@@ -32,6 +32,9 @@ Page({
   },
 
   onLoad() {
+    this.setData({
+      creditsHidden: getApp().globalData.creditsEarningHidden === true
+    });
     this.loadData();
   },
 
@@ -40,11 +43,12 @@ Page({
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 0 });
     }
-    
-    // 更新应用名称
+    const creditsHidden = app.globalData.creditsEarningHidden === true;
+    // 更新应用名称与积分隐藏开关
     this.setData({
       appName: app.getAppName(),
-      webUrl: app.globalData.config?.webUrl || 'https://youxijia.com'
+      webUrl: app.globalData.config?.webUrl || 'https://youxijia.com',
+      creditsHidden
     });
     
     // 检查登录状态
@@ -66,12 +70,17 @@ Page({
 
   // 加载所有数据
   async loadData() {
-    await Promise.all([
-      this.loadCredits(),
-      this.loadCheckinStatus(),
-      this.loadClaimableRewards(),
-      this.loadLatestGames()
-    ]);
+    const creditsHidden = app.globalData.creditsEarningHidden === true;
+    if (creditsHidden) {
+      await this.loadLatestGames();
+    } else {
+      await Promise.all([
+        this.loadCredits(),
+        this.loadCheckinStatus(),
+        this.loadClaimableRewards(),
+        this.loadLatestGames()
+      ]);
+    }
   },
 
   // 加载积分
@@ -190,6 +199,7 @@ Page({
 
   // 去积分中心
   goToCredits() {
+    if (app.globalData.creditsEarningHidden) return;
     wx.navigateTo({
       url: '/pages/credits/credits'
     });
@@ -247,8 +257,9 @@ Page({
   // 分享
   onShareAppMessage() {
     const appName = app.getAppName();
+    const creditsHidden = app.globalData.creditsEarningHidden === true;
     return {
-      title: `${appName} - 来签到领积分，创作你的游戏`,
+      title: creditsHidden ? `${appName} - 来创作你的游戏` : `${appName} - 来签到领积分，创作你的游戏`,
       path: '/pages/create/create'
     };
   }

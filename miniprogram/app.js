@@ -27,7 +27,11 @@ App({
     siteConfigLoaded: false,
     // 小程序功能开关（默认都开启）
     miniprogramCommentDisabled: false,
-    miniprogramLLMDisabled: false
+    miniprogramLLMDisabled: false,
+    // 一键隐藏所有积分获得途径（界面完全隐藏）
+    creditsEarningHidden: false,
+    // 仅保留部分积分途径（签到、看广告、关注公众号），其余隐藏；默认 true
+    creditsEarningLimited: true
   },
 
   onLaunch() {
@@ -59,6 +63,8 @@ App({
         // 小程序功能开关配置
         this.globalData.miniprogramCommentDisabled = result.miniprogramCommentDisabled === true;
         this.globalData.miniprogramLLMDisabled = result.miniprogramLLMDisabled === true;
+        this.globalData.creditsEarningHidden = result.creditsEarningHidden === true;
+        this.globalData.creditsEarningLimited = result.creditsEarningLimited !== false;
         
         // 订阅消息模板ID
         if (result.wxSubscribeTmplId) {
@@ -82,6 +88,8 @@ App({
         console.log('小程序功能开关:', { 
           commentDisabled: this.globalData.miniprogramCommentDisabled,
           llmDisabled: this.globalData.miniprogramLLMDisabled,
+          creditsEarningHidden: this.globalData.creditsEarningHidden,
+          creditsEarningLimited: this.globalData.creditsEarningLimited,
           wxSubscribeTmplId: this.globalData.config.wxSubscribeTmplId ? '已配置' : '未配置'
         });
       }

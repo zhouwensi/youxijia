@@ -52,15 +52,16 @@ Page({
     
     // 功能开关（从全局配置读取）
     llmDisabled: false,
-    
+    creditsHidden: false,  // 为 true 时完全隐藏积分相关
     // 网站激活状态
     webActivated: false
   },
 
   onLoad() {
-    // 从全局配置读取LLM禁用状态
+    // 从全局配置读取功能开关
     this.setData({
-      llmDisabled: app.globalData.miniprogramLLMDisabled === true
+      llmDisabled: app.globalData.miniprogramLLMDisabled === true,
+      creditsHidden: app.globalData.creditsEarningHidden === true
     });
     
     this.checkLoginStatus();
@@ -72,9 +73,10 @@ Page({
       this.getTabBar().setData({ selected: 2 });
     }
     
-    // 刷新LLM禁用状态（配置可能在运行时更新）
+    // 刷新功能开关（配置可能在运行时更新）
     this.setData({
-      llmDisabled: app.globalData.miniprogramLLMDisabled === true
+      llmDisabled: app.globalData.miniprogramLLMDisabled === true,
+      creditsHidden: app.globalData.creditsEarningHidden === true
     });
     
     this.checkLoginStatus();
@@ -179,10 +181,11 @@ Page({
   async loadUserData() {
     try {
       const myToken = app.globalData.token;
+      const creditsHidden = app.globalData.creditsEarningHidden === true;
       
-      // 并行请求
+      // 并行请求（积分隐藏时不请求积分接口）
       const requests = [
-        app.request('/api/credits'),
+        creditsHidden ? Promise.resolve(null) : app.request('/api/credits'),
         app.request('/api/account'),
         app.request('/api/user/subscribe-count')
       ];
@@ -198,8 +201,7 @@ Page({
 
       const updates = {};
 
-      if (creditsResult && creditsResult.success !== false) {
-        // 使用全局格式化函数处理积分显示
+      if (!creditsHidden && creditsResult && creditsResult.success !== false) {
         const credits = creditsResult.credits || 0;
         updates['stats.credits'] = app.formatCredits(credits);
       }
@@ -510,8 +512,9 @@ Page({
     });
   },
 
-  // 显示积分信息
+  // 显示积分信息（积分隐藏时不展示）
   showCreditsInfo() {
+    if (app.globalData.creditsEarningHidden) return;
     wx.showModal({
       title: '我的积分',
       content: `当前积分: ${this.data.stats.credits}\n\n获取积分方式:\n• 每日登录\n• 邀请好友\n• 观看广告`,
@@ -731,9 +734,8 @@ Page({
         app.globalData.userInfo = updatedUserInfo;
         wx.setStorageSync('userInfo', updatedUserInfo);
 
-        // 检查是否获得积分奖励
-        if (result.creditsEarned && result.creditsEarned > 0) {
-          // 显示积分奖励提示
+        // 检查是否获得积分奖励（积分隐藏时不展示积分文案）
+        if (result.creditsEarned && result.creditsEarned > 0 && !app.globalData.creditsEarningHidden) {
           wx.showModal({
             title: '🎉 恭喜获得奖励',
             content: result.rewardMessage || `设置昵称成功！获得${result.creditsEarned}积分奖励`,
@@ -916,11 +918,10 @@ Page({
           });
           this.setData({ creatingTasks: tasks });
           
-          // 显示订阅成功提示（含积分奖励）
+          // 显示订阅成功提示（积分隐藏时不展示积分文案）
           const reward = result.creditsReward || 0;
-          if (reward > 0) {
+          if (reward > 0 && !app.globalData.creditsEarningHidden) {
             app.showToast(`订阅成功！+${reward}积分`, 'success');
-            // 刷新积分显示
             this.loadUserData();
           } else {
             app.showToast('订阅成功', 'success');

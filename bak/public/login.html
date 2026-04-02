@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>登录 - 一句话游戏</title>
+  <style>
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-tertiary: #1a1a24;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.7);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --accent-primary: #6366f1;
+      --accent-secondary: #8b5cf6;
+      --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      --border-subtle: rgba(255, 255, 255, 0.1);
+      --success: #22c55e;
+      --error: #ef4444;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .login-container {
+      width: 100%;
+      max-width: 400px;
+      background: var(--bg-secondary);
+      border-radius: 20px;
+      padding: 40px 30px;
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+    
+    .login-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .login-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    
+    .login-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    
+    .login-subtitle {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+    
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      color: var(--text-primary);
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+    
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+    
+    .form-input::placeholder {
+      color: var(--text-muted);
+    }
+    
+    .input-with-toggle {
+      position: relative;
+    }
+    
+    .input-with-toggle input {
+      padding-right: 50px;
+    }
+    
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px;
+    }
+    
+    .toggle-password:hover {
+      color: var(--text-secondary);
+    }
+    
+    .btn {
+      width: 100%;
+      padding: 14px 24px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+      background: var(--accent-gradient);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+    }
+    
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-subtle);
+      margin-top: 12px;
+    }
+    
+    .btn-secondary:hover {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+    
+    .divider {
+      display: flex;
+      align-items: center;
+      margin: 24px 0;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+    
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-subtle);
+    }
+    
+    .divider span {
+      padding: 0 12px;
+    }
+    
+    .login-footer {
+      text-align: center;
+      margin-top: 24px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    
+    .login-footer a {
+      color: var(--accent-primary);
+      text-decoration: none;
+    }
+    
+    .login-footer a:hover {
+      text-decoration: underline;
+    }
+    
+    .message {
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      display: none;
+    }
+    
+    .message.error {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #f87171;
+      display: block;
+    }
+    
+    .message.success {
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #4ade80;
+      display: block;
+    }
+    
+    .tips {
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    
+    .tips-title {
+      font-weight: 600;
+      color: var(--accent-primary);
+      margin-bottom: 6px;
+    }
+    
+    @media (max-width: 480px) {
+      .login-container {
+        padding: 30px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-header">
+      <div class="login-icon">🎮</div>
+      <h1 class="login-title">登录账号</h1>
+      <p class="login-subtitle">使用小程序绑定的账号登录</p>
+    </div>
+    
+    <div id="message" class="message"></div>
+    
+    <div class="tips">
+      <div class="tips-title">💡 如何获取账号？</div>
+      <div>在小程序「我的」→「设置」→「绑定网站账号」，设置密码后即可使用账号ID或昵称登录。</div>
+    </div>
+    
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label class="form-label">账号ID或昵称</label>
+        <input type="text" id="account" class="form-input" placeholder="请输入账号ID或昵称" required autocomplete="username">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">密码</label>
+        <div class="input-with-toggle">
+          <input type="password" id="password" class="form-input" placeholder="请输入密码" required autocomplete="current-password">
+          <button type="button" class="toggle-password" onclick="togglePassword()">👁️</button>
+        </div>
+      </div>
+      
+      <button type="submit" id="submitBtn" class="btn btn-primary">登录</button>
+    </form>
+    
+    <div class="divider"><span>或</span></div>
+    
+    <button class="btn btn-secondary" onclick="goHome()">返回首页</button>
+    
+    <div class="login-footer">
+      <p>还没有账号？<a href="javascript:void(0)" onclick="showActivateTips()">在小程序中绑定</a></p>
+    </div>
+  </div>
+  
+  <script>
+    // 检查是否已登录
+    function checkLogin() {
+      const jwt = localStorage.getItem('aigame-jwt');
+      if (jwt) {
+        // 验证JWT有效性
+        fetch('/api/user/verify-jwt', {
+          headers: { 'Authorization': 'Bearer ' + jwt }
+        })
+        .then(r => {
+          // 检查HTTP状态码
+          if (!r.ok) {
+            // JWT无效，清除并保持在登录页面
+            localStorage.removeItem('aigame-jwt');
+            localStorage.removeItem('aigame-user-token');
+            localStorage.removeItem('aigame-account-id');
+            return { success: false };
+          }
+          return r.json();
+        })
+        .then(data => {
+          if (data && data.success) {
+            // 已登录，跳转到返回URL或首页
+            const returnUrl = new URLSearchParams(window.location.search).get('return');
+            window.location.href = returnUrl || '/';
+          }
+        })
+        .catch(() => {
+          // 网络错误，清除JWT
+          localStorage.removeItem('aigame-jwt');
+        });
+      }
+    }
+    
+    // 页面加载时检查登录状态
+    checkLogin();
+    
+    function showMessage(text, type) {
+      const msg = document.getElementById('message');
+      msg.textContent = text;
+      msg.className = 'message ' + type;
+    }
+    
+    function hideMessage() {
+      const msg = document.getElementById('message');
+      msg.className = 'message';
+    }
+    
+    function togglePassword() {
+      const input = document.getElementById('password');
+      const btn = document.querySelector('.toggle-password');
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        btn.textContent = '👁️';
+      }
+    }
+    
+    async function handleLogin(e) {
+      e.preventDefault();
+      hideMessage();
+      
+      const account = document.getElementById('account').value.trim();
+      const password = document.getElementById('password').value;
+      const submitBtn = document.getElementById('submitBtn');
+      
+      if (!account || !password) {
+        showMessage('请输入账号和密码', 'error');
+        return;
+      }
+      
+      submitBtn.disabled = true;
+      submitBtn.textContent = '登录中...';
+      
+      try {
+        const response = await fetch('/api/user/web-login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ account, password })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          // 保存JWT和用户信息
+          localStorage.setItem('aigame-jwt', data.jwt);
+          localStorage.setItem('aigame-user-token', data.user.userToken);
+          localStorage.setItem('aigame-author-token', data.user.userToken);
+          localStorage.setItem('aigame-account-id', data.user.accountId);
+          if (data.user.nickname) {
+            localStorage.setItem('aigame-author-name', data.user.nickname);
+          }
+          
+          // 清除退出标记
+          localStorage.removeItem('aigame-logged-out');
+          
+          showMessage('登录成功，正在同步数据...', 'success');
+          
+          // 同步用户数据
+          await syncUserData(data.user.userToken);
+          
+          showMessage('登录成功，正在跳转...', 'success');
+          
+          // 跳转到首页或之前的页面
+          setTimeout(() => {
+            const returnUrl = new URLSearchParams(window.location.search).get('return');
+            window.location.href = returnUrl || '/';
+          }, 800);
+        } else {
+          showMessage(data.error || '登录失败', 'error');
+        }
+      } catch (error) {
+        showMessage('网络错误，请稍后重试', 'error');
+        console.error('Login error:', error);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '登录';
+      }
+    }
+    
+    function goHome() {
+      window.location.href = '/';
+    }
+    
+    function showActivateTips() {
+      showMessage('请在小程序「我的」→「设置」→「绑定网站账号」，复制链接到浏览器打开并设置密码。', 'success');
+    }
+    
+    // 同步用户数据（点赞、收藏列表）
+    async function syncUserData(userToken) {
+      try {
+        // 并行请求点赞和收藏列表
+        const [likesRes, favoritesRes] = await Promise.all([
+          fetch('/api/my-likes', { headers: { 'X-User-Token': userToken } }).then(r => r.json()).catch(() => ({ success: false })),
+          fetch('/api/my-favorites', { headers: { 'X-User-Token': userToken } }).then(r => r.json()).catch(() => ({ success: false }))
+        ]);
+        
+        // 缓存点赞的游戏ID列表
+        if (likesRes.success && likesRes.games) {
+          const likedIds = likesRes.games.map(g => g.id);
+          localStorage.setItem('aigame-liked-games', JSON.stringify(likedIds));
+          console.log('[同步] 点赞游戏:', likedIds.length, '个');
+        }
+        
+        // 缓存收藏的游戏ID列表
+        if (favoritesRes.success && favoritesRes.games) {
+          const favoritedIds = favoritesRes.games.map(g => g.id);
+          localStorage.setItem('aigame-favorited-games', JSON.stringify(favoritedIds));
+          console.log('[同步] 收藏游戏:', favoritedIds.length, '个');
+        }
+        
+        console.log('[同步] 用户数据同步完成');
+      } catch (error) {
+        console.error('[同步] 数据同步失败:', error);
+        // 同步失败不影响登录
+      }
+    }
+  </script>
+</body>
+</html>

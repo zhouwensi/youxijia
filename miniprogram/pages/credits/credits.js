@@ -129,10 +129,19 @@ Page({
       remainingToday: 0           // 今日剩余次数
     },
     adLoading: false,              // 广告加载状态
-    rewardedVideoAd: null         // 激励视频广告实例
+    rewardedVideoAd: null,        // 激励视频广告实例
+    creditsEarningLimited: true   // 仅保留签到/看广告/关注公众号时为 true，用于隐藏其余入口
   },
 
   onLoad(options) {
+    // 积分获得途径已全局隐藏时，直接跳转创作页（不展示任何“未开放”提示）
+    if (app.globalData.creditsEarningHidden === true) {
+      wx.redirectTo({ url: '/pages/create/create' });
+      return;
+    }
+    this.setData({
+      creditsEarningLimited: app.globalData.creditsEarningLimited !== false
+    });
     // 处理邀请码参数（被邀请者通过分享链接进入）
     if (options.ref) {
       this.handleInviteRef(options.ref);
@@ -172,6 +181,9 @@ Page({
   },
 
   onShow() {
+    this.setData({
+      creditsEarningLimited: app.globalData.creditsEarningLimited !== false
+    });
     this.loadAllData();
   },
 
@@ -335,8 +347,12 @@ Page({
           actionClaimableCredits: result.data.total_claimable || 0
         });
         
-        // 更新智能贴士（文档6.1节底部设计）
-        this.updateSmartTip(result.data.rewards || []);
+        // 限制模式下不显示「再XX次即可领取」类智能贴士（避免出现创作/编辑/邀请等）
+        if (this.data.creditsEarningLimited) {
+          this.setData({ 'smartTip.show': false });
+        } else {
+          this.updateSmartTip(result.data.rewards || []);
+        }
       }
     } catch (err) {
       console.error('加载互动奖励失败:', err);

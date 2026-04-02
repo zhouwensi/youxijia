@@ -1,0 +1,3134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#080810">
+  <!-- 微信分享相关 -->
+  <meta name="description" content="用一句话描述，AI帮你生成可玩的小游戏！未来科技，一触即发！">
+  <meta property="og:title" content="" id="og-title">
+  <meta property="og:description" content="用一句话描述，AI帮你生成可玩的小游戏！未来科技，一触即发！">
+  <meta property="og:type" content="website">
+  <title>加载中...</title>
+  <script>
+    // 尽早加载站点配置，动态设置标题和品牌名称
+    (function() {
+      fetch('/api/site-config')
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            const siteName = data.siteName || '一句话游戏';
+            const siteSlogan = data.siteSlogan || '一句话生成游戏';
+            const fullTitle = siteName + ' - ' + siteSlogan;
+            document.title = fullTitle;
+            const ogTitle = document.getElementById('og-title');
+            if (ogTitle) ogTitle.setAttribute('content', fullTitle);
+            // 页面加载完成后更新品牌名称
+            document.addEventListener('DOMContentLoaded', function() {
+              document.querySelectorAll('.brand-name').forEach(function(el) {
+                el.textContent = siteName;
+              });
+            });
+          }
+        })
+        .catch(function() {
+          document.title = '一句话游戏 - 一句话生成游戏';
+        });
+    })();
+  </script>
+  <!-- 科技字体 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+  
+  <!-- 搜索面板样式 -->
+  <style>
+    /* 顶部搜索栏 */
+    .home-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: linear-gradient(180deg, rgba(10, 14, 20, 0.98) 0%, rgba(10, 14, 20, 0.9) 100%);
+      border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .top-bar-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-logo {
+      font-size: 24px;
+    }
+    .brand-name {
+      font-size: 18px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #00d4ff, #7b68ee);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .search-trigger-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .search-trigger-btn:hover,
+    .search-trigger-btn:active {
+      background: rgba(0, 212, 255, 0.15);
+      border-color: rgba(0, 212, 255, 0.4);
+    }
+    .search-trigger-btn svg {
+      color: rgba(255, 255, 255, 0.8);
+    }
+    
+    /* 顶部栏右侧区域 */
+    .top-bar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    /* 登录按钮 */
+    .login-btn {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      border: none;
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .login-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+    }
+    
+    /* 用户状态按钮 */
+    .user-btn {
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 120px;
+    }
+    .user-btn:hover {
+      background: rgba(99, 102, 241, 0.25);
+      border-color: rgba(99, 102, 241, 0.5);
+    }
+    .user-btn .user-avatar {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+    .user-btn .user-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 70px;
+    }
+    
+    /* 登录提示 Toast */
+    .login-toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(20, 20, 30, 0.95);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 10000;
+      opacity: 0;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+    .login-toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    .login-toast-text {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 14px;
+    }
+    .login-toast-btn {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      border: none;
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 16px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .login-toast-btn:hover {
+      filter: brightness(1.1);
+    }
+
+    /* 搜索面板 - 全屏覆盖 */
+    .search-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(180deg, #0a0e14 0%, #0d1520 50%, #0a0e14 100%);
+      z-index: 1000;
+      transform: translateX(100%);
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .search-panel.active {
+      transform: translateX(0);
+    }
+    
+    /* 搜索头部 */
+    .search-panel-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: rgba(0, 0, 0, 0.6);
+      border-bottom: 1px solid rgba(0, 255, 255, 0.15);
+      position: relative;
+      z-index: 10;
+    }
+    .search-back-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      padding: 8px;
+      cursor: pointer;
+      border-radius: 50%;
+      transition: all 0.2s;
+      z-index: 10;
+      position: relative;
+      min-width: 40px;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .search-back-btn:hover,
+    .search-back-btn:active {
+      background: rgba(255, 255, 255, 0.15);
+    }
+    .search-input-wrapper {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      border: none;
+      outline: none;
+      box-shadow: none;
+    }
+    .search-input-icon {
+      position: absolute;
+      left: 12px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+    #search-input {
+      width: 100%;
+      padding: 10px 40px 10px 40px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(0, 255, 255, 0.2);
+      border-radius: 20px;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+      box-shadow: none;
+      -webkit-appearance: none;
+    }
+    #search-input:focus {
+      border-color: rgba(0, 255, 255, 0.5);
+    }
+    #search-input::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+    }
+    .search-clear-btn {
+      position: absolute;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: #fff;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .search-submit-btn {
+      background: linear-gradient(135deg, #00d4ff, #0099cc);
+      border: none;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 20px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .search-submit-btn:active {
+      transform: scale(0.95);
+    }
+    
+    /* 搜索内容区 */
+    .search-default-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .search-section {
+      margin-bottom: 24px;
+    }
+    .search-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .section-title.hot-title {
+      background: linear-gradient(90deg, #ff6b6b, #ffa502, #ff6b6b);
+      background-size: 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: hotGradient 2s ease infinite;
+    }
+    @keyframes hotGradient {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    .section-action {
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 13px;
+      cursor: pointer;
+    }
+    
+    /* 搜索历史标签 */
+    .search-history-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .history-tag {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.8);
+      padding: 8px 16px;
+      border-radius: 18px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .history-tag:hover, .history-tag:active {
+      background: rgba(0, 255, 255, 0.15);
+      border-color: rgba(0, 255, 255, 0.4);
+    }
+    
+    /* 猜你想搜 */
+    .search-suggest-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .suggest-tag {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+      border: 1px solid rgba(102, 126, 234, 0.3);
+      color: #a8b4e0;
+      padding: 10px 8px;
+      border-radius: 10px;
+      font-size: 14px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .suggest-tag:hover, .suggest-tag:active {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.35), rgba(118, 75, 162, 0.35));
+      transform: translateY(-2px);
+    }
+    
+    /* 热搜榜 */
+    .search-hot-list {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 100, 100, 0.2);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .hot-item {
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .hot-item:last-child {
+      border-bottom: none;
+    }
+    .hot-item:hover, .hot-item:active {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .hot-rank {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+      margin-right: 14px;
+      border-radius: 6px;
+    }
+    .hot-rank.rank-1 {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+      color: #fff;
+    }
+    .hot-rank.rank-2 {
+      background: linear-gradient(135deg, #ffa502, #ff9f43);
+      color: #fff;
+    }
+    .hot-rank.rank-3 {
+      background: linear-gradient(135deg, #a29bfe, #6c5ce7);
+      color: #fff;
+    }
+    .hot-rank.rank-other {
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.6);
+    }
+    .hot-info {
+      flex: 1;
+    }
+    .hot-title {
+      color: #fff;
+      font-size: 15px;
+      font-weight: 500;
+    }
+    .hot-meta {
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 12px;
+      margin-top: 3px;
+    }
+    .hot-badge {
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+    .hot-badge.hot {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+      color: #fff;
+    }
+    .hot-badge.new {
+      background: linear-gradient(135deg, #ffa502, #ff9f43);
+      color: #fff;
+    }
+    
+    /* 搜索结果 */
+    .search-results {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+    }
+    .search-results.active {
+      display: flex;
+    }
+    .search-results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .results-count {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 14px;
+    }
+    .results-close-btn {
+      background: none;
+      border: none;
+      color: #00d4ff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .search-results-list {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-auto-rows: min-content;
+      gap: 12px;
+      align-content: start;
+      min-height: 0;
+    }
+    /* 搜索结果卡片 - 与主页保持一致的横向布局 */
+    .result-card {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .result-card:active {
+      transform: scale(0.98);
+    }
+    .result-card:hover {
+      border-color: #6366f1;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .result-card-cover {
+      display: none;
+    }
+    .result-card-placeholder {
+      font-size: 1.5rem;
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+    .result-card-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+      overflow: hidden;
+      padding: 0;
+      background: none;
+    }
+    .result-card-title {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.3;
+    }
+    .result-card-author {
+      font-size: 0.6875rem;
+      color: #64748b;
+      margin-top: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .result-card-stats {
+      display: flex;
+      gap: 0.5rem;
+      font-size: 0.625rem;
+      color: #64748b;
+      flex-wrap: nowrap;
+      margin-top: 0;
+    }
+    .result-card-stats span {
+      display: flex;
+      align-items: center;
+      gap: 0.125rem;
+      white-space: nowrap;
+    }
+    .search-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 40px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+    .loading-spinner-small {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(0, 255, 255, 0.2);
+      border-top-color: #00d4ff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .search-no-results {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+    .search-no-results svg {
+      width: 60px;
+      height: 60px;
+      margin-bottom: 16px;
+      opacity: 0.3;
+    }
+    
+    /* 阻止body滚动 */
+    body.modal-open {
+      overflow: hidden;
+    }
+    
+    /* 确保搜索面板所有子元素可点击 */
+    .search-panel * {
+      pointer-events: auto;
+    }
+    
+    /* ========== 作者榜单样式 ========== */
+    
+    /* 首页榜单入口卡片 - 显示前3名 */
+    .leaderboard-entry-section {
+      margin-bottom: 20px;
+    }
+    .leaderboard-preview-cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .leaderboard-preview-card {
+      background: linear-gradient(145deg, rgba(99, 102, 241, 0.12), rgba(139, 92, 246, 0.08));
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: 14px;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+    .leaderboard-preview-card:hover,
+    .leaderboard-preview-card:active {
+      background: linear-gradient(145deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.15));
+      transform: translateY(-2px);
+    }
+    .leaderboard-preview-card.newstar {
+      background: linear-gradient(145deg, rgba(251, 191, 36, 0.12), rgba(245, 158, 11, 0.08));
+      border-color: rgba(251, 191, 36, 0.25);
+    }
+    .leaderboard-preview-card.newstar:hover {
+      background: linear-gradient(145deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.15));
+    }
+    .lp-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .lp-icon {
+      font-size: 20px;
+    }
+    .lp-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .lp-top3 {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .lp-top3-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      pointer-events: none; /* 让事件穿透到父卡片 */
+    }
+    .lp-rank {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    .lp-rank.rank-1 { background: linear-gradient(135deg, #ffd700, #ffaa00); color: #000; }
+    .lp-rank.rank-2 { background: linear-gradient(135deg, #c0c0c0, #a0a0a0); color: #000; }
+    .lp-rank.rank-3 { background: linear-gradient(135deg, #cd7f32, #b5651d); color: #fff; }
+    .lp-nickname {
+      flex: 1;
+      color: rgba(255,255,255,0.85);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .lp-value {
+      color: rgba(255,255,255,0.5);
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+    .lp-loading {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      text-align: center;
+      padding: 8px 0;
+    }
+    
+    /* 榜单页面 - 全屏覆盖 */
+    #leaderboard-page {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(180deg, #0a0e14 0%, #0d1520 100%);
+      z-index: 1000;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    #leaderboard-page.active {
+      display: block;
+    }
+    .leaderboard-tabs {
+      display: flex;
+      gap: 6px;
+      padding: 12px 16px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .leaderboard-tabs::-webkit-scrollbar {
+      display: none;
+    }
+    .lb-tab {
+      flex-shrink: 0;
+      padding: 8px 14px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      color: rgba(255,255,255,0.7);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .lb-tab.active {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-color: transparent;
+      color: #fff;
+    }
+    .lb-tab.newstar {
+      background: rgba(251, 191, 36, 0.1);
+      border-color: rgba(251, 191, 36, 0.3);
+    }
+    .lb-tab.newstar.active {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    }
+    
+    /* 周期选择 */
+    .leaderboard-period-tabs {
+      display: flex;
+      gap: 8px;
+      padding: 0 16px 12px;
+    }
+    .period-tab {
+      padding: 6px 12px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px;
+      color: rgba(255,255,255,0.6);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .period-tab.active {
+      background: rgba(0, 212, 255, 0.15);
+      border-color: rgba(0, 212, 255, 0.4);
+      color: #00d4ff;
+    }
+    
+    /* 我的排名 */
+    .my-rank-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: linear-gradient(90deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1));
+      border-top: 1px solid rgba(99, 102, 241, 0.2);
+      border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+    }
+    .my-rank-label {
+      color: rgba(255,255,255,0.7);
+      font-size: 13px;
+    }
+    .my-rank-value {
+      color: #a5b4fc;
+      font-size: 15px;
+      font-weight: 600;
+    }
+    
+    /* 榜单列表 */
+    .leaderboard-list-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px 20px;
+    }
+    .leaderboard-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    /* 修复榜单item上鼠标滚动问题 - 允许滚动穿透 */
+    .lb-item {
+      touch-action: pan-y;
+    }
+    
+    /* 用户主页弹窗账号样式 */
+    .user-profile-account {
+      font-size: 12px;
+      color: #888;
+      margin-top: 2px;
+    }
+    
+    /* 用户主页作品滚动容器 */
+    .user-games-scroll-container {
+      max-height: 300px;
+      overflow-y: auto;
+      padding-right: 5px;
+    }
+    .user-games-scroll-container::-webkit-scrollbar {
+      width: 4px;
+    }
+    .user-games-scroll-container::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.2);
+      border-radius: 2px;
+    }
+    .user-games-load-more {
+      text-align: center;
+      padding: 12px;
+      color: #888;
+      font-size: 12px;
+    }
+    
+    .lb-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .lb-item:hover {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(99, 102, 241, 0.3);
+    }
+    /* 榜单容器允许滚动 */
+    .leaderboard-list-container {
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
+    }
+    .lb-rank {
+      width: 32px;
+      text-align: center;
+      font-weight: 600;
+    }
+    .lb-rank.top1 { color: #ffd700; font-size: 20px; }
+    .lb-rank.top2 { color: #c0c0c0; font-size: 18px; }
+    .lb-rank.top3 { color: #cd7f32; font-size: 16px; }
+    .lb-rank.normal { color: rgba(255,255,255,0.4); font-size: 14px; }
+    .lb-avatar {
+      font-size: 32px;
+      width: 40px;
+      text-align: center;
+    }
+    .lb-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .lb-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .lb-account {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+    }
+    .lb-value {
+      text-align: right;
+    }
+    .lb-value-num {
+      font-size: 16px;
+      font-weight: 600;
+      color: #a5b4fc;
+    }
+    .lb-value-label {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+    }
+    
+    /* 新星榜特殊样式 */
+    .lb-item.newstar-item {
+      background: linear-gradient(145deg, rgba(251, 191, 36, 0.05), transparent);
+      border-color: rgba(251, 191, 36, 0.15);
+    }
+    .lb-item.newstar-item .lb-value-num {
+      color: #fbbf24;
+    }
+    
+    /* 空状态 */
+    .lb-empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: rgba(255,255,255,0.4);
+    }
+    .lb-empty-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+    .lb-empty-text {
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="app-layout">
+    <!-- 内测提示横幅 -->
+    <div class="beta-banner" id="beta-banner">
+      <span class="beta-icon">🧪</span>
+      <span class="beta-text">内测版本 - 有问题或建议欢迎反馈</span>
+      <button class="beta-close">×</button>
+    </div>
+    
+    <!-- 主页内容 -->
+    <div id="home-page" class="page active">
+      <!-- 顶部搜索栏 -->
+      <div class="home-top-bar">
+        <div class="top-bar-brand">
+          <span class="brand-logo">🤖</span>
+          <span class="brand-name">一句话游戏</span>
+        </div>
+        <div class="top-bar-actions">
+          <button class="search-trigger-btn" onclick="openSearchPanel()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="M21 21l-4.35-4.35"></path>
+            </svg>
+          </button>
+          <!-- 用户入口已移至底部"我的"按钮 -->
+        </div>
+      </div>
+      
+      <!-- 登录提示 Toast -->
+      <div id="login-toast" class="login-toast">
+        <span class="login-toast-text" id="login-toast-text">🔐 登录后可进行此操作</span>
+        <button class="login-toast-btn" onclick="goToLogin()">去登录</button>
+      </div>
+      
+      <!-- 下拉刷新指示器 -->
+      <div class="pull-refresh-indicator" id="pull-refresh-indicator">
+        <div class="pull-refresh-icon">↓</div>
+        <span class="pull-refresh-text">下拉刷新</span>
+      </div>
+      <!-- 主内容区 -->
+      <main class="main-content" id="main-content">
+        <!-- Hero 创作区域 -->
+        <section class="hero">
+          <div class="hero-content">
+            <h1>🎮 一句话生成游戏</h1>
+            <p class="hero-subtitle">描述你想要的游戏，AI 帮你实现</p>
+            <div class="generate-form">
+              <div class="input-wrapper">
+                <textarea id="prompt-input" placeholder="例如：贪吃蛇、2048、飞机大战..." maxlength="500" rows="2"></textarea>
+                <button class="btn btn-primary btn-generate" onclick="generateGame()">
+                  <span class="btn-text">✨ 生成</span>
+                  <span class="btn-loading">
+                    <svg class="spinner" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="60" stroke-dashoffset="20"></circle>
+                    </svg>
+                  </span>
+                </button>
+              </div>
+              <div class="quick-prompts">
+                <button class="chip" onclick="setPrompt('贪吃蛇')">🐍 贪吃蛇</button>
+                <button class="chip" onclick="setPrompt('2048')">🔢 2048</button>
+                <button class="chip" onclick="setPrompt('俄罗斯方块')">🧱 方块</button>
+                <button class="chip" onclick="setPrompt('打砖块')">🎯 打砖块</button>
+                <button class="chip" onclick="setPrompt('飞机大战')">🚀 飞机大战</button>
+                <button class="chip" onclick="setPrompt('翻牌配对')">🃏 翻牌</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 作者榜单入口 -->
+        <section class="home-section leaderboard-entry-section" id="section-leaderboard-entry">
+          <div class="section-header">
+            <h3 class="section-title">🏆 作者榜单</h3>
+            <button class="btn-more" onclick="openLeaderboardPage()">查看全部 →</button>
+          </div>
+          <div class="leaderboard-preview-cards">
+            <div class="leaderboard-preview-card" onclick="openLeaderboardPage('fans')">
+              <div class="lp-header">
+                <span class="lp-icon">👥</span>
+                <span class="lp-title">粉丝榜</span>
+              </div>
+              <div class="lp-top3" id="lp-fans-top3">
+                <div class="lp-loading">加载中...</div>
+              </div>
+            </div>
+            <div class="leaderboard-preview-card" onclick="openLeaderboardPage('works')">
+              <div class="lp-header">
+                <span class="lp-icon">📚</span>
+                <span class="lp-title">作品榜</span>
+              </div>
+              <div class="lp-top3" id="lp-works-top3">
+                <div class="lp-loading">加载中...</div>
+              </div>
+            </div>
+            <div class="leaderboard-preview-card" onclick="openLeaderboardPage('popularity')">
+              <div class="lp-header">
+                <span class="lp-icon">🔥</span>
+                <span class="lp-title">人气榜</span>
+              </div>
+              <div class="lp-top3" id="lp-popularity-top3">
+                <div class="lp-loading">加载中...</div>
+              </div>
+            </div>
+            <div class="leaderboard-preview-card newstar" onclick="openLeaderboardPage('newstar')">
+              <div class="lp-header">
+                <span class="lp-icon">⭐</span>
+                <span class="lp-title">新星榜</span>
+              </div>
+              <div class="lp-top3" id="lp-newstar-top3">
+                <div class="lp-loading">加载中...</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 首页游戏分类展示 -->
+        <div class="home-sections">
+          <!-- 最新游戏 -->
+          <section class="home-section" id="section-recent">
+            <div class="section-header">
+              <h3 class="section-title">🆕 最新</h3>
+              <button class="btn-more" onclick="showMoreGames('recent')">更多 →</button>
+            </div>
+            <div class="games-grid-home" id="list-recent">
+              <!-- 动态加载 -->
+            </div>
+          </section>
+
+          <!-- 推荐游戏 -->
+          <section class="home-section" id="section-featured">
+            <div class="section-header">
+              <h3 class="section-title">✨ 推荐</h3>
+              <button class="btn-more" onclick="showMoreGames('featured')">更多 →</button>
+            </div>
+            <div class="games-grid-home" id="list-featured">
+              <!-- 动态加载 -->
+            </div>
+          </section>
+
+          <!-- 热门游戏 -->
+          <section class="home-section" id="section-hot">
+            <div class="section-header">
+              <h3 class="section-title">🔥 热门</h3>
+              <button class="btn-more" onclick="showMoreGames('hot')">更多 →</button>
+            </div>
+            <div class="games-grid-home" id="list-hot">
+              <!-- 动态加载 -->
+            </div>
+          </section>
+
+          <!-- 点赞榜 -->
+          <section class="home-section" id="section-likes">
+            <div class="section-header">
+              <h3 class="section-title">❤️ 点赞</h3>
+              <button class="btn-more" onclick="showMoreGames('likes')">更多 →</button>
+            </div>
+            <div class="games-grid-home" id="list-likes">
+              <!-- 动态加载 -->
+            </div>
+          </section>
+
+          <!-- 收藏榜 -->
+          <section class="home-section" id="section-favorites">
+            <div class="section-header">
+              <h3 class="section-title">⭐ 收藏</h3>
+              <button class="btn-more" onclick="showMoreGames('favorites')">更多 →</button>
+            </div>
+            <div class="games-grid-home" id="list-favorites">
+              <!-- 动态加载 -->
+            </div>
+          </section>
+
+          <!-- 评论榜 -->
+          <section class="home-section" id="section-comments">
+            <div class="section-header">
+              <h3 class="section-title">💬 评论</h3>
+              <button class="btn-more" onclick="showMoreGames('comments')">更多 →</button>
+            </div>
+            <div class="games-grid-home" id="list-comments">
+              <!-- 动态加载 -->
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- 创作页面（独立页面） -->
+    <div id="create-page" class="page">
+      <div class="page-header">
+        <h2>✨ 创作游戏</h2>
+      </div>
+      <div class="create-page-body">
+        <div class="create-hero">
+          <div class="create-icon-large">🎮</div>
+          <h3>用一句话描述你的游戏</h3>
+          <p>AI 将为你生成可玩的 HTML5 游戏</p>
+        </div>
+        <!-- 滚动Tips -->
+        <div class="create-tips-banner">
+          <span class="tips-icon">💡</span>
+          <span class="tips-text" id="create-tips-text">描述越具体，游戏越精确！</span>
+        </div>
+        <div class="create-input-area">
+          <textarea 
+            id="create-page-input" 
+            placeholder="例如：贪吃蛇、飞机大战、打砖块..."
+            maxlength="500"
+            rows="3"
+          ></textarea>
+          <!-- 高级设置切换 -->
+          <button class="btn-advanced-toggle" id="btn-advanced-toggle" onclick="toggleAdvancedSettings()">
+            <span class="toggle-icon">⚙️</span>
+            <span class="toggle-text">高级设置</span>
+            <span class="toggle-arrow" id="advanced-arrow">▼</span>
+          </button>
+          <!-- 高级设置面板 -->
+          <div class="advanced-settings-panel" id="advanced-settings-panel" style="display:none;">
+            <div class="advanced-settings-grid">
+              <!-- 游戏名称 -->
+              <div class="setting-group">
+                <label>🏷️ 游戏名称</label>
+                <input type="text" id="adv-game-name" placeholder="留空则自动生成" maxlength="50">
+              </div>
+              <!-- 游戏类型 -->
+              <div class="setting-group">
+                <label>🎮 游戏类型</label>
+                <select id="adv-game-type">
+                  <option value="">自动识别</option>
+                  <option value="action">动作游戏</option>
+                  <option value="puzzle">益智解谜</option>
+                  <option value="arcade">街机休闲</option>
+                  <option value="strategy">策略经营</option>
+                  <option value="adventure">冒险探索</option>
+                  <option value="sports">体育竞技</option>
+                  <option value="shooting">射击游戏</option>
+                  <option value="card">卡牌棋牌</option>
+                </select>
+              </div>
+              <!-- 画风 -->
+              <div class="setting-group">
+                <label>🎨 画风风格</label>
+                <select id="adv-art-style">
+                  <option value="">默认</option>
+                  <option value="pixel">像素复古</option>
+                  <option value="cartoon">卡通可爱</option>
+                  <option value="minimalist">简约极简</option>
+                  <option value="neon">霓虹赛博</option>
+                  <option value="handdrawn">手绘涂鸦</option>
+                  <option value="realistic">写实风格</option>
+                  <option value="retro">复古怀旧</option>
+                  <option value="dark">暗黑哥特</option>
+                </select>
+              </div>
+              <!-- 屏幕方向 -->
+              <div class="setting-group">
+                <label>📱 屏幕方向</label>
+                <select id="adv-orientation">
+                  <option value="">自适应</option>
+                  <option value="portrait">竖屏优先</option>
+                  <option value="landscape">横屏优先</option>
+                </select>
+              </div>
+              <!-- 目标平台 -->
+              <div class="setting-group">
+                <label>💻 目标平台</label>
+                <select id="adv-platform">
+                  <option value="">全平台</option>
+                  <option value="mobile">移动端优先</option>
+                  <option value="desktop">桌面端优先</option>
+                  <option value="touch">纯触屏</option>
+                </select>
+              </div>
+              <!-- 游戏难度 -->
+              <div class="setting-group">
+                <label>📊 游戏难度</label>
+                <select id="adv-difficulty">
+                  <option value="">适中</option>
+                  <option value="easy">简单轻松</option>
+                  <option value="hard">困难挑战</option>
+                  <option value="progressive">渐进式</option>
+                </select>
+              </div>
+              <!-- 音效 -->
+              <div class="setting-group">
+                <label>🔊 音效设置</label>
+                <select id="adv-sound">
+                  <option value="">无音效</option>
+                  <option value="basic">基础音效</option>
+                  <option value="rich">丰富音效</option>
+                </select>
+              </div>
+              <!-- 可见性 -->
+              <div class="setting-group">
+                <label>👁️ 可见范围</label>
+                <select id="adv-visibility">
+                  <option value="public">🌍 所有人可见</option>
+                  <option value="followers">👥 仅粉丝可见</option>
+                  <option value="private">🔒 仅自己可见</option>
+                </select>
+              </div>
+              <!-- 色调 -->
+              <div class="setting-group">
+                <label>🌈 主色调</label>
+                <select id="adv-color-theme">
+                  <option value="">自动</option>
+                  <option value="dark">深色主题</option>
+                  <option value="light">浅色主题</option>
+                  <option value="colorful">多彩鲜艳</option>
+                  <option value="pastel">柔和淡雅</option>
+                </select>
+              </div>
+              <!-- AI模型 -->
+              <div class="setting-group">
+                <label>🤖 AI模型</label>
+                <select id="adv-llm-model" onchange="onAdvModelChange()">
+                  <option value="">加载中...</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-create-generate btn-generate" id="btn-create-generate" onclick="generateFromCreatePage()">
+            <span class="btn-text">✨ 开始生成</span>
+            <span class="btn-loading">
+              <svg class="spinner" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="60" stroke-dashoffset="20"></circle>
+              </svg>
+            </span>
+          </button>
+        </div>
+        <div class="create-quick-section">
+          <p class="quick-label">💡 热门游戏：</p>
+          <div class="quick-chips-large">
+            <button class="chip-large" onclick="setCreatePrompt('贪吃蛇')">🐍 贪吃蛇</button>
+            <button class="chip-large" onclick="setCreatePrompt('2048')">🔢 2048</button>
+            <button class="chip-large" onclick="setCreatePrompt('俄罗斯方块')">🧱 方块</button>
+            <button class="chip-large" onclick="setCreatePrompt('打砖块')">🎯 打砖块</button>
+            <button class="chip-large" onclick="setCreatePrompt('飞机大战')">🚀 飞机大战</button>
+            <button class="chip-large" onclick="setCreatePrompt('翻牌配对')">🃏 翻牌</button>
+            <button class="chip-large" onclick="setCreatePrompt('Flappy Bird')">🐦 小鸟</button>
+            <button class="chip-large" onclick="setCreatePrompt('跑酷游戏')">🏃 跑酷</button>
+          </div>
+        </div>
+        <div class="create-credits-info">
+          <span class="credits-icon">💎</span>
+          <span>剩余 <strong id="create-credits-count">0</strong> 次生成机会</span>
+          <a href="javascript:openCreditsModal()">获取更多</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 我的页面（独立页面） -->
+    <div id="profile-page" class="page">
+      <!-- 下拉刷新指示器 -->
+      <div class="pull-refresh-indicator" id="profile-pull-refresh-indicator">
+        <div class="pull-refresh-icon">↓</div>
+        <span class="pull-refresh-text">下拉刷新</span>
+      </div>
+      <div class="page-header profile-page-header">
+        <!-- 设置按钮 -->
+        <button class="profile-settings-btn visible" id="profile-settings-btn" onclick="openProfileSettings()" title="设置">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+        <div class="profile-user-section">
+          <div class="profile-avatar-large">👤</div>
+          <div class="profile-user-details">
+            <h2 id="profile-page-username">游戏创作者</h2>
+            <div class="profile-account-id" id="profile-page-account-id" onclick="copyAccountId()"></div>
+            <div class="profile-mini-stats">
+              <span class="stat-clickable" onclick="showMoreGames('my-games')">🎮 <strong id="profile-page-games">0</strong> 作品</span>
+              <span class="stat-clickable" onclick="showMoreGames('my-likes')">❤️ <strong id="profile-page-likes">0</strong> 点赞</span>
+              <span class="stat-clickable" onclick="openCreditsModal()">💎 <strong id="profile-page-credits">0</strong> 积分</span>
+            </div>
+            <div class="profile-follow-stats">
+              <span class="follow-stat-item" onclick="openFollowModal('following')">
+                <strong id="profile-page-following">0</strong> 关注
+              </span>
+              <span class="follow-stat-divider">|</span>
+              <span class="follow-stat-item" onclick="openFollowModal('followers')">
+                <strong id="profile-page-followers">0</strong> 粉丝
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- 竖向标签布局 - 每个标签占一行 -->
+      <div class="profile-sections-vertical">
+        <!-- 我的作品 -->
+        <div class="profile-section-row">
+          <div class="profile-section-header-v">
+            <span class="section-icon">🎨</span>
+            <span class="section-title">我的作品</span>
+            <button class="btn-more-header" id="profile-games-more" onclick="showMoreGames('my-games')" style="display:none;">更多 →</button>
+            <span class="section-count" id="section-count-games">0</span>
+          </div>
+          <div class="profile-horizontal-scroll">
+            <div class="profile-horizontal-list" id="profile-games-list">
+              <div class="loading-games">加载中...</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 我的点赞 -->
+        <div class="profile-section-row">
+          <div class="profile-section-header-v">
+            <span class="section-icon">❤️</span>
+            <span class="section-title">我的点赞</span>
+            <button class="btn-more-header" id="profile-likes-more" onclick="showMoreGames('my-likes')" style="display:none;">更多 →</button>
+            <span class="section-count" id="section-count-likes">0</span>
+          </div>
+          <div class="profile-horizontal-scroll">
+            <div class="profile-horizontal-list" id="profile-likes-list">
+              <div class="loading-games">加载中...</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 我的收藏 -->
+        <div class="profile-section-row">
+          <div class="profile-section-header-v">
+            <span class="section-icon">⭐</span>
+            <span class="section-title">我的收藏</span>
+            <button class="btn-more-header" id="profile-favs-more" onclick="showMoreGames('my-favs')" style="display:none;">更多 →</button>
+            <span class="section-count" id="section-count-favs">0</span>
+          </div>
+          <div class="profile-horizontal-scroll">
+            <div class="profile-horizontal-list" id="profile-favs-list">
+              <div class="loading-games">加载中...</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 我的评论 -->
+        <div class="profile-section-row">
+          <div class="profile-section-header-v">
+            <span class="section-icon">💬</span>
+            <span class="section-title">我的评论</span>
+            <button class="btn-more-header" id="profile-comments-more" onclick="showMoreComments()" style="display:none;">更多 →</button>
+            <span class="section-count" id="section-count-comments">0</span>
+          </div>
+          <div class="profile-comments-scroll">
+            <div class="profile-comments-list" id="profile-comments-list">
+              <div class="loading-games">加载中...</div>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <nav class="bottom-nav" id="bottom-nav">
+      <button class="nav-item active" data-nav="home" onclick="switchBottomNav('home')">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">首页</span>
+      </button>
+      <button class="nav-item nav-create" data-nav="create" onclick="switchBottomNav('create')">
+        <span class="nav-icon-create">✨</span>
+        <span class="nav-label">创作</span>
+      </button>
+      <button class="nav-item" data-nav="profile" onclick="switchBottomNav('profile')">
+        <span class="nav-icon">👤</span>
+        <span class="nav-label">我的</span>
+      </button>
+    </nav>
+
+    <!-- 作者榜单页面 -->
+    <div id="leaderboard-page" class="page">
+      <div class="list-page-header">
+        <button class="btn btn-back" onclick="closeLeaderboardPage()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M19 12H5M12 19l-7-7 7-7"></path>
+          </svg>
+        </button>
+        <h2 id="leaderboard-page-title">🏆 作者榜单</h2>
+        <div class="list-page-actions"></div>
+      </div>
+      
+      <!-- 榜单类型选择 -->
+      <div class="leaderboard-tabs">
+        <button class="lb-tab active" data-type="fans" onclick="switchLeaderboardType('fans')">👥 粉丝</button>
+        <button class="lb-tab" data-type="works" onclick="switchLeaderboardType('works')">📚 作品</button>
+        <button class="lb-tab" data-type="popularity" onclick="switchLeaderboardType('popularity')">🔥 人气</button>
+        <button class="lb-tab" data-type="credits" onclick="switchLeaderboardType('credits')">💎 积分</button>
+        <button class="lb-tab newstar" data-type="newstar" onclick="switchLeaderboardType('newstar')">⭐ 新星</button>
+      </div>
+      
+      <!-- 周期选择 -->
+      <div class="leaderboard-period-tabs" id="leaderboard-period-tabs">
+        <button class="period-tab active" data-period="all" onclick="switchLeaderboardPeriod('all')">总榜</button>
+        <button class="period-tab" data-period="week" onclick="switchLeaderboardPeriod('week')">周榜</button>
+        <button class="period-tab" data-period="month" onclick="switchLeaderboardPeriod('month')">月榜</button>
+      </div>
+      
+      <!-- 我的排名 -->
+      <div class="my-rank-bar" id="my-rank-bar" style="display:none;">
+        <span class="my-rank-label">我的排名</span>
+        <span class="my-rank-value" id="my-rank-value">-</span>
+      </div>
+      
+      <!-- 榜单列表 -->
+      <div class="leaderboard-list-container">
+        <div class="leaderboard-list" id="leaderboard-list">
+          <!-- 动态加载 -->
+        </div>
+        <div class="list-loading-more" id="lb-loading-more" style="display:none;">
+          <div class="loading-spinner-small"></div>
+          <span>加载中...</span>
+        </div>
+        <div class="list-no-more" id="lb-no-more" style="display:none;">
+          <span>没有更多了</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 游戏列表页面（全部游戏/我的作品等） -->
+    <div id="game-list-page" class="page">
+      <div class="list-page-header">
+        <button class="btn btn-back" id="list-page-back-btn" type="button" onclick="closeGameListPage()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M19 12H5M12 19l-7-7 7-7"></path>
+          </svg>
+        </button>
+        <h2 id="list-page-title">游戏列表</h2>
+        <div class="list-page-actions"></div>
+      </div>
+      
+      <div class="list-page-content" id="list-page-content">
+        <div class="game-list-grid" id="game-list-grid">
+          <!-- 动态加载游戏卡片 -->
+        </div>
+        <!-- 加载更多指示器 -->
+        <div class="list-loading-more" id="list-loading-more" style="display:none;">
+          <div class="loading-spinner-small"></div>
+          <span>加载中...</span>
+        </div>
+        <div class="list-no-more" id="list-no-more" style="display:none;">
+          <span>没有更多了</span>
+        </div>
+      </div>
+      
+      <!-- 回到顶部按钮 -->
+      <button class="scroll-to-top-btn" id="list-scroll-top-btn" onclick="scrollListToTop()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 19V5M5 12l7-7 7 7"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- 游戏预览/编辑页面 -->
+    <div id="game-page" class="page">
+      <div class="game-container">
+        <!-- 游戏顶部栏：返回 + 标题 + 操作 -->
+        <div class="game-header">
+          <button class="btn btn-back" onclick="showHome()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 12H5M12 19l-7-7 7-7"></path>
+            </svg>
+            <span>返回</span>
+          </button>
+          <div class="game-info">
+            <h2 id="game-title">游戏标题</h2>
+            <span class="game-model-tag" id="game-model-tag" style="display:none;">🤖 DeepSeek V3</span>
+          </div>
+          <div class="game-header-actions">
+            <button class="btn btn-action" onclick="viewGameSource()" title="查看源码">📄</button>
+            <button class="btn btn-action" id="edit-btn" onclick="editGame()" title="编辑" style="display:none;">✏️</button>
+          </div>
+        </div>
+        
+        <!-- 隐藏的兼容性统计条（完全隐藏） -->
+        <div id="game-stats-bar" style="display:none!important;visibility:hidden;">
+          <span id="stat-hot">0</span>
+        </div>
+        
+        <div class="game-frame-container">
+          <!-- 抖音风格左下角作者信息 -->
+          <div class="tiktok-author-info" id="tiktok-author-info">
+            <div class="tiktok-author-row">
+              <div class="tiktok-author-avatar" onclick="openAuthorProfile()">👤</div>
+              <div class="tiktok-author-details">
+                <span class="tiktok-author-name" id="tiktok-author-name" onclick="openAuthorProfile()">作者</span>
+                <button class="tiktok-follow-btn" id="tiktok-follow-btn" onclick="followCurrentAuthor()">
+                  <span class="follow-icon">+</span> 关注
+                </button>
+              </div>
+            </div>
+            <div class="tiktok-publish-time" id="tiktok-publish-time"></div>
+          </div>
+          
+          <!-- TikTok风格右侧互动栏 -->
+          <div class="tiktok-sidebar" id="tiktok-sidebar">
+            <div class="tiktok-action" id="stat-like-btn" onclick="likeGame()">
+              <div class="tiktok-icon" id="stat-like-icon">🤍</div>
+              <span class="tiktok-count" id="stat-likes">0</span>
+            </div>
+            <div class="tiktok-action" id="stat-fav-btn" onclick="toggleFavorite()">
+              <div class="tiktok-icon" id="stat-fav-icon">☆</div>
+              <span class="tiktok-count" id="stat-favs">0</span>
+            </div>
+            <div class="tiktok-action" onclick="openSharePanel()">
+              <div class="tiktok-icon">🔗</div>
+            </div>
+            <div class="tiktok-action tiktok-info" title="游玩次数">
+              <div class="tiktok-icon">👁️</div>
+              <span class="tiktok-count" id="stat-plays">0</span>
+            </div>
+            <div class="tiktok-action" id="stat-edit-btn" onclick="openGameEditor(state.currentGameId)" title="编辑游戏">
+              <div class="tiktok-icon">✏️</div>
+            </div>
+            <div class="tiktok-action" id="stat-repair-btn" onclick="repairGame()" title="AI修复">
+              <div class="tiktok-icon">🔧</div>
+            </div>
+            <div class="tiktok-action" onclick="toggleFullscreenMode()" title="全屏游玩">
+              <div class="tiktok-icon" id="tiktok-fullscreen-icon">⛶</div>
+            </div>
+          </div>
+          <div class="game-loading" id="game-loading">
+            <div class="loading-spinner"></div>
+            <p>游戏加载中...</p>
+          </div>
+          <div class="game-error" id="game-error" style="display:none;">
+            <p>😢 游戏加载失败</p>
+            <button class="btn btn-primary" onclick="reloadGame()">重新加载</button>
+          </div>
+          <iframe id="game-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups" allow="autoplay; fullscreen"></iframe>
+          
+          <!-- 全屏模式悬浮操作按钮 -->
+          <div class="fullscreen-floating-btns" id="fullscreen-floating-btns">
+            <button class="floating-btn floating-btn-back" onclick="exitFullscreenMode()" title="退出全屏">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"></path>
+              </svg>
+            </button>
+            <button class="floating-btn floating-btn-share" onclick="openSharePanel()" title="分享">
+              🔗
+            </button>
+            <button class="floating-btn floating-btn-expand" onclick="toggleFullscreenMode()" title="切换全屏" id="fullscreen-toggle-btn">
+              ⛶
+            </button>
+          </div>
+          
+          <!-- 右下角公众号按钮 -->
+          <div class="game-promo-float" id="game-promo-float" onclick="showBrandPromo()">
+            <span class="promo-float-icon">📱</span>
+            <span class="promo-float-text">关注公众号"游戏开发技术教程"，一句话免费做游戏</span>
+          </div>
+        </div>
+        <!-- 游戏留言板 -->
+        <div class="comments-section" id="comments-section" style="display:none;">
+          <div class="comments-header" onclick="toggleCommentsExpand()">
+            <h3 class="comments-title">💬 留言板 <span class="comments-count" id="comments-count">(0)</span></h3>
+            <button class="comments-toggle-btn" id="comments-toggle-btn">展开 ▼</button>
+          </div>
+          
+          <!-- 留言输入区域 -->
+          <div id="comment-input-container">
+            <!-- 登录提示（未登录时显示） -->
+            <div class="comment-login-hint" id="comment-login-hint" style="display:none;">
+              <p>登录后即可发表留言</p>
+              <button class="btn btn-primary btn-sm" onclick="showLoginModal()">立即登录</button>
+            </div>
+            
+            <!-- 输入框（已登录时显示） -->
+            <div class="comment-input-area" id="comment-input-area" style="display:none;">
+              <textarea id="comment-input" placeholder="说点什么吧...（最多500字）" maxlength="500"></textarea>
+              <button class="comment-submit-btn" id="comment-submit-btn" onclick="submitComment()">发布</button>
+            </div>
+          </div>
+          
+          <!-- 留言列表 -->
+          <div class="comments-list" id="comments-list">
+            <!-- 动态加载 -->
+          </div>
+          
+          <!-- 加载更多 -->
+          <div class="comments-load-more" id="comments-load-more" style="display:none;">
+            <button class="comments-load-more-btn" onclick="loadMoreComments()">加载更多留言</button>
+          </div>
+        </div>
+        
+        <!-- 调试面板 -->
+        <div class="debug-panel" id="debug-panel" style="display:none;">
+          <div class="debug-header">
+            <span>🔧 调试信息</span>
+            <button onclick="toggleDebugPanel()">收起</button>
+          </div>
+          <div class="debug-content" id="debug-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 生成中的遮罩 -->
+    <div id="generating-overlay" class="overlay">
+      <div class="overlay-content">
+        <!-- 右上角操作按钮 -->
+        <div class="generating-header-actions">
+          <button class="gen-action-btn" onclick="minimizeGenerating()" title="最小化">📥</button>
+          <button class="gen-action-btn gen-action-close" onclick="confirmCloseGeneration()" title="关闭">✕</button>
+        </div>
+        <div class="generating-animation">
+          <div class="pulse-ring"></div>
+          <div class="emoji-center">🎮</div>
+        </div>
+        <h3>AI 正在创作游戏...</h3>
+        <p class="generating-tip" id="generating-status">正在连接 AI 服务</p>
+        <p class="generating-time" id="generating-time">已用时: 0秒</p>
+        <div class="generating-progress">
+          <div class="generating-progress-bar" id="generating-progress-bar"></div>
+        </div>
+        <div class="generating-log" id="generating-log">
+          <div class="log-item">⏳ 等待生成...</div>
+        </div>
+        
+        <!-- 生成过程中的提示 -->
+        <div class="generating-tips-box" id="generating-tips-box">
+          <div class="tips-icon">💡</div>
+          <div class="tips-text" id="generating-tips-text">提示：添加具体的游戏玩法描述，效果会更好哦！</div>
+        </div>
+        
+        <!-- 切换模型区域（始终显示） -->
+        <div class="model-switch-section" id="model-switch-section">
+          <div class="model-switch-tip">💡 不同模型的生成速度和效果不同</div>
+          <button class="btn-model-switch" id="btn-model-switch" onclick="showTurboOptions()">
+            🔄 切换模型
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 浮动生成状态条（最小化后显示） -->
+    <div id="generating-float" class="generating-float">
+      <div class="float-content" onclick="restoreGenerating()">
+        <div class="float-spinner"></div>
+        <span class="float-text">AI生成中...</span>
+        <span class="float-time" id="float-time">0s</span>
+      </div>
+      <button class="float-restore" onclick="restoreGenerating()" title="展开">📤</button>
+      <button class="float-cancel" onclick="confirmCloseGeneration()" title="关闭">✖</button>
+    </div>
+    
+    <!-- 生成完成通知（取消/最小化后生成成功时显示） -->
+    <div id="generation-notify" class="generation-notify">
+      <div class="notify-content">
+        <span class="notify-icon">✅</span>
+        <span class="notify-text">游戏生成完成！</span>
+        <button class="btn btn-primary btn-sm" onclick="viewGeneratedGame()">查看游戏</button>
+        <button class="notify-close" onclick="closeGenerationNotify()">×</button>
+      </div>
+    </div>
+
+    <!-- 加速模型选择弹窗 -->
+    <div id="turbo-modal" class="modal turbo-modal">
+      <div class="modal-content turbo-modal-content">
+        <div class="modal-header">
+          <h3>⚡ 选择加速模式</h3>
+          <button class="btn btn-icon btn-close" onclick="closeTurboModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <p class="turbo-modal-desc">切换到更快的AI模型，加速游戏生成。当前生成将被中断并重新开始。</p>
+          <div class="turbo-models-list" id="turbo-models-list">
+            <!-- 动态填充 -->
+          </div>
+          <div class="turbo-warning">
+            <span class="warning-icon">⚠️</span>
+            <span>加速模式需要消耗积分，切换后将从头开始生成</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeTurboModal()">继续等待</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 全屏设置页面 -->
+    <div id="settings-page" class="settings-fullpage">
+      <div class="settings-fullpage-container">
+        <!-- 左侧导航 -->
+        <div class="settings-sidebar">
+          <div class="settings-sidebar-header">
+            <button class="settings-back-btn" onclick="closeSettings()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+              </svg>
+              <span>设置</span>
+            </button>
+          </div>
+          <nav class="settings-nav">
+            <button class="settings-nav-item active" data-section="profile" onclick="switchSettingsSection('profile')">
+              <span class="settings-nav-icon">👤</span>
+              <span class="settings-nav-text">个人中心</span>
+            </button>
+            <button class="settings-nav-item" data-section="llm" onclick="switchSettingsSection('llm')">
+              <span class="settings-nav-icon">🤖</span>
+              <span class="settings-nav-text">LLM 设置</span>
+            </button>
+          </nav>
+        </div>
+        
+        <!-- 右侧内容区 -->
+        <div class="settings-content">
+          <!-- 个人中心 (合并个人信息和账号管理) -->
+          <div class="settings-panel active" id="settings-panel-profile">
+            <div class="settings-panel-header">
+              <h2>个人中心</h2>
+              <p class="settings-panel-desc">管理您的个人资料和账号</p>
+            </div>
+            <div class="settings-panel-body">
+              <div class="settings-group">
+                <h3>个人信息</h3>
+                <div class="form-group">
+                  <label>你的昵称</label>
+                  <input type="text" id="author-name" placeholder="创作游戏时显示的名字" maxlength="20">
+                  <p class="form-hint">此昵称将显示在您创作的游戏上</p>
+                </div>
+              </div>
+              
+              <div class="settings-group">
+                <h3>当前账号</h3>
+                <div class="account-info-card">
+                  <div class="account-info-row">
+                    <span class="account-info-label">账号 ID</span>
+                    <div class="account-info-value">
+                      <code id="settings-account-id">未知</code>
+                      <button class="btn btn-icon btn-small" onclick="copyAccountId()" title="复制">📋</button>
+                    </div>
+                  </div>
+                </div>
+                <p class="form-hint">💡 退出前请记住账号ID，换设备时输入即可恢复数据</p>
+              </div>
+              
+              <div class="settings-group">
+                <h3>账号操作</h3>
+                <div class="settings-actions-list">
+                  <button class="settings-action-btn" id="password-action-btn" onclick="closeSettings(); showChangePasswordDialog();">
+                    <span class="settings-action-icon">🔐</span>
+                    <span class="settings-action-text" id="password-action-text">设置密码</span>
+                    <span class="settings-action-arrow">›</span>
+                  </button>
+                  <button class="settings-action-btn" onclick="closeSettings(); showLoginDialog();">
+                    <span class="settings-action-icon">🔄</span>
+                    <span class="settings-action-text">切换/恢复账号</span>
+                    <span class="settings-action-arrow">›</span>
+                  </button>
+                  <button class="settings-action-btn danger" onclick="closeSettings(); logoutAccount();">
+                    <span class="settings-action-icon">🚪</span>
+                    <span class="settings-action-text">退出登录</span>
+                    <span class="settings-action-arrow">›</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- LLM 设置 -->
+          <div class="settings-panel" id="settings-panel-llm">
+            <div class="settings-panel-header">
+              <h2>LLM 设置</h2>
+              <p class="settings-panel-desc">选择默认使用的AI模型</p>
+            </div>
+            <div class="settings-panel-body">
+              <!-- 模型列表 -->
+              <div class="settings-group">
+                <h3>可用模型</h3>
+                <p class="settings-group-hint">勾选设为默认模型，不同模型消耗不同积分</p>
+                <div class="llm-keys-list" id="llm-keys-list">
+                  <!-- 动态生成 -->
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 底部保存按钮 -->
+          <div class="settings-footer">
+            <button class="btn btn-secondary" onclick="closeSettings()">取消</button>
+            <button class="btn btn-primary" onclick="saveSettings()">保存设置</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 积分弹窗 -->
+    <div id="credits-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>💎 我的积分</h3>
+          <button class="btn btn-icon btn-close" onclick="closeCreditsModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="credits-display">
+            <div class="credits-number" id="credits-count">0</div>
+            <div class="credits-label">剩余生成次数</div>
+          </div>
+          
+          <div class="credits-ways">
+            <h4>一次性奖励</h4>
+            
+            <div class="credit-way-wrapper">
+              <div class="credit-way" id="way-wechat" onclick="toggleWechatVerify()">
+                <div class="credit-way-icon">📱</div>
+                <div class="credit-way-info">
+                  <div class="credit-way-title">关注公众号</div>
+                  <div class="credit-way-desc" id="way-wechat-desc">关注后输入验证码领取</div>
+                </div>
+                <div class="credit-way-reward" id="way-wechat-reward">+3次</div>
+              </div>
+              <div class="wechat-verify credit-way-expand" id="wechat-verify-section" style="display:none;">
+                <p>关注公众号【<strong>游戏开发技术教程</strong>】</p>
+                <p>回复"<strong>积分</strong>"获取验证码</p>
+                <div class="verify-input">
+                  <input type="text" id="wechat-verify-code" placeholder="输入验证码" maxlength="20">
+                  <button class="btn btn-primary" onclick="verifyWechatFollow()">验证</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 每日重置奖励 -->
+          <div class="credits-ways" id="daily-action-ways">
+            <h4>每日奖励 <span style="font-size:0.75rem;color:#888;font-weight:normal;">（每日重置）</span></h4>
+            
+            <div class="credit-way" id="way-share" onclick="shareForCredits()">
+              <div class="credit-way-icon">🔗</div>
+              <div class="credit-way-info">
+                <div class="credit-way-title">分享游戏</div>
+                <div class="credit-way-desc" id="way-share-desc">分享你创作的游戏给朋友</div>
+              </div>
+              <div class="credit-way-status">
+                <div class="credit-way-reward" id="way-share-reward">+1次</div>
+                <div class="credit-way-progress" id="way-share-progress">0/5</div>
+              </div>
+            </div>
+            
+            <!-- 看视频广告入口（突出显示） -->
+            <div class="credit-way credit-way-ad" id="way-ad" onclick="showMiniprogramAdPrompt()">
+              <div class="credit-way-icon">🎬</div>
+              <div class="credit-way-info">
+                <div class="credit-way-title">看视频广告</div>
+                <div class="credit-way-desc" id="way-ad-desc">观看完整视频广告获得积分</div>
+              </div>
+              <div class="credit-way-status">
+                <div class="credit-way-reward" id="way-ad-reward">+3积分</div>
+                <div class="credit-way-badge" id="way-ad-badge">小程序</div>
+              </div>
+            </div>
+            
+            <div class="credit-way-wrapper">
+              <div class="credit-way" id="way-invite" onclick="toggleInviteSection()">
+                <div class="credit-way-icon">👥</div>
+                <div class="credit-way-info">
+                  <div class="credit-way-title">邀请好友</div>
+                  <div class="credit-way-desc" id="way-invite-desc">分享邀请链接，双方各得积分</div>
+                </div>
+                <div class="credit-way-status">
+                  <div class="credit-way-reward" id="way-invite-reward">+3次</div>
+                  <div class="credit-way-progress" id="way-invite-progress">0/5</div>
+                </div>
+              </div>
+              <div class="invite-section credit-way-expand" id="invite-section" style="display:none;">
+                <h4>🔗 我的专属邀请链接</h4>
+                <div class="invite-link-display">
+                  <input type="text" id="my-invite-link" readonly value="加载中..." class="invite-link-input">
+                  <button class="btn btn-primary" onclick="copyInviteLink()">📋 复制链接</button>
+                </div>
+                <p class="form-hint" style="margin-top:0.5rem;">
+                  ✨ 新用户通过你的链接访问网站，<strong>你+3积分</strong>，<strong>对方+3积分</strong>！
+                </p>
+              </div>
+            </div>
+            
+            <div class="credit-way-wrapper">
+              <div class="credit-way" id="way-article" onclick="toggleArticleCodeSection()">
+                <div class="credit-way-icon">📖</div>
+                <div class="credit-way-info">
+                  <div class="credit-way-title">阅读文章福利</div>
+                  <div class="credit-way-desc" id="way-article-desc">在公众号文章中获取验证码</div>
+                </div>
+                <div class="credit-way-status">
+                  <div class="credit-way-reward" id="way-article-reward">+1次</div>
+                  <div class="credit-way-progress" id="way-article-progress">0/3</div>
+                </div>
+              </div>
+              <div class="article-code-section credit-way-expand" id="article-code-section" style="display:none;">
+                <h4>📖 文章阅读福利</h4>
+                <p style="color:#666; font-size:0.9rem; margin-bottom:0.8rem;">
+                  关注公众号【<strong>游戏开发技术教程</strong>】，阅读文章，在留言区获取验证码
+                </p>
+                <div class="verify-input">
+                  <input type="text" id="article-promo-code" placeholder="输入文章验证码" maxlength="20">
+                  <button class="btn btn-primary" onclick="redeemArticleCode()">兑换</button>
+                </div>
+                <p class="form-hint" style="margin-top:0.5rem;">
+                  💡 每个验证码只能使用一次
+                </p>
+              </div>
+            </div>
+
+            <!-- 验证邮箱入口 -->
+            <div class="credit-way-wrapper" id="way-email-wrapper" style="display:none;">
+              <div class="credit-way" id="way-email" onclick="toggleEmailVerifySection()">
+                <div class="credit-way-icon">📧</div>
+                <div class="credit-way-info">
+                  <div class="credit-way-title">验证邮箱</div>
+                  <div class="credit-way-desc" id="way-email-desc">绑定邮箱，可用于找回密码</div>
+                </div>
+                <div class="credit-way-status">
+                  <div class="credit-way-reward" id="way-email-reward">+3积分</div>
+                  <div class="credit-way-badge" id="way-email-badge" style="display:none;">一次性</div>
+                </div>
+              </div>
+              <div class="email-verify-section credit-way-expand" id="email-verify-section" style="display:none;">
+                <h4>📧 验证邮箱领积分</h4>
+                <p style="color:#666; font-size:0.9rem; margin-bottom:0.8rem;">
+                  绑定邮箱后可用于找回密码，首次验证奖励积分
+                </p>
+                <div class="verify-input" id="email-input-step">
+                  <input type="email" id="email-input" placeholder="请输入邮箱地址" maxlength="100">
+                  <button class="btn btn-primary" id="send-email-code-btn" onclick="sendEmailVerifyCode()">发送验证码</button>
+                </div>
+                <div class="verify-input" id="email-code-step" style="display:none; margin-top:0.8rem;">
+                  <input type="text" id="email-verify-code" placeholder="输入6位验证码" maxlength="6">
+                  <button class="btn btn-primary" onclick="verifyEmailCode()">验证</button>
+                </div>
+                <p class="form-hint" style="margin-top:0.5rem;" id="email-hint">
+                  💡 验证码10分钟内有效
+                </p>
+              </div>
+            </div>
+            
+            <div id="action-ways-container">
+              <!-- 动态加载点赞、收藏、关注、评论 -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 保存游戏弹窗 -->
+    <div id="save-modal" class="modal">
+      <div class="modal-content modal-large">
+        <div class="modal-header">
+          <h3>🎮 游戏生成完成！</h3>
+          <button class="btn btn-icon btn-close" onclick="closeSaveModal()">×</button>
+        </div>
+        <div class="modal-body save-modal-body">
+          <!-- 左侧：可玩游戏区域 -->
+          <div class="preview-play-area">
+            <div class="preview-play-header">
+              <span class="preview-badge">🎮 试玩预览</span>
+              <button class="btn btn-sm btn-icon" onclick="toggleFullscreenPreview()" title="全屏">⛶</button>
+            </div>
+            <div class="preview-game-frame">
+              <iframe id="preview-frame" sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-forms allow-modals allow-popups"></iframe>
+            </div>
+            <div class="preview-play-tip">点击游戏区域开始试玩</div>
+          </div>
+          
+          <!-- 右侧：保存表单 -->
+          <div class="save-form-area">
+            <div class="form-group">
+              <label>🏷️ 游戏名称</label>
+              <input type="text" id="save-title" placeholder="给游戏起个名字" maxlength="50">
+            </div>
+            <div class="form-group">
+              <label>👤 作者昵称</label>
+              <input type="text" id="save-author" placeholder="你的名字（可以是中文）" maxlength="20">
+            </div>
+            
+            <!-- 账号信息 -->
+            <div class="account-info-box" id="account-info-box">
+              <div class="account-id-row">
+                <span class="account-label">🔑 你的专属账号：</span>
+                <span class="account-id" id="save-account-id">加载中...</span>
+                <button class="btn-copy-account" onclick="copyAccountId()" title="复制账号">📋</button>
+              </div>
+              <p class="account-hint">🔐 账号已绑定设备，换设备时输入账号ID恢复</p>
+            </div>
+            
+            <div class="save-tips">
+              <p>💡 保存后可获得分享链接</p>
+            </div>
+            <div class="save-form-actions">
+              <button class="btn btn-secondary" onclick="closeSaveModal()">取消</button>
+              <button class="btn btn-primary btn-save-main" onclick="confirmSaveGame()">
+                <span>💾</span> 保存并分享
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 分享面板弹窗 -->
+    <div id="share-modal" class="modal">
+      <div class="modal-content modal-small">
+        <div class="modal-header">
+          <h3>🎉 分享游戏</h3>
+          <button class="btn btn-icon btn-close" onclick="closeShareModal()">×</button>
+        </div>
+        <div class="modal-body share-modal-body">
+          <!-- 分享统计展示 -->
+          <div class="share-stats-preview">
+            <div class="share-game-emoji" id="share-game-emoji">🎮</div>
+            <div class="share-game-title" id="share-game-title">游戏名称</div>
+            <div class="share-mini-stats">
+              <span>🎮 <strong id="share-play-count">0</strong> 人玩过</span>
+              <span>❤️ <strong id="share-like-count">0</strong> 人喜欢</span>
+              <span>🔗 <strong id="share-share-count">0</strong> 次分享</span>
+            </div>
+          </div>
+
+          <!-- 分享内容预览区域 -->
+          <div class="share-link-section">
+            <label class="share-link-label">分享内容预览</label>
+            <div class="share-content-preview">
+              <textarea id="share-text-preview" readonly class="share-text-area"></textarea>
+              <input type="hidden" id="share-url">
+            </div>
+            <button class="btn btn-primary share-copy-btn-full" onclick="copyShareUrl()">
+              <span>📋</span> 一键复制
+            </button>
+          </div>
+
+          <div class="share-tips">
+            <p class="share-reward-hint">💡 分享游戏可获得积分奖励</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 个人中心弹窗 -->
+    <div id="profile-modal" class="modal">
+      <div class="modal-content modal-xlarge">
+        <div class="modal-header profile-header">
+          <div class="profile-user-info">
+            <div class="profile-avatar">👤</div>
+            <div class="profile-name-area">
+              <h3 id="profile-username">游戏创作者</h3>
+              <div class="profile-stats-mini">
+                <span>🎮 <strong id="profile-game-count">0</strong> 作品</span>
+                <span>❤️ <strong id="profile-like-count">0</strong> 点赞</span>
+                <span>💎 <strong id="profile-credits">0</strong> 积分</span>
+              </div>
+              <div class="profile-follow-stats">
+                <span class="follow-stat-item" onclick="openFollowModal(null, 'following')">
+                  <strong id="followingCount">0</strong> 关注
+                </span>
+                <span class="follow-divider">|</span>
+                <span class="follow-stat-item" onclick="openFollowModal(null, 'followers')">
+                  <strong id="followersCount">0</strong> 粉丝
+                </span>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-icon btn-close" onclick="closeProfileModal()">×</button>
+        </div>
+        
+        <!-- 标签页导航 -->
+        <div class="profile-tabs">
+          <button class="profile-tab active" data-tab="my-games" onclick="switchProfileTab('my-games')">
+            🎨 我的作品
+          </button>
+          <button class="profile-tab" data-tab="my-likes" onclick="switchProfileTab('my-likes')">
+            ❤️ 我的点赞
+          </button>
+          <button class="profile-tab" data-tab="my-favorites" onclick="switchProfileTab('my-favorites')">
+            ⭐ 我的收藏
+          </button>
+          <button class="profile-tab" data-tab="my-settings" onclick="switchProfileTab('my-settings')">
+            ⚙️ 账号设置
+          </button>
+        </div>
+        
+        <div class="modal-body profile-body">
+          <!-- 我的作品 -->
+          <div class="profile-tab-content active" id="tab-my-games">
+            <div class="tab-header">
+              <div id="my-games-stats" class="tab-stats"></div>
+              <button class="btn btn-secondary btn-small" onclick="loadMyGames()">🔄 刷新</button>
+            </div>
+            <div id="my-games-list" class="games-list-container">
+              <div class="loading-games">加载中...</div>
+            </div>
+          </div>
+          
+          <!-- 我的点赞 -->
+          <div class="profile-tab-content" id="tab-my-likes">
+            <div class="tab-header">
+              <div id="my-likes-stats" class="tab-stats"></div>
+              <button class="btn btn-secondary btn-small" onclick="loadMyLikes()">🔄 刷新</button>
+            </div>
+            <div id="my-likes-list" class="games-list-container">
+              <div class="loading-games">加载中...</div>
+            </div>
+          </div>
+          
+          <!-- 我的收藏 -->
+          <div class="profile-tab-content" id="tab-my-favorites">
+            <div class="tab-header">
+              <div id="my-favorites-stats" class="tab-stats"></div>
+              <button class="btn btn-secondary btn-small" onclick="loadMyFavorites()">🔄 刷新</button>
+            </div>
+            <div id="my-favorites-list" class="games-list-container">
+              <div class="loading-games">加载中...</div>
+            </div>
+          </div>
+          
+          <!-- 账号设置 -->
+          <div class="profile-tab-content" id="tab-my-settings">
+            <div class="settings-sections">
+              <!-- 账号信息 -->
+              <div class="settings-card account-card">
+                <h4>🔑 我的账号</h4>
+                <div class="account-display">
+                  <div class="account-display-row">
+                    <span class="account-display-label">账号 ID：</span>
+                    <span class="account-display-value" id="profile-account-id">加载中...</span>
+                    <button class="btn-copy-small" onclick="copyAccountId()" title="复制账号ID">📋</button>
+                  </div>
+                  <div class="account-display-row">
+                    <span class="account-display-label">账号状态：</span>
+                    <span class="account-status" id="profile-account-status">
+                      <span class="status-badge status-protected">🔐 已绑定设备</span>
+                    </span>
+                  </div>
+                </div>
+                <div class="account-actions">
+                  <button class="btn btn-secondary btn-small" onclick="showLoginDialog()">
+                    🔄 切换/恢复账号
+                  </button>
+                  <button class="btn btn-danger btn-small" onclick="logoutAccount()">
+                    🚪 退出登录
+                  </button>
+                </div>
+                <p class="form-hint">💡 保存好账号ID，换设备时输入即可恢复数据</p>
+              </div>
+              
+              <!-- 个人信息 -->
+              <div class="settings-card">
+                <h4>👤 个人信息</h4>
+                <div class="form-group">
+                  <label>昵称</label>
+                  <input type="text" id="profile-author-name" placeholder="你的昵称" maxlength="20">
+                </div>
+                <div class="form-group">
+                  <label>邮箱 <span class="bonus-tag" id="email-bonus-tag">+3积分</span></label>
+                  <input type="email" id="profile-email" placeholder="your@email.com">
+                  <p class="form-hint" id="email-hint">绑定邮箱可获得3积分奖励</p>
+                </div>
+              </div>
+              
+              <!-- AI 模型配置 -->
+              <div class="settings-card">
+                <h4>🤖 AI 模型</h4>
+                <div class="form-group">
+                  <label>选择模型</label>
+                  <select id="profile-model-select">
+                    <!-- 动态从后端加载可用模型 -->
+                  </select>
+                  <p class="form-hint">不同模型消耗不同积分</p>
+                </div>
+              </div>
+              
+              <!-- 积分信息 -->
+              <div class="settings-card">
+                <h4>💎 我的积分</h4>
+                <div class="credits-mini-display">
+                  <div class="credits-value" id="profile-credits-value">0</div>
+                  <div class="credits-label">剩余生成次数</div>
+                </div>
+                <div class="credits-actions">
+                  <button class="btn btn-secondary btn-small" onclick="closeProfileModal();openCreditsModal();">
+                    获取更多积分
+                  </button>
+                </div>
+              </div>
+              
+              <!-- 其他设置 -->
+              <div class="settings-card">
+                <h4>🔧 其他设置</h4>
+                <div class="form-group form-switch">
+                  <label>
+                    <input type="checkbox" id="profile-debug-mode">
+                    <span>显示调试信息</span>
+                  </label>
+                </div>
+              </div>
+              
+              <!-- 保存按钮 -->
+              <div class="settings-actions">
+                <button class="btn btn-primary" onclick="saveProfileSettings()">💾 保存设置</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 全部游戏弹窗 -->
+    <div id="all-games-modal" class="modal">
+      <div class="modal-content modal-xlarge">
+        <div class="modal-header">
+          <h3>🎮 全部游戏</h3>
+          <button class="btn btn-icon btn-close" onclick="closeAllGamesModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="all-games-grid" id="all-games-grid">
+            <div class="loading-spinner">加载中...</div>
+          </div>
+          <div class="load-more-container">
+            <button class="btn btn-secondary" id="load-more-all-games" onclick="loadMoreAllGames()">加载更多</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 公众号推广弹窗 -->
+    <div id="brand-promo-modal" class="modal">
+      <div class="modal-content modal-small">
+        <div class="modal-header">
+          <h3>📱 一句话做游戏</h3>
+          <button class="btn btn-icon btn-close" onclick="closeBrandPromo()">×</button>
+        </div>
+        <div class="modal-body brand-promo-body">
+          <div class="promo-qr-large">
+            <img src="/images/wechat-qrcode.png" alt="微信搜一搜：游戏开发技术教程" class="promo-banner-modal">
+          </div>
+          <div class="promo-modal-info">
+            <p style="text-align:center;color:var(--text-secondary);margin-bottom:0.75rem;">长按识别二维码或微信搜一搜</p>
+          </div>
+          <div class="promo-verify-section" id="promo-verify-section">
+            <p style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:0.5rem;">关注后回复"<strong>积分</strong>"获取验证码，免费领3次生成机会</p>
+            <div class="verify-input" style="display:flex;gap:0.5rem;">
+              <input type="text" id="promo-verify-code" placeholder="输入验证码" maxlength="20" style="flex:1;">
+              <button class="btn btn-primary" onclick="verifyWechatFromPromo()">领取</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 关注/粉丝列表弹窗 -->
+    <div id="follow-modal" class="modal">
+      <div class="modal-content modal-medium">
+        <div class="modal-header">
+          <h3 id="follow-modal-title">👥 关注列表</h3>
+          <button class="btn btn-icon btn-close" onclick="closeFollowModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <!-- 标签切换 -->
+          <div class="follow-tabs">
+            <button class="follow-tab active" id="tab-following-btn" onclick="switchFollowTab('following')">
+              关注 <span id="follow-tab-following-count">0</span>
+            </button>
+            <button class="follow-tab" id="tab-followers-btn" onclick="switchFollowTab('followers')">
+              粉丝 <span id="follow-tab-followers-count">0</span>
+            </button>
+          </div>
+          <!-- 列表内容 -->
+          <div class="follow-list" id="follow-list">
+            <div class="loading-games">加载中...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 搜索面板（抖音风格） -->
+    <div id="search-panel" class="search-panel">
+      <div class="search-panel-header">
+        <button class="search-back-btn" onclick="closeSearchPanel()">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"></path>
+          </svg>
+        </button>
+        <div class="search-input-wrapper">
+          <svg class="search-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="M21 21l-4.35-4.35"></path>
+          </svg>
+          <input type="text" id="search-input" placeholder="搜索游戏、作者..." autocomplete="off" maxlength="50">
+          <button class="search-clear-btn" id="search-clear-btn" onclick="clearSearchInput()" style="display:none;">×</button>
+        </div>
+        <button class="search-submit-btn" onclick="executeSearch()">搜索</button>
+      </div>
+      
+      <!-- 搜索结果区域 -->
+      <div class="search-results" id="search-results">
+        <div class="search-results-header">
+          <span class="results-count" id="search-results-count">找到 0 个结果</span>
+          <button class="results-close-btn" onclick="clearSearchResults()">返回</button>
+        </div>
+        <div class="search-results-list" id="search-results-list">
+          <!-- 动态加载 -->
+        </div>
+        <div class="search-loading" id="search-loading" style="display:none;">
+          <div class="loading-spinner-small"></div>
+          <span>搜索中...</span>
+        </div>
+      </div>
+      
+      <!-- 默认内容：历史 + 推荐 -->
+      <div class="search-default-content" id="search-default-content">
+        <!-- 搜索历史 -->
+        <div class="search-section" id="search-history-section">
+          <div class="search-section-header">
+            <span class="section-title">🕐 搜索历史</span>
+            <button class="section-action" onclick="clearSearchHistory()">全部删除</button>
+          </div>
+          <div class="search-history-list" id="search-history-list">
+            <!-- 动态加载 -->
+          </div>
+        </div>
+        
+        <!-- 猜你想搜 -->
+        <div class="search-section" id="search-suggest-section">
+          <div class="search-section-header">
+            <span class="section-title">🔮 猜你想搜</span>
+          </div>
+          <div class="search-suggest-grid" id="search-suggest-list">
+            <!-- 动态加载 -->
+          </div>
+        </div>
+        
+        <!-- 热搜榜 -->
+        <div class="search-section" id="search-hot-section">
+          <div class="search-section-header">
+            <span class="section-title hot-title">🔥 热搜榜</span>
+          </div>
+          <div class="search-hot-list" id="search-hot-list">
+            <!-- 动态加载 -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast提示 -->
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script src="/js/security.js"></script>
+  <script src="/js/auth.js"></script>
+  
+  <!-- 个人主页导航处理 -->
+  <script>
+  // 检查用户是否真正登录（同时检查本地jwt和服务端状态）
+  function isReallyLoggedIn() {
+    // 检查本地 jwt
+    const jwt = localStorage.getItem('aigame-jwt');
+    if (!jwt) return false;
+    
+    // 检查 app.js 中的登录状态
+    if (typeof state !== 'undefined' && state.account) {
+      return state.account.loggedIn === true;
+    }
+    
+    // 如果 state 不可用，只依赖 jwt
+    return true;
+  }
+  
+  // 显示登录提示弹窗
+  function showLoginPrompt() {
+    if (typeof showWriteDisabledTip === 'function') {
+      showWriteDisabledTip('profile');  // 显示小程序引导弹窗
+    } else if (typeof goToLogin === 'function') {
+      goToLogin();  // 或者跳转到登录页
+    } else {
+      alert('请先登录');
+    }
+  }
+
+  // 处理底部导航"我的"按钮点击
+  function handleProfileNavClick() {
+    // 检查用户是否已登录
+    if (isReallyLoggedIn()) {
+      // 已登录用户：直接切换到个人主页
+      if (typeof switchBottomNav === 'function') {
+        switchBottomNav('profile');
+      } else {
+        directSwitchToProfile();
+      }
+    } else {
+      // 未登录用户：弹出登录弹窗
+      if (typeof openModal === 'function') {
+        openModal('login-modal');
+      } else if (typeof goToLogin === 'function') {
+        goToLogin();
+      } else {
+        alert('请先登录');
+      }
+    }
+  }
+  
+  // 直接切换到个人主页（供已登录用户使用）
+  function directSwitchToProfile() {
+    // 关闭所有弹窗
+    if (typeof closeAllModals === 'function') {
+      closeAllModals();
+    }
+    
+    // 更新导航栏状态
+    document.querySelectorAll('.bottom-nav .nav-item').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.nav === 'profile');
+    });
+    
+    // 隐藏所有页面，显示个人主页
+    document.querySelectorAll('.page').forEach(page => {
+      page.classList.remove('active');
+    });
+    
+    const profilePage = document.getElementById('profile-page');
+    if (profilePage) {
+      profilePage.classList.add('active');
+    }
+    
+    // 显示设置按钮
+    const settingsBtn = document.getElementById('profile-settings-btn');
+    if (settingsBtn) {
+      settingsBtn.classList.add('visible');
+    }
+    
+    // 显示底部导航
+    document.getElementById('bottom-nav').style.display = 'flex';
+    
+    // 加载个人主页数据
+    if (typeof loadProfilePageData === 'function') {
+      loadProfilePageData();
+    }
+    
+    // 初始化下拉刷新（如果需要）
+    if (!window._profilePullRefreshInited && typeof initPullToRefresh === 'function') {
+      initPullToRefresh('profile-page', 'profile-pull-refresh-indicator', async () => {
+        if (typeof loadProfilePageData === 'function') {
+          await loadProfilePageData();
+        }
+      });
+      window._profilePullRefreshInited = true;
+    }
+  }
+  
+  // 导出全局函数
+  window.handleProfileNavClick = handleProfileNavClick;
+  window.directSwitchToProfile = directSwitchToProfile;
+  </script>
+  
+  <!-- 搜索功能脚本 -->
+  <script>
+  (function() {
+    // 搜索相关配置
+    const SEARCH_HISTORY_KEY = 'aigame-search-history';
+    const MAX_HISTORY_ITEMS = 10;
+    
+    // 默认推荐搜索词
+    const defaultSuggestions = [
+      '贪吃蛇', '2048', '俄罗斯方块', '打砖块', '飞机大战',
+      '消消乐', '跑酷', '射击', '益智', '休闲'
+    ];
+    
+    // 打开搜索面板
+    window.openSearchPanel = function() {
+      const panel = document.getElementById('search-panel');
+      if (panel) {
+        panel.classList.add('active');
+        document.body.classList.add('modal-open');
+        
+        // 加载搜索历史和推荐
+        loadSearchHistory();
+        loadSearchSuggestions();
+        loadHotSearch();
+        
+        // 聚焦输入框
+        setTimeout(() => {
+          const input = document.getElementById('search-input');
+          if (input) input.focus();
+        }, 300);
+      }
+    };
+    
+    // 关闭搜索面板
+    window.closeSearchPanel = function() {
+      const panel = document.getElementById('search-panel');
+      if (panel) {
+        panel.classList.remove('active');
+        document.body.classList.remove('modal-open');
+        clearSearchResults();
+      }
+    };
+    
+    // 清除搜索输入
+    window.clearSearchInput = function() {
+      const input = document.getElementById('search-input');
+      const clearBtn = document.getElementById('search-clear-btn');
+      if (input) {
+        input.value = '';
+        input.focus();
+      }
+      if (clearBtn) clearBtn.style.display = 'none';
+      
+      // 显示默认内容，隐藏结果
+      document.getElementById('search-default-content').style.display = 'block';
+      document.getElementById('search-results').classList.remove('active');
+    };
+    
+    // 执行搜索
+    window.executeSearch = async function() {
+      const input = document.getElementById('search-input');
+      const keyword = input ? input.value.trim() : '';
+      
+      if (!keyword) {
+        if (typeof showToast === 'function') {
+          showToast('请输入搜索内容', 'warning');
+        }
+        return;
+      }
+      
+      // 保存搜索历史
+      saveSearchHistory(keyword);
+      
+      // 显示加载状态
+      const resultsContainer = document.getElementById('search-results');
+      const defaultContent = document.getElementById('search-default-content');
+      const resultsList = document.getElementById('search-results-list');
+      const loading = document.getElementById('search-loading');
+      
+      defaultContent.style.display = 'none';
+      resultsContainer.classList.add('active');
+      loading.style.display = 'flex';
+      resultsList.innerHTML = '';
+      
+      try {
+        const response = await fetch(`/api/games?search=${encodeURIComponent(keyword)}&limit=20`);
+        const data = await response.json();
+        
+        loading.style.display = 'none';
+        
+        if (data.success && data.games && data.games.length > 0) {
+          document.getElementById('search-results-count').textContent = `找到 ${data.games.length} 个结果`;
+          renderSearchResults(data.games);
+        } else {
+          document.getElementById('search-results-count').textContent = '没有找到结果';
+          resultsList.innerHTML = `
+            <div class="search-no-results">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="M21 21l-4.35-4.35"></path>
+              </svg>
+              <p>没有找到 "${keyword}" 相关的游戏</p>
+              <p style="font-size: 12px; margin-top: 8px;">试试其他关键词吧~</p>
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error('搜索失败:', error);
+        loading.style.display = 'none';
+        resultsList.innerHTML = `
+          <div class="search-no-results">
+            <p>搜索出错，请稍后重试</p>
+          </div>
+        `;
+      }
+    };
+    
+    // 渲染搜索结果
+    function renderSearchResults(games) {
+      const resultsList = document.getElementById('search-results-list');
+      if (!resultsList) {
+        console.error('search-results-list not found');
+        return;
+      }
+      
+      let html = '';
+      for (let i = 0; i < games.length; i++) {
+        const game = games[i];
+        const gameEmoji = getGameEmoji(game.title);
+        const title = escapeHtml(game.title) || '未命名游戏';
+        const author = escapeHtml(game.author_name) || '匿名';
+        const plays = game.play_count || 0;
+        const likes = game.like_count || 0;
+        const comments = game.comment_count || 0;
+        const gameId = game.id || '';
+        
+        html += '<div class="result-card" onclick="goToGame(\'' + gameId + '\')">';
+        html += '<div class="result-card-placeholder">' + gameEmoji + '</div>';
+        html += '<div class="result-card-info">';
+        html += '<div class="result-card-title">' + title + '</div>';
+        html += '<div class="result-card-author">👤 ' + author + '</div>';
+        html += '<div class="result-card-stats">';
+        html += '<span>👁 ' + plays + '</span>';
+        html += '<span>❤️ ' + likes + '</span>';
+        html += '<span>💬 ' + comments + '</span>';
+        html += '</div>';
+        html += '</div></div>';
+      }
+      
+      resultsList.innerHTML = html;
+    }
+    
+    // 根据游戏标题获取emoji
+    function getGameEmoji(title) {
+      if (!title) return '🎮';
+      
+      const emojiMap = {
+        '贪吃蛇': '🐍', '蛇': '🐍',
+        '2048': '🔢', '数字': '🔢',
+        '俄罗斯方块': '🧱', '方块': '🧱', '俄罗斯': '🧱',
+        '打砖块': '🎯', '砖块': '🧱',
+        '飞机': '✈️', '战机': '🛩️', '射击': '🔫',
+        '跑酷': '🏃', '跳跃': '🦘',
+        '消消乐': '💎', '消除': '💎', '三消': '💎',
+        '翻牌': '🃏', '配对': '🎴', '记忆': '🧠',
+        '赛车': '🏎️', '竞速': '🏁',
+        '益智': '🧩', '拼图': '🧩',
+        '冒险': '⚔️', '战斗': '⚔️',
+        'moba': '🎮', 'MOBA': '🎮',
+        '休闲': '🎪', '弹球': '🎱'
+      };
+      
+      const titleLower = String(title).toLowerCase();
+      for (const [key, emoji] of Object.entries(emojiMap)) {
+        if (titleLower.includes(key.toLowerCase())) {
+          return emoji;
+        }
+      }
+      return '🎮';
+    }
+    
+    // 跳转到游戏
+    window.goToGame = function(gameId) {
+      closeSearchPanel();
+      
+      // 尝试使用 SPA 内部路由函数
+      if (typeof window.playGame === 'function') {
+        window.playGame(gameId);
+        return;
+      }
+      
+      if (typeof window.loadGameById === 'function') {
+        window.loadGameById(gameId);
+        return;
+      }
+      
+      if (typeof window.showGame === 'function') {
+        window.showGame(gameId);
+        return;
+      }
+      
+      // 备用：直接跳转到游戏静态页面
+      // 游戏文件存储在 /g/{前2位字符}/{gameId}.html
+      const subDir = gameId.substring(0, 2);
+      window.location.href = `/g/${subDir}/${gameId}.html`;
+    };
+    
+    // 清除搜索结果
+    window.clearSearchResults = function() {
+      const input = document.getElementById('search-input');
+      if (input) input.value = '';
+      
+      document.getElementById('search-default-content').style.display = 'block';
+      document.getElementById('search-results').classList.remove('active');
+    };
+    
+    // 加载搜索历史
+    function loadSearchHistory() {
+      const historyList = document.getElementById('search-history-list');
+      const historySection = document.getElementById('search-history-section');
+      const history = getSearchHistory();
+      
+      if (history.length === 0) {
+        historySection.style.display = 'none';
+        return;
+      }
+      
+      historySection.style.display = 'block';
+      historyList.innerHTML = history.map(item => `
+        <span class="history-tag" onclick="searchByKeyword('${escapeHtml(item)}')">${escapeHtml(item)}</span>
+      `).join('');
+    }
+    
+    // 加载搜索推荐
+    function loadSearchSuggestions() {
+      const suggestList = document.getElementById('search-suggest-list');
+      // 随机打乱并取6个
+      const shuffled = [...defaultSuggestions].sort(() => Math.random() - 0.5).slice(0, 6);
+      
+      suggestList.innerHTML = shuffled.map(item => `
+        <span class="suggest-tag" onclick="searchByKeyword('${item}')">${item}</span>
+      `).join('');
+    }
+    
+    // 加载热搜榜
+    async function loadHotSearch() {
+      const hotList = document.getElementById('search-hot-list');
+      
+      try {
+        // 尝试获取热门游戏作为热搜
+        const response = await fetch('/api/games?sort=plays&limit=10');
+        const data = await response.json();
+        
+        if (data.success && data.games && data.games.length > 0) {
+          hotList.innerHTML = data.games.map((game, index) => {
+            const rankClass = index < 3 ? `rank-${index + 1}` : 'rank-other';
+            const badge = index === 0 ? '<span class="hot-badge hot">HOT</span>' : 
+                         (index < 3 ? '<span class="hot-badge new">热</span>' : '');
+            return `
+              <div class="hot-item" onclick="goToGame('${game.id}')">
+                <span class="hot-rank ${rankClass}">${index + 1}</span>
+                <div class="hot-info">
+                  <div class="hot-title">${escapeHtml(game.title)}</div>
+                  <div class="hot-meta">${game.play_count || 0} 次游玩</div>
+                </div>
+                ${badge}
+              </div>
+            `;
+          }).join('');
+        } else {
+          // 使用默认热搜
+          const defaultHot = ['贪吃蛇', '2048', '俄罗斯方块', '飞机大战', '消消乐'];
+          hotList.innerHTML = defaultHot.map((item, index) => {
+            const rankClass = index < 3 ? `rank-${index + 1}` : 'rank-other';
+            return `
+              <div class="hot-item" onclick="searchByKeyword('${item}')">
+                <span class="hot-rank ${rankClass}">${index + 1}</span>
+                <div class="hot-info">
+                  <div class="hot-title">${item}</div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      } catch (error) {
+        console.error('加载热搜失败:', error);
+      }
+    }
+    
+    // 通过关键词搜索
+    window.searchByKeyword = function(keyword) {
+      const input = document.getElementById('search-input');
+      if (input) {
+        input.value = keyword;
+        executeSearch();
+      }
+    };
+    
+    // 清除搜索历史
+    window.clearSearchHistory = function() {
+      localStorage.removeItem(SEARCH_HISTORY_KEY);
+      loadSearchHistory();
+      if (typeof showToast === 'function') {
+        showToast('搜索历史已清除', 'success');
+      }
+    };
+    
+    // 获取搜索历史
+    function getSearchHistory() {
+      try {
+        return JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY) || '[]');
+      } catch {
+        return [];
+      }
+    }
+    
+    // 保存搜索历史
+    function saveSearchHistory(keyword) {
+      let history = getSearchHistory();
+      // 移除已存在的相同关键词
+      history = history.filter(item => item !== keyword);
+      // 添加到开头
+      history.unshift(keyword);
+      // 限制数量
+      history = history.slice(0, MAX_HISTORY_ITEMS);
+      localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(history));
+    }
+    
+    // HTML转义
+    function escapeHtml(text) {
+      if (text == null) return '';
+      const div = document.createElement('div');
+      div.textContent = String(text);
+      return div.innerHTML;
+    }
+    
+    // 监听输入框
+    document.addEventListener('DOMContentLoaded', function() {
+      const input = document.getElementById('search-input');
+      const clearBtn = document.getElementById('search-clear-btn');
+      
+      if (input) {
+        input.addEventListener('input', function() {
+          if (clearBtn) {
+            clearBtn.style.display = this.value ? 'flex' : 'none';
+          }
+        });
+        
+        // 回车搜索
+        input.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            executeSearch();
+          }
+        });
+      }
+      
+      // 加载首页榜单预览
+      loadLeaderboardQuickPreview();
+    });
+  })();
+  
+  // ==================== 作者榜单功能 ====================
+  
+  let currentLbType = 'fans';
+  let currentLbPeriod = 'all';
+  let lbOffset = 0;
+  let lbLoading = false;
+  let lbHasMore = true;
+  
+  // 加载首页榜单预览 - 显示前3名
+  async function loadLeaderboardQuickPreview() {
+    const types = ['fans', 'works', 'popularity', 'newstar'];
+    for (const type of types) {
+      const container = document.getElementById(`lp-${type}-top3`);
+      if (!container) continue;
+      
+      try {
+        const response = await fetch(`/api/author-leaderboard/${type}?limit=3`);
+        const data = await response.json();
+        
+        if (data.success && data.list.length > 0) {
+          const html = data.list.map((user, idx) => `
+            <div class="lp-top3-item">
+              <span class="lp-rank rank-${idx + 1}">${idx + 1}</span>
+              <span class="lp-nickname">${escapeHtml(user.nickname)}</span>
+              <span class="lp-value">${user.value}</span>
+            </div>
+          `).join('');
+          container.innerHTML = html;
+        } else {
+          container.innerHTML = '<div class="lp-loading">暂无数据</div>';
+        }
+      } catch (e) {
+        console.error(`加载${type}榜单预览失败:`, e);
+        container.innerHTML = '<div class="lp-loading">加载失败</div>';
+      }
+    }
+  }
+  
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = String(text || '');
+    return div.innerHTML;
+  }
+  
+  // 打开榜单页面
+  function openLeaderboardPage(type = 'fans') {
+    currentLbType = type;
+    currentLbPeriod = 'all';
+    lbOffset = 0;
+    lbHasMore = true;
+    
+    // 显示页面
+    document.getElementById('leaderboard-page').classList.add('active');
+    document.getElementById('bottom-nav').style.display = 'none';
+    
+    // 更新选中状态
+    document.querySelectorAll('.lb-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.type === type);
+    });
+    document.querySelectorAll('.period-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.period === 'all');
+    });
+    
+    // 新星榜隐藏周期选择
+    const periodTabs = document.getElementById('leaderboard-period-tabs');
+    periodTabs.style.display = type === 'newstar' ? 'none' : 'flex';
+    
+    // 加载数据
+    loadLeaderboardData(true);
+  }
+  
+  // 关闭榜单页面
+  function closeLeaderboardPage() {
+    document.getElementById('leaderboard-page').classList.remove('active');
+    document.getElementById('bottom-nav').style.display = '';
+  }
+  
+  // 切换榜单类型
+  function switchLeaderboardType(type) {
+    currentLbType = type;
+    currentLbPeriod = 'all';
+    lbOffset = 0;
+    lbHasMore = true;
+    
+    document.querySelectorAll('.lb-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.type === type);
+    });
+    document.querySelectorAll('.period-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.period === 'all');
+    });
+    
+    // 新星榜隐藏周期选择
+    const periodTabs = document.getElementById('leaderboard-period-tabs');
+    periodTabs.style.display = type === 'newstar' ? 'none' : 'flex';
+    
+    loadLeaderboardData(true);
+  }
+  
+  // 切换周期
+  function switchLeaderboardPeriod(period) {
+    currentLbPeriod = period;
+    lbOffset = 0;
+    lbHasMore = true;
+    
+    document.querySelectorAll('.period-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.period === period);
+    });
+    
+    loadLeaderboardData(true);
+  }
+  
+  // 加载榜单数据
+  async function loadLeaderboardData(reset = false) {
+    if (lbLoading) return;
+    if (!reset && !lbHasMore) return;
+    
+    lbLoading = true;
+    const listEl = document.getElementById('leaderboard-list');
+    const loadingEl = document.getElementById('lb-loading-more');
+    const noMoreEl = document.getElementById('lb-no-more');
+    
+    if (reset) {
+      lbOffset = 0;
+      lbHasMore = true;
+      listEl.innerHTML = '<div class="lb-empty"><div class="lb-empty-icon">⏳</div><div class="lb-empty-text">加载中...</div></div>';
+      noMoreEl.style.display = 'none';
+    }
+    loadingEl.style.display = 'flex';
+    
+    try {
+      const userToken = localStorage.getItem('userToken') || '';
+      const url = `/api/author-leaderboard/${currentLbType}?limit=20&offset=${lbOffset}&period=${currentLbPeriod}`;
+      const response = await fetch(url, {
+        headers: { 'x-user-token': userToken }
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        // 更新标题
+        document.getElementById('leaderboard-page-title').textContent = data.title || '🏆 作者榜单';
+        
+        // 更新我的排名
+        const myRankBar = document.getElementById('my-rank-bar');
+        const myRankValue = document.getElementById('my-rank-value');
+        if (data.myRank && userToken) {
+          myRankBar.style.display = 'flex';
+          myRankValue.textContent = `第 ${data.myRank} 名`;
+        } else {
+          myRankBar.style.display = 'none';
+        }
+        
+        // 渲染列表
+        if (reset) {
+          listEl.innerHTML = '';
+        }
+        
+        if (data.list.length === 0 && lbOffset === 0) {
+          listEl.innerHTML = `
+            <div class="lb-empty">
+              <div class="lb-empty-icon">🏆</div>
+              <div class="lb-empty-text">暂无数据</div>
+            </div>
+          `;
+        } else {
+          const rankIcons = ['🥇', '🥈', '🥉'];
+          data.list.forEach(item => {
+            const rankClass = item.rank === 1 ? 'top1' : item.rank === 2 ? 'top2' : item.rank === 3 ? 'top3' : 'normal';
+            const rankDisplay = item.rank <= 3 ? rankIcons[item.rank - 1] : `#${item.rank}`;
+            const itemClass = currentLbType === 'newstar' ? 'lb-item newstar-item' : 'lb-item';
+            
+            listEl.innerHTML += `
+              <div class="${itemClass}" data-user-token="${item.user_token}">
+                <div class="lb-rank ${rankClass}">${rankDisplay}</div>
+                <div class="lb-avatar">${item.avatar_emoji}</div>
+                <div class="lb-info">
+                  <div class="lb-name">${escapeHtml(item.nickname)}</div>
+                  <div class="lb-account">${escapeHtml(item.account_id)}</div>
+                </div>
+                <div class="lb-value">
+                  <div class="lb-value-num">${item.value}</div>
+                  <div class="lb-value-label">${item.label}</div>
+                </div>
+              </div>
+            `;
+          });
+          
+          lbOffset += data.list.length;
+          lbHasMore = data.list.length === 20;
+        }
+        
+        if (!lbHasMore && lbOffset > 0) {
+          noMoreEl.style.display = 'block';
+        }
+      } else {
+        if (reset) {
+          listEl.innerHTML = `<div class="lb-empty"><div class="lb-empty-icon">😕</div><div class="lb-empty-text">加载失败: ${data.error || '未知错误'}</div></div>`;
+        }
+      }
+    } catch (error) {
+      console.error('加载榜单失败:', error);
+      if (reset) {
+        listEl.innerHTML = `<div class="lb-empty"><div class="lb-empty-icon">😕</div><div class="lb-empty-text">网络错误</div></div>`;
+      }
+    } finally {
+      lbLoading = false;
+      loadingEl.style.display = 'none';
+    }
+  }
+  
+  // 查看用户主页 - 调用已有的 openUserProfile 函数
+  function viewUserProfile(userToken) {
+    if (!userToken) return;
+    // 调用 app.js 中的 openUserProfile 函数
+    if (typeof openUserProfile === 'function') {
+      openUserProfile(userToken);
+    }
+  }
+  
+  // 榜单页面滚动加载更多 + 点击事件委托
+  (function() {
+    document.addEventListener('DOMContentLoaded', function() {
+      const container = document.querySelector('.leaderboard-list-container');
+      if (container) {
+        // 滚动加载更多
+        container.addEventListener('scroll', function() {
+          if (this.scrollHeight - this.scrollTop - this.clientHeight < 100) {
+            loadLeaderboardData(false);
+          }
+        });
+        
+        // 事件委托：区分点击和拖动
+        let startX = 0, startY = 0, isDragging = false;
+        
+        container.addEventListener('pointerdown', function(e) {
+          startX = e.clientX;
+          startY = e.clientY;
+          isDragging = false;
+        });
+        
+        container.addEventListener('pointermove', function(e) {
+          if (Math.abs(e.clientX - startX) > 10 || Math.abs(e.clientY - startY) > 10) {
+            isDragging = true;
+          }
+        });
+        
+        container.addEventListener('pointerup', function(e) {
+          // 如果是拖动，不触发点击
+          if (isDragging) return;
+          
+          // 查找被点击的 lb-item
+          const item = e.target.closest('.lb-item');
+          if (item && item.dataset.userToken) {
+            viewUserProfile(item.dataset.userToken);
+          }
+        });
+      }
+    });
+  })();
+  
+  // HTML转义函数（如果不存在）
+  if (typeof escapeHtml !== 'function') {
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  }
+  
+  // 登录功能已移至 /js/auth.js
+  </script>
+</body>
+</html>

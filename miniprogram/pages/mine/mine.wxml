@@ -56,11 +56,12 @@
     </view>
   </view>
 
-  <!-- 订阅通知提示（只有在创作中有任务时才显示） -->
+  <!-- 订阅通知提示（只有在创作中有任务时才显示；积分隐藏时不显示积分文案） -->
   <view class="subscribe-tip-card" wx:if="{{isLoggedIn && creatingTasks.length > 0}}">
     <view class="subscribe-tip-content">
       <text class="subscribe-tip-icon">💡</text>
-      <text class="subscribe-tip-text">点击任务右侧🔔可订阅完成通知（+{{subscribeReward || 0.5}}积分）</text>
+      <text class="subscribe-tip-text">点击任务右侧🔔可订阅完成通知</text>
+      <text class="subscribe-tip-text" wx:if="{{!creditsHidden}}">（+{{subscribeReward || 0.5}}积分）</text>
     </view>
   </view>
 
