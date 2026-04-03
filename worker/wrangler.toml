@@ -1,0 +1,29 @@
+# Cloudflare Worker：API（api.yijuhuayouxi.com）
+# 1) 创建 KV：npx wrangler kv namespace create USER_KV
+# 2) 把下方 id 换成命令输出的 production id（preview_id 可选，用于 wrangler dev --remote）
+# 3) 密钥：npx wrangler secret put WX_APPSECRET   npx wrangler secret put DEEPSEEK_API_KEY
+
+name = "yijuhuayouxi-api"
+main = "src/index.js"
+compatibility_date = "2024-12-01"
+
+[[kv_namespaces]]
+binding = "USER_KV"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+# 绑定自定义域时在 Cloudflare 控制台 Workers → 该 Worker → Triggers → Custom Domains
+# 或使用 routes（需 zone 已在 Cloudflare）：
+# routes = [
+#   { pattern = "api.yijuhuayouxi.com/*", zone_name = "yijuhuayouxi.com" }
+# ]
+
+[vars]
+SITE_NAME = "一句话游戏"
+SITE_SLOGAN = "一句话生成游戏"
+MINIPROGRAM_NAME = "一句话游戏"
+# 逗号分隔；生产务必收紧为你的站点
+ALLOWED_ORIGINS = "https://www.yijuhuayouxi.com,https://yijuhuayouxi.com,http://localhost:80,http://127.0.0.1:80"
+# 小程序 AppID 可放 vars（公开）；AppSecret 用 secret
+# WX_APPID = ""
+
+# DEEPSEEK_BASE_URL 默认已在代码里；如需覆盖可在此加 [vars]

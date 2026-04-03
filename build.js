@@ -112,6 +112,23 @@ function obfuscateFile(srcFile, distFile, options) {
   }
 }
 
+/** 写入 API 根地址（GitHub Pages 等静态托管时指向 https://api.yijuhuayouxi.com） */
+function writeApiBase() {
+  const base = process.env.API_BASE_URL || '';
+  const content =
+    'window.__API_BASE__ = ' +
+    JSON.stringify(base) +
+    ';\n' +
+    "window.resolveApiUrl = function (p) {\n" +
+    "  var b = String(window.__API_BASE__ || '').replace(/\\/$/, '');\n" +
+    "  if (/^https?:\\/\\//.test(p)) return p;\n" +
+    "  return b + (p.charAt(0) === '/' ? p : '/' + p);\n" +
+    "};\n";
+  const out = path.join(__dirname, 'public', 'js', 'api-base.js');
+  fs.writeFileSync(out, content, 'utf8');
+  console.log(`✓ api-base.js  API_BASE_URL=${base || '(空，与页面同域)'}\n`);
+}
+
 // 主函数
 function build() {
   console.log('========================================');
@@ -166,6 +183,8 @@ function build() {
     }
   });
   
+  writeApiBase();
+
   console.log('\n========================================');
   console.log(`完成: ${successCount} 成功, ${failCount} 失败`);
   console.log('========================================');

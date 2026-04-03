@@ -18,7 +18,7 @@
                        localStorage.getItem('aigame-user-token') || 
                        localStorage.getItem('aigame-author-token') || '';
       
-      const response = await fetch(`/api/user/status`, {
+      const response = await fetch((window.resolveApiUrl || function (p) { return p; })(`/api/user/status`), {
         headers: userToken ? { 'X-User-Token': userToken } : {}
       });
       const data = await response.json();

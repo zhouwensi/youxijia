@@ -5,9 +5,9 @@
 
 // 全局配置
 const config = {
-  // API基础地址（你的服务器）
-  baseUrl: 'https://www.yijuhuayouxi.com',
-  // 网站地址（跳转用）
+  // API：Cloudflare Worker 子域（与微信公众平台 request 合法域名一致）
+  baseUrl: 'https://api.yijuhuayouxi.com',
+  // 网站：GitHub Pages / 自定义域（复制链接、webview 用）
   webUrl: 'https://www.yijuhuayouxi.com',
   // 版本号
   version: '1.0.0',

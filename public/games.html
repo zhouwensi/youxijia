@@ -7,6 +7,7 @@
   <meta name="description" content="浏览所有AI生成的小游戏">
   <title>全部游戏 - AI Game Generator</title>
   <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/api-base.js"></script>
   <script src="/js/security.js"></script>
   <script src="/js/auth.js"></script>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
@@ -720,7 +721,7 @@
               headers = { 'X-User-Token': getUserToken() };
             }
             
-            const response = await fetch(url, { headers });
+            const response = await fetch((window.resolveApiUrl || function (u) { return u; })(url), { headers });
             const data = await response.json();
             
             if (data.success) {
@@ -744,7 +745,7 @@
         } else {
           // 全部游戏：直接请求后端API
           const url = `/api/games?sort=${currentSort}&category=${currentCategory}&orientation=${currentOrientation}&gameType=${currentGameType}&limit=${PAGE_SIZE}&offset=${currentOffset}`;
-          const response = await fetch(url);
+          const response = await fetch((window.resolveApiUrl || function (u) { return u; })(url));
           const data = await response.json();
           
           if (data.success) {

@@ -38,6 +38,7 @@ temp/
 
 # Cloudflare
 .wrangler/
+worker/wrangler.deploy.toml
 
 # SSL 证书（绝对不要提交私钥！）
 ssl/
