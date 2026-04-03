@@ -3,11 +3,9 @@
 name: Deploy Cloudflare Worker
 
 on:
+  # 不限 paths：任意 push main 都部署，避免漏跑（仅多几次 Wrangler 调用）
   push:
     branches: [main, master]
-    paths:
-      - 'worker/**'
-      - '.github/workflows/cloudflare-worker.yml'
   workflow_dispatch:
 
 concurrency:

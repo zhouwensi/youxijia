@@ -1,5 +1,17 @@
 # 游戏家 - AI 游戏生成平台
 
+## Pages + Worker：只有这些必须你本人点（无法由脚本代填）
+
+以下涉及**你的账号与密钥**，任何人/CI 都**不能**替你完成，除此之外推送 `main` 后会自动部署 Worker 与（可选）Pages。
+
+1. **GitHub** → 仓库 **Settings → Secrets and variables → Actions**，新建 Secret：  
+   - `CLOUDFLARE_API_TOKEN`：Cloudflare **API 令牌**里用模板「编辑 Cloudflare Workers」生成后**整串粘贴**（只显示一次）。  
+   - `CF_KV_NAMESPACE_ID`：`wrangler kv namespace create` 得到的 **KV id**（若已加可忽略）。  
+2. **微信小程序** → **开发管理 → 服务器域名** → **request 合法域名** 添加 `https://api.yijuhuayouxi.com`（与 `miniprogram/app.js` 的 `baseUrl` 一致）。  
+3. **GitHub Pages**（若要自动发布网站）：仓库 **Settings → Pages** → **Source** 选 **GitHub Actions**（只需设一次）。
+
+---
+
 ## 🚀 部署到 Railway
 
 ### 1. 准备工作
