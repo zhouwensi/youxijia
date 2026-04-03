@@ -128,9 +128,13 @@ cd worker && npx wrangler login
 
 ### 2. GitHub Pages
 
-仓库 **Settings → Pages**：Source 选 **GitHub Actions**。推送 `main`/`master` 后工作流会执行 `npm ci`、`npm run build`（`NODE_ENV=production`），并把 **`public/`** 作为站点根目录上传。
+仓库 **Settings → Pages**：**Build and deployment** 里 **Source 必须选 GitHub Actions**（不要停留在 “Deploy from a branch”）。**未切换时**，`deploy` 任务常会报 `Resource not found` / `Creating pages deployment failed`。
+
+推送 `main`/`master` 后工作流会执行 `npm ci`、`npm run build`（`NODE_ENV=production`），并把 **`public/`** 作为站点根目录上传。
 
 构建时会写入 `public/js/api-base.js` 中的 **`API_BASE_URL`**（工作流里默认为 `https://api.yijuhuayouxi.com`）。若你的 API 域名不同，请编辑 `.github/workflows/pages.yml` 中的 `API_BASE_URL`。
+
+另：**Settings → Actions → General → Workflow permissions** 建议为 **Read and write**（或保持默认由 workflow 内 `permissions` 声明）；组织若强制只读，需放行 `pages: write` / `id-token: write`。
 
 ### 3. 微信小程序
 

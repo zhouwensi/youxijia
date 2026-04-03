@@ -18,6 +18,10 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -35,13 +39,17 @@ jobs:
           API_BASE_URL: https://api.yijuhuayouxi.com
         run: npm run build
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: public
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    # deploy-pages 官方要求：本 job 必须显式声明（仅靠 workflow 顶层在部分仓库下会导致 Resource not found）
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
