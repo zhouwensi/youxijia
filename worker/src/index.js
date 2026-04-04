@@ -253,6 +253,54 @@ export default {
         return json(request, env, { success: true, credits: user?.credits ?? 100 });
       }
 
+      if (path === '/api/credits/daily-login' && request.method === 'POST') {
+        const token = request.headers.get('x-user-token') || request.headers.get('X-User-Token');
+        if (!token || !String(token).trim()) {
+          return json(request, env, { success: false, error: '缺少用户标识' }, 400);
+        }
+        return json(request, env, {
+          success: false,
+          error: '今日已领取',
+          alreadyClaimed: true,
+        });
+      }
+
+      const authorLbMatch = path.match(/^\/api\/author-leaderboard\/([^/]+)$/);
+      if (authorLbMatch && request.method === 'GET') {
+        const lbType = authorLbMatch[1];
+        const validLb = ['fans', 'works', 'credits', 'popularity', 'newstar'];
+        if (!validLb.includes(lbType)) {
+          return json(request, env, { success: false, error: '无效的榜单类型' }, 400);
+        }
+        const lbTitles = {
+          fans: '🏆 粉丝榜',
+          works: '📚 作品榜',
+          credits: '💎 积分榜',
+          popularity: '🔥 人气榜',
+          newstar: '⭐ 新星榜',
+        };
+        const lbLabels = {
+          fans: '粉丝',
+          works: '作品',
+          credits: '积分',
+          popularity: '人气值',
+          newstar: '综合分',
+        };
+        const period = url.searchParams.get('period') || 'all';
+        const periodLabel = period === 'week' ? '周榜' : period === 'month' ? '月榜' : '总榜';
+        const titleBase = lbTitles[lbType];
+        return json(request, env, {
+          success: true,
+          type: lbType,
+          title: period !== 'all' ? `${titleBase}·${periodLabel}` : titleBase,
+          period,
+          periodLabel,
+          list: [],
+          total: 0,
+          updated_at: new Date().toISOString(),
+        });
+      }
+
       if (path === '/api/account/login' && request.method === 'POST') {
         return handleAccountLogin(request, env, json);
       }

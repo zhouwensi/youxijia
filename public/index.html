@@ -2882,7 +2882,11 @@
       if (!container) continue;
       
       try {
-        const response = await fetch(`/api/author-leaderboard/${type}?limit=3`);
+        const lbUrl =
+          typeof resolveApiUrl === 'function'
+            ? resolveApiUrl(`/api/author-leaderboard/${type}?limit=3`)
+            : `/api/author-leaderboard/${type}?limit=3`;
+        const response = await fetch(lbUrl);
         const data = await response.json();
         
         if (data.success && data.list.length > 0) {
@@ -2996,8 +3000,13 @@
     loadingEl.style.display = 'flex';
     
     try {
-      const userToken = localStorage.getItem('userToken') || '';
-      const url = `/api/author-leaderboard/${currentLbType}?limit=20&offset=${lbOffset}&period=${currentLbPeriod}`;
+      const userToken =
+        localStorage.getItem('aigame-user-token') ||
+        localStorage.getItem('aigame-author-token') ||
+        localStorage.getItem('userToken') ||
+        '';
+      const lbPath = `/api/author-leaderboard/${currentLbType}?limit=20&offset=${lbOffset}&period=${currentLbPeriod}`;
+      const url = typeof resolveApiUrl === 'function' ? resolveApiUrl(lbPath) : lbPath;
       const response = await fetch(url, {
         headers: { 'x-user-token': userToken }
       });
