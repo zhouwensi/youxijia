@@ -2154,7 +2154,12 @@
   <!-- Toast -->
   <div class="toast" id="toast"></div>
 
+  <script src="/js/api-base.js"></script>
   <script>
+    function adminApi(p) {
+      return typeof window.resolveApiUrl === 'function' ? window.resolveApiUrl(p) : p;
+    }
+
     let adminKey = '';
     let currentGamesPage = 1;
     let currentUsersPage = 1;
@@ -2171,7 +2176,7 @@
       adminKey = key;
       
       try {
-        const response = await fetch('/api/admin/stats', {
+        const response = await fetch(adminApi('/api/admin/stats'), {
           headers: { 'X-Admin-Key': adminKey }
         });
         
@@ -2262,7 +2267,7 @@
     // 加载统计
     async function loadStats() {
       try {
-        const response = await fetch('/api/admin/stats', {
+        const response = await fetch(adminApi('/api/admin/stats'), {
           headers: { 'X-Admin-Key': adminKey }
         });
         const data = await response.json();
@@ -2275,13 +2280,13 @@
         }
 
         // 获取推荐和隐藏数量
-        const gamesRes = await fetch('/api/admin/games?limit=1&filter=featured', {
+        const gamesRes = await fetch(adminApi('/api/admin/games?limit=1&filter=featured'), {
           headers: { 'X-Admin-Key': adminKey }
         });
         const gamesData = await gamesRes.json();
         document.getElementById('stat-featured').textContent = gamesData.pagination?.total || 0;
 
-        const hiddenRes = await fetch('/api/admin/games?limit=1&filter=hidden', {
+        const hiddenRes = await fetch(adminApi('/api/admin/games?limit=1&filter=hidden'), {
           headers: { 'X-Admin-Key': adminKey }
         });
         const hiddenData = await hiddenRes.json();
@@ -2295,7 +2300,7 @@
     // 加载登录统计
     async function loadLoginStats() {
       try {
-        const response = await fetch('/api/admin/login-stats', {
+        const response = await fetch(adminApi('/api/admin/login-stats'), {
           headers: { 'X-Admin-Token': adminKey }
         });
         const data = await response.json();
@@ -2380,7 +2385,7 @@
     // 加载最近游戏
     async function loadRecentGames() {
       try {
-        const response = await fetch('/api/admin/games?limit=10', {
+        const response = await fetch(adminApi('/api/admin/games?limit=10'), {
           headers: { 'X-Admin-Key': adminKey }
         });
         const data = await response.json();
@@ -2413,7 +2418,7 @@
     // 加载配置
     async function loadConfig() {
       try {
-        const response = await fetch('/api/admin/config', {
+        const response = await fetch(adminApi('/api/admin/config'), {
           headers: { 'X-Admin-Key': adminKey }
         });
         const data = await response.json();
@@ -2462,7 +2467,7 @@
         await saveConfig();
         
         // 然后发送测试邮件
-        const response = await fetch('/api/admin/test-smtp', {
+        const response = await fetch(adminApi('/api/admin/test-smtp'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -2553,7 +2558,7 @@
       });
       
       try {
-        const response = await fetch('/api/admin/config', {
+        const response = await fetch(adminApi('/api/admin/config'), {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -2595,7 +2600,7 @@
       });
       
       try {
-        const response = await fetch('/api/admin/config', {
+        const response = await fetch(adminApi('/api/admin/config'), {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -2625,7 +2630,7 @@
       const filter = document.getElementById('game-filter').value;
       
       try {
-        const response = await fetch(`/api/admin/games?page=${page}&limit=15&search=${encodeURIComponent(search)}&filter=${filter}`, {
+        const response = await fetch(adminApi(`/api/admin/games?page=${page}&limit=15&search=${encodeURIComponent(search)}&filter=${filter}`), {
           headers: { 'X-Admin-Key': adminKey }
         });
         const data = await response.json();
@@ -2746,7 +2751,7 @@
     // 切换推荐状态
     async function toggleFeature(gameId, featured) {
       try {
-        const response = await fetch(`/api/admin/games/${gameId}`, {
+        const response = await fetch(adminApi(`/api/admin/games/${gameId}`), {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -2770,7 +2775,7 @@
     // 切换隐藏状态
     async function toggleHide(gameId, hidden) {
       try {
-        const response = await fetch(`/api/admin/games/${gameId}`, {
+        const response = await fetch(adminApi(`/api/admin/games/${gameId}`), {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -2796,7 +2801,7 @@
       if (!confirm('确定要删除这个游戏吗？\n\n游戏将从公开列表中移除，但管理员仍可在"已删除游戏"中查看和恢复。')) return;
       
       try {
-        const response = await fetch(`/api/admin/games/${gameId}`, {
+        const response = await fetch(adminApi(`/api/admin/games/${gameId}`), {
           method: 'DELETE',
           headers: { 
             'Content-Type': 'application/json',
@@ -2822,7 +2827,7 @@
       if (!confirm('确定要恢复这个游戏吗？\n\n游戏将重新出现在公开列表中。')) return;
       
       try {
-        const response = await fetch(`/api/admin/games/${gameId}/restore`, {
+        const response = await fetch(adminApi(`/api/admin/games/${gameId}/restore`), {
           method: 'POST',
           headers: { 'X-Admin-Key': adminKey }
         });
@@ -2845,7 +2850,7 @@
       
       try {
         showToast('正在修复...', 'info');
-        const response = await fetch(`/api/admin/games/${gameId}/repair`, {
+        const response = await fetch(adminApi(`/api/admin/games/${gameId}/repair`), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -2867,7 +2872,7 @@
     // 下载原始源码
     function downloadSource(gameId) {
       // 通过URL参数传递adminKey，触发下载
-      const url = `/api/admin/games/${gameId}/source?key=${encodeURIComponent(adminKey)}`;
+      const url = adminApi(`/api/admin/games/${gameId}/source?key=${encodeURIComponent(adminKey)}`);
       window.open(url, '_blank');
     }
 
@@ -2879,7 +2884,7 @@
       if (!confirm('请再次确认：真的要永久删除吗？')) return;
       
       try {
-        const response = await fetch(`/api/admin/games/${gameId}`, {
+        const response = await fetch(adminApi(`/api/admin/games/${gameId}`), {
           method: 'DELETE',
           headers: { 
             'Content-Type': 'application/json',
@@ -2950,7 +2955,7 @@
       }
       
       try {
-        const response = await fetch('/api/admin/games/batch', {
+        const response = await fetch(adminApi('/api/admin/games/batch'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -2997,7 +3002,7 @@
       currentUsersPage = page;
       
       try {
-        let url = `/api/admin/users?page=${page}&limit=15`;
+        let url = adminApi(`/api/admin/users?page=${page}&limit=15`);
         if (userSearchKeyword) {
           url += `&search=${encodeURIComponent(userSearchKeyword)}`;
         }
@@ -3310,7 +3315,7 @@
       }
       
       try {
-        const response = await fetch('/api/admin/send-batch-email', {
+        const response = await fetch(adminApi('/api/admin/send-batch-email'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -3350,7 +3355,7 @@
       }
       
       try {
-        const response = await fetch(`/api/admin/users/${encodeURIComponent(userToken)}/set-admin`, {
+        const response = await fetch(adminApi(`/api/admin/users/${encodeURIComponent(userToken)}/set-admin`), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -3447,7 +3452,7 @@
       }
       
       try {
-        const response = await fetch(`/api/admin/users/${encodeURIComponent(userToken)}/reset-password`, {
+        const response = await fetch(adminApi(`/api/admin/users/${encodeURIComponent(userToken)}/reset-password`), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -3486,7 +3491,7 @@
       }
       
       try {
-        const response = await fetch('/api/admin/add-credits', {
+        const response = await fetch(adminApi('/api/admin/add-credits'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -3599,7 +3604,7 @@
       if (!confirm(`确定要重置${target}的积分为初始值吗？`)) return;
       
       try {
-        const response = await fetch('/api/admin/tools/reset-credits', {
+        const response = await fetch(adminApi('/api/admin/tools/reset-credits'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -3630,7 +3635,7 @@
       if (!confirm(`确定要重置${target}的今日广告次数吗？`)) return;
       
       try {
-        const response = await fetch('/api/admin/tools/reset-ad-count', {
+        const response = await fetch(adminApi('/api/admin/tools/reset-ad-count'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -3661,7 +3666,7 @@
       if (!confirm(`确定要重置${target}的首次生成免费状态吗？`)) return;
       
       try {
-        const response = await fetch('/api/admin/tools/reset-first-gen', {
+        const response = await fetch(adminApi('/api/admin/tools/reset-first-gen'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -3689,7 +3694,7 @@
       if (!confirm('确定要清理30天前的隐藏游戏吗？此操作不可恢复！')) return;
       
       try {
-        const response = await fetch('/api/admin/tools/cleanup-old-games', {
+        const response = await fetch(adminApi('/api/admin/tools/cleanup-old-games'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -3716,7 +3721,7 @@
       if (!confirm('确定要清理没有任何活动的空用户吗？')) return;
       
       try {
-        const response = await fetch('/api/admin/tools/cleanup-inactive-users', {
+        const response = await fetch(adminApi('/api/admin/tools/cleanup-inactive-users'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -3743,7 +3748,7 @@
       if (!confirm('确定要清理30天前的日志数据吗？')) return;
       
       try {
-        const response = await fetch('/api/admin/tools/cleanup-logs', {
+        const response = await fetch(adminApi('/api/admin/tools/cleanup-logs'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -3770,7 +3775,7 @@
       addToolsLog('⏳ 正在优化数据库...', 'info');
       
       try {
-        const response = await fetch('/api/admin/tools/vacuum', {
+        const response = await fetch(adminApi('/api/admin/tools/vacuum'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -3797,7 +3802,7 @@
       addToolsLog('⏳ 正在重建索引...', 'info');
       
       try {
-        const response = await fetch('/api/admin/tools/reindex', {
+        const response = await fetch(adminApi('/api/admin/tools/reindex'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -3822,7 +3827,7 @@
     // 获取数据库统计
     async function getDatabaseStats() {
       try {
-        const response = await fetch('/api/admin/tools/db-stats', {
+        const response = await fetch(adminApi('/api/admin/tools/db-stats'), {
           headers: { 'X-Admin-Key': adminKey }
         });
         
@@ -3858,7 +3863,7 @@
       if (!confirm(`确定要给所有用户添加 ${amount} 积分吗？`)) return;
       
       try {
-        const response = await fetch('/api/admin/tools/batch-add-credits', {
+        const response = await fetch(adminApi('/api/admin/tools/batch-add-credits'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -3886,7 +3891,7 @@
       if (!confirm('确定要重置所有用户的公众号关注状态吗？重置后用户可以重新获得关注奖励。')) return;
       
       try {
-        const response = await fetch('/api/admin/tools/reset-follow-status', {
+        const response = await fetch(adminApi('/api/admin/tools/reset-follow-status'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -3914,7 +3919,7 @@
     async function refreshStaticFilesStats() {
       try {
         console.log('[Admin] 刷新静态文件统计, adminKey:', adminKey ? '已设置' : '未设置');
-        const response = await fetch('/api/admin/static-files-stats', {
+        const response = await fetch(adminApi('/api/admin/static-files-stats'), {
           headers: { 'X-Admin-Key': adminKey }
         });
         
@@ -3943,7 +3948,7 @@
         addToolsLog('⏳ 开始生成缺失的静态文件...', 'info');
         showToast('开始生成静态文件，请稍候...', 'info');
         
-        const response = await fetch('/api/admin/generate-static-files', {
+        const response = await fetch(adminApi('/api/admin/generate-static-files'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -3979,7 +3984,7 @@
         addToolsLog('⏳ 开始强制重新生成所有静态文件...', 'info');
         showToast('正在重新生成所有静态文件，请耐心等待...', 'info');
         
-        const response = await fetch('/api/admin/generate-static-files', {
+        const response = await fetch(adminApi('/api/admin/generate-static-files'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -4024,7 +4029,7 @@
     // 加载封禁列表
     async function loadBannedList() {
       try {
-        const response = await fetch('/api/admin/ban', {
+        const response = await fetch(adminApi('/api/admin/ban'), {
           headers: { 'X-Admin-Key': adminKey }
         });
         const data = await response.json();
@@ -4196,7 +4201,7 @@
       if (!confirm(`确定要封禁账号 ${accountId} 吗？\n封禁类型：${banTypeNames}`)) return;
       
       try {
-        const response = await fetch('/api/admin/ban', {
+        const response = await fetch(adminApi('/api/admin/ban'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -4259,7 +4264,7 @@
       if (!confirm(`确定要封禁IP ${ip} 吗？\n封禁类型：${banTypeNames}`)) return;
       
       try {
-        const response = await fetch('/api/admin/ban', {
+        const response = await fetch(adminApi('/api/admin/ban'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -4293,7 +4298,7 @@
       if (!confirm(`确定要解封账号 ${accountId} 吗？`)) return;
       
       try {
-        const response = await fetch('/api/admin/ban', {
+        const response = await fetch(adminApi('/api/admin/ban'), {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -4319,7 +4324,7 @@
       if (!confirm(`确定要解封IP ${ip} 吗？`)) return;
       
       try {
-        const response = await fetch('/api/admin/ban', {
+        const response = await fetch(adminApi('/api/admin/ban'), {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -4343,7 +4348,7 @@
     // 加载DevTools白名单
     async function loadDevToolsWhitelist() {
       try {
-        const response = await fetch('/api/admin/devtools', {
+        const response = await fetch(adminApi('/api/admin/devtools'), {
           headers: { 'X-Admin-Key': adminKey }
         });
         const data = await response.json();
@@ -4409,7 +4414,7 @@
       }
       
       try {
-        const response = await fetch('/api/admin/devtools', {
+        const response = await fetch(adminApi('/api/admin/devtools'), {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -4436,7 +4441,7 @@
       if (!confirm(`确定要从白名单移除 ${value} 吗？`)) return;
       
       try {
-        const response = await fetch('/api/admin/devtools', {
+        const response = await fetch(adminApi('/api/admin/devtools'), {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -4462,7 +4467,7 @@
     // 加载CORS白名单
     async function loadCorsWhitelist() {
       try {
-        const response = await fetch('/api/admin/cors', {
+        const response = await fetch(adminApi('/api/admin/cors'), {
           headers: { 'X-Admin-Key': adminKey }
         });
         const data = await response.json();
@@ -4514,7 +4519,7 @@
       }
       
       try {
-        const response = await fetch('/api/admin/cors', {
+        const response = await fetch(adminApi('/api/admin/cors'), {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -4542,7 +4547,7 @@
       if (!confirm(`确定要从CORS白名单移除 ${origin} 吗？\n\n⚠️ 移除后该来源的跨域请求将被阻止！`)) return;
       
       try {
-        const response = await fetch('/api/admin/cors', {
+        const response = await fetch(adminApi('/api/admin/cors'), {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -4579,7 +4584,7 @@
       }
       
       try {
-        const response = await fetch('/api/admin/create-test-account', {
+        const response = await fetch(adminApi('/api/admin/create-test-account'), {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
@@ -4606,7 +4611,7 @@
     // 加载所有测试账号
     async function loadAllTestAccounts() {
       try {
-        const response = await fetch('/api/admin/test-accounts', {
+        const response = await fetch(adminApi('/api/admin/test-accounts'), {
           headers: { 'X-Admin-Key': adminKey }
         });
         
@@ -4639,7 +4644,7 @@
       if (!confirm('确定要删除此测试账号吗？')) return;
       
       try {
-        const response = await fetch(`/api/admin/test-account/${accountId}`, {
+        const response = await fetch(adminApi(`/api/admin/test-account/${accountId}`), {
           method: 'DELETE',
           headers: { 'X-Admin-Key': adminKey }
         });
@@ -4669,7 +4674,7 @@
       const status = document.getElementById('comment-filter-status')?.value || 'all';
       
       try {
-        const response = await fetch(`/api/admin/comments?page=${page}&limit=${commentsAdminLimit}&keyword=${encodeURIComponent(keyword)}&status=${status}`, {
+        const response = await fetch(adminApi(`/api/admin/comments?page=${page}&limit=${commentsAdminLimit}&keyword=${encodeURIComponent(keyword)}&status=${status}`), {
           headers: { 'X-Admin-Key': adminKey }
         });
         const data = await response.json();
@@ -4791,7 +4796,7 @@
       if (!confirm('确定要删除这条留言吗？')) return;
       
       try {
-        const response = await fetch(`/api/admin/comments/${commentId}`, {
+        const response = await fetch(adminApi(`/api/admin/comments/${commentId}`), {
           method: 'DELETE',
           headers: { 'X-Admin-Key': adminKey }
         });
@@ -4811,7 +4816,7 @@
     // 恢复留言
     async function restoreComment(commentId) {
       try {
-        const response = await fetch(`/api/admin/comments/${commentId}/restore`, {
+        const response = await fetch(adminApi(`/api/admin/comments/${commentId}/restore`), {
           method: 'POST',
           headers: { 'X-Admin-Key': adminKey }
         });
@@ -4833,7 +4838,7 @@
       if (!confirm('确定要彻底删除这条留言吗？此操作不可恢复！')) return;
       
       try {
-        const response = await fetch(`/api/admin/comments/${commentId}/permanent`, {
+        const response = await fetch(adminApi(`/api/admin/comments/${commentId}/permanent`), {
           method: 'DELETE',
           headers: { 'X-Admin-Key': adminKey }
         });
@@ -4908,7 +4913,7 @@
     // 加载所有积分配置
     async function loadAllCreditsConfig() {
       try {
-        const response = await fetch('/api/admin/credits-all-config', {
+        const response = await fetch(adminApi('/api/admin/credits-all-config'), {
           headers: { 'X-Admin-Key': adminKey }
         });
         const data = await response.json();
@@ -5050,7 +5055,7 @@
           mpCreditsEarningLimited: document.getElementById('credits-limited-switch')?.checked !== false
         };
         
-        const response = await fetch('/api/admin/credits-all-config', {
+        const response = await fetch(adminApi('/api/admin/credits-all-config'), {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -5081,7 +5086,7 @@
     // 加载成就配置
     async function loadAchievementsConfig() {
       try {
-        const response = await fetch('/api/admin/achievements', {
+        const response = await fetch(adminApi('/api/admin/achievements'), {
           headers: { 'X-Admin-Key': adminKey }
         });
         const data = await response.json();
@@ -5186,7 +5191,7 @@
           });
         });
         
-        const response = await fetch('/api/admin/achievements', {
+        const response = await fetch(adminApi('/api/admin/achievements'), {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -5252,7 +5257,7 @@
     // 加载行为积分配置
     async function loadActionCreditsConfig() {
       try {
-        const response = await fetch('/api/admin/action-credits-config', {
+        const response = await fetch(adminApi('/api/admin/action-credits-config'), {
           headers: { 'X-Admin-Key': adminKey }
         });
         const data = await response.json();
@@ -5308,7 +5313,7 @@
           }
         };
         
-        const response = await fetch('/api/admin/action-credits-config', {
+        const response = await fetch(adminApi('/api/admin/action-credits-config'), {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -5335,7 +5340,7 @@
     // 加载特殊积分配置
     async function loadExtraCreditsConfig() {
       try {
-        const response = await fetch('/api/admin/extra-credits-config', {
+        const response = await fetch(adminApi('/api/admin/extra-credits-config'), {
           headers: { 'X-Admin-Key': adminKey }
         });
         const data = await response.json();
@@ -5373,7 +5378,7 @@
           }
         };
         
-        const response = await fetch('/api/admin/extra-credits-config', {
+        const response = await fetch(adminApi('/api/admin/extra-credits-config'), {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -5419,7 +5424,7 @@
     // 加载验证码列表
     async function loadPromoCodes() {
       try {
-        const response = await fetch('/api/admin/promo-codes', {
+        const response = await fetch(adminApi('/api/admin/promo-codes'), {
           headers: { 'X-Admin-Key': adminKey }
         });
         const data = await response.json();
@@ -5524,7 +5529,7 @@
       }
       
       try {
-        const response = await fetch('/api/admin/promo-codes', {
+        const response = await fetch(adminApi('/api/admin/promo-codes'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -5556,7 +5561,7 @@
     // 切换验证码状态
     async function togglePromoCode(code) {
       try {
-        const response = await fetch(`/api/admin/promo-codes/${encodeURIComponent(code)}/toggle`, {
+        const response = await fetch(adminApi(`/api/admin/promo-codes/${encodeURIComponent(code)}/toggle`), {
           method: 'PUT',
           headers: { 'X-Admin-Key': adminKey }
         });
@@ -5580,7 +5585,7 @@
       if (!confirm(`确定要删除验证码 "${code}" 吗？`)) return;
       
       try {
-        const response = await fetch(`/api/admin/promo-codes/${encodeURIComponent(code)}`, {
+        const response = await fetch(adminApi(`/api/admin/promo-codes/${encodeURIComponent(code)}`), {
           method: 'DELETE',
           headers: { 'X-Admin-Key': adminKey }
         });
@@ -5611,7 +5616,7 @@
       
       try {
         // 从后端获取模型列表
-        const response = await fetch('/api/admin/models', {
+        const response = await fetch(adminApi('/api/admin/models'), {
           headers: { 'X-Admin-Key': adminKey }
         });
         const data = await response.json();
@@ -5815,7 +5820,7 @@
       console.log(`[保存] 共 ${configs.length} 项配置，其中 ${apiKeyCount} 个 API Key`);
       
       try {
-        const response = await fetch('/api/admin/config', {
+        const response = await fetch(adminApi('/api/admin/config'), {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -5847,7 +5852,7 @@
       
       try {
         // 发送空值来清除 Key
-        const response = await fetch('/api/admin/config', {
+        const response = await fetch(adminApi('/api/admin/config'), {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -5914,7 +5919,7 @@
     // 加载当前默认模型设置
     async function loadCurrentDefaultModel() {
       try {
-        const response = await fetch('/api/admin/config', {
+        const response = await fetch(adminApi('/api/admin/config'), {
           headers: { 'X-Admin-Key': adminKey }
         });
         const data = await response.json();
@@ -5945,7 +5950,7 @@
       }
       
       try {
-        const response = await fetch('/api/admin/config', {
+        const response = await fetch(adminApi('/api/admin/config'), {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -6013,7 +6018,7 @@
       
       try {
         const periodParam = type === 'newstar' ? '' : `&period=${currentAdminPeriod}`;
-        const response = await fetch(`/api/author-leaderboard/${type}?limit=50${periodParam}`, {
+        const response = await fetch(adminApi(`/api/author-leaderboard/${type}?limit=50${periodParam}`), {
           headers: { 'X-Admin-Key': adminKey }
         });
         const data = await response.json();
@@ -6073,7 +6078,7 @@
       }
       
       try {
-        const response = await fetch(`/api/admin/user/search?keyword=${encodeURIComponent(keyword)}`, {
+        const response = await fetch(adminApi(`/api/admin/user/search?keyword=${encodeURIComponent(keyword)}`), {
           headers: { 'X-Admin-Key': adminKey }
         });
         const data = await response.json();
@@ -6158,7 +6163,7 @@
       }
       
       try {
-        const response = await fetch('/api/admin/leaderboard/exclude', {
+        const response = await fetch(adminApi('/api/admin/leaderboard/exclude'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -6191,7 +6196,7 @@
       const tbody = document.getElementById('exclude-list-tbody');
       
       try {
-        const response = await fetch('/api/admin/leaderboard/excludes', {
+        const response = await fetch(adminApi('/api/admin/leaderboard/excludes'), {
           headers: { 'X-Admin-Key': adminKey }
         });
         const data = await response.json();
@@ -6243,7 +6248,7 @@
       if (!confirm('确定要将该用户从排除名单中移除吗？')) return;
       
       try {
-        const response = await fetch(`/api/admin/leaderboard/exclude/${encodeURIComponent(userToken)}`, {
+        const response = await fetch(adminApi(`/api/admin/leaderboard/exclude/${encodeURIComponent(userToken)}`), {
           method: 'DELETE',
           headers: { 'X-Admin-Key': adminKey }
         });
@@ -6269,7 +6274,7 @@
       try {
         showToast('正在重新生成静态文件...', 'info');
         
-        const response = await fetch(`/api/admin/games/${gameId}/regenerate`, {
+        const response = await fetch(adminApi(`/api/admin/games/${gameId}/regenerate`), {
           method: 'POST',
           headers: { 'X-Admin-Key': adminKey }
         });
@@ -6290,7 +6295,7 @@
       if (!confirm(`确定要使用AI修复游戏「${gameTitle}」的代码吗？\n\nAI将在后台自动分析并修复游戏中的错误。\n修复完成后会自动更新游戏，无需等待。`)) return;
       
       try {
-        const response = await fetch(`/api/admin/games/${gameId}/ai-repair`, {
+        const response = await fetch(adminApi(`/api/admin/games/${gameId}/ai-repair`), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

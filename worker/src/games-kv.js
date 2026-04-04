@@ -23,7 +23,7 @@ async function putGame(kv, game) {
   await kv.put(`${GAME_PREFIX}${game.id}`, JSON.stringify(game));
 }
 
-async function readIndex(kv) {
+export async function readIndex(kv) {
   const raw = await kv.get(INDEX_KEY);
   if (!raw) return [];
   try {
@@ -69,6 +69,7 @@ function toListItem(g) {
     status: g.status || 'published',
     comment_count: g.comment_count || 0,
     is_hidden: g.is_hidden ?? 0,
+    is_featured: g.is_featured ?? 0,
   };
 }
 
@@ -116,6 +117,7 @@ export async function createGame(kv, body) {
     visibility: gameVisibility,
     is_public: isPublic,
     is_hidden: 0,
+    is_featured: 0,
     llm_model: null,
     play_count: 0,
     like_count: 0,
@@ -293,4 +295,100 @@ export async function listGames(kv, url) {
       },
     },
   };
+}
+
+function rowToAdminGame(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    prompt: row.prompt,
+    author_name: row.author_name,
+    play_count: row.play_count || 0,
+    like_count: row.like_count || 0,
+    favorite_count: row.favorite_count || 0,
+    is_featured: row.is_featured ?? 0,
+    is_hidden: row.is_hidden ?? 0,
+    category: row.category ?? null,
+    created_at: row.created_at,
+  };
+}
+
+export async function adminListGames(kv, url) {
+  const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
+  const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '20', 10)));
+  const offset = (page - 1) * limit;
+  const search = (url.searchParams.get('search') || '').trim().toLowerCase();
+  const filter = url.searchParams.get('filter') || 'all';
+
+  let rows = await readIndex(kv);
+  if (search) {
+    rows = rows.filter(
+      (g) =>
+        (g.title && String(g.title).toLowerCase().includes(search)) ||
+        (g.prompt && String(g.prompt).toLowerCase().includes(search))
+    );
+  }
+  if (filter === 'featured') {
+    rows = rows.filter((g) => (g.is_featured ?? 0) === 1);
+  } else if (filter === 'hidden') {
+    rows = rows.filter((g) => (g.is_hidden ?? 0) === 1);
+  }
+  rows = [...rows].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  const total = rows.length;
+  const slice = rows.slice(offset, offset + limit).map((r) => rowToAdminGame(r));
+  return {
+    success: true,
+    games: slice,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    },
+  };
+}
+
+async function removeFromAuthorIndex(kv, authorToken, gameId) {
+  if (!authorToken) return;
+  const k = `author:${authorToken}`;
+  const raw = await kv.get(k);
+  let ids = [];
+  try {
+    ids = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(ids)) ids = [];
+  } catch {
+    ids = [];
+  }
+  ids = ids.filter((x) => x !== gameId);
+  await kv.put(k, JSON.stringify(ids));
+}
+
+export async function adminUpdateGameFlags(kv, id, body) {
+  const game = await getGame(kv, id);
+  if (!game) return { ok: false, status: 404, body: { success: false, error: '游戏不存在' } };
+  if (body.is_featured !== undefined) game.is_featured = body.is_featured ? 1 : 0;
+  if (body.is_hidden !== undefined) game.is_hidden = body.is_hidden ? 1 : 0;
+  if (body.category !== undefined) game.category = body.category;
+  game.updated_at = nowIso();
+  await putGame(kv, game);
+  const idx = await readIndex(kv);
+  const i = idx.findIndex((x) => x.id === id);
+  if (i >= 0) {
+    idx[i] = toListItem(game);
+    await writeIndex(kv, idx);
+  } else if (game.status === 'published') {
+    idx.unshift(toListItem(game));
+    await writeIndex(kv, idx);
+  }
+  return { ok: true, body: { success: true, message: '游戏已更新' } };
+}
+
+export async function adminDeleteGame(kv, id) {
+  const game = await getGame(kv, id);
+  if (!game) return { ok: false, status: 404, body: { success: false, error: '游戏不存在' } };
+  await kv.delete(`${GAME_PREFIX}${id}`);
+  const idx = (await readIndex(kv)).filter((x) => x.id !== id);
+  await writeIndex(kv, idx);
+  await removeFromAuthorIndex(kv, game.author_token, id);
+  return { ok: true, body: { success: true, message: '已删除' } };
 }

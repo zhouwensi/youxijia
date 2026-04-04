@@ -55,11 +55,12 @@ jobs:
             npx wrangler deploy
           fi
 
-      - name: 同步 Worker Secrets（微信 / LLM）
+      - name: 同步 Worker Secrets（微信 / LLM / 管理后台）
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           WX_APPSECRET: ${{ secrets.WX_APPSECRET }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          ADMIN_KEY: ${{ secrets.ADMIN_KEY }}
         run: |
           if [ -n "$WX_APPSECRET" ]; then
             echo "$WX_APPSECRET" | npx wrangler secret put WX_APPSECRET
@@ -70,4 +71,9 @@ jobs:
             echo "$DEEPSEEK_API_KEY" | npx wrangler secret put DEEPSEEK_API_KEY
           else
             echo "未设置 DEEPSEEK_API_KEY，/api/generate 需用户自带 Key"
+          fi
+          if [ -n "$ADMIN_KEY" ]; then
+            echo "$ADMIN_KEY" | npx wrangler secret put ADMIN_KEY
+          else
+            echo "未设置 ADMIN_KEY，管理后台 /admin.html 将无法登录 Worker 版接口"
           fi

@@ -5,7 +5,7 @@
 其余（改代码、push、Worker 部署、防再次提交 `.env`）已由仓库内 workflow 自动化。
 
 1. **密钥只放在平台，不进 Git**  
-   - GitHub **Settings → Secrets → Actions**：`CLOUDFLARE_API_TOKEN`、`CF_KV_NAMESPACE_ID`；可选 `WX_APPSECRET`、`DEEPSEEK_API_KEY`。  
+   - GitHub **Settings → Secrets → Actions**：`CLOUDFLARE_API_TOKEN`、`CF_KV_NAMESPACE_ID`；可选 `WX_APPSECRET`、`DEEPSEEK_API_KEY`、**`ADMIN_KEY`**（管理后台 `/admin.html`）。  
    - 本地开发：自己维护 **`.env`**（从 `.env.example` 复制），**勿提交**。若曾泄露：**微信公众平台重置 AppSecret**，并换新 `ADMIN_KEY` 等（见 `SECURITY.md`）。
 2. **微信小程序**：**服务器域名** 与 `miniprogram/app.js` 里 `baseUrl` 一致（如 `https://api.yijuhuayouxi.com`）。  
 3. **GitHub Pages**（要自动发站时）：**Settings → Pages → Source：GitHub Actions**。
@@ -92,8 +92,9 @@ npx wrangler kv namespace create USER_KV
 将 `wrangler.toml` 里 `REPLACE_WITH_KV_NAMESPACE_ID` 换成上一步输出的 **production** id。
 
 ```bash
-npx wrangler secret put DEEPSEEK_API_KEY   # 或依赖用户自带 Key 调 /api/generate
+npx wrangler secret put DEEPSEEK_API_KEY   # 默认 LLM；不配则生成接口需用户自带 Key
 npx wrangler secret put WX_APPSECRET      # 小程序正式登录必填
+npx wrangler secret put ADMIN_KEY         # 管理后台密钥（与本地 .env 的 ADMIN_KEY 可相同或不同）
 ```
 
 在 `wrangler.toml` 的 `[vars]` 中填写 `WX_APPID`（AppId 可公开）。部署：
@@ -103,6 +104,20 @@ npx wrangler deploy
 ```
 
 在 Cloudflare 控制台为该 Worker 绑定自定义域 **`api.yijuhuayouxi.com`**（或你在 `ALLOWED_ORIGINS` 里允许的 API 域）。
+
+#### Worker 管理后台（`public/admin.html`）
+
+- 浏览器打开 **`https://你的站点域名/admin.html`**（与首页同源，由 Pages 托管）。
+- 页面已通过 **`/js/api-base.js`** 把 `/api/admin/*` 请求发到 **Worker API 域名**，不再误请求 Pages 上的 `/api`。
+- 在 Worker 配置 **`ADMIN_KEY`**（`wrangler secret put ADMIN_KEY` 或 GitHub Actions Secret 同名）后，用该密钥登录。
+- **已实现（KV）**：概览统计、站点配置读写（存 KV `admin:system_config`）、游戏列表/推荐与隐藏/删除、源码下载、模型列表展示、登录统计与安全日志占位等。
+- **未迁移（仍为 501）**：依赖 SQLite 的用户管理、积分工具、评论后台、封禁、静态文件批量生成等；需使用本地 **`server.js`** 或后续继续移植。
+
+#### Worker 侧 LLM（生成游戏）
+
+- **`DEEPSEEK_API_KEY`**（Secret）：写入 Worker 后，`/api/generate` 在用户未自带 `llmConfig.apiKey` 时作为默认 Key 调用 DeepSeek（见 `worker/src/generate.js`）。
+- 可选在 **`wrangler.toml` 的 `[vars]`** 增加 `DEEPSEEK_BASE_URL` 指向兼容 OpenAI 格式的网关（默认 `https://api.deepseek.com`）。
+- 前端「自定义接口 / 自带 Key」仍会随请求体传入 `llmConfig`，优先于环境变量。
 
 #### 一次性：本机登录（仅当你选择本地部署时）
 
@@ -124,6 +139,7 @@ cd worker && npx wrangler login
 | Secret | `CF_KV_NAMESPACE_ID` | 先在本地或任意环境执行一次 `npx wrangler kv namespace create USER_KV`，把输出的 **id** 粘到这里（勿提交进 Git） |
 | Secret | `WX_APPSECRET` | 小程序 AppSecret（可选；不配则 Worker 内为 mock 微信登录） |
 | Secret | `DEEPSEEK_API_KEY` | 默认 LLM Key（可选；不配则仅靠用户自带 Key 调生成） |
+| Secret | `ADMIN_KEY` | 管理后台密钥（可选；不配则 `/admin.html` 无法通过 Worker 校验） |
 | Variable | `WX_APPID` | 小程序 AppID（可选；与 `WX_APPSECRET` 成对使用） |
 
 说明：流水线会在构建时用 `CF_KV_NAMESPACE_ID` **替换** `wrangler.toml` 里的占位符；**仓库里的 `wrangler.toml` 仍可保留 `REPLACE_WITH_KV_NAMESPACE_ID`**，勿把真实 id 提交进公开仓库。

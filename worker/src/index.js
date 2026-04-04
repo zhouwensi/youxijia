@@ -9,6 +9,7 @@ import {
   handleAccountNickname,
   handleAccountChangePassword,
 } from './accounts-kv.js';
+import { handleAdminRequest } from './admin-kv.js';
 
 const DEFAULT_ORIGINS = [
   'https://www.yijuhuayouxi.com',
@@ -41,7 +42,8 @@ function corsHeaders(request, env) {
   return {
     'Access-Control-Allow-Origin': allow,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-User-Token, X-Author-Token, x-user-token, x-platform, Authorization',
+    'Access-Control-Allow-Headers':
+      'Content-Type, X-User-Token, X-Author-Token, x-user-token, x-platform, Authorization, X-Admin-Key, X-Admin-Token',
     'Access-Control-Allow-Credentials': 'true',
     Vary: 'Origin',
   };
@@ -703,6 +705,10 @@ export default {
 
       if (path.match(/^\/api\/users\/[^/]+\/follow$/) && request.method === 'POST') {
         return json(request, env, { success: true, following: true });
+      }
+
+      if (path.startsWith('/api/admin')) {
+        return handleAdminRequest(request, env, url, json);
       }
 
       return json(
