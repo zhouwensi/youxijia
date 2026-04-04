@@ -493,6 +493,10 @@ Page({
     menuItems.push('🔐 修改登录密码');
     menuActions.push('changepwd');
 
+    // 微信用户绑定邮箱，与网站同一账号
+    menuItems.push('📧 绑定邮箱（与网站同账号）');
+    menuActions.push('bindemail');
+
     // 绑定网站/重置密码（旧流程，可选）
     menuItems.push(webActivated ? '🔑 网站激活链接(旧)' : '🔗 网站激活链接(旧)');
     menuActions.push('activate');
@@ -511,6 +515,9 @@ Page({
             break;
           case 'changepwd':
             wx.navigateTo({ url: '/pages/auth/auth?mode=changepwd' });
+            break;
+          case 'bindemail':
+            wx.navigateTo({ url: '/pages/auth/auth?mode=bindEmail' });
             break;
           case 'activate':
             that.generateWebActivateLink();

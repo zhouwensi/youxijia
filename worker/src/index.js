@@ -8,6 +8,7 @@ import {
   handleAccountRegister,
   handleAccountNickname,
   handleAccountChangePassword,
+  handleBindEmail,
 } from './accounts-kv.js';
 import { handleAdminRequest } from './admin-kv.js';
 
@@ -145,6 +146,8 @@ async function handleWechatLogin(request, env) {
         nickname: user.nickname || user.account_id,
         avatar_emoji: '🎮',
         credits: user.credits ?? 0,
+        email: user.email || '',
+        has_password: !!(user.has_password && user.password_hash),
       },
     },
   });
@@ -356,6 +359,10 @@ export default {
 
       if (path === '/api/account/password' && request.method === 'POST') {
         return handleAccountChangePassword(request, env, json);
+      }
+
+      if (path === '/api/account/bind-email' && request.method === 'POST') {
+        return handleBindEmail(request, env, json);
       }
 
       if (path === '/api/account/secure-recover' && request.method === 'POST') {

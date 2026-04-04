@@ -57,6 +57,20 @@ export async function verifyPassword(password, hash) {
 export async function saveUser(kv, user) {
   const openid = user.wechat_openid;
   if (!openid) throw new Error('user.wechat_openid required');
+  const rawPrev = await kv.get(`user:${openid}`);
+  let prev = null;
+  try {
+    prev = rawPrev ? JSON.parse(rawPrev) : null;
+  } catch {
+    prev = null;
+  }
+  if (prev && prev.email) {
+    const pe = normalizeEmail(prev.email);
+    const ne = normalizeEmail(user.email);
+    if (pe && pe !== ne) {
+      await kv.delete(`email:${pe}`);
+    }
+  }
   await kv.put(`user:${openid}`, JSON.stringify(user));
   await kv.put(`token:${user.user_token}`, openid);
   if (user.account_id) {
@@ -146,6 +160,71 @@ export async function handleAccountLogin(request, env, json) {
       accountId: user.account_id,
       nickname: displayNickname(user),
       rawNickname: user.nickname,
+      hasPassword: true,
+      email: user.email || null,
+    },
+  });
+}
+
+/**
+ * 微信登录用户绑定邮箱+密码，与网站共用同一账号（同一 KV 用户、积分与作品）
+ */
+export async function handleBindEmail(request, env, json) {
+  if (!env.USER_KV) {
+    return json(request, env, { success: false, error: '未配置 USER_KV' }, 503);
+  }
+  const token = request.headers.get('x-user-token') || request.headers.get('X-User-Token');
+  const user = await getUserByToken(env.USER_KV, token);
+  if (!user) {
+    return json(request, env, { success: false, error: '请先登录' }, 401);
+  }
+  let body = {};
+  try {
+    body = await request.json();
+  } catch {
+    return json(request, env, { success: false, error: '无效 JSON' }, 400);
+  }
+  const emailNorm = normalizeEmail(body.email);
+  const password = body.password;
+  if (!emailNorm) {
+    return json(request, env, { success: false, error: '请输入有效邮箱' }, 400);
+  }
+  if (!password || String(password).length < 8) {
+    return json(request, env, { success: false, error: '密码至少 8 位' }, 400);
+  }
+
+  const oid = String(user.wechat_openid || '');
+  if (oid.startsWith('em_')) {
+    return json(request, env, { success: false, error: '当前已是邮箱注册账号，请直接使用邮箱登录网站' }, 400);
+  }
+  if (normalizeEmail(user.email || '') === emailNorm && user.password_hash) {
+    return json(request, env, { success: false, error: '该邮箱已绑定本账号' }, 400);
+  }
+
+  const kv = env.USER_KV;
+  const taken = await kv.get(`email:${emailNorm}`);
+  if (taken && taken !== user.wechat_openid) {
+    return json(request, env, {
+      success: false,
+      error:
+        '该邮箱已在网站或其他入口注册。请在小程序选择「邮箱登录」使用原账号，勿使用「微信一键登录」另开新号。',
+    }, 400);
+  }
+
+  user.email = emailNorm;
+  user.password_hash = bcrypt.hashSync(password, 10);
+  user.has_password = true;
+  user.auth_provider = user.auth_provider === 'email' ? 'email' : 'wechat+email';
+  await saveUser(kv, user);
+
+  return json(request, env, {
+    success: true,
+    message: '绑定成功，可在网站用该邮箱与密码登录，数据与积分与本小程序一致',
+    userToken: user.user_token,
+    account: {
+      accountId: user.account_id,
+      nickname: displayNickname(user),
+      email: user.email,
       hasPassword: true,
     },
   });
@@ -291,6 +370,7 @@ export async function handleAccountRegister(request, env, json) {
       nickname: displayNickname(user),
       rawNickname: user.nickname,
       hasPassword: true,
+      email: user.email || null,
     },
   });
 }

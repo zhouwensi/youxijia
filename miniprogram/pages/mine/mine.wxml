@@ -11,7 +11,7 @@
       </view>
       <view class="login-info">
         <text class="login-title">登录体验更多功能</text>
-        <text class="login-desc">邮箱注册与网站通用；积分领取在「积分」页</text>
+        <text class="login-desc">邮箱登录与网站同一账号；积分在「积分」页领取</text>
       </view>
       <view class="login-actions">
         <button class="login-btn" bindtap="goEmailAuth">邮箱登录 / 注册</button>

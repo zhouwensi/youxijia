@@ -1,5 +1,23 @@
 <view class="page">
-  <view wx:if="{{mode === 'changepwd'}}">
+  <view wx:if="{{mode === 'bindEmail'}}">
+    <view wx:if="{{alreadyBound}}" class="hint" style="margin-bottom: 24rpx;">
+      <view>已绑定邮箱：<text style="color:#00d4ff;">{{boundEmail}}</text></view>
+      <view>与网站使用同一账号，积分与作品自动同步。</view>
+    </view>
+    <block wx:else>
+      <view class="label">邮箱（与网站登录一致）</view>
+      <input class="input form-group" type="text" placeholder="your@email.com" value="{{bindEmail}}" bindinput="onBindEmail" />
+      <view class="label">密码（至少 8 位，网站登录用同一密码）</view>
+      <input class="input form-group" type="password" password="{{true}}" value="{{bindPassword}}" bindinput="onBindPassword" />
+      <view class="label">确认密码</view>
+      <input class="input form-group" type="password" password="{{true}}" value="{{bindPassword2}}" bindinput="onBindPassword2" />
+      <view class="error" wx:if="{{error}}">{{error}}</view>
+      <button class="btn-primary" loading="{{loading}}" bindtap="submitBindEmail">绑定并同步网站</button>
+    </block>
+    <view class="hint">绑定后：网站用该邮箱+密码登录，与小程序为同一用户（同一积分、作品）。领取/兑换积分仍在小程序完成。</view>
+  </view>
+
+  <view wx:elif="{{mode === 'changepwd'}}">
     <view class="label">当前密码</view>
     <input class="input form-group" type="password" password="{{true}}" placeholder="原密码" value="{{oldPassword}}" bindinput="onOldPwd" />
     <view class="label">新密码（至少 8 位）</view>
@@ -24,7 +42,7 @@
       <input class="input form-group" type="password" password="{{true}}" placeholder="密码" value="{{loginPassword}}" bindinput="onLoginPassword" />
       <view class="error" wx:if="{{error}}">{{error}}</view>
       <button class="btn-primary" loading="{{loading}}" bindtap="submitLogin">登录</button>
-      <button class="btn-secondary" bindtap="wxLoginOnly">微信一键登录</button>
+      <button class="btn-secondary" bindtap="wxLoginOnly">仅微信登录（未绑邮箱时与网站不同步）</button>
     </block>
 
     <block wx:else>
@@ -40,6 +58,7 @@
       <button class="btn-primary" loading="{{loading}}" bindtap="submitRegister">注册并登录</button>
     </block>
 
-    <view class="hint">💎 领取与兑换积分仅在小程序「积分」页完成；网站与小程序使用同一邮箱账号即可同步数据。</view>
+    <view class="hint">💎 与网站一致：请用「邮箱登录」或「注册」；若已用微信登录，请到「我的 → 绑定邮箱」后再到网站用邮箱登录。</view>
+    <view class="hint">领取与兑换积分仅在小程序「积分」页完成；积分与作品在网站与小程序共用同一账号。</view>
   </view>
 </view>
