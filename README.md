@@ -1,6 +1,6 @@
 # 一句话游戏
 
-用 AI（DeepSeek / OpenAI 等）把一句话描述变成可玩的 HTML5 小游戏。**正式线上环境不依赖你自备的物理机或本机长期跑 Node**：网站走静态托管，接口走 **Cloudflare Worker**；微信小程序请求同一套 API 域名。
+用 AI（DeepSeek / OpenAI 等）把一句话描述变成可玩的 HTML5 小游戏。**正式线上环境不依赖你自备的物理机或本机长期跑 Node**：网站走 **GitHub Pages**（如 `https://www.yijuhuayouxi.com`），接口走 **Cloudflare Worker**。本地 `start.bat` / `npm start` 仅用于开发预览（`http://localhost`），**关电脑后请用 www 域名访问**；若 www 打不开，按 `DEPLOY.md`「关本机后网站打不开」检查 DNS，勿让域名仍指向本机或旧服务器。
 
 ## 推荐架构（无自有服务器）
 

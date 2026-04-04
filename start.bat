@@ -109,13 +109,18 @@ echo.
 
 :: 显示启动信息
 echo ================================================================
-echo   服务器启动中...
-echo   访问地址: http://localhost:%PORT%
-echo   按 Ctrl+C 可停止服务器
+echo   本机开发服务启动中...
+echo   本地访问: http://localhost:%PORT%
+echo.
+echo   【重要】线上正式网站不依赖本机，请用浏览器打开:
+echo   https://www.yijuhuayouxi.com
+echo   若关电脑后打不开该地址，说明域名 DNS 仍指向本机或旧服务器，
+echo   请按仓库 DEPLOY.md「关本机后网站打不开」一节改 DNS（GitHub Pages）。
+echo   按 Ctrl+C 可停止本机服务
 echo ================================================================
 echo.
 
-:: 尝试自动打开浏览器（延迟2秒后）
+:: 仅打开本机预览（正式站请手动访问 www 域名）
 start "" cmd /c "timeout /t 2 /nobreak >nul && start http://localhost:%PORT%"
 
 :: 启动服务器（前台运行，显示日志）

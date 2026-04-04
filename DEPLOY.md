@@ -138,6 +138,35 @@ cd worker && npx wrangler login
 
 另：**Settings → Actions → General → Workflow permissions** 建议为 **Read and write**（或保持默认由 workflow 内 `permissions` 声明）；组织若强制只读，需放行 `pages: write` / `id-token: write`。
 
+仓库已包含 **`public/CNAME`**（`www.yijuhuayouxi.com`）与 **`public/.nojekyll`**，推送到 `main` 后由 Pages 工作流一并发布，便于 GitHub 识别自定义域。
+
+#### 关本机 / 停掉 `start.bat` 后，https://www.yijuhuayouxi.com 打不开？
+
+这与**代码无关**，几乎都是 **DNS 仍指向你的电脑或旧 VPS**。`start.bat` 只会打开 **http://localhost**，正式站必须走公网域名 + **GitHub Pages**。
+
+请按顺序自检（在域名 DNS 托管处操作，常见为 **Cloudflare** 或与注册商处）：
+
+1. **不要用内网或本机地址访问**  
+   收藏夹里若是 `http://localhost`、`http://127.0.0.1` 或 `http://192.168.x.x`，关电脑后必然打不开；请改用 **`https://www.yijuhuayouxi.com`**。
+
+2. **删掉指向旧服务器 / 家里宽带的 A 记录**  
+   若 **`@`（根域）或 `www` 的 A 记录** 仍是你以前那台机器或路由器的公网 IP，关那台机后网站即挂。**只走 GitHub Pages 时，根域不要再用这些 A。**
+
+3. **按 GitHub 官方要求改指向 Pages**（与 [GitHub 文档](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site#configuring-an-apex-domain) 一致）  
+   - **根域 `yijuhuayouxi.com`（@）**：添加 **4 条 A 记录**，分别为 `185.199.108.153`、`185.199.109.153`、`185.199.110.153`、`185.199.111.153`。  
+   - **`www`**：一条 **CNAME**，指向 **`zhouwensi.github.io`**（不要带 `https://` 和路径；仓库名为 `youxijia` 时，项目站即挂在此用户名下）。  
+
+4. **GitHub 仓库侧**  
+   **Settings → Pages → Custom domain** 填写 `www.yijuhuayouxi.com`（或根域，与 DNS 一致），保存后等待校验通过，再勾选 **Enforce HTTPS**。
+
+5. **Cloudflare 橙云**  
+   若校验或证书长期异常，可先将上述 A / CNAME 设为 **仅 DNS（灰云）**，通过后再按需开代理。
+
+6. **本机 `hosts`**  
+   若曾把 `yijuhuayouxi.com` 指到 `127.0.0.1`，删除该条后再试。
+
+确认 **Actions → Deploy GitHub Pages** 最近一次为成功（绿勾）后，再访问自定义域。
+
 ### 3. 微信小程序
 
 1. 公众平台 → **开发管理 → 服务器域名**：将 **`https://api.yijuhuayouxi.com`**（或你的 Worker 域）加入 **request 合法域名**。
