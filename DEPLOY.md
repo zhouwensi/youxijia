@@ -53,6 +53,8 @@ Railway 提供持久化存储，SQLite 数据库会自动保存。
 
 ## 💻 本地开发
 
+`games.db` 已加入 `.gitignore` 且**不再纳入 Git 跟踪**；新克隆仓库后首次 `npm start` 会自动生成 SQLite 文件（或按你现有迁移流程导入）。
+
 ```bash
 # 安装依赖
 npm install

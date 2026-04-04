@@ -35,8 +35,8 @@ jobs:
       - name: Build frontend (混淆 + api-base.js)
         env:
           NODE_ENV: production
-          # 默认 API 子域；若使用其它 Worker 域名，在仓库 Settings → Variables 新增 API_BASE_URL 并在下方改为 ${{ vars.API_BASE_URL }}
-          API_BASE_URL: https://api.yijuhuayouxi.com
+          # 默认 API 子域；可在仓库 Settings → Variables 设置 API_BASE_URL 覆盖
+          API_BASE_URL: ${{ vars.API_BASE_URL || 'https://api.yijuhuayouxi.com' }}
         run: npm run build
 
       - uses: actions/upload-pages-artifact@v4

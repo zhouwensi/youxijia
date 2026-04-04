@@ -14,6 +14,7 @@
 
 构建时会把 `public/js/api-base.js` 写成带 `window.__API_BASE__` 的脚本，供浏览器把 `/api/...` 指到 Worker：
 
+- **GitHub Pages 构建**（Actions）默认同上；可在仓库 **Settings → Variables** 设置 **`API_BASE_URL`** 覆盖 Worker 域名。
 - 未设置环境变量 **`API_BASE_URL`** 时，**默认**为 `https://api.yijuhuayouxi.com`（与 `build.js` 一致）。
 - 若要与页面**同域**调 API（例如本地 `npm start` 只开 Node），请在构建前设置：`API_BASE_URL=`（空字符串）或省略由 `.env` 覆盖（`build.js` 会尝试 `dotenv`）。
 

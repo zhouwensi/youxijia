@@ -39,6 +39,8 @@ jobs:
             exit 1
           fi
           sed -i.bak "s/REPLACE_WITH_KV_NAMESPACE_ID/${CF_KV_NAMESPACE_ID}/g" wrangler.toml
+          # 仓库内若已写死 id，仍覆盖为 Secret 中的值，避免与 CI 不一致
+          sed -i.bak2 "s/^id = \".*\"/id = \"${CF_KV_NAMESPACE_ID}\"/" wrangler.toml
 
       - name: 部署 Worker
         env:
