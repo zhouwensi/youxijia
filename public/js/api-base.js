@@ -1,4 +1,4 @@
-window.__API_BASE__ = "";
+window.__API_BASE__ = "https://api.yijuhuayouxi.com";
 window.resolveApiUrl = function (p) {
   var b = String(window.__API_BASE__ || '').replace(/\/$/, '');
   if (/^https?:\/\//.test(p)) return p;

@@ -1,4 +1,11 @@
 import { runGenerate } from './generate.js';
+import { createGame, updateGame, getGameDetail, listGames, listMyGames, getGame } from './games-kv.js';
+import {
+  getUserByToken,
+  saveUser,
+  handleAccountLogin,
+  handleSecureRecover,
+} from './accounts-kv.js';
 
 const DEFAULT_ORIGINS = [
   'https://www.yijuhuayouxi.com',
@@ -15,10 +22,19 @@ function parseOrigins(env) {
   return raw.split(',').map((s) => s.trim()).filter(Boolean);
 }
 
-function corsHeaders(request, env) {
+function pickAllowOrigin(request, env) {
   const origin = request.headers.get('Origin') || '';
   const allowed = parseOrigins(env);
-  const allow = allowed.includes(origin) ? origin : allowed[0] || '*';
+  if (!origin) return allowed[0] || '*';
+  if (allowed.includes(origin)) return origin;
+  if (String(env.ALLOW_GITHUB_IO || '') === 'true' && /^https:\/\/[a-zA-Z0-9.-]+\.github\.io$/i.test(origin)) {
+    return origin;
+  }
+  return allowed[0] || '*';
+}
+
+function corsHeaders(request, env) {
+  const allow = pickAllowOrigin(request, env);
   return {
     'Access-Control-Allow-Origin': allow,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
@@ -38,24 +54,6 @@ function json(request, env, data, status = 200) {
 async function sha256Short(text) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
-}
-
-async function getUserByToken(kv, token) {
-  if (!kv || !token) return null;
-  const openid = await kv.get(`token:${token}`);
-  if (!openid) return null;
-  const raw = await kv.get(`user:${openid}`);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-
-async function saveUser(kv, user) {
-  await kv.put(`user:${user.wechat_openid}`, JSON.stringify(user));
-  await kv.put(`token:${user.user_token}`, user.wechat_openid);
 }
 
 async function handleWechatLogin(request, env) {
@@ -110,6 +108,8 @@ async function handleWechatLogin(request, env) {
       wechat_openid: openid,
       credits: 100,
     };
+    await saveUser(kv, user);
+  } else {
     await saveUser(kv, user);
   }
 
@@ -253,8 +253,23 @@ export default {
         return json(request, env, { success: true, credits: user?.credits ?? 100 });
       }
 
+      if (path === '/api/account/login' && request.method === 'POST') {
+        return handleAccountLogin(request, env, json);
+      }
+
+      if (path === '/api/account/secure-recover' && request.method === 'POST') {
+        return handleSecureRecover(request, env, json);
+      }
+
       if (path === '/api/account/init' && request.method === 'POST') {
         const token = request.headers.get('x-user-token') || request.headers.get('X-User-Token');
+        let body = {};
+        try {
+          body = await request.json();
+        } catch {
+          body = {};
+        }
+        const deviceFingerprint = body.deviceFingerprint || '';
         const user = await getUserByToken(env.USER_KV, token);
         if (!user) {
           return json(request, env, {
@@ -266,7 +281,14 @@ export default {
             account: null,
           });
         }
+        if (deviceFingerprint) {
+          user.device_fingerprint = deviceFingerprint;
+          await saveUser(env.USER_KV, user);
+        } else {
+          await saveUser(env.USER_KV, user);
+        }
         const displayNickname = user.nickname && user.nickname !== '游戏玩家' ? user.nickname : user.account_id;
+        const hasPassword = !!(user.has_password && user.password_hash);
         return json(request, env, {
           success: true,
           recovered: false,
@@ -275,8 +297,8 @@ export default {
             accountId: user.account_id,
             nickname: displayNickname,
             rawNickname: user.nickname,
-            hasPassword: false,
-            createdAt: new Date().toISOString(),
+            hasPassword,
+            createdAt: user.created_at || new Date().toISOString(),
           },
         });
       }
@@ -288,6 +310,7 @@ export default {
           return json(request, env, { success: false, error: '账号不存在，请刷新页面' }, 404);
         }
         const displayNickname = user.nickname && user.nickname !== '游戏玩家' ? user.nickname : user.account_id;
+        const hasPassword = !!(user.has_password && user.password_hash);
         return json(request, env, {
           success: true,
           account: {
@@ -295,11 +318,11 @@ export default {
             accountId: user.account_id,
             nickname: displayNickname,
             rawNickname: user.nickname,
-            hasPassword: false,
-            has_password: false,
-            email: null,
-            createdAt: new Date().toISOString(),
-            created_at: new Date().toISOString(),
+            hasPassword,
+            has_password: hasPassword,
+            email: user.email || null,
+            createdAt: user.created_at || new Date().toISOString(),
+            created_at: user.created_at || new Date().toISOString(),
           },
         });
       }
@@ -330,33 +353,173 @@ export default {
         });
       }
 
+      const kvGames = env.USER_KV;
+
+      if (path === '/api/games/search' || path.startsWith('/api/games/search/')) {
+        if (request.method === 'GET') {
+          return json(request, env, { success: true, games: [], pagination: { total: 0, hasMore: false } });
+        }
+      }
+
       if (path === '/api/games' && request.method === 'GET') {
-        return json(request, env, {
-          success: true,
-          games: [],
-          data: [],
-          pagination: { hasMore: false, total: 0, offset: 0, limit: 20 },
-        });
+        if (!kvGames) {
+          return json(request, env, {
+            success: true,
+            games: [],
+            pagination: { hasMore: false, total: 0, offset: 0, limit: 20 },
+          });
+        }
+        const r = await listGames(kvGames, url);
+        return json(request, env, r.body);
+      }
+
+      if (path === '/api/games' && request.method === 'POST') {
+        if (!kvGames) {
+          return json(request, env, { success: false, error: 'KV 未配置' }, 503);
+        }
+        let body = {};
+        try {
+          body = await request.json();
+        } catch {
+          return json(request, env, { success: false, error: '无效 JSON' }, 400);
+        }
+        const r = await createGame(kvGames, body);
+        return json(request, env, r.body, r.ok ? 200 : r.status);
       }
 
       if (path === '/api/games/recent' && request.method === 'GET') {
-        return json(request, env, { success: true, games: [] });
+        if (!kvGames) return json(request, env, { success: true, games: [] });
+        const u = new URL(url.href);
+        u.pathname = '/api/games';
+        if (!u.searchParams.has('limit')) u.searchParams.set('limit', '10');
+        const r = await listGames(kvGames, u);
+        return json(request, env, { success: true, games: r.body.games || [] });
       }
 
       if (path === '/api/games/hot' && request.method === 'GET') {
-        return json(request, env, { success: true, games: [] });
+        if (!kvGames) return json(request, env, { success: true, games: [] });
+        const u = new URL(url.href);
+        u.pathname = '/api/games';
+        u.searchParams.set('sort', 'hot');
+        if (!u.searchParams.has('limit')) u.searchParams.set('limit', '10');
+        const r = await listGames(kvGames, u);
+        return json(request, env, { success: true, games: r.body.games || [] });
       }
 
       if (path === '/api/games/featured' && request.method === 'GET') {
-        return json(request, env, { success: true, games: [] });
+        if (!kvGames) return json(request, env, { success: true, games: [] });
+        const u = new URL(url.href);
+        u.pathname = '/api/games';
+        if (!u.searchParams.has('limit')) u.searchParams.set('limit', '10');
+        const r = await listGames(kvGames, u);
+        return json(request, env, { success: true, games: r.body.games || [] });
       }
 
       if (path.startsWith('/api/leaderboard/') && request.method === 'GET') {
-        return json(request, env, { success: true, games: [] });
+        if (!kvGames) return json(request, env, { success: true, games: [] });
+        const u = new URL(url.href);
+        u.pathname = '/api/games';
+        u.searchParams.set('sort', 'hot');
+        if (!u.searchParams.has('limit')) u.searchParams.set('limit', '20');
+        const r = await listGames(kvGames, u);
+        return json(request, env, { success: true, games: r.body.games || [] });
       }
 
       if (path === '/api/my-games' && request.method === 'GET') {
-        return json(request, env, { success: true, games: [] });
+        if (!kvGames) {
+          return json(request, env, {
+            success: true,
+            games: [],
+            stats: { count: 0, plays: 0, likes: 0 },
+          });
+        }
+        const authorToken =
+          request.headers.get('x-author-token') ||
+          request.headers.get('X-Author-Token') ||
+          request.headers.get('x-user-token') ||
+          request.headers.get('X-User-Token');
+        const r = await listMyGames(kvGames, authorToken);
+        return json(request, env, r.body);
+      }
+
+      const putGameId = path.match(/^\/api\/games\/([^/]+)$/);
+      if (putGameId && request.method === 'PUT') {
+        const id = putGameId[1];
+        if (!['recent', 'hot', 'featured', 'search'].includes(id)) {
+          if (!kvGames) {
+            return json(request, env, { success: false, error: 'KV 未配置' }, 503);
+          }
+          let body = {};
+          try {
+            body = await request.json();
+          } catch {
+            body = {};
+          }
+          const hdr = request.headers.get('x-author-token') || request.headers.get('X-Author-Token');
+          const r = await updateGame(kvGames, id, body, hdr);
+          return json(request, env, r.body, r.ok ? 200 : r.status);
+        }
+      }
+
+      const getGameId = path.match(/^\/api\/games\/([^/]+)$/);
+      if (getGameId && request.method === 'GET') {
+        const id = getGameId[1];
+        if (!['recent', 'hot', 'featured', 'search'].includes(id)) {
+          if (!kvGames) {
+            return json(request, env, { success: false, error: '游戏不存在' }, 404);
+          }
+          const r = await getGameDetail(kvGames, id);
+          return json(request, env, r.body, r.ok ? 200 : r.status);
+        }
+      }
+
+      const subGame = path.match(/^\/api\/games\/([^/]+)\/(like-status|favorite-status|can-edit|stats)$/);
+      if (subGame && request.method === 'GET') {
+        const id = subGame[1];
+        const kind = subGame[2];
+        if (kind === 'like-status' || kind === 'favorite-status') {
+          return json(request, env, { success: true, liked: false, favorited: false });
+        }
+        if (kind === 'stats') {
+          return json(request, env, { success: true, plays: 0, likes: 0, favorites: 0, comments: 0 });
+        }
+        if (kind === 'can-edit') {
+          if (!kvGames) {
+            return json(request, env, { success: true, canEdit: false, reason: '未登录' });
+          }
+          const g = await getGame(kvGames, id);
+          if (!g) return json(request, env, { success: false, error: '游戏不存在' }, 404);
+          const ut = request.headers.get('x-user-token') || request.headers.get('X-User-Token');
+          const at = request.headers.get('x-author-token') || request.headers.get('X-Author-Token');
+          const isAuthor = g.author_token === ut || g.author_token === at;
+          return json(request, env, {
+            success: true,
+            canEdit: isAuthor,
+            isAuthor,
+            isAdmin: false,
+            reason: isAuthor ? '作者' : '无权限',
+          });
+        }
+      }
+
+      if (path.match(/^\/api\/games\/[^/]+\/like$/) && request.method === 'POST') {
+        return json(request, env, { success: true, liked: true, likeCount: 1, creditAwarded: false });
+      }
+
+      if (path.match(/^\/api\/games\/[^/]+\/favorite$/) && request.method === 'POST') {
+        return json(request, env, { success: true, favorited: true, favoriteCount: 1 });
+      }
+
+      if (path.match(/^\/api\/games\/[^/]+\/play$/) && request.method === 'POST') {
+        return json(request, env, { success: true });
+      }
+
+      if (path.match(/^\/api\/games\/[^/]+\/verify$/) && request.method === 'POST') {
+        return json(request, env, { success: true, isAuthor: true });
+      }
+
+      if (path.match(/^\/api\/games\/[^/]+\/comments/) && request.method === 'GET') {
+        return json(request, env, { success: true, comments: [] });
       }
 
       if (path === '/api/my-likes' && request.method === 'GET') {
@@ -438,14 +601,6 @@ export default {
 
       if (path.match(/^\/api\/users\/[^/]+\/follow$/) && request.method === 'POST') {
         return json(request, env, { success: true, following: true });
-      }
-
-      if (path.startsWith('/api/games/') && request.method === 'GET') {
-        const parts = path.split('/').filter(Boolean);
-        const reserved = new Set(['recent', 'hot', 'featured', 'search']);
-        if (parts.length === 3 && !reserved.has(parts[2])) {
-          return json(request, env, { success: false, error: '游戏不存在或尚未迁移到云端' }, 404);
-        }
       }
 
       return json(

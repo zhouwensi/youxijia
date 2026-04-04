@@ -59,8 +59,9 @@ miniprogram/
 
 2. **配置服务器域名**
    
-   在微信公众平台 → 开发管理 → 开发设置 → 服务器域名，添加：
-   - request合法域名：`https://www.yijuhuayouxi.com`
+   在微信公众平台 → 开发管理 → 开发设置 → 服务器域名，添加（与 `app.js` 里 `baseUrl` / `webUrl` 一致）：
+   - **request 合法域名**：`https://api.yijuhuayouxi.com`（API 走 Cloudflare Worker，**不依赖你本机或自建 VPS**）
+   - **业务域名 / web-view**（若使用）：`https://www.yijuhuayouxi.com`（网站静态站 + 自定义域）
 
 ### 3. 导入项目
 
@@ -82,12 +83,14 @@ miniprogram/
 
 ## 🔧 后端适配
 
-### 需要在后端添加的接口
+线上一律走 **Cloudflare Worker**（`../worker/`，路由含 `/api/wechat/login`、`/api/site-config` 等），**不需要**在你本机或 VPS 上跑 `server.js`。
 
-小程序需要后端新增一个微信登录接口：
+以下为历史说明：若你仍用旧版一体化 Node 服务，可参考其中登录逻辑（字段名以当前 Worker / `server.js` 实现为准）。
+
+### （可选）在自建 Node 中实现登录接口
 
 ```javascript
-// server.js 中添加
+// server.js 中添加（可选；与 Worker 二选一）
 
 // 微信小程序登录接口
 app.post('/api/wechat/login', async (req, res) => {

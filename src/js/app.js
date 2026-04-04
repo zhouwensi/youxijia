@@ -1,10 +1,7 @@
 // ==================== 模型配置常量（统一定义） ====================
 
-/** 静态托管（GitHub Pages）时由 /js/api-base.js 注入 __API_BASE__，API 在独立子域 */
-function resolveApiUrl(path) {
-  if (typeof window !== 'undefined' && typeof window.resolveApiUrl === 'function') {
-    return window.resolveApiUrl(path);
-  }
+/** 静态托管时由 /js/api-base.js 注入 __API_BASE__。勿用全局名 resolveApiUrl，否则会覆盖 api-base 并导致自调用栈溢出 */
+function buildApiUrl(path) {
   const base =
     typeof window !== 'undefined' && window.__API_BASE__
       ? String(window.__API_BASE__).replace(/\/$/, '')
@@ -67,7 +64,7 @@ async function loadModelRegistry() {
   }
   
   try {
-    const response = await fetch(resolveApiUrl('/api/turbo-models'));
+    const response = await fetch(buildApiUrl('/api/turbo-models'));
     const data = await response.json();
     if (data.success && data.models) {
       // 将数组转换为对象格式
@@ -323,7 +320,7 @@ const state = {
  */
 async function loadSiteConfig() {
   try {
-    const response = await fetch(resolveApiUrl('/api/site-config'));
+    const response = await fetch(buildApiUrl('/api/site-config'));
     const data = await response.json();
     if (data.success) {
       // API 直接返回字段，不包装在 config 中
@@ -772,7 +769,7 @@ async function initAccount() {
     // 如果用户主动退出过，不使用设备指纹恢复
     const deviceFingerprint = getDeviceFingerprint();
 
-    const response = await fetch(resolveApiUrl('/api/account/init'), {
+    const response = await fetch(buildApiUrl('/api/account/init'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -846,7 +843,7 @@ async function recoverAccount(accountId, password = null) {
     const deviceFingerprint = getDeviceFingerprint();
     
     // 使用安全恢复API
-    const response = await fetch(resolveApiUrl('/api/account/secure-recover'), {
+    const response = await fetch(buildApiUrl('/api/account/secure-recover'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ accountId, password, deviceFingerprint })
@@ -1004,7 +1001,7 @@ async function saveGeneratingState() {
         const authorToken = getAuthorToken();
         const authorName = getEffectiveAuthorName();
         
-        const response = await fetch(resolveApiUrl('/api/games'), {
+        const response = await fetch(buildApiUrl('/api/games'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1068,7 +1065,7 @@ function startDraftPolling(draftId) {
     }
     
     try {
-      const response = await fetch(resolveApiUrl(`/api/games/${draftId}`));
+      const response = await fetch(buildApiUrl(`/api/games/${draftId}`));
       const data = await response.json();
       
       if (data.success && data.game) {
@@ -1218,7 +1215,7 @@ let userBanStatus = { banned: false, type: null, reason: null, expireAt: null };
 // 检查用户封禁状态
 async function checkUserBanStatus() {
   try {
-    const response = await fetch(resolveApiUrl('/api/check-ban'), {
+    const response = await fetch(buildApiUrl('/api/check-ban'), {
       headers: {
         'X-User-Token': state.token || ''
       }
@@ -1314,6 +1311,14 @@ function log(message, type = 'info') {
 // 页面加载时初始化
 document.addEventListener('DOMContentLoaded', async () => {
   log('页面加载完成，初始化应用...', 'info');
+  // GitHub Pages：深链 /game/:id 会先落到 404.html 再跳回 /，在此恢复真实路径供路由使用
+  try {
+    const sp = sessionStorage.getItem('__spa_restore_path');
+    if (sp) {
+      sessionStorage.removeItem('__spa_restore_path');
+      history.replaceState(null, '', sp);
+    }
+  } catch (_) {}
   loadSettings();
   
   // 加载网站配置（包括写操作禁用状态）
@@ -1597,7 +1602,7 @@ function fallbackCopy(text) {
 async function updateNickname(nickname) {
   try {
     const userToken = getUserToken();
-    const response = await fetch(resolveApiUrl('/api/account/nickname'), {
+    const response = await fetch(buildApiUrl('/api/account/nickname'), {
       method: 'PUT',
       headers: { 
         'Content-Type': 'application/json',
@@ -1649,7 +1654,7 @@ async function updateNickname(nickname) {
 async function setAccountPassword(password) {
   try {
     const userToken = getUserToken();
-    const response = await fetch(resolveApiUrl('/api/account/password'), {
+    const response = await fetch(buildApiUrl('/api/account/password'), {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -1676,7 +1681,7 @@ async function setAccountPassword(password) {
 async function changeAccountPassword(oldPassword, newPassword) {
   try {
     const userToken = getUserToken();
-    const response = await fetch(resolveApiUrl('/api/account/change-password'), {
+    const response = await fetch(buildApiUrl('/api/account/change-password'), {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -1847,7 +1852,7 @@ async function submitSetPassword() {
 // 账号登录
 async function loginWithAccount(accountId, password) {
   try {
-    const response = await fetch(resolveApiUrl('/api/account/login'), {
+    const response = await fetch(buildApiUrl('/api/account/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ accountId, password })
@@ -2073,7 +2078,7 @@ async function doLogin() {
   }
   
   try {
-    const response = await fetch(resolveApiUrl('/api/account/login'), {
+    const response = await fetch(buildApiUrl('/api/account/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ accountId, password })
@@ -2509,7 +2514,7 @@ async function loadClaimableAchievementsByCategory() {
       return;
     }
     
-    const response = await fetch(resolveApiUrl('/api/user/credits-progress'), {
+    const response = await fetch(buildApiUrl('/api/user/credits-progress'), {
       headers: { 'X-User-Token': userToken }
     });
     
@@ -2895,7 +2900,7 @@ async function showInteractionCreditTip(actionType, progressData = null) {
     try {
       const userToken = getUserToken();
       if (userToken) {
-        const response = await fetch(resolveApiUrl('/api/user/credits-progress'), {
+        const response = await fetch(buildApiUrl('/api/user/credits-progress'), {
           headers: { 'X-User-Token': userToken }
         });
         const data = await response.json();
@@ -3316,7 +3321,7 @@ async function loadHomeSection(sectionName) {
         apiUrl = `/api/games?sort=newest&limit=${HOME_SECTION_LIMIT}&offset=0`;
     }
     
-    const res = await fetch(resolveApiUrl(apiUrl));
+    const res = await fetch(buildApiUrl(apiUrl));
     const data = await res.json();
     
     if (data.success && data.games && data.games.length > 0) {
@@ -3662,7 +3667,7 @@ let tipInterval = null;
 // 加载后台配置的Tips
 async function loadTipsConfig() {
   try {
-    const response = await fetch(resolveApiUrl('/api/config/tips'));
+    const response = await fetch(buildApiUrl('/api/config/tips'));
     const data = await response.json();
     
     if (data.success) {
@@ -3922,7 +3927,7 @@ async function loadProfilePageData() {
 
   // 优先从服务器获取最新账号信息
   try {
-    const accountResponse = await fetch(resolveApiUrl('/api/account'), {
+    const accountResponse = await fetch(buildApiUrl('/api/account'), {
       headers: { 'X-User-Token': userToken }
     });
     
@@ -3961,7 +3966,7 @@ async function loadProfilePageData() {
 
   // 加载游戏统计
   try {
-    const response = await fetch(resolveApiUrl('/api/my-games'), {
+    const response = await fetch(buildApiUrl('/api/my-games'), {
       headers: { 'X-Author-Token': getAuthorToken() }
     });
     const data = await response.json();
@@ -4287,7 +4292,7 @@ async function loadProfilePageGames() {
   container.innerHTML = '<div class="loading-games">加载中...</div>';
   
   try {
-    const response = await fetch(resolveApiUrl('/api/my-games'), {
+    const response = await fetch(buildApiUrl('/api/my-games'), {
       headers: { 'X-Author-Token': getAuthorToken() }
     });
     const data = await response.json();
@@ -4466,7 +4471,7 @@ function confirmDeleteDraft(draftId) {
 // 删除草稿
 async function deleteDraft(draftId) {
   try {
-    const response = await fetch(resolveApiUrl(`/api/games/${draftId}`), {
+    const response = await fetch(buildApiUrl(`/api/games/${draftId}`), {
       method: 'DELETE',
       headers: { 'X-Author-Token': getAuthorToken() }
     });
@@ -4543,7 +4548,7 @@ async function loadProfilePageLikes() {
   container.innerHTML = '<div class="loading-games">加载中...</div>';
   
   try {
-    const response = await fetch(resolveApiUrl('/api/my-likes'), {
+    const response = await fetch(buildApiUrl('/api/my-likes'), {
       headers: { 'X-User-Token': getUserToken() }
     });
     const data = await response.json();
@@ -4577,7 +4582,7 @@ async function loadProfilePageFavorites() {
   container.innerHTML = '<div class="loading-games">加载中...</div>';
   
   try {
-    const response = await fetch(resolveApiUrl('/api/my-favorites'), {
+    const response = await fetch(buildApiUrl('/api/my-favorites'), {
       headers: { 'X-User-Token': getUserToken() }
     });
     const data = await response.json();
@@ -4611,7 +4616,7 @@ async function loadProfilePageComments() {
   container.innerHTML = '<div class="loading-games">加载中...</div>';
   
   try {
-    const response = await fetch(resolveApiUrl('/api/my-comments'), {
+    const response = await fetch(buildApiUrl('/api/my-comments'), {
       headers: { 'X-User-Token': getUserToken() }
     });
     const data = await response.json();
@@ -4663,7 +4668,7 @@ function renderMyCommentCard(comment) {
 // 切换评论隐藏状态
 async function toggleMyCommentHidden(commentId) {
   try {
-    const response = await fetch(resolveApiUrl(`/api/my-comments/${commentId}/toggle-hidden`), {
+    const response = await fetch(buildApiUrl(`/api/my-comments/${commentId}/toggle-hidden`), {
       method: 'POST',
       headers: { 'X-User-Token': getUserToken() }
     });
@@ -4686,7 +4691,7 @@ async function deleteMyComment(commentId) {
   if (!confirm('确定要删除这条评论吗？')) return;
   
   try {
-    const response = await fetch(resolveApiUrl(`/api/my-comments/${commentId}`), {
+    const response = await fetch(buildApiUrl(`/api/my-comments/${commentId}`), {
       method: 'DELETE',
       headers: { 'X-User-Token': getUserToken() }
     });
@@ -4721,7 +4726,7 @@ async function openMyCommentsPage() {
   grid.innerHTML = '<div class="loading-games">加载中...</div>';
   
   try {
-    const response = await fetch(resolveApiUrl('/api/my-comments?limit=100'), {
+    const response = await fetch(buildApiUrl('/api/my-comments?limit=100'), {
       headers: { 'X-User-Token': getUserToken() }
     });
     const data = await response.json();
@@ -4891,7 +4896,7 @@ function hideDraftActions() {
 async function regenerateDraft(prompt, draftId) {
   // 先删除旧草稿
   try {
-    await fetch(resolveApiUrl(`/api/games/${draftId}`), {
+    await fetch(buildApiUrl(`/api/games/${draftId}`), {
       method: 'DELETE',
       headers: { 'X-Author-Token': getAuthorToken() }
     });
@@ -5279,7 +5284,7 @@ function onProviderChange() {
 async function loadGames() {
   try {
     // 只加载最新创作（10个）
-    const recentRes = await fetch(resolveApiUrl('/api/games/recent?limit=10'));
+    const recentRes = await fetch(buildApiUrl('/api/games/recent?limit=10'));
     const recentData = await recentRes.json();
     renderGamesList('recent-games', recentData.games || []);
     state.recentGamesOffset = (recentData.games || []).length;
@@ -5310,7 +5315,7 @@ async function loadAllGamesSection() {
   container.innerHTML = '<div class="loading-games">加载中...</div>';
   
   try {
-    const res = await fetch(resolveApiUrl('/api/games?sort=hot&limit=10'));
+    const res = await fetch(buildApiUrl('/api/games?sort=hot&limit=10'));
     const data = await res.json();
     
     if (data.success && data.games && data.games.length > 0) {
@@ -5335,7 +5340,7 @@ async function loadFeaturedGames() {
   container.innerHTML = '<div class="loading-games">加载中...</div>';
   
   try {
-    const res = await fetch(resolveApiUrl('/api/leaderboard/featured?limit=10'));
+    const res = await fetch(buildApiUrl('/api/leaderboard/featured?limit=10'));
     const data = await res.json();
     
     if (data.success && data.games && data.games.length > 0) {
@@ -5375,7 +5380,7 @@ async function loadLeaderboardData(type, append = false) {
   try {
     const offset = state.leaderboard.offsets[type];
     const limit = state.leaderboard.pageSize;
-    const res = await fetch(resolveApiUrl(`/api/leaderboard/${type}?limit=${limit}&offset=${offset}`));
+    const res = await fetch(buildApiUrl(`/api/leaderboard/${type}?limit=${limit}&offset=${offset}`));
     const data = await res.json();
     
     if (data.success && data.games && data.games.length > 0) {
@@ -5561,7 +5566,7 @@ function initLeaderboardSwiper() {
 // 加载更多游戏
 async function loadMoreGames() {
   try {
-    const res = await fetch(resolveApiUrl(`/api/games/recent?offset=${state.recentGamesOffset}`));
+    const res = await fetch(buildApiUrl(`/api/games/recent?offset=${state.recentGamesOffset}`));
     const data = await res.json();
     
     if (data.games && data.games.length > 0) {
@@ -5676,7 +5681,7 @@ let modelEstimatedTimes = {}; // 各模型预计时间配置
 // 从服务器加载模型预计生成时间配置
 async function loadModelEstimatedTimes() {
   try {
-    const response = await fetch(resolveApiUrl('/api/config/model-times'));
+    const response = await fetch(buildApiUrl('/api/config/model-times'));
     if (response.ok) {
       const data = await response.json();
       modelEstimatedTimes = data.times || {};
@@ -5749,7 +5754,7 @@ async function fetchTurboModels() {
   if (turboModelsCache) return turboModelsCache;
   
   try {
-    const response = await fetch(resolveApiUrl('/api/turbo-models'));
+    const response = await fetch(buildApiUrl('/api/turbo-models'));
     const data = await response.json();
     if (data.success) {
       turboModelsCache = data.models;
@@ -5937,7 +5942,7 @@ async function selectTurboModel(modelId, creditCost, needsUserKey = false) {
   if (oldRequestId) {
     try {
       const userToken = getUserToken();
-      await fetch(resolveApiUrl('/api/cancel-generation'), {
+      await fetch(buildApiUrl('/api/cancel-generation'), {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -6015,7 +6020,7 @@ async function generateGameWithTurbo(prompt, turboModelId) {
     // 获取当前高级设置
     const advancedSettings = getCurrentAdvancedSettings();
     
-    const response = await fetch(resolveApiUrl('/api/generate'), {
+    const response = await fetch(buildApiUrl('/api/generate'), {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -6376,7 +6381,7 @@ async function cancelGeneration() {
   if (requestIdToCancel) {
     try {
       const userToken = getUserToken();
-      await fetch(resolveApiUrl('/api/cancel-generation'), {
+      await fetch(buildApiUrl('/api/cancel-generation'), {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -6395,7 +6400,7 @@ async function cancelGeneration() {
   if (draftIdToDelete) {
     try {
       const authorToken = getAuthorToken();
-      const response = await fetch(resolveApiUrl(`/api/games/${draftIdToDelete}`), {
+      const response = await fetch(buildApiUrl(`/api/games/${draftIdToDelete}`), {
         method: 'DELETE',
         headers: {
           'X-Author-Token': authorToken || ''
@@ -6606,7 +6611,7 @@ async function generateGame(advancedSettings = null) {
     state.currentRequestId = requestId;
     console.log(`[DEBUG] 生成请求ID: ${requestId}`);
     
-    const response = await fetch(resolveApiUrl('/api/generate'), {
+    const response = await fetch(buildApiUrl('/api/generate'), {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -6724,7 +6729,7 @@ async function generateGame(advancedSettings = null) {
         const authorToken = getAuthorToken();
         console.log('[DEBUG] 更新草稿状态:', { draftId, authorToken: authorToken?.slice(0,8) + '...' });
         
-        const updateResponse = await fetch(resolveApiUrl(`/api/games/${draftId}`), {
+        const updateResponse = await fetch(buildApiUrl(`/api/games/${draftId}`), {
           method: 'PUT',
           headers: { 
             'Content-Type': 'application/json',
@@ -6836,7 +6841,7 @@ async function autoSaveAndPublishGame(title, prompt, code, draftId) {
     
     if (gameId) {
       // 更新已有游戏（草稿或已发布的游戏）
-      const response = await fetch(resolveApiUrl(`/api/games/${gameId}`), {
+      const response = await fetch(buildApiUrl(`/api/games/${gameId}`), {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -6860,7 +6865,7 @@ async function autoSaveAndPublishGame(title, prompt, code, draftId) {
       state.currentGameId = gameId;
     } else {
       // 创建新游戏
-      const response = await fetch(resolveApiUrl('/api/games'), {
+      const response = await fetch(buildApiUrl('/api/games'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -7118,7 +7123,7 @@ async function confirmSaveGame() {
     let response;
     if (isEditing) {
       // 编辑模式：更新现有游戏
-      response = await fetch(resolveApiUrl(`/api/games/${state.currentGameId}`), {
+      response = await fetch(buildApiUrl(`/api/games/${state.currentGameId}`), {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -7131,7 +7136,7 @@ async function confirmSaveGame() {
       });
     } else if (existingGameId) {
       // 更新已有游戏（草稿或已发布的游戏）
-      response = await fetch(resolveApiUrl(`/api/games/${existingGameId}`), {
+      response = await fetch(buildApiUrl(`/api/games/${existingGameId}`), {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -7150,7 +7155,7 @@ async function confirmSaveGame() {
       state.currentGameId = existingGameId;
     } else {
       // 创建新游戏
-      response = await fetch(resolveApiUrl('/api/games'), {
+      response = await fetch(buildApiUrl('/api/games'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -7204,6 +7209,7 @@ async function openGame(gameId) {
   await loadGameById(gameId);
   history.pushState(null, '', `/game/${gameId}`);
 }
+window.openGame = openGame;
 
 // 显示游戏加载状态
 function showGameLoading(show) {
@@ -7240,11 +7246,15 @@ function reloadGame() {
 async function loadGameById(gameId) {
   console.log(`[DEBUG] 加载游戏: ${gameId}`);  // 仅控制台输出
   
-  // 统一使用静态页面来获得最佳体验（微信和其他浏览器均使用独立HTML页面）
-  if (!window.location.pathname.startsWith('/g/')) {
-    // 如果不是已经在静态页面，则跳转到静态页面
+  // GitHub Pages / 静态托管：API 在独立子域，无 /g/ 下静态文件，改为走 SPA + /api/games/:id
+  const useApiEmbed =
+    typeof window !== 'undefined' &&
+    window.__API_BASE__ &&
+    String(window.__API_BASE__).trim() !== '';
+  // 自建站有静态 /g/ 文件时仍走独立 HTML；静态托管时不要用 /g/（会 404）
+  if (!window.location.pathname.startsWith('/g/') && !useApiEmbed) {
     const staticUrl = `/g/${gameId.substring(0, 2)}/${gameId}.html`;
-    console.log(`[DEBUG] 跳转到静态游戏页面: ${staticUrl}`);  // 仅控制台输出
+    console.log(`[DEBUG] 跳转到静态游戏页面: ${staticUrl}`);
     window.location.href = staticUrl;
     return;
   }
@@ -7253,7 +7263,7 @@ async function loadGameById(gameId) {
   showGameLoading(true);
   
   try {
-    const response = await fetch(resolveApiUrl(`/api/games/${gameId}`));
+    const response = await fetch(buildApiUrl(`/api/games/${gameId}`));
     const data = await response.json();
     
     if (!data.success) {
@@ -7775,7 +7785,7 @@ async function checkIsAuthor(gameId) {
   
   try {
     // 调用后端API检查编辑权限（包括作者和管理员）
-    const response = await fetch(resolveApiUrl(`/api/games/${gameId}/can-edit`), {
+    const response = await fetch(buildApiUrl(`/api/games/${gameId}/can-edit`), {
       headers: { 'X-User-Token': userToken }
     });
     const data = await response.json();
@@ -7866,7 +7876,7 @@ async function executeRepairGame() {
   }
   
   try {
-    const response = await fetch(resolveApiUrl(`/api/games/${state.currentGameId}/repair`), {
+    const response = await fetch(buildApiUrl(`/api/games/${state.currentGameId}/repair`), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -7993,7 +8003,7 @@ async function likeGame() {
   if (!state.currentGameId) return;
   
   try {
-    const response = await fetch(resolveApiUrl(`/api/games/${state.currentGameId}/like`), {
+    const response = await fetch(buildApiUrl(`/api/games/${state.currentGameId}/like`), {
       method: 'POST',
       headers: { 'X-User-Token': getUserToken() }
     });
@@ -8524,7 +8534,7 @@ async function loadCredits(options = {}) {
   try {
     const oldCredits = state.credits;
     
-    const response = await fetch(resolveApiUrl('/api/credits'), {
+    const response = await fetch(buildApiUrl('/api/credits'), {
       headers: { 'X-User-Token': getUserToken() }
     });
     const data = await response.json();
@@ -8714,7 +8724,7 @@ async function checkClaimableRewardsCount() {
     if (!userToken) return;
     
     // 使用 credits-progress 接口获取完整的可领取数量
-    const response = await fetch(resolveApiUrl('/api/user/credits-progress'), {
+    const response = await fetch(buildApiUrl('/api/user/credits-progress'), {
       headers: { 'X-User-Token': userToken }
     });
     
@@ -8757,7 +8767,7 @@ async function loadActionWays() {
     }
     
     // 添加 cache: 'no-store' 确保每次都获取最新数据
-    const response = await fetch(resolveApiUrl('/api/credits/action-ways'), { 
+    const response = await fetch(buildApiUrl('/api/credits/action-ways'), { 
       headers,
       cache: 'no-store'
     });
@@ -8915,7 +8925,7 @@ async function verifyWechatFollow() {
   }
   
   try {
-    const response = await fetch(resolveApiUrl('/api/credits/follow-wechat'), {
+    const response = await fetch(buildApiUrl('/api/credits/follow-wechat'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -8956,7 +8966,7 @@ async function verifyWechatFromPromo() {
   }
 
   try {
-    const response = await fetch(resolveApiUrl('/api/credits/follow-wechat'), {
+    const response = await fetch(buildApiUrl('/api/credits/follow-wechat'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -9001,7 +9011,7 @@ async function watchAd() {
   // 模拟广告播放
   setTimeout(async () => {
     try {
-      const response = await fetch(resolveApiUrl('/api/credits/watch-ad'), {
+      const response = await fetch(buildApiUrl('/api/credits/watch-ad'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -9079,7 +9089,7 @@ async function redeemArticleCode() {
   }
   
   try {
-    const response = await fetch(resolveApiUrl('/api/credits/redeem-code'), {
+    const response = await fetch(buildApiUrl('/api/credits/redeem-code'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -9114,7 +9124,7 @@ async function checkArticlePromoFromURL() {
   // 延迟执行，确保用户token已初始化
   setTimeout(async () => {
     try {
-      const response = await fetch(resolveApiUrl('/api/credits/article-visit'), {
+      const response = await fetch(buildApiUrl('/api/credits/article-visit'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -9202,7 +9212,7 @@ async function sendEmailVerifyCode() {
   if (btn) btn.disabled = true;
   
   try {
-    const response = await fetch(resolveApiUrl('/api/account/send-email-code'), {
+    const response = await fetch(buildApiUrl('/api/account/send-email-code'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -9261,7 +9271,7 @@ async function verifyEmailCode() {
   }
   
   try {
-    const response = await fetch(resolveApiUrl('/api/account/verify-email'), {
+    const response = await fetch(buildApiUrl('/api/account/verify-email'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -9339,7 +9349,7 @@ function updateEmailWayUI(verified) {
 // 加载邮箱验证状态
 async function loadEmailStatus() {
   try {
-    const response = await fetch(resolveApiUrl('/api/account/email-status'), {
+    const response = await fetch(buildApiUrl('/api/account/email-status'), {
       headers: { 'X-User-Token': getUserToken() }
     });
     
@@ -9403,7 +9413,7 @@ async function verifyWechatInCreditsModal() {
   }
   
   try {
-    const response = await fetch(resolveApiUrl('/api/credits/follow-wechat'), {
+    const response = await fetch(buildApiUrl('/api/credits/follow-wechat'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -9468,7 +9478,7 @@ async function redeemArticleInCreditsModal() {
   }
   
   try {
-    const response = await fetch(resolveApiUrl('/api/credits/redeem-code'), {
+    const response = await fetch(buildApiUrl('/api/credits/redeem-code'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -9548,7 +9558,7 @@ async function sendEmailCodeInCreditsModal() {
   if (btn) btn.disabled = true;
   
   try {
-    const response = await fetch(resolveApiUrl('/api/account/send-email-code'), {
+    const response = await fetch(buildApiUrl('/api/account/send-email-code'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -9607,7 +9617,7 @@ async function verifyEmailInCreditsModal() {
   }
   
   try {
-    const response = await fetch(resolveApiUrl('/api/account/verify-email'), {
+    const response = await fetch(buildApiUrl('/api/account/verify-email'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -9706,7 +9716,7 @@ async function saveNicknameInCreditsModal() {
   
   try {
     const userToken = getUserToken();
-    const response = await fetch(resolveApiUrl('/api/account/nickname'), {
+    const response = await fetch(buildApiUrl('/api/account/nickname'), {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -9766,7 +9776,7 @@ async function updateCreditsModalEntryStatus() {
     if (!userToken) return;
     
     // 获取公众号状态
-    const creditsResponse = await fetch(resolveApiUrl('/api/credits'), {
+    const creditsResponse = await fetch(buildApiUrl('/api/credits'), {
       headers: { 'X-User-Token': userToken }
     });
     const creditsData = await creditsResponse.json();
@@ -9789,7 +9799,7 @@ async function updateCreditsModalEntryStatus() {
     }
     
     // 获取邮箱状态
-    const emailResponse = await fetch(resolveApiUrl('/api/account/email-status'), {
+    const emailResponse = await fetch(buildApiUrl('/api/account/email-status'), {
       headers: { 'X-User-Token': userToken }
     });
     const emailData = await emailResponse.json();
@@ -9811,7 +9821,7 @@ async function updateCreditsModalEntryStatus() {
     }
     
     // 获取昵称奖励状态
-    const nicknameResponse = await fetch(resolveApiUrl('/api/account/nickname-status'), {
+    const nicknameResponse = await fetch(buildApiUrl('/api/account/nickname-status'), {
       headers: { 'X-User-Token': userToken }
     });
     const nicknameData = await nicknameResponse.json();
@@ -9937,7 +9947,7 @@ async function sendForgotPasswordCode() {
   if (errorDiv) errorDiv.style.display = 'none';
   
   try {
-    const response = await fetch(resolveApiUrl('/api/account/forgot-password'), {
+    const response = await fetch(buildApiUrl('/api/account/forgot-password'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email })
@@ -9997,7 +10007,7 @@ async function resetPasswordByEmail() {
   if (errorDiv) errorDiv.style.display = 'none';
   
   try {
-    const response = await fetch(resolveApiUrl('/api/account/reset-password-by-email'), {
+    const response = await fetch(buildApiUrl('/api/account/reset-password-by-email'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -10094,7 +10104,7 @@ async function loadAllGames(isInitial = false) {
   }
   
   try {
-    const response = await fetch(resolveApiUrl(`/api/games?sort=newest&limit=${ALL_GAMES_LIMIT}&offset=${allGamesOffset}`));
+    const response = await fetch(buildApiUrl(`/api/games?sort=newest&limit=${ALL_GAMES_LIMIT}&offset=${allGamesOffset}`));
     const data = await response.json();
     
     if (data.success && data.games) {
@@ -10189,7 +10199,7 @@ async function loadProfileData() {
   
   // 加载游戏统计
   try {
-    const response = await fetch(resolveApiUrl('/api/my-games'), {
+    const response = await fetch(buildApiUrl('/api/my-games'), {
       headers: { 'X-Author-Token': getAuthorToken() }
     });
     const data = await response.json();
@@ -10339,7 +10349,7 @@ async function loadMyGames() {
   listContainer.innerHTML = '<div class="loading-games">加载中...</div>';
   
   try {
-    const response = await fetch(resolveApiUrl('/api/my-games'), {
+    const response = await fetch(buildApiUrl('/api/my-games'), {
       headers: { 'X-Author-Token': getAuthorToken() }
     });
     const data = await response.json();
@@ -10447,7 +10457,7 @@ async function loadMyLikes() {
   listContainer.innerHTML = '<div class="loading-games">加载中...</div>';
   
   try {
-    const response = await fetch(resolveApiUrl('/api/my-likes'), {
+    const response = await fetch(buildApiUrl('/api/my-likes'), {
       headers: { 'X-User-Token': getUserToken() }
     });
     const data = await response.json();
@@ -10498,7 +10508,7 @@ async function loadMyFavorites() {
   listContainer.innerHTML = '<div class="loading-games">加载中...</div>';
   
   try {
-    const response = await fetch(resolveApiUrl('/api/my-favorites'), {
+    const response = await fetch(buildApiUrl('/api/my-favorites'), {
       headers: { 'X-User-Token': getUserToken() }
     });
     const data = await response.json();
@@ -10550,7 +10560,7 @@ async function unlikeGame(gameId) {
   }
   
   try {
-    const response = await fetch(resolveApiUrl(`/api/games/${gameId}/like`), {
+    const response = await fetch(buildApiUrl(`/api/games/${gameId}/like`), {
       method: 'POST',
       headers: { 'X-User-Token': getUserToken() }
     });
@@ -10574,7 +10584,7 @@ async function unfavoriteGame(gameId) {
   }
   
   try {
-    const response = await fetch(resolveApiUrl(`/api/games/${gameId}/favorite`), {
+    const response = await fetch(buildApiUrl(`/api/games/${gameId}/favorite`), {
       method: 'POST',
       headers: { 'X-User-Token': getUserToken() }
     });
@@ -10611,7 +10621,7 @@ async function toggleFavorite() {
   console.log('[收藏] 正在切换收藏状态，游戏ID:', state.currentGameId);
   
   try {
-    const response = await fetch(resolveApiUrl(`/api/games/${state.currentGameId}/favorite`), {
+    const response = await fetch(buildApiUrl(`/api/games/${state.currentGameId}/favorite`), {
       method: 'POST',
       headers: { 'X-User-Token': getUserToken() }
     });
@@ -10661,7 +10671,7 @@ async function toggleFavorite() {
 // 加载游戏时检查收藏状态
 async function checkFavoriteStatus(gameId) {
   try {
-    const response = await fetch(resolveApiUrl(`/api/games/${gameId}/favorite-status`), {
+    const response = await fetch(buildApiUrl(`/api/games/${gameId}/favorite-status`), {
       headers: { 'X-User-Token': getUserToken() }
     });
     const data = await response.json();
@@ -10683,7 +10693,7 @@ async function checkFavoriteStatus(gameId) {
 // 加载游戏时检查点赞状态
 async function checkLikeStatus(gameId) {
   try {
-    const response = await fetch(resolveApiUrl(`/api/games/${gameId}/like-status`), {
+    const response = await fetch(buildApiUrl(`/api/games/${gameId}/like-status`), {
       headers: { 'X-User-Token': getUserToken() }
     });
     const data = await response.json();
@@ -10728,7 +10738,7 @@ function playMyGame(gameId) {
 // 编辑我的游戏
 async function editMyGame(gameId) {
   try {
-    const response = await fetch(resolveApiUrl(`/api/games/${gameId}`));
+    const response = await fetch(buildApiUrl(`/api/games/${gameId}`));
     const data = await response.json();
     
     if (data.success && data.game) {
@@ -10984,7 +10994,7 @@ async function deleteMyGame(gameId, title) {
     `确定要删除游戏「${title}」吗？\n\n删除后将无法在公开列表显示，但管理员仍可查看。`,
     async () => {
       try {
-        const response = await fetch(resolveApiUrl(`/api/games/${gameId}`), {
+        const response = await fetch(buildApiUrl(`/api/games/${gameId}`), {
           method: 'DELETE',
           headers: { 'X-Author-Token': getAuthorToken() }
         });
@@ -11030,7 +11040,7 @@ async function toggleGameVisibility(gameId, currentVisibility) {
     confirmText,
     async () => {
       try {
-        const response = await fetch(resolveApiUrl(`/api/games/${gameId}`), {
+        const response = await fetch(buildApiUrl(`/api/games/${gameId}`), {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -11162,7 +11172,7 @@ function onModelSelectChange() {
 // 加载游客模式信息
 async function loadTrialInfo() {
   try {
-    const response = await fetch(resolveApiUrl('/api/trial/status'), {
+    const response = await fetch(buildApiUrl('/api/trial/status'), {
       headers: { 'X-User-Token': getUserToken() }
     });
     const data = await response.json();
@@ -11203,7 +11213,7 @@ async function generateWithTrial(draftId = null) {
   
   try {
     const authorToken = getAuthorToken();
-    const response = await fetch(resolveApiUrl('/api/trial/generate'), {
+    const response = await fetch(buildApiUrl('/api/trial/generate'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -11243,7 +11253,7 @@ async function triggerReferralReward() {
   }
   
   try {
-    const response = await fetch(resolveApiUrl('/api/referral/reward'), {
+    const response = await fetch(buildApiUrl('/api/referral/reward'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -11286,7 +11296,7 @@ async function handleReferralParams() {
         await initAccount();
       }
       
-      const response = await fetch(resolveApiUrl('/api/referral/record'), {
+      const response = await fetch(buildApiUrl('/api/referral/record'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -11317,7 +11327,7 @@ async function handleReferralParams() {
   const fromGameId = urlParams.get('from');
   if (sharerToken && fromGameId) {
     try {
-      await fetch(resolveApiUrl('/api/invite/share-visit'), {
+      await fetch(buildApiUrl('/api/invite/share-visit'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -11339,7 +11349,7 @@ async function handleReferralParams() {
 // 每日登录积分检查
 async function checkDailyLoginCredit() {
   try {
-    const response = await fetch(resolveApiUrl('/api/credits/daily-login'), {
+    const response = await fetch(buildApiUrl('/api/credits/daily-login'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -11360,7 +11370,7 @@ async function checkDailyLoginCredit() {
 // 获取我的邀请链接
 async function getMyInviteLink() {
   try {
-    const response = await fetch(resolveApiUrl('/api/invite/my-link'), {
+    const response = await fetch(buildApiUrl('/api/invite/my-link'), {
       headers: { 'X-User-Token': getUserToken() }
     });
     const data = await response.json();
@@ -11390,7 +11400,7 @@ async function useInviteCode(code) {
   }
   
   try {
-    const response = await fetch(resolveApiUrl('/api/invite/use'), {
+    const response = await fetch(buildApiUrl('/api/invite/use'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -11514,7 +11524,7 @@ async function submitInviteCode() {
 // 加载本周挑战
 async function loadWeeklyChallenge() {
   try {
-    const response = await fetch(resolveApiUrl('/api/challenge/current'));
+    const response = await fetch(buildApiUrl('/api/challenge/current'));
     const data = await response.json();
     
     if (data.success && data.challenge) {
@@ -11554,7 +11564,7 @@ function updateChallengeDisplay() {
 // 加载排行榜
 async function loadLeaderboard(type = 'games') {
   try {
-    const response = await fetch(resolveApiUrl(`/api/leaderboard/${type}`));
+    const response = await fetch(buildApiUrl(`/api/leaderboard/${type}`));
     const data = await response.json();
     
     if (data.success) {
@@ -11577,7 +11587,7 @@ async function loadGameStats(gameId) {
   if (!gameId) return;
   
   try {
-    const response = await fetch(resolveApiUrl(`/api/games/${gameId}/stats`));
+    const response = await fetch(buildApiUrl(`/api/games/${gameId}/stats`));
     const data = await response.json();
     
     if (data.success) {
@@ -11681,7 +11691,7 @@ async function recordPlayEnd() {
   if (duration < 3) return;
   
   try {
-    const response = await fetch(resolveApiUrl(`/api/games/${state.currentGameId}/play`), {
+    const response = await fetch(buildApiUrl(`/api/games/${state.currentGameId}/play`), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -11792,7 +11802,7 @@ async function openSharePanel() {
   // 生成完整分享文案并显示在预览区
   let shareTemplate = '🎮 我用一句话免费做了个游戏《{title}》，太好玩了！你也来试试吧👇\n{url}';
   try {
-    const response = await fetch(resolveApiUrl('/api/config/share-text'));
+    const response = await fetch(buildApiUrl('/api/config/share-text'));
     const data = await response.json();
     if (data.success && data.shareConfig && data.shareConfig.template) {
       shareTemplate = data.shareConfig.template + '\n{url}';
@@ -11824,7 +11834,7 @@ async function shareToChannel(platform) {
     qq: '一句话生成的AI游戏，快来玩！'
   };
   try {
-    const configResponse = await fetch(resolveApiUrl('/api/config/share-text'));
+    const configResponse = await fetch(buildApiUrl('/api/config/share-text'));
     const configData = await configResponse.json();
     if (configData.success && configData.shareConfig) {
       shareConfig = configData.shareConfig;
@@ -11840,7 +11850,7 @@ async function shareToChannel(platform) {
 
   // 记录分享
   try {
-    const response = await fetch(resolveApiUrl(`/api/games/${gameId}/share`), {
+    const response = await fetch(buildApiUrl(`/api/games/${gameId}/share`), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -11921,7 +11931,7 @@ function shareGame() {
 // 加载热门游戏（按热度分数）
 async function loadHotGames() {
   try {
-    const response = await fetch(resolveApiUrl('/api/games/hot'));
+    const response = await fetch(buildApiUrl('/api/games/hot'));
     const data = await response.json();
     
     if (data.success && data.games) {
@@ -12127,7 +12137,7 @@ async function openFollowModal(userTokenOrTab, tab) {
 
   // 加载关注统计来更新标签计数
   try {
-    const statsResponse = await fetch(resolveApiUrl(`/api/users/${currentViewingUserToken}/follow-stats`), {
+    const statsResponse = await fetch(buildApiUrl(`/api/users/${currentViewingUserToken}/follow-stats`), {
       headers: { 'X-User-Token': getUserToken() }
     });
     const statsData = await statsResponse.json();
@@ -12270,7 +12280,7 @@ async function toggleFollowUser(targetToken, buttonElement) {
   }
   
   try {
-    const response = await fetch(resolveApiUrl(`/api/users/${targetToken}/follow`), {
+    const response = await fetch(buildApiUrl(`/api/users/${targetToken}/follow`), {
       method: 'POST',
       headers: { 'X-User-Token': getUserToken() }
     });
@@ -12360,7 +12370,7 @@ async function setupAuthorFollowButton(authorToken, authorName) {
   }
   
   try {
-    const response = await fetch(resolveApiUrl(`/api/users/${authorToken}/follow-status`), {
+    const response = await fetch(buildApiUrl(`/api/users/${authorToken}/follow-status`), {
       headers: { 'X-User-Token': userToken }
     });
     const data = await response.json();
@@ -12417,7 +12427,7 @@ async function loadUserFollowStats() {
   if (!userToken) return;
 
   try {
-    const response = await fetch(resolveApiUrl(`/api/users/${userToken}/follow-stats`), {
+    const response = await fetch(buildApiUrl(`/api/users/${userToken}/follow-stats`), {
       headers: { 'X-User-Token': userToken }
     });
 
@@ -12538,16 +12548,16 @@ async function openUserProfile(userToken) {
   try {
     // 并行加载用户信息、关注统计和作品
     const [profileResponse, statsResponse, gamesResponse, followStatusResponse] = await Promise.all([
-      fetch(resolveApiUrl(`/api/users/${userToken}/profile`), {
+      fetch(buildApiUrl(`/api/users/${userToken}/profile`), {
         headers: { 'X-User-Token': getUserToken() }
       }),
-      fetch(resolveApiUrl(`/api/users/${userToken}/follow-stats`), {
+      fetch(buildApiUrl(`/api/users/${userToken}/follow-stats`), {
         headers: { 'X-User-Token': getUserToken() }
       }),
-      fetch(resolveApiUrl(`/api/users/${userToken}/games`), {
+      fetch(buildApiUrl(`/api/users/${userToken}/games`), {
         headers: { 'X-User-Token': getUserToken() }
       }),
-      fetch(resolveApiUrl(`/api/users/${userToken}/follow-status`), {
+      fetch(buildApiUrl(`/api/users/${userToken}/follow-status`), {
         headers: { 'X-User-Token': getUserToken() }
       })
     ]);
@@ -12819,7 +12829,7 @@ async function openGameEditor(gameId) {
   
   try {
     // 调用开始编辑 API
-    const response = await fetch(resolveApiUrl(`/api/games/${gameId}/edit`), {
+    const response = await fetch(buildApiUrl(`/api/games/${gameId}/edit`), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -13328,7 +13338,7 @@ async function cancelEditorRequest() {
   // 通知后端取消 LLM 请求
   if (editSession.sessionId) {
     try {
-      await fetch(resolveApiUrl('/api/cancel-edit'), {
+      await fetch(buildApiUrl('/api/cancel-edit'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -13443,7 +13453,7 @@ async function sendEditMessage() {
   
   try {
     // 步骤1：提交异步编辑任务
-    const submitResponse = await fetch(resolveApiUrl(`/api/games/${editSession.gameId}/edit-async`), {
+    const submitResponse = await fetch(buildApiUrl(`/api/games/${editSession.gameId}/edit-async`), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -13490,7 +13500,7 @@ async function sendEditMessage() {
       }
       
       try {
-        const statusResponse = await fetch(resolveApiUrl(`/api/games/${editSession.gameId}/edit-status/${taskId}`), {
+        const statusResponse = await fetch(buildApiUrl(`/api/games/${editSession.gameId}/edit-status/${taskId}`), {
           headers: { 'X-User-Token': getUserToken() }
         });
         
@@ -13721,7 +13731,7 @@ async function saveGameEdit(saveAsNew) {
   showToast('正在保存...', 'info');
   
   try {
-    const response = await fetch(resolveApiUrl(`/api/games/${editSession.gameId}/edit`), {
+    const response = await fetch(buildApiUrl(`/api/games/${editSession.gameId}/edit`), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -13836,7 +13846,7 @@ async function forceCloseGameEditor() {
   // 通知后端取消 LLM 请求
   if (editSession.sessionId) {
     try {
-      await fetch(resolveApiUrl('/api/cancel-edit'), {
+      await fetch(buildApiUrl('/api/cancel-edit'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -14199,7 +14209,7 @@ async function loadComments(isRefresh = false) {
     const limit = 20;
     const offset = isRefresh ? 0 : commentsState.offset;
     
-    const response = await fetch(resolveApiUrl(`/api/games/${commentsState.gameId}/comments?limit=${limit}&offset=${offset}`), {
+    const response = await fetch(buildApiUrl(`/api/games/${commentsState.gameId}/comments?limit=${limit}&offset=${offset}`), {
       headers: {
         'X-User-Token': userToken
       }
@@ -14351,7 +14361,7 @@ async function submitComment() {
   submitBtn.textContent = '发布中...';
   
   try {
-    const response = await fetch(resolveApiUrl(`/api/games/${commentsState.gameId}/comments`), {
+    const response = await fetch(buildApiUrl(`/api/games/${commentsState.gameId}/comments`), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -14402,7 +14412,7 @@ async function deleteComment(commentId) {
   }
   
   try {
-    const response = await fetch(resolveApiUrl(`/api/games/${commentsState.gameId}/comments/${commentId}`), {
+    const response = await fetch(buildApiUrl(`/api/games/${commentsState.gameId}/comments/${commentId}`), {
       method: 'DELETE',
       headers: {
         'X-User-Token': userToken
@@ -14665,7 +14675,7 @@ async function autoSaveEditorGame() {
     console.log('[AutoSave] 开始自动保存...');
     
     try {
-      const response = await fetch(resolveApiUrl(`/api/games/${editSession.gameId}/edit`), {
+      const response = await fetch(buildApiUrl(`/api/games/${editSession.gameId}/edit`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

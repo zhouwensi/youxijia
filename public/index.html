@@ -13,32 +13,7 @@
   <meta property="og:description" content="用一句话描述，AI帮你生成可玩的小游戏！未来科技，一触即发！">
   <meta property="og:type" content="website">
   <title>加载中...</title>
-  <script>
-    // 尽早加载站点配置，动态设置标题和品牌名称
-    (function() {
-      fetch('/api/site-config')
-        .then(r => r.json())
-        .then(data => {
-          if (data.success) {
-            const siteName = data.siteName || '一句话游戏';
-            const siteSlogan = data.siteSlogan || '一句话生成游戏';
-            const fullTitle = siteName + ' - ' + siteSlogan;
-            document.title = fullTitle;
-            const ogTitle = document.getElementById('og-title');
-            if (ogTitle) ogTitle.setAttribute('content', fullTitle);
-            // 页面加载完成后更新品牌名称
-            document.addEventListener('DOMContentLoaded', function() {
-              document.querySelectorAll('.brand-name').forEach(function(el) {
-                el.textContent = siteName;
-              });
-            });
-          }
-        })
-        .catch(function() {
-          document.title = '一句话游戏 - 一句话生成游戏';
-        });
-    })();
-  </script>
+  <!-- 站点标题：在 body 中 api-base.js 之后请求 Worker，避免静态托管时误请求本站 /api -->
   <!-- 科技字体 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2393,6 +2368,31 @@
   </div>
 
   <script src="/js/api-base.js"></script>
+  <script>
+    (function () {
+      var cfgUrl = typeof resolveApiUrl === 'function' ? resolveApiUrl('/api/site-config') : '/api/site-config';
+      fetch(cfgUrl)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.success) {
+            var siteName = data.siteName || '一句话游戏';
+            var siteSlogan = data.siteSlogan || '一句话生成游戏';
+            var fullTitle = siteName + ' - ' + siteSlogan;
+            document.title = fullTitle;
+            var ogTitle = document.getElementById('og-title');
+            if (ogTitle) ogTitle.setAttribute('content', fullTitle);
+            document.addEventListener('DOMContentLoaded', function () {
+              document.querySelectorAll('.brand-name').forEach(function (el) {
+                el.textContent = siteName;
+              });
+            });
+          }
+        })
+        .catch(function () {
+          document.title = '一句话游戏 - 一句话生成游戏';
+        });
+    })();
+  </script>
   <script src="/js/app.js"></script>
   <script src="/js/security.js"></script>
   <script src="/js/auth.js"></script>
@@ -2680,30 +2680,36 @@
       return '🎮';
     }
     
-    // 跳转到游戏
+    // 跳转到游戏（优先 SPA：openGame / loadGameById；静态托管时不要强跳 /g/）
     window.goToGame = function(gameId) {
       closeSearchPanel();
-      
-      // 尝试使用 SPA 内部路由函数
+      if (typeof window.openGame === 'function') {
+        window.openGame(gameId);
+        return;
+      }
+      if (typeof openGame === 'function') {
+        openGame(gameId);
+        return;
+      }
       if (typeof window.playGame === 'function') {
         window.playGame(gameId);
         return;
       }
-      
       if (typeof window.loadGameById === 'function') {
         window.loadGameById(gameId);
         return;
       }
-      
       if (typeof window.showGame === 'function') {
         window.showGame(gameId);
         return;
       }
-      
-      // 备用：直接跳转到游戏静态页面
-      // 游戏文件存储在 /g/{前2位字符}/{gameId}.html
-      const subDir = gameId.substring(0, 2);
-      window.location.href = `/g/${subDir}/${gameId}.html`;
+      var apiBase = typeof window.__API_BASE__ !== 'undefined' && String(window.__API_BASE__ || '').trim();
+      if (apiBase) {
+        window.location.href = '/game/' + gameId;
+        return;
+      }
+      var subDir = gameId.substring(0, 2);
+      window.location.href = '/g/' + subDir + '/' + gameId + '.html';
     };
     
     // 清除搜索结果
@@ -2749,7 +2755,7 @@
       
       try {
         // 尝试获取热门游戏作为热搜
-        const response = await fetch('/api/games?sort=plays&limit=10');
+        const response = await fetch(resolveApiUrl('/api/games/hot?limit=10'));
         const data = await response.json();
         
         if (data.success && data.games && data.games.length > 0) {

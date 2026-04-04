@@ -8,6 +8,9 @@
 const fs = require('fs');
 const path = require('path');
 const JavaScriptObfuscator = require('javascript-obfuscator');
+try {
+  require('dotenv').config();
+} catch (_) {}
 
 // 配置
 const SRC_DIR = path.join(__dirname, 'src', 'js');
@@ -112,9 +115,11 @@ function obfuscateFile(srcFile, distFile, options) {
   }
 }
 
-/** 写入 API 根地址（GitHub Pages 等静态托管时指向 https://api.yijuhuayouxi.com） */
+/** 写入 API 根地址。未设置 API_BASE_URL 时默认 Cloudflare Worker，避免静态站仍走同域 /api（依赖本机 Node） */
 function writeApiBase() {
-  const base = process.env.API_BASE_URL || '';
+  const raw = process.env.API_BASE_URL;
+  const base =
+    raw !== undefined ? String(raw).replace(/\/$/, '') : 'https://api.yijuhuayouxi.com';
   const content =
     'window.__API_BASE__ = ' +
     JSON.stringify(base) +
@@ -126,7 +131,9 @@ function writeApiBase() {
     "};\n";
   const out = path.join(__dirname, 'public', 'js', 'api-base.js');
   fs.writeFileSync(out, content, 'utf8');
-  console.log(`✓ api-base.js  API_BASE_URL=${base || '(空，与页面同域)'}\n`);
+  console.log(
+    `✓ api-base.js  API_BASE_URL=${raw !== undefined ? base || '(空，与页面同域)' : base + ' (默认 Worker)'}\n`
+  );
 }
 
 // 主函数

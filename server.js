@@ -3612,8 +3612,8 @@ const app = express();
 // 设置为 1 表示信任第一个代理，避免 express-rate-limit 警告
 app.set('trust proxy', 1);
 
-// youximudi.com 仍占 80 入口时：按域名反代到本机墓地整站（与 youximudi 仓库 deploy/install-windows.ps1 默认端口一致）
-const YOUXIMUDI_UPSTREAM = process.env.YOUXIMUDI_UPSTREAM || 'http://127.0.0.1:59871';
+// youximudi：仅当显式设置 YOUXIMUDI_UPSTREAM 时反代。墓地已可独立 GitHub Pages（见 youximudi README），默认不再依赖本机 59871
+const YOUXIMUDI_UPSTREAM = (process.env.YOUXIMUDI_UPSTREAM || '').trim();
 function isYouximudiHost(host) {
   if (!host) return false;
   const h = String(host).split(':')[0].toLowerCase();
@@ -3621,6 +3621,12 @@ function isYouximudiHost(host) {
 }
 app.use((req, res, next) => {
   if (!isYouximudiHost(req.headers.host)) return next();
+  if (!YOUXIMUDI_UPSTREAM) {
+    return res
+      .status(503)
+      .type('text/plain')
+      .send('Youximudi is not proxied here (use GitHub Pages for youximudi, or set YOUXIMUDI_UPSTREAM for local co-host).');
+  }
   let upstream;
   try {
     upstream = new URL(YOUXIMUDI_UPSTREAM);

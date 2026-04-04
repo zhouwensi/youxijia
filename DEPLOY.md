@@ -77,7 +77,9 @@ open http://localhost:80
 
 ## GitHub Pages + Cloudflare Worker（推荐：无自有服务器）
 
-架构：**静态站点**（`public/`）由 GitHub Actions 发布到 Pages；**API** 在 Cloudflare Worker（建议子域 `api.yijuhuayouxi.com`）。
+架构：**静态站点**（`public/`）由 GitHub Actions 发布到 Pages；**API** 在 Cloudflare Worker（建议子域 `api.yijuhuayouxi.com`）。`npm run build` 未设置 `API_BASE_URL` 时也会默认写入该 API 地址到 `public/js/api-base.js`，静态站不再误走「同域 /api」从而依赖本机 Node。
+
+**与旧自建机 / 游戏墓地**：按推荐方式部署时，**不依赖**原先那台 VPS 或同机反代。游戏墓地（youximudi）已可单独用 GitHub Pages 发布（见其仓库 `README.md`）。本仓库根目录的 `server.js` 里曾有「`youximudi.com` → 本机端口」反代，现已改为**仅当**在 `.env` 中显式设置 `YOUXIMUDI_UPSTREAM` 才启用；默认不假设本机跑着墓地服务。
 
 ### 1. Worker（`worker/` 目录）
 

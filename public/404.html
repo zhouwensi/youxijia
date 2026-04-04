@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>加载中…</title>
+  <script>
+    (function () {
+      try {
+        var p = location.pathname + location.search + location.hash;
+        if (p && p !== '/') sessionStorage.setItem('__spa_restore_path', p);
+      } catch (e) {}
+      location.replace('/');
+    })();
+  </script>
+</head>
+<body></body>
+</html>
