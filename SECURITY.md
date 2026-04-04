@@ -65,9 +65,17 @@
 - 输入验证失败
 - 服务器启动/重启
 
+## 密钥与 Git（必读）
+
+- **永远不要**把真实 `WX_APPSECRET`、`ADMIN_KEY`、LLM Key 等写入 Git；`.env` 仅本地使用，仓库只保留 **`.env.example` 占位符**。
+- 若 `.env` 曾被 push 到 GitHub：**立即**到微信公众平台 **重置小程序 AppSecret**，并更换 `ADMIN_KEY` 等所有曾暴露的密钥；GitHub / Cloudflare 上的 Secrets 同步改成新值。
+- **清除历史中的 `.env`（可选）**：克隆仓库后安装 [git-filter-repo](https://github.com/newren/git-filter-repo)，执行  
+  `git filter-repo --path .env --invert-paths`  
+  再对远端 **force push**（改写历史，团队需协调）。
+
 ## 环境配置
 
-在 `.env` 文件中配置以下安全相关变量：
+在 `.env` 文件中配置以下安全相关变量（**勿提交该文件**）：
 
 ```env
 # 运行环境（生产环境启用更严格的安全策略）

@@ -1,0 +1,22 @@
+# 防止再次把 .env 等敏感文件提交进仓库
+name: Repo guard
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  no-tracked-env:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 禁止跟踪 .env
+        run: |
+          if git ls-files --error-unmatch .env >/dev/null 2>&1; then
+            echo "::error::仓库仍跟踪 .env，请执行: git rm --cached .env"
+            exit 1
+          fi
+          echo "OK: .env 未纳入版本控制"

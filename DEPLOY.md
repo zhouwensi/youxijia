@@ -1,14 +1,14 @@
 # 游戏家 - AI 游戏生成平台
 
-## Pages + Worker：只有这些必须你本人点（无法由脚本代填）
+## Pages + Worker：只能你本人完成的操作
 
-以下涉及**你的账号与密钥**，任何人/CI 都**不能**替你完成，除此之外推送 `main` 后会自动部署 Worker 与（可选）Pages。
+其余（改代码、push、Worker 部署、防再次提交 `.env`）已由仓库内 workflow 自动化。
 
-1. **GitHub** → 仓库 **Settings → Secrets and variables → Actions**，新建 Secret：  
-   - `CLOUDFLARE_API_TOKEN`：Cloudflare **API 令牌**里用模板「编辑 Cloudflare Workers」生成后**整串粘贴**（只显示一次）。  
-   - `CF_KV_NAMESPACE_ID`：`wrangler kv namespace create` 得到的 **KV id**（若已加可忽略）。  
-2. **微信小程序** → **开发管理 → 服务器域名** → **request 合法域名** 添加 `https://api.yijuhuayouxi.com`（与 `miniprogram/app.js` 的 `baseUrl` 一致）。  
-3. **GitHub Pages**（若要自动发布网站）：仓库 **Settings → Pages** → **Source** 选 **GitHub Actions**（只需设一次）。
+1. **密钥只放在平台，不进 Git**  
+   - GitHub **Settings → Secrets → Actions**：`CLOUDFLARE_API_TOKEN`、`CF_KV_NAMESPACE_ID`；可选 `WX_APPSECRET`、`DEEPSEEK_API_KEY`。  
+   - 本地开发：自己维护 **`.env`**（从 `.env.example` 复制），**勿提交**。若曾泄露：**微信公众平台重置 AppSecret**，并换新 `ADMIN_KEY` 等（见 `SECURITY.md`）。
+2. **微信小程序**：**服务器域名** 与 `miniprogram/app.js` 里 `baseUrl` 一致（如 `https://api.yijuhuayouxi.com`）。  
+3. **GitHub Pages**（要自动发站时）：**Settings → Pages → Source：GitHub Actions**。
 
 ---
 
