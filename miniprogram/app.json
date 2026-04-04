@@ -3,6 +3,7 @@
     "pages/create/create",
     "pages/works/works",
     "pages/mine/mine",
+    "pages/auth/auth",
     "pages/credits/credits",
     "pages/game-detail/game-detail",
     "pages/game-edit/game-edit",

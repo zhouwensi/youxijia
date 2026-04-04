@@ -13,7 +13,7 @@ const config = {
   version: '1.0.0',
   // 站点名称（从后台加载）
   siteName: '一句话游戏',
-  miniprogramName: '一句话游戏',
+  miniprogramName: 'JustOneWord',
   siteSlogan: '一句话生成游戏'
 };
 

@@ -55,8 +55,17 @@
   color: #8b8b8b;
 }
 
+.login-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20rpx;
+  width: 100%;
+}
+
 .login-btn {
-  width: 280rpx;
+  width: 520rpx;
+  max-width: 90%;
   height: 80rpx;
   line-height: 80rpx;
   font-size: 28rpx;
@@ -64,6 +73,12 @@
   color: #fff;
   border-radius: 40rpx;
   border: none;
+}
+
+.login-btn-wx {
+  background: transparent;
+  border: 2rpx solid rgba(0, 212, 255, 0.5);
+  color: #00d4ff;
 }
 
 .login-btn::after {

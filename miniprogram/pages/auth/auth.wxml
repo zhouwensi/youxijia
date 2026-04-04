@@ -1,0 +1,45 @@
+<view class="page">
+  <view wx:if="{{mode === 'changepwd'}}">
+    <view class="label">当前密码</view>
+    <input class="input form-group" type="password" password="{{true}}" placeholder="原密码" value="{{oldPassword}}" bindinput="onOldPwd" />
+    <view class="label">新密码（至少 8 位）</view>
+    <input class="input form-group" type="password" password="{{true}}" placeholder="新密码" value="{{newPassword}}" bindinput="onNewPwd" />
+    <view class="label">确认新密码</view>
+    <input class="input form-group" type="password" password="{{true}}" placeholder="再次输入" value="{{newPassword2}}" bindinput="onNewPwd2" />
+    <view class="error" wx:if="{{error}}">{{error}}</view>
+    <button class="btn-primary" loading="{{loading}}" bindtap="submitChangePwd">保存新密码</button>
+    <view class="hint">忘记密码且无法登录时，请使用邮箱重新注册或联系管理员。</view>
+  </view>
+
+  <view wx:else>
+    <view class="tabs">
+      <view class="tab {{authTab === 'login' ? 'active' : ''}}" data-tab="login" bindtap="switchTab">登录</view>
+      <view class="tab {{authTab === 'register' ? 'active' : ''}}" data-tab="register" bindtap="switchTab">注册</view>
+    </view>
+
+    <block wx:if="{{authTab === 'login'}}">
+      <view class="label">邮箱 / 账号 ID / 昵称</view>
+      <input class="input form-group" placeholder="注册邮箱或账号 ID" value="{{loginAccount}}" bindinput="onLoginAccount" />
+      <view class="label">密码</view>
+      <input class="input form-group" type="password" password="{{true}}" placeholder="密码" value="{{loginPassword}}" bindinput="onLoginPassword" />
+      <view class="error" wx:if="{{error}}">{{error}}</view>
+      <button class="btn-primary" loading="{{loading}}" bindtap="submitLogin">登录</button>
+      <button class="btn-secondary" bindtap="wxLoginOnly">微信一键登录</button>
+    </block>
+
+    <block wx:else>
+      <view class="label">邮箱</view>
+      <input class="input form-group" type="text" placeholder="your@email.com" value="{{regEmail}}" bindinput="onRegEmail" />
+      <view class="label">密码（至少 8 位）</view>
+      <input class="input form-group" type="password" password="{{true}}" value="{{regPassword}}" bindinput="onRegPassword" />
+      <view class="label">确认密码</view>
+      <input class="input form-group" type="password" password="{{true}}" value="{{regPassword2}}" bindinput="onRegPassword2" />
+      <view class="label">昵称（可选）</view>
+      <input class="input form-group" placeholder="展示名" maxlength="20" value="{{regNickname}}" bindinput="onRegNickname" />
+      <view class="error" wx:if="{{error}}">{{error}}</view>
+      <button class="btn-primary" loading="{{loading}}" bindtap="submitRegister">注册并登录</button>
+    </block>
+
+    <view class="hint">💎 领取与兑换积分仅在小程序「积分」页完成；网站与小程序使用同一邮箱账号即可同步数据。</view>
+  </view>
+</view>

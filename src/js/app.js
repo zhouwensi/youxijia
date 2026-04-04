@@ -1901,15 +1901,18 @@ async function loginWithAccount(accountId, password) {
   }
 }
 
-// 显示统一登录弹窗（包含"新用户"和"已有账号"两个Tab）
-function showLoginDialog(defaultTab = 'new') {
+// 显示统一登录弹窗（登录 / 邮箱注册）
+function showLoginDialog(defaultTab = 'existing') {
+  if (defaultTab === 'new') defaultTab = 'register';
+
   // 移除旧的对话框（如果有）
   const oldDialog = document.getElementById('login-dialog');
   if (oldDialog) oldDialog.remove();
-  
-  const mpName = state.siteConfig?.miniprogram?.name || '一句话游戏';
-  const qrcodeUrl = '/images/miniprogram.png';
-  
+
+  const mpName = state.siteConfig?.miniprogram?.name || 'JustOneWord';
+  const tabExistingActive = defaultTab !== 'register';
+  const tabRegisterActive = defaultTab === 'register';
+
   const dialog = document.createElement('div');
   dialog.className = 'modal active';
   dialog.id = 'login-dialog';
@@ -1917,84 +1920,38 @@ function showLoginDialog(defaultTab = 'new') {
   dialog.innerHTML = `
     <div class="modal-content" style="max-width: 420px;">
       <div class="modal-header" style="padding-bottom: 0; border-bottom: none;">
-        <h3 style="margin: 0;">🔐 登录</h3>
+        <h3 style="margin: 0;">🔐 账号</h3>
         <button class="btn btn-icon btn-close" onclick="closeLoginDialog()">×</button>
       </div>
-      
-      <!-- Tab 切换 -->
+
       <div class="login-tabs" style="display: flex; border-bottom: 1px solid var(--border-color); margin: 0 1.5rem;">
-        <button class="login-tab ${defaultTab === 'new' ? 'active' : ''}" data-tab="new" onclick="switchLoginTab('new')" style="
+        <button class="login-tab ${tabExistingActive ? 'active' : ''}" data-tab="existing" onclick="switchLoginTab('existing')" style="
           flex: 1; padding: 0.75rem; background: none; border: none; cursor: pointer;
-          color: ${defaultTab === 'new' ? 'var(--accent-primary)' : 'var(--text-muted)'};
-          border-bottom: 2px solid ${defaultTab === 'new' ? 'var(--accent-primary)' : 'transparent'};
-          font-weight: ${defaultTab === 'new' ? '600' : '400'};
+          color: ${tabExistingActive ? 'var(--accent-primary)' : 'var(--text-muted)'};
+          border-bottom: 2px solid ${tabExistingActive ? 'var(--accent-primary)' : 'transparent'};
+          font-weight: ${tabExistingActive ? '600' : '400'};
           transition: all 0.2s;
-        ">📱 新用户</button>
-        <button class="login-tab ${defaultTab === 'existing' ? 'active' : ''}" data-tab="existing" onclick="switchLoginTab('existing')" style="
+        ">🔑 登录</button>
+        <button class="login-tab ${tabRegisterActive ? 'active' : ''}" data-tab="register" onclick="switchLoginTab('register')" style="
           flex: 1; padding: 0.75rem; background: none; border: none; cursor: pointer;
-          color: ${defaultTab === 'existing' ? 'var(--accent-primary)' : 'var(--text-muted)'};
-          border-bottom: 2px solid ${defaultTab === 'existing' ? 'var(--accent-primary)' : 'transparent'};
-          font-weight: ${defaultTab === 'existing' ? '600' : '400'};
+          color: ${tabRegisterActive ? 'var(--accent-primary)' : 'var(--text-muted)'};
+          border-bottom: 2px solid ${tabRegisterActive ? 'var(--accent-primary)' : 'transparent'};
+          font-weight: ${tabRegisterActive ? '600' : '400'};
           transition: all 0.2s;
-        ">🔑 已有账号</button>
+        ">✨ 注册</button>
       </div>
-      
-      <!-- 新用户 Tab 内容 -->
-      <div id="login-tab-new" class="login-tab-content" style="display: ${defaultTab === 'new' ? 'block' : 'none'}; padding: 1.5rem;">
-        <div style="text-align: center;">
-          <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1rem;">
-            请在微信小程序中注册账号
-          </p>
-          
-          <!-- 小程序二维码 -->
-          <div id="login-qrcode-container" style="
-            width: 160px; height: 160px; margin: 0 auto 1rem;
-            background: #fff; border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            overflow: hidden; border: 1px solid var(--border-color);
-          ">
-            <img src="${qrcodeUrl}" style="width: 100%; height: 100%; object-fit: contain;"
-              onerror="this.parentElement.innerHTML='<div style=\\'text-align:center;padding:1rem;color:#666;\\'><div style=\\'font-size:2rem;margin-bottom:0.5rem;\\'>🔍</div><p style=\\'font-size:0.75rem;\\'>微信搜索</p><p style=\\'font-size:0.875rem;font-weight:600;color:#333;\\'>${mpName}</p></div>'"
-              alt="小程序二维码">
-          </div>
-          
-          <p style="color: var(--accent-primary); font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">
-            ${mpName}
-          </p>
-          <p style="color: var(--text-muted); font-size: 0.75rem; margin-bottom: 1.25rem;">
-            微信扫一扫 或 搜索「${mpName}」
-          </p>
-          
-          <!-- 注册流程说明 -->
-          <div style="text-align: left; background: var(--bg-secondary); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
-            <p style="color: var(--text-secondary); font-size: 0.8125rem; font-weight: 600; margin-bottom: 0.75rem;">📋 注册流程：</p>
-            <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.8;">
-              <p style="margin: 0;"><span style="color: var(--accent-primary);">①</span> 微信扫码打开小程序</p>
-              <p style="margin: 0;"><span style="color: var(--accent-primary);">②</span> 点击「微信登录」获取账号</p>
-              <p style="margin: 0;"><span style="color: var(--accent-primary);">③</span> 进入 设置 → 绑定网站账号</p>
-              <p style="margin: 0;"><span style="color: var(--accent-primary);">④</span> 复制链接到浏览器设置密码</p>
-              <p style="margin: 0;"><span style="color: var(--accent-primary);">⑤</span> 返回此页面登录</p>
-            </div>
-          </div>
-          
-          <p style="color: var(--text-muted); font-size: 0.75rem;">
-            已有账号？<a href="javascript:void(0)" onclick="switchLoginTab('existing')" style="color: var(--accent-primary);">点击登录</a>
-          </p>
-        </div>
-      </div>
-      
-      <!-- 已有账号 Tab 内容 -->
-      <div id="login-tab-existing" class="login-tab-content" style="display: ${defaultTab === 'existing' ? 'block' : 'none'}; padding: 1.5rem;">
+
+      <div id="login-tab-existing" class="login-tab-content" style="display: ${tabExistingActive ? 'block' : 'none'}; padding: 1.5rem;">
         <p style="color: var(--text-muted); font-size: 0.8125rem; margin-bottom: 1rem; text-align: center;">
-          使用账号ID和密码登录
+          使用注册邮箱、账号 ID 或昵称登录
         </p>
         <div class="form-group" style="margin-bottom: 1rem;">
-          <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">账号ID 或 昵称</label>
-          <input type="text" id="login-account-id" placeholder="例如: WXA1B2C3 或 你的昵称" style="
+          <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">邮箱 / 账号 ID / 昵称</label>
+          <input type="text" id="login-account-id" placeholder="邮箱或 WXA1B2C3、昵称" style="
             width: 100%; padding: 0.75rem; border: 1px solid var(--border-color);
             border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);
             font-size: 0.875rem;
-          ">
+          " autocomplete="username">
         </div>
         <div class="form-group" style="margin-bottom: 1rem;">
           <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">密码</label>
@@ -2002,40 +1959,89 @@ function showLoginDialog(defaultTab = 'new') {
             width: 100%; padding: 0.75rem; border: 1px solid var(--border-color);
             border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);
             font-size: 0.875rem;
-          ">
+          " autocomplete="current-password">
         </div>
         <div id="login-error" style="display: none; color: #ef4444; font-size: 0.8125rem; margin-bottom: 1rem; text-align: center;"></div>
         <button class="btn btn-primary" onclick="doLogin()" style="width: 100%; padding: 0.75rem; font-size: 0.9375rem;">
           登录
         </button>
         <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 1rem; text-align: center;">
-          没有账号？<a href="javascript:void(0)" onclick="switchLoginTab('new')" style="color: var(--accent-primary);">去注册</a>
+          没有账号？<a href="javascript:void(0)" onclick="switchLoginTab('register')" style="color: var(--accent-primary);">去注册</a>
           &nbsp;|&nbsp;
           <a href="javascript:void(0)" onclick="showForgotPasswordDialog()" style="color: var(--accent-primary);">忘记密码？</a>
         </p>
         <p style="color: var(--text-muted); font-size: 0.7rem; margin-top: 0.5rem; text-align: center;">
-          💡 密码在小程序「设置 → 绑定网站账号」中设置
+          💎 领取与兑换积分请打开微信小程序「${mpName}」
+        </p>
+      </div>
+
+      <div id="login-tab-register" class="login-tab-content" style="display: ${tabRegisterActive ? 'block' : 'none'}; padding: 1.5rem;">
+        <p style="color: var(--text-muted); font-size: 0.8125rem; margin-bottom: 1rem; text-align: center;">
+          使用邮箱注册，网站与小程序通用同一账号
+        </p>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">邮箱</label>
+          <input type="email" id="register-email" placeholder="your@email.com" style="
+            width: 100%; padding: 0.75rem; border: 1px solid var(--border-color);
+            border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);
+            font-size: 0.875rem;
+          " autocomplete="email">
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">密码（至少 8 位）</label>
+          <input type="password" id="register-password" placeholder="设置登录密码" style="
+            width: 100%; padding: 0.75rem; border: 1px solid var(--border-color);
+            border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);
+            font-size: 0.875rem;
+          " autocomplete="new-password">
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">确认密码</label>
+          <input type="password" id="register-password2" placeholder="再次输入密码" style="
+            width: 100%; padding: 0.75rem; border: 1px solid var(--border-color);
+            border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);
+            font-size: 0.875rem;
+          " autocomplete="new-password">
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">昵称（可选）</label>
+          <input type="text" id="register-nickname" placeholder="展示在个人主页" maxlength="20" style="
+            width: 100%; padding: 0.75rem; border: 1px solid var(--border-color);
+            border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);
+            font-size: 0.875rem;
+          ">
+        </div>
+        <div id="register-error" style="display: none; color: #ef4444; font-size: 0.8125rem; margin-bottom: 1rem; text-align: center;"></div>
+        <button class="btn btn-primary" onclick="doRegister()" style="width: 100%; padding: 0.75rem; font-size: 0.9375rem;">
+          注册并登录
+        </button>
+        <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 1rem; text-align: center;">
+          已有账号？<a href="javascript:void(0)" onclick="switchLoginTab('existing')" style="color: var(--accent-primary);">去登录</a>
+        </p>
+        <p style="color: var(--text-muted); font-size: 0.7rem; margin-top: 0.5rem; text-align: center;">
+          💎 注册后初始积分为 0；领取、兑换积分仅在微信小程序「${mpName}」内进行
         </p>
       </div>
     </div>
   `;
   document.body.appendChild(dialog);
   document.body.classList.add('modal-open');
-  
-  // 聚焦对应输入框
+
   setTimeout(() => {
-    if (defaultTab === 'existing') {
+    if (defaultTab === 'register') {
+      document.getElementById('register-email')?.focus();
+    } else {
       document.getElementById('login-account-id')?.focus();
     }
   }, 100);
 }
 
-// 切换登录Tab
+// 切换登录 Tab（登录 / 注册）
 function switchLoginTab(tab) {
-  const newTab = document.getElementById('login-tab-new');
+  const registerTab = document.getElementById('login-tab-register');
   const existingTab = document.getElementById('login-tab-existing');
   const tabs = document.querySelectorAll('.login-tab');
-  
+
   tabs.forEach(t => {
     const isActive = t.dataset.tab === tab;
     t.style.color = isActive ? 'var(--accent-primary)' : 'var(--text-muted)';
@@ -2043,16 +2049,19 @@ function switchLoginTab(tab) {
     t.style.fontWeight = isActive ? '600' : '400';
     t.classList.toggle('active', isActive);
   });
-  
-  if (tab === 'new') {
-    newTab.style.display = 'block';
-    existingTab.style.display = 'none';
+
+  if (tab === 'register') {
+    if (registerTab) registerTab.style.display = 'block';
+    if (existingTab) existingTab.style.display = 'none';
+    const re = document.getElementById('register-error');
+    if (re) re.style.display = 'none';
+    setTimeout(() => document.getElementById('register-email')?.focus(), 100);
   } else {
-    newTab.style.display = 'none';
-    existingTab.style.display = 'block';
-    setTimeout(() => {
-      document.getElementById('login-account-id')?.focus();
-    }, 100);
+    if (registerTab) registerTab.style.display = 'none';
+    if (existingTab) existingTab.style.display = 'block';
+    const le = document.getElementById('login-error');
+    if (le) le.style.display = 'none';
+    setTimeout(() => document.getElementById('login-account-id')?.focus(), 100);
   }
 }
 
@@ -2066,7 +2075,7 @@ async function doLogin() {
   errorEl.style.display = 'none';
   
   if (!accountId) {
-    errorEl.textContent = '请输入账号ID或昵称';
+    errorEl.textContent = '请输入邮箱、账号 ID 或昵称';
     errorEl.style.display = 'block';
     return;
   }
@@ -2121,6 +2130,77 @@ async function doLogin() {
     console.error('[ERROR] 登录失败:', error);
     errorEl.textContent = '网络错误，请重试';
     errorEl.style.display = 'block';
+  }
+}
+
+// 邮箱注册（网站与小程序共用接口）
+async function doRegister() {
+  const email = document.getElementById('register-email')?.value?.trim() || '';
+  const password = document.getElementById('register-password')?.value || '';
+  const password2 = document.getElementById('register-password2')?.value || '';
+  const nickname = document.getElementById('register-nickname')?.value?.trim() || '';
+  const errorEl = document.getElementById('register-error');
+  if (errorEl) errorEl.style.display = 'none';
+
+  if (!email) {
+    if (errorEl) {
+      errorEl.textContent = '请输入邮箱';
+      errorEl.style.display = 'block';
+    }
+    return;
+  }
+  if (!password || password.length < 8) {
+    if (errorEl) {
+      errorEl.textContent = '密码至少 8 位';
+      errorEl.style.display = 'block';
+    }
+    return;
+  }
+  if (password !== password2) {
+    if (errorEl) {
+      errorEl.textContent = '两次输入的密码不一致';
+      errorEl.style.display = 'block';
+    }
+    return;
+  }
+
+  try {
+    const response = await fetch(buildApiUrl('/api/account/register'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, nickname: nickname || undefined })
+    });
+    const data = await response.json();
+
+    if (data.success) {
+      saveUserToken(data.userToken);
+      state.account = {
+        accountId: data.account.accountId,
+        nickname: data.account.nickname || '',
+        hasPassword: true,
+        loaded: true,
+        loggedIn: true
+      };
+      closeLoginDialog();
+      updateAccountIdDisplay();
+      updateCreditsDisplay();
+      loadCredits();
+      if (document.getElementById('profile-page')?.classList.contains('active')) {
+        loadProfilePageData();
+      }
+      showToast('注册成功', 'success');
+    } else {
+      if (errorEl) {
+        errorEl.textContent = data.error || '注册失败';
+        errorEl.style.display = 'block';
+      }
+    }
+  } catch (err) {
+    console.error('[ERROR] 注册失败:', err);
+    if (errorEl) {
+      errorEl.textContent = '网络错误，请重试';
+      errorEl.style.display = 'block';
+    }
   }
 }
 
@@ -9163,8 +9243,7 @@ let emailVerifyState = {
   smtpConfigured: false,
   verifyEmailCredits: 3,
   cooldown: 0,
-  cooldownTimer: null,
-  forgotEmail: ''  // 找回密码时使用的邮箱
+  cooldownTimer: null
 };
 
 // 切换邮箱验证区域展开/收起
@@ -9851,11 +9930,11 @@ async function updateCreditsModalEntryStatus() {
   }
 }
 
-// 显示忘记密码弹窗
+// 显示忘记密码说明（无独立邮件服务器时不提供网页自助重置）
 function showForgotPasswordDialog() {
-  // 关闭登录弹窗
   closeLoginDialog();
-  
+
+  const mpName = state.siteConfig?.miniprogram?.name || 'JustOneWord';
   const dialog = document.createElement('div');
   dialog.className = 'modal active';
   dialog.id = 'forgot-password-dialog';
@@ -9863,62 +9942,24 @@ function showForgotPasswordDialog() {
   dialog.innerHTML = `
     <div class="modal-content" style="max-width: 400px;">
       <div class="modal-header">
-        <h3>🔑 找回密码</h3>
+        <h3>🔑 忘记密码</h3>
         <button class="btn btn-icon btn-close" onclick="closeForgotPasswordDialog()">×</button>
       </div>
       <div class="modal-body" style="padding: 1.5rem;">
-        <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1rem; text-align: center;">
-          请输入已绑定的邮箱地址
+        <p style="color: var(--text-secondary); font-size: 0.875rem; line-height: 1.6; margin-bottom: 1rem;">
+          请打开微信小程序「<strong>${mpName}</strong>」，在<strong>我的</strong>中登录后使用<strong>设置</strong>里的修改密码；或联系管理员协助。
         </p>
-        
-        <!-- Step 1: 输入邮箱 -->
-        <div id="forgot-step-1">
-          <div class="form-group" style="margin-bottom: 1rem;">
-            <input type="email" id="forgot-email" placeholder="请输入邮箱地址" style="
-              width: 100%; padding: 0.75rem; border: 1px solid var(--border-color);
-              border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);
-            ">
-          </div>
-          <button class="btn btn-primary" id="forgot-send-btn" onclick="sendForgotPasswordCode()" style="width: 100%;">
-            发送验证码
-          </button>
-        </div>
-        
-        <!-- Step 2: 输入验证码和新密码 -->
-        <div id="forgot-step-2" style="display: none;">
-          <div class="form-group" style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">验证码</label>
-            <input type="text" id="forgot-code" placeholder="输入6位验证码" maxlength="6" style="
-              width: 100%; padding: 0.75rem; border: 1px solid var(--border-color);
-              border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);
-            ">
-          </div>
-          <div class="form-group" style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">新密码</label>
-            <input type="password" id="forgot-new-password" placeholder="请输入新密码（至少6位）" style="
-              width: 100%; padding: 0.75rem; border: 1px solid var(--border-color);
-              border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);
-            ">
-          </div>
-          <button class="btn btn-primary" onclick="resetPasswordByEmail()" style="width: 100%;">
-            重置密码
-          </button>
-        </div>
-        
-        <div id="forgot-error" style="display: none; color: #ef4444; font-size: 0.8125rem; margin-top: 1rem; text-align: center;"></div>
-        
-        <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 1rem; text-align: center;">
-          <a href="javascript:void(0)" onclick="closeForgotPasswordDialog(); showLoginDialog('existing');" style="color: var(--accent-primary);">返回登录</a>
+        <p style="color: var(--text-muted); font-size: 0.8125rem; line-height: 1.5;">
+          当前部署为 Pages + Cloudflare Worker，未配置对外发信，网站端无法发送邮箱验证码。
         </p>
+        <button class="btn btn-primary" onclick="closeForgotPasswordDialog(); showLoginDialog('existing');" style="width: 100%; margin-top: 1.25rem;">
+          返回登录
+        </button>
       </div>
     </div>
   `;
   document.body.appendChild(dialog);
   document.body.classList.add('modal-open');
-  
-  setTimeout(() => {
-    document.getElementById('forgot-email')?.focus();
-  }, 100);
 }
 
 // 关闭忘记密码弹窗
@@ -9926,120 +9967,6 @@ function closeForgotPasswordDialog() {
   const dialog = document.getElementById('forgot-password-dialog');
   if (dialog) dialog.remove();
   document.body.classList.remove('modal-open');
-}
-
-// 发送找回密码验证码
-async function sendForgotPasswordCode() {
-  const emailInput = document.getElementById('forgot-email');
-  const email = emailInput?.value?.trim();
-  const errorDiv = document.getElementById('forgot-error');
-  const btn = document.getElementById('forgot-send-btn');
-  
-  if (!email) {
-    if (errorDiv) {
-      errorDiv.textContent = '请输入邮箱地址';
-      errorDiv.style.display = 'block';
-    }
-    return;
-  }
-  
-  if (btn) btn.disabled = true;
-  if (errorDiv) errorDiv.style.display = 'none';
-  
-  try {
-    const response = await fetch(buildApiUrl('/api/account/forgot-password'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    });
-    
-    const data = await response.json();
-    
-    if (data.success) {
-      showToast(data.message || '验证码已发送', 'success');
-      
-      // 显示第二步
-      document.getElementById('forgot-step-1').style.display = 'none';
-      document.getElementById('forgot-step-2').style.display = 'block';
-      document.getElementById('forgot-code')?.focus();
-      
-      // 保存邮箱用于重置
-      emailVerifyState.forgotEmail = email;
-    } else {
-      if (errorDiv) {
-        errorDiv.textContent = data.error || '发送失败';
-        errorDiv.style.display = 'block';
-      }
-      if (btn) btn.disabled = false;
-    }
-  } catch (error) {
-    console.error('发送验证码失败:', error);
-    if (errorDiv) {
-      errorDiv.textContent = '发送失败，请重试';
-      errorDiv.style.display = 'block';
-    }
-    if (btn) btn.disabled = false;
-  }
-}
-
-// 通过邮箱重置密码
-async function resetPasswordByEmail() {
-  const code = document.getElementById('forgot-code')?.value?.trim();
-  const newPassword = document.getElementById('forgot-new-password')?.value;
-  const errorDiv = document.getElementById('forgot-error');
-  
-  if (!code || !newPassword) {
-    if (errorDiv) {
-      errorDiv.textContent = '请填写完整信息';
-      errorDiv.style.display = 'block';
-    }
-    return;
-  }
-  
-  if (newPassword.length < 6) {
-    if (errorDiv) {
-      errorDiv.textContent = '密码至少6位';
-      errorDiv.style.display = 'block';
-    }
-    return;
-  }
-  
-  if (errorDiv) errorDiv.style.display = 'none';
-  
-  try {
-    const response = await fetch(buildApiUrl('/api/account/reset-password-by-email'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        email: emailVerifyState.forgotEmail, 
-        code, 
-        newPassword 
-      })
-    });
-    
-    const data = await response.json();
-    
-    if (data.success) {
-      showToast(data.message || '密码重置成功', 'success');
-      closeForgotPasswordDialog();
-      
-      // 显示登录弹窗
-      setTimeout(() => {
-        showLoginDialog('existing');
-      }, 500);
-    } else {
-      if (errorDiv) {
-        errorDiv.textContent = data.error || '重置失败';
-        errorDiv.style.display = 'block';
-      }
-    }
-  } catch (error) {
-    console.error('重置密码失败:', error);
-    if (errorDiv) {
-      errorDiv.textContent = '重置失败，请重试';
-      errorDiv.style.display = 'block';
-    }
-  }
 }
 
 // ==================== 个人中心 ====================

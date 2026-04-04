@@ -421,6 +421,10 @@ Page({
     });
   },
 
+  goEmailAuth() {
+    wx.navigateTo({ url: '/pages/auth/auth' });
+  },
+
   // 登录
   async handleLogin() {
     wx.showLoading({ title: '登录中...' });
@@ -485,8 +489,12 @@ Page({
     menuItems.push('🌐 访问网页版');
     menuActions.push('web');
     
-    // 绑定网站/重置密码
-    menuItems.push(webActivated ? '🔑 重置网站密码' : '🔗 绑定网站账号');
+    // 修改登录密码（邮箱与网站共用）
+    menuItems.push('🔐 修改登录密码');
+    menuActions.push('changepwd');
+
+    // 绑定网站/重置密码（旧流程，可选）
+    menuItems.push(webActivated ? '🔑 网站激活链接(旧)' : '🔗 网站激活链接(旧)');
     menuActions.push('activate');
     
     // 关于我们
@@ -500,6 +508,9 @@ Page({
         switch (action) {
           case 'web':
             that.goToWeb();
+            break;
+          case 'changepwd':
+            wx.navigateTo({ url: '/pages/auth/auth?mode=changepwd' });
             break;
           case 'activate':
             that.generateWebActivateLink();

@@ -20,7 +20,7 @@ id = "1118560a049f4acd85b33ef1e3dd4b69"
 [vars]
 SITE_NAME = "一句话游戏"
 SITE_SLOGAN = "一句话生成游戏"
-MINIPROGRAM_NAME = "一句话游戏"
+MINIPROGRAM_NAME = "JustOneWord"
 # 允许 GitHub Pages 预览域（*.github.io）跨域调 API；正式站仍建议用自定义域
 ALLOW_GITHUB_IO = "true"
 # 逗号分隔；生产务必收紧为你的站点

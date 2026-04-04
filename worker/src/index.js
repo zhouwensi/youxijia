@@ -5,6 +5,9 @@ import {
   saveUser,
   handleAccountLogin,
   handleSecureRecover,
+  handleAccountRegister,
+  handleAccountNickname,
+  handleAccountChangePassword,
 } from './accounts-kv.js';
 
 const DEFAULT_ORIGINS = [
@@ -49,6 +52,24 @@ function json(request, env, data, status = 200) {
     status,
     headers: { 'Content-Type': 'application/json; charset=utf-8', ...corsHeaders(request, env) },
   });
+}
+
+/** 积分领取、兑换类接口仅允许微信小程序调用（依赖客户端头 x-platform，请勿在浏览器控制台伪造依赖） */
+function isMiniprogramClient(request) {
+  return (request.headers.get('x-platform') || '').toLowerCase() === 'miniprogram';
+}
+
+function creditsMutationBlockedResponse(request, env) {
+  return json(
+    request,
+    env,
+    {
+      success: false,
+      error: '积分领取与兑换仅支持在微信小程序内完成，请在小程序「积分」页操作',
+      creditsRedeemMiniprogramOnly: true,
+    },
+    403
+  );
 }
 
 async function sha256Short(text) {
@@ -132,7 +153,7 @@ function siteConfig(env) {
     success: true,
     siteName: env.SITE_NAME || '一句话游戏',
     siteSlogan: env.SITE_SLOGAN || '一句话生成游戏',
-    miniprogramName: env.MINIPROGRAM_NAME || '一句话游戏',
+    miniprogramName: env.MINIPROGRAM_NAME || 'JustOneWord',
     webCreateDisabled: false,
     webEditDisabled: false,
     webInteractDisabled: false,
@@ -141,6 +162,7 @@ function siteConfig(env) {
     miniprogramLLMDisabled: false,
     creditsEarningHidden: false,
     creditsEarningLimited: true,
+    creditsRedeemMiniprogramOnly: true,
     inviteReward: 3,
     wxSubscribeTmplId: env.WX_SUBSCRIBE_TMPL_GAME_CREATED || '',
     rewardedVideoAdUnitId: '',
@@ -154,13 +176,14 @@ function siteConfig(env) {
       webEditDisabled: false,
       webInteractDisabled: false,
       miniprogram: {
-        name: env.MINIPROGRAM_NAME || '一句话游戏',
+        name: env.MINIPROGRAM_NAME || 'JustOneWord',
         appId: '',
         defaultPath: '/pages/create/create',
         commentDisabled: false,
         llmDisabled: false,
         creditsEarningHidden: false,
         creditsEarningLimited: true,
+        creditsRedeemMiniprogramOnly: true,
       },
     },
   };
@@ -249,8 +272,20 @@ export default {
 
       if (path === '/api/credits' && request.method === 'GET') {
         const token = request.headers.get('x-user-token') || request.headers.get('X-User-Token');
+        if (!token || !String(token).trim()) {
+          return json(request, env, { success: true, credits: 100 });
+        }
         const user = await getUserByToken(env.USER_KV, token);
-        return json(request, env, { success: true, credits: user?.credits ?? 100 });
+        if (!user) {
+          return json(request, env, { success: true, credits: 0 });
+        }
+        return json(request, env, { success: true, credits: user.credits ?? 0 });
+      }
+
+      if (path.startsWith('/api/credits/') && request.method === 'POST' && path !== '/api/credits') {
+        if (!isMiniprogramClient(request)) {
+          return creditsMutationBlockedResponse(request, env);
+        }
       }
 
       if (path === '/api/credits/daily-login' && request.method === 'POST') {
@@ -303,6 +338,22 @@ export default {
 
       if (path === '/api/account/login' && request.method === 'POST') {
         return handleAccountLogin(request, env, json);
+      }
+
+      if (path === '/api/account/register' && request.method === 'POST') {
+        return handleAccountRegister(request, env, json);
+      }
+
+      if (path === '/api/account/nickname' && request.method === 'PUT') {
+        return handleAccountNickname(request, env, json);
+      }
+
+      if (path === '/api/account/change-password' && request.method === 'POST') {
+        return handleAccountChangePassword(request, env, json);
+      }
+
+      if (path === '/api/account/password' && request.method === 'POST') {
+        return handleAccountChangePassword(request, env, json);
       }
 
       if (path === '/api/account/secure-recover' && request.method === 'POST') {
@@ -383,6 +434,9 @@ export default {
       }
 
       if (path === '/api/user/checkin' && request.method === 'POST') {
+        if (!isMiniprogramClient(request)) {
+          return creditsMutationBlockedResponse(request, env);
+        }
         return json(request, env, {
           success: true,
           data: {

@@ -248,97 +248,113 @@
   </style>
 </head>
 <body>
+  <script src="/js/api-base.js"></script>
   <div class="login-container">
     <div class="login-header">
       <div class="login-icon">🎮</div>
-      <h1 class="login-title">登录账号</h1>
-      <p class="login-subtitle">使用小程序绑定的账号登录</p>
+      <h1 class="login-title" id="pageTitle">登录</h1>
+      <p class="login-subtitle" id="pageSub">网站与小程序共用邮箱账号</p>
     </div>
-    
+
     <div id="message" class="message"></div>
-    
+
     <div class="tips">
-      <div class="tips-title">💡 如何获取账号？</div>
-      <div>在小程序「我的」→「设置」→「绑定网站账号」，设置密码后即可使用账号ID或昵称登录。</div>
+      <div class="tips-title">💡 积分说明</div>
+      <div>领取、兑换积分请在微信小程序「JustOneWord」内完成；本站可登录后消耗积分进行创作。</div>
     </div>
-    
-    <form id="loginForm" onsubmit="handleLogin(event)">
-      <div class="form-group">
-        <label class="form-label">账号ID或昵称</label>
-        <input type="text" id="account" class="form-input" placeholder="请输入账号ID或昵称" required autocomplete="username">
-      </div>
-      
-      <div class="form-group">
-        <label class="form-label">密码</label>
-        <div class="input-with-toggle">
-          <input type="password" id="password" class="form-input" placeholder="请输入密码" required autocomplete="current-password">
-          <button type="button" class="toggle-password" onclick="togglePassword()">👁️</button>
+
+    <div id="panel-login">
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label">邮箱 / 账号 ID / 昵称</label>
+          <input type="text" id="account" class="form-input" placeholder="注册邮箱或账号 ID" required autocomplete="username">
         </div>
+        <div class="form-group">
+          <label class="form-label">密码</label>
+          <div class="input-with-toggle">
+            <input type="password" id="password" class="form-input" placeholder="请输入密码" required autocomplete="current-password">
+            <button type="button" class="toggle-password" onclick="togglePassword('password', this)">👁️</button>
+          </div>
+        </div>
+        <button type="submit" id="submitBtn" class="btn btn-primary">登录</button>
+      </form>
+      <div class="login-footer" style="margin-top: 1rem;">
+        <p>还没有账号？<a href="javascript:void(0)" onclick="showRegister()">邮箱注册</a></p>
       </div>
-      
-      <button type="submit" id="submitBtn" class="btn btn-primary">登录</button>
-    </form>
-    
-    <div class="divider"><span>或</span></div>
-    
-    <button class="btn btn-secondary" onclick="goHome()">返回首页</button>
-    
-    <div class="login-footer">
-      <p>还没有账号？<a href="javascript:void(0)" onclick="showActivateTips()">在小程序中绑定</a></p>
     </div>
+
+    <div id="panel-register" style="display: none;">
+      <form id="registerForm" onsubmit="handleRegister(event)">
+        <div class="form-group">
+          <label class="form-label">邮箱</label>
+          <input type="email" id="reg-email" class="form-input" placeholder="your@email.com" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">密码（至少 8 位）</label>
+          <div class="input-with-toggle">
+            <input type="password" id="reg-password" class="form-input" required autocomplete="new-password">
+            <button type="button" class="toggle-password" onclick="togglePassword('reg-password', this)">👁️</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">确认密码</label>
+          <input type="password" id="reg-password2" class="form-input" required autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label class="form-label">昵称（可选）</label>
+          <input type="text" id="reg-nickname" class="form-input" maxlength="20" placeholder="展示名">
+        </div>
+        <button type="submit" id="regBtn" class="btn btn-primary">注册并登录</button>
+      </form>
+      <div class="login-footer" style="margin-top: 1rem;">
+        <p><a href="javascript:void(0)" onclick="showLoginPanel()">返回登录</a></p>
+      </div>
+    </div>
+
+    <div class="divider"><span>或</span></div>
+    <button class="btn btn-secondary" onclick="goHome()">返回首页</button>
   </div>
-  
+
   <script>
-    // 检查是否已登录
+    function apiUrl(p) {
+      return typeof window.resolveApiUrl === 'function' ? window.resolveApiUrl(p) : p;
+    }
+
     function checkLogin() {
-      const jwt = localStorage.getItem('aigame-jwt');
-      if (jwt) {
-        // 验证JWT有效性
-        fetch('/api/user/verify-jwt', {
-          headers: { 'Authorization': 'Bearer ' + jwt }
-        })
-        .then(r => {
-          // 检查HTTP状态码
-          if (!r.ok) {
-            // JWT无效，清除并保持在登录页面
-            localStorage.removeItem('aigame-jwt');
-            localStorage.removeItem('aigame-user-token');
-            localStorage.removeItem('aigame-account-id');
-            return { success: false };
-          }
-          return r.json();
-        })
-        .then(data => {
-          if (data && data.success) {
-            // 已登录，跳转到返回URL或首页
-            const returnUrl = new URLSearchParams(window.location.search).get('return');
-            window.location.href = returnUrl || '/';
-          }
-        })
-        .catch(() => {
-          // 网络错误，清除JWT
-          localStorage.removeItem('aigame-jwt');
-        });
+      const t = localStorage.getItem('aigame-user-token');
+      if (t) {
+        const returnUrl = new URLSearchParams(window.location.search).get('return');
+        window.location.href = returnUrl || '/';
       }
     }
-    
-    // 页面加载时检查登录状态
     checkLogin();
-    
+
     function showMessage(text, type) {
       const msg = document.getElementById('message');
       msg.textContent = text;
-      msg.className = 'message ' + type;
+      msg.className = 'message ' + (type || '');
     }
-    
     function hideMessage() {
-      const msg = document.getElementById('message');
-      msg.className = 'message';
+      document.getElementById('message').className = 'message';
     }
-    
-    function togglePassword() {
-      const input = document.getElementById('password');
-      const btn = document.querySelector('.toggle-password');
+
+    function showRegister() {
+      document.getElementById('panel-login').style.display = 'none';
+      document.getElementById('panel-register').style.display = 'block';
+      document.getElementById('pageTitle').textContent = '注册';
+      document.getElementById('pageSub').textContent = '注册后可在网站与小程序同一账号登录';
+      hideMessage();
+    }
+    function showLoginPanel() {
+      document.getElementById('panel-register').style.display = 'none';
+      document.getElementById('panel-login').style.display = 'block';
+      document.getElementById('pageTitle').textContent = '登录';
+      document.getElementById('pageSub').textContent = '网站与小程序共用邮箱账号';
+      hideMessage();
+    }
+
+    function togglePassword(inputId, btn) {
+      const input = document.getElementById(inputId);
       if (input.type === 'password') {
         input.type = 'text';
         btn.textContent = '🙈';
@@ -347,107 +363,117 @@
         btn.textContent = '👁️';
       }
     }
-    
+
+    function persistSession(data) {
+      localStorage.setItem('aigame-user-token', data.userToken);
+      localStorage.setItem('aigame-author-token', data.userToken);
+      localStorage.setItem('aigame-account-id', data.account.accountId);
+      if (data.account.nickname) {
+        localStorage.setItem('aigame-author-name', data.account.nickname);
+      }
+      localStorage.removeItem('aigame-logged-out');
+    }
+
+    async function syncUserData(userToken) {
+      try {
+        const h = { 'X-User-Token': userToken };
+        const [likesRes, favoritesRes] = await Promise.all([
+          fetch(apiUrl('/api/my-likes'), { headers: h }).then(r => r.json()).catch(() => ({ success: false })),
+          fetch(apiUrl('/api/my-favorites'), { headers: h }).then(r => r.json()).catch(() => ({ success: false }))
+        ]);
+        if (likesRes.success && likesRes.games) {
+          localStorage.setItem('aigame-liked-games', JSON.stringify(likesRes.games.map(g => g.id)));
+        }
+        if (favoritesRes.success && favoritesRes.games) {
+          localStorage.setItem('aigame-favorited-games', JSON.stringify(favoritesRes.games.map(g => g.id)));
+        }
+      } catch (e) { console.warn(e); }
+    }
+
     async function handleLogin(e) {
       e.preventDefault();
       hideMessage();
-      
-      const account = document.getElementById('account').value.trim();
+      const accountId = document.getElementById('account').value.trim();
       const password = document.getElementById('password').value;
       const submitBtn = document.getElementById('submitBtn');
-      
-      if (!account || !password) {
+      if (!accountId || !password) {
         showMessage('请输入账号和密码', 'error');
         return;
       }
-      
       submitBtn.disabled = true;
       submitBtn.textContent = '登录中...';
-      
       try {
-        const response = await fetch('/api/user/web-login', {
+        const response = await fetch(apiUrl('/api/account/login'), {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ account, password })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accountId, password })
         });
-        
         const data = await response.json();
-        
         if (data.success) {
-          // 保存JWT和用户信息
-          localStorage.setItem('aigame-jwt', data.jwt);
-          localStorage.setItem('aigame-user-token', data.user.userToken);
-          localStorage.setItem('aigame-author-token', data.user.userToken);
-          localStorage.setItem('aigame-account-id', data.user.accountId);
-          if (data.user.nickname) {
-            localStorage.setItem('aigame-author-name', data.user.nickname);
-          }
-          
-          // 清除退出标记
-          localStorage.removeItem('aigame-logged-out');
-          
-          showMessage('登录成功，正在同步数据...', 'success');
-          
-          // 同步用户数据
-          await syncUserData(data.user.userToken);
-          
+          persistSession({ userToken: data.userToken, account: data.account });
           showMessage('登录成功，正在跳转...', 'success');
-          
-          // 跳转到首页或之前的页面
+          await syncUserData(data.userToken);
           setTimeout(() => {
             const returnUrl = new URLSearchParams(window.location.search).get('return');
             window.location.href = returnUrl || '/';
-          }, 800);
+          }, 500);
         } else {
           showMessage(data.error || '登录失败', 'error');
         }
-      } catch (error) {
+      } catch (err) {
         showMessage('网络错误，请稍后重试', 'error');
-        console.error('Login error:', error);
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = '登录';
       }
     }
-    
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      hideMessage();
+      const email = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const password2 = document.getElementById('reg-password2').value;
+      const nickname = document.getElementById('reg-nickname').value.trim();
+      const regBtn = document.getElementById('regBtn');
+      if (password.length < 8) {
+        showMessage('密码至少 8 位', 'error');
+        return;
+      }
+      if (password !== password2) {
+        showMessage('两次密码不一致', 'error');
+        return;
+      }
+      regBtn.disabled = true;
+      regBtn.textContent = '注册中...';
+      try {
+        const response = await fetch(apiUrl('/api/account/register'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, nickname: nickname || undefined })
+        });
+        const data = await response.json();
+        if (data.success) {
+          persistSession({ userToken: data.userToken, account: data.account });
+          showMessage('注册成功，正在跳转...', 'success');
+          await syncUserData(data.userToken);
+          setTimeout(() => {
+            const returnUrl = new URLSearchParams(window.location.search).get('return');
+            window.location.href = returnUrl || '/';
+          }, 500);
+        } else {
+          showMessage(data.error || '注册失败', 'error');
+        }
+      } catch (err) {
+        showMessage('网络错误，请稍后重试', 'error');
+      } finally {
+        regBtn.disabled = false;
+        regBtn.textContent = '注册并登录';
+      }
+    }
+
     function goHome() {
       window.location.href = '/';
-    }
-    
-    function showActivateTips() {
-      showMessage('请在小程序「我的」→「设置」→「绑定网站账号」，复制链接到浏览器打开并设置密码。', 'success');
-    }
-    
-    // 同步用户数据（点赞、收藏列表）
-    async function syncUserData(userToken) {
-      try {
-        // 并行请求点赞和收藏列表
-        const [likesRes, favoritesRes] = await Promise.all([
-          fetch('/api/my-likes', { headers: { 'X-User-Token': userToken } }).then(r => r.json()).catch(() => ({ success: false })),
-          fetch('/api/my-favorites', { headers: { 'X-User-Token': userToken } }).then(r => r.json()).catch(() => ({ success: false }))
-        ]);
-        
-        // 缓存点赞的游戏ID列表
-        if (likesRes.success && likesRes.games) {
-          const likedIds = likesRes.games.map(g => g.id);
-          localStorage.setItem('aigame-liked-games', JSON.stringify(likedIds));
-          console.log('[同步] 点赞游戏:', likedIds.length, '个');
-        }
-        
-        // 缓存收藏的游戏ID列表
-        if (favoritesRes.success && favoritesRes.games) {
-          const favoritedIds = favoritesRes.games.map(g => g.id);
-          localStorage.setItem('aigame-favorited-games', JSON.stringify(favoritedIds));
-          console.log('[同步] 收藏游戏:', favoritedIds.length, '个');
-        }
-        
-        console.log('[同步] 用户数据同步完成');
-      } catch (error) {
-        console.error('[同步] 数据同步失败:', error);
-        // 同步失败不影响登录
-      }
     }
   </script>
 </body>

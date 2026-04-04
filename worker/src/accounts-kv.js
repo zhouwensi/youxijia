@@ -1,9 +1,28 @@
 /**
- * KV 用户：token 映射 + 账号 ID / 昵称 索引，供网站登录与安全恢复
+ * KV 用户：token 映射 + 账号 ID / 昵称 / 邮箱 索引，供网站与小程序登录
  */
 import bcrypt from 'bcryptjs';
 
 const PASSWORD_SALT = 'aigame_salt_2025';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function normalizeEmail(email) {
+  const s = (email || '').trim().toLowerCase();
+  if (!s || !EMAIL_RE.test(s)) return '';
+  return s;
+}
+
+async function sha256Hex(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/** 邮箱注册用户使用稳定内部 ID（非微信 openid） */
+export async function openidForEmail(emailNorm) {
+  const h = await sha256Hex(`email_uid|${emailNorm}|${PASSWORD_SALT}`);
+  return `em_${h}`;
+}
 
 export async function getUserByToken(kv, token) {
   if (!kv || !token) return null;
@@ -34,7 +53,7 @@ export async function verifyPassword(password, hash) {
   return hex === hash;
 }
 
-/** 写入用户并维护 aid:/nick: 索引（默认昵称不写入 nick，避免大量冲突） */
+/** 写入用户并维护 aid:/nick:/email: 索引（默认昵称不写入 nick，避免大量冲突） */
 export async function saveUser(kv, user) {
   const openid = user.wechat_openid;
   if (!openid) throw new Error('user.wechat_openid required');
@@ -42,6 +61,10 @@ export async function saveUser(kv, user) {
   await kv.put(`token:${user.user_token}`, openid);
   if (user.account_id) {
     await kv.put(`aid:${user.account_id}`, openid);
+  }
+  const em = normalizeEmail(user.email);
+  if (em) {
+    await kv.put(`email:${em}`, openid);
   }
   const nick = (user.nickname || '').trim();
   if (nick && nick !== '游戏玩家') {
@@ -52,6 +75,12 @@ export async function saveUser(kv, user) {
 async function resolveOpenIdForLookup(kv, accountIdInput) {
   const raw = (accountIdInput || '').trim();
   if (!raw) return null;
+  if (raw.includes('@')) {
+    const em = normalizeEmail(raw);
+    if (!em) return null;
+    const byEmail = await kv.get(`email:${em}`);
+    if (byEmail) return byEmail;
+  }
   let openid = await kv.get(`aid:${raw}`);
   if (openid) return openid;
   openid = await kv.get(`nick:${raw.toLowerCase()}`);
@@ -100,7 +129,7 @@ export async function handleAccountLogin(request, env, json) {
 
   const hasPassword = !!(user.has_password && user.password_hash);
   if (!hasPassword) {
-    return json(request, env, { success: false, error: '该账号未设置密码，请先在小程序中绑定网站账号' }, 400);
+    return json(request, env, { success: false, error: '该账号未设置密码，请使用邮箱注册或前往小程序完成绑定' }, 400);
   }
 
   const passwordMatch = await verifyPassword(password, user.password_hash);
@@ -197,4 +226,148 @@ export async function handleSecureRecover(request, env, json) {
     },
     warning: !hasPassword ? '建议设置密码以保护账号安全' : null,
   });
+}
+
+/**
+ * 邮箱 + 密码注册（网站 / 小程序通用）
+ */
+export async function handleAccountRegister(request, env, json) {
+  if (!env.USER_KV) {
+    return json(request, env, { success: false, error: '未配置 USER_KV' }, 503);
+  }
+  let body = {};
+  try {
+    body = await request.json();
+  } catch {
+    return json(request, env, { success: false, error: '无效 JSON' }, 400);
+  }
+  const emailNorm = normalizeEmail(body.email);
+  const password = body.password;
+  const nicknameRaw = (body.nickname || '').trim();
+
+  if (!emailNorm) {
+    return json(request, env, { success: false, error: '请输入有效邮箱地址' }, 400);
+  }
+  if (!password || typeof password !== 'string' || password.length < 8) {
+    return json(request, env, { success: false, error: '密码至少 8 位' }, 400);
+  }
+  if (nicknameRaw.length > 20) {
+    return json(request, env, { success: false, error: '昵称最长 20 个字符' }, 400);
+  }
+
+  const kv = env.USER_KV;
+  const openid = await openidForEmail(emailNorm);
+  const existing = await kv.get(`user:${openid}`);
+  if (existing) {
+    return json(request, env, { success: false, error: '该邮箱已注册，请直接登录' }, 400);
+  }
+  const dupEmail = await kv.get(`email:${emailNorm}`);
+  if (dupEmail && dupEmail !== openid) {
+    return json(request, env, { success: false, error: '该邮箱已被使用' }, 400);
+  }
+
+  const user_token = crypto.randomUUID();
+  const account_id = 'U' + Math.random().toString(36).slice(2, 8).toUpperCase();
+  const password_hash = bcrypt.hashSync(password, 10);
+  const user = {
+    user_token,
+    account_id,
+    nickname: nicknameRaw || '游戏玩家',
+    wechat_openid: openid,
+    email: emailNorm,
+    password_hash,
+    has_password: true,
+    credits: 0,
+    created_at: new Date().toISOString(),
+    auth_provider: 'email',
+  };
+  await saveUser(kv, user);
+
+  return json(request, env, {
+    success: true,
+    userToken: user.user_token,
+    account: {
+      accountId: user.account_id,
+      nickname: displayNickname(user),
+      rawNickname: user.nickname,
+      hasPassword: true,
+    },
+  });
+}
+
+/**
+ * 已登录用户修改昵称
+ */
+export async function handleAccountNickname(request, env, json) {
+  if (!env.USER_KV) {
+    return json(request, env, { success: false, error: '未配置 USER_KV' }, 503);
+  }
+  const token = request.headers.get('x-user-token') || request.headers.get('X-User-Token');
+  const user = await getUserByToken(env.USER_KV, token);
+  if (!user) {
+    return json(request, env, { success: false, error: '请先登录' }, 401);
+  }
+  let body = {};
+  try {
+    body = await request.json();
+  } catch {
+    return json(request, env, { success: false, error: '无效 JSON' }, 400);
+  }
+  const nickname = (body.nickname || '').trim();
+  if (!nickname || nickname.length > 20) {
+    return json(request, env, { success: false, error: '昵称长度 1–20 个字符' }, 400);
+  }
+
+  const kv = env.USER_KV;
+  const oldNick = (user.nickname || '').trim();
+  if (oldNick && oldNick !== '游戏玩家') {
+    await kv.delete(`nick:${oldNick.toLowerCase()}`);
+  }
+  user.nickname = nickname;
+  await saveUser(kv, user);
+
+  return json(request, env, {
+    success: true,
+    account: {
+      account_id: user.account_id,
+      accountId: user.account_id,
+      nickname: displayNickname(user),
+      rawNickname: user.nickname,
+    },
+  });
+}
+
+/**
+ * 已登录用户修改密码
+ */
+export async function handleAccountChangePassword(request, env, json) {
+  if (!env.USER_KV) {
+    return json(request, env, { success: false, error: '未配置 USER_KV' }, 503);
+  }
+  const token = request.headers.get('x-user-token') || request.headers.get('X-User-Token');
+  const user = await getUserByToken(env.USER_KV, token);
+  if (!user) {
+    return json(request, env, { success: false, error: '请先登录' }, 401);
+  }
+  let body = {};
+  try {
+    body = await request.json();
+  } catch {
+    return json(request, env, { success: false, error: '无效 JSON' }, 400);
+  }
+  const oldPassword = body.oldPassword;
+  const newPassword = body.newPassword || body.password;
+  if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) {
+    return json(request, env, { success: false, error: '新密码至少 8 位' }, 400);
+  }
+  const hasPassword = !!(user.has_password && user.password_hash);
+  if (hasPassword) {
+    if (!oldPassword || !(await verifyPassword(oldPassword, user.password_hash))) {
+      return json(request, env, { success: false, error: '当前密码错误' }, 400);
+    }
+  }
+  user.password_hash = bcrypt.hashSync(newPassword, 10);
+  user.has_password = true;
+  await saveUser(env.USER_KV, user);
+  return json(request, env, { success: true, message: '密码已更新' });
 }
