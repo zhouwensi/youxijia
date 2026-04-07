@@ -204,7 +204,7 @@ function turboModels(env) {
       creditCost: 1,
       speedLevel: 'fast',
       quality: 'high',
-      maxTokens: 16384,
+      maxTokens: 8192,
       turboRecommended: true,
       hasDefaultKey: true,
       needsUserKey: false,

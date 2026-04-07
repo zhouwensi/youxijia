@@ -87,6 +87,11 @@ export async function runGenerate(body, env) {
     model: llmConfig?.model || 'deepseek-chat',
   };
 
+  /** DeepSeek Chat 等接口要求 max_tokens ∈ [1, 8192]，超出会 400 */
+  const cap = 8192;
+  const requested = Number(llmConfig?.maxTokens);
+  const max_tokens = Math.min(cap, Math.max(1, Number.isFinite(requested) && requested > 0 ? requested : cap));
+
   if (!config.apiKey) {
     return { ok: false, status: 400, body: { success: false, error: '请配置API Key' } };
   }
@@ -105,7 +110,7 @@ export async function runGenerate(body, env) {
         { role: 'user', content: `请生成游戏：${prompt}` },
       ],
       temperature: 0.7,
-      max_tokens: 16384,
+      max_tokens,
     }),
   });
 
