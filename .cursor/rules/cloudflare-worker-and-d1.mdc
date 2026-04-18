@@ -1,0 +1,31 @@
+---
+description: Cloudflare Pages Functions（Worker）与 D1 部署；Wrangler 需用户协助登录时如何处理
+globs: "**/functions/**/*.ts,wrangler.toml,migrations/*.sql,DEPLOY.md,scripts/provision-cloudflare.mjs"
+alwaysApply: false
+---
+
+# Cloudflare Worker（Pages Functions）与 D1
+
+## 架构（本仓库）
+
+- API：`functions/api/[[path]].ts` → `functions/lib/handlers.ts` 等。
+- 数据库：`wrangler.toml` 绑定 D1 `YOUXIJIA_DB`（库名 `youxijia-db`）。
+- 一键部署脚本：`package.json` 里 `cf:deploy` / `cf:db:remote` / `cf:provision` / `cf:dev`。
+
+## 改代码后谁部署
+
+- **Agent**：在仓库根目录用终端执行 `npm run cf:deploy`（含 `build`、provision、**远程 D1 迁移**、`wrangler pages deploy`），或按改动只跑 `npm run cf:db:remote`（仅新迁移）+ `npx wrangler pages deploy public --project-name youxijia`（与现有 `deploy-and-git` 规则一致）。
+- **用户可辅助**：`wrangler` / `npm run login` 需在浏览器完成 OAuth；若终端提示未登录或 token 失效，**明确请用户本机执行 `npm run login` 并完成授权**，再继续部署命令。
+
+## 密钥（不进 Git）
+
+小程序服务端登录等见 `DEPLOY.md`；常用例如 `npx wrangler secret put WX_MINI_APPID`、`WX_MINI_SECRET`、`LLM_DEFAULT_API_KEY`。Agent 不代填密钥，只提示在 Cloudflare 控制台或上述命令配置。
+
+## 迁移
+
+- 新增/修改表结构：写在 `migrations/*.sql`，部署前/后执行 **`npm run cf:db:remote`**（或让 `cf:deploy` 带上该步）。
+- 本地验证 D1：`npm run cf:db:local` + `npm run cf:dev`。
+
+## 与小程序联调
+
+- 线上 API 域名须与 `miniprogram/app.js` 的 `baseUrl` 一致，且已在微信公众平台配置 **request 合法域名**。
