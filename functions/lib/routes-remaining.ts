@@ -13,6 +13,7 @@ import {
   ipForRequest,
   isUserAdmin,
 } from "./cf-helpers";
+import { tryCheckinRoutes } from "./checkin-routes";
 
 export type RouteCtx = {
   request: Request;
@@ -47,6 +48,9 @@ const CREDITS_STATIC = {
 export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null> {
   const { request, db, url, method, segs } = ctx;
   const h = (n: string) => request.headers.get(n);
+
+  const checkinRes = await tryCheckinRoutes({ request, db, method, segs });
+  if (checkinRes) return checkinRes;
 
   if (method === "GET" && segs[0] === "check-ban") {
     const userToken = getUserTokenFromRequest(request);

@@ -20,6 +20,7 @@ import {
   handleBindEmail,
 } from './accounts-kv.js';
 import { handleAdminRequest } from './admin-kv.js';
+import { handleMpCheckin, handleMpCheckinStatus } from './mp-checkin-kv.js';
 
 const DEFAULT_ORIGINS = [
   'https://www.yijuhuayouxi.com',
@@ -246,6 +247,10 @@ function shouldForwardToPages(path, method) {
   if (path === '/api/wechat/login' && method === 'POST') return true;
   if (path === '/api/account' && method === 'GET') return true;
   if (path === '/api/account/nickname' && method === 'PUT') return true;
+  // 积分与签到以 Pages+D1 为准（避免本 Worker 桩数据与真实账户不一致）
+  if (path === '/api/credits' && method === 'GET') return true;
+  if (path === '/api/user/checkin' && method === 'POST') return true;
+  if (path === '/api/user/checkin-status' && method === 'GET') return true;
   return false;
 }
 
@@ -467,25 +472,14 @@ export default {
       }
 
       if (path === '/api/user/checkin-status' && request.method === 'GET') {
-        return json(request, env, {
-          success: true,
-          data: { checked_in_today: false, streak_days: 0 },
-        });
+        return handleMpCheckinStatus(request, env, (data, status = 200) => json(request, env, data, status));
       }
 
       if (path === '/api/user/checkin' && request.method === 'POST') {
         if (!isMiniprogramClient(request)) {
           return creditsMutationBlockedResponse(request, env);
         }
-        return json(request, env, {
-          success: true,
-          data: {
-            total_credits: 100,
-            total_earned: 5,
-            bonus_credits: 0,
-            streak_days: 1,
-          },
-        });
+        return handleMpCheckin(request, env, (data, status = 200) => json(request, env, data, status));
       }
 
       if (path === '/api/achievements' && request.method === 'GET') {
