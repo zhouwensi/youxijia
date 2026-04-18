@@ -224,6 +224,22 @@ function turboModels(env) {
   return { success: true, models, defaultModel: 'deepseek-v3' };
 }
 
+/**
+ * 自定义域仍挂在旧 KV Worker、但微信登录已走 Pages Functions+D1 时，将账号类请求转发到 Pages 源站。
+ * 在 Worker 环境变量中设置 PAGES_API_ORIGIN，例如 https://youxijia.pages.dev（勿尾斜杠）
+ */
+function pagesAccountForwardBase(env) {
+  const raw = (env.PAGES_API_ORIGIN || '').trim().replace(/\/$/, '');
+  return raw || '';
+}
+
+function shouldForwardToPages(path, method) {
+  if (path === '/api/wechat/login' && method === 'POST') return true;
+  if (path === '/api/account' && method === 'GET') return true;
+  if (path === '/api/account/nickname' && method === 'PUT') return true;
+  return false;
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -234,6 +250,12 @@ export default {
     }
 
     try {
+      const pagesBase = pagesAccountForwardBase(env);
+      if (pagesBase && shouldForwardToPages(path, request.method)) {
+        const forwardUrl = `${pagesBase}${path}${url.search}`;
+        return fetch(new Request(forwardUrl, request));
+      }
+
       if (path === '/health' || path === '/') {
         return json(request, env, { ok: true, service: 'yijuhuayouxi-api' });
       }

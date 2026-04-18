@@ -214,8 +214,17 @@ App({
               success: (res) => {
                 const result = res.data;
                 if (res.statusCode === 200 && result && result.success) {
-                  const token = result.userToken;
-                  const acc = this.normalizeUserInfo(result.account || {});
+                  // Pages+D1：{ userToken, account }；旧 KV Worker：{ data: { token, userInfo } }
+                  const token =
+                    result.userToken ||
+                    (result.data && (result.data.token || result.data.userToken)) ||
+                    '';
+                  const rawAcc = result.account || (result.data && result.data.userInfo) || {};
+                  const acc = this.normalizeUserInfo(rawAcc);
+                  if (!token) {
+                    reject(new Error((result && result.error) || '登录失败：未返回 token'));
+                    return;
+                  }
                   this.globalData.token = token;
                   this.globalData.userInfo = acc;
                   this.globalData.isLoggedIn = true;

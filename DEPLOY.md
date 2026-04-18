@@ -95,6 +95,8 @@ npm run cf:db:remote
 
 在 Cloudflare 控制台为 Pages 项目绑定 D1（若控制台提示未绑定，选择与 `wrangler.toml` 中一致的 `youxijia-db`）。
 
+**若 `api.*` 自定义域仍绑在旧 Worker（`worker/wrangler.toml` 的 KV Worker）上**，而小程序微信登录已走 **Pages Functions + D1**，会出现「能登录但改昵称 401/失败」：请在旧 Worker 的环境变量中设置 **`PAGES_API_ORIGIN`**（例如 `https://youxijia.pages.dev`，与当前 Pages 项目子域一致），使 `POST /api/wechat/login`、`GET /api/account`、`PUT /api/account/nickname` 转发到 Pages；**更推荐**将 api 子域改为只指向 Pages 项目，下线该 Worker 路由。
+
 ### 2. 大模型 API Key（二选一或同时）
 
 - **推荐**：`npx wrangler secret put LLM_DEFAULT_API_KEY`（生产密钥，不写进仓库）

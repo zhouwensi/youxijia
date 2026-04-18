@@ -29,3 +29,7 @@ ALLOWED_ORIGINS = "https://www.yijuhuayouxi.com,https://yijuhuayouxi.com,http://
 # WX_APPID = ""
 
 # DEEPSEEK_BASE_URL 默认已在代码里；如需覆盖可在此加 [vars]
+#
+# 若 api 子域仍绑在本 KV Worker，但小程序微信登录已用 Pages+D1，请设置转发源（Cloudflare 控制台 → Worker → Settings → Variables）：
+# PAGES_API_ORIGIN = https://youxijia.pages.dev
+# 设置后 /api/wechat/login、GET /api/account、PUT /api/account/nickname 会转发到 Pages Functions。

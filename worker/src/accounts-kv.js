@@ -176,7 +176,7 @@ export async function handleBindEmail(request, env, json) {
   const token = request.headers.get('x-user-token') || request.headers.get('X-User-Token');
   const user = await getUserByToken(env.USER_KV, token);
   if (!user) {
-    return json(request, env, { success: false, error: '请先登录' }, 401);
+    return json(request, env, { success: false, error: '当前节点无此账号，请使用 Pages API 或配置 PAGES_API_ORIGIN' }, 404);
   }
   let body = {};
   try {
@@ -385,7 +385,16 @@ export async function handleAccountNickname(request, env, json) {
   const token = request.headers.get('x-user-token') || request.headers.get('X-User-Token');
   const user = await getUserByToken(env.USER_KV, token);
   if (!user) {
-    return json(request, env, { success: false, error: '请先登录' }, 401);
+    // 勿用 401：小程序会把任意 401 当作「登录过期」清空本地 token。KV 无此 token 多为已迁 D1（Pages），应改域名或配置 PAGES_API_ORIGIN 转发。
+    return json(
+      request,
+      env,
+      {
+        success: false,
+        error: '当前 API 节点无此账号（可能已使用 Pages+D1 登录）。请将 api 指向 Pages 或在 Worker 配置 PAGES_API_ORIGIN',
+      },
+      404,
+    );
   }
   let body = {};
   try {
@@ -427,7 +436,7 @@ export async function handleAccountChangePassword(request, env, json) {
   const token = request.headers.get('x-user-token') || request.headers.get('X-User-Token');
   const user = await getUserByToken(env.USER_KV, token);
   if (!user) {
-    return json(request, env, { success: false, error: '请先登录' }, 401);
+    return json(request, env, { success: false, error: '当前节点无此账号，请使用 Pages API 或配置 PAGES_API_ORIGIN' }, 404);
   }
   let body = {};
   try {
