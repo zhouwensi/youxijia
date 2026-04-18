@@ -22,7 +22,10 @@ jobs:
       - name: Install and build
         run: npm ci && npm run build
 
+      # 迁移失败（例如 Token 无 D1 权限、库已对齐）时不阻塞发布；请查看日志并在本机执行 npm run cf:db:remote 修复
       - name: Apply D1 migrations (remote)
+        id: d1_migrate
+        continue-on-error: true
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
