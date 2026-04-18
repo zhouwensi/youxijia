@@ -259,6 +259,14 @@ Page({
         console.log('关注统计:', updates['stats.following'], updates['stats.followers']);
       }
 
+      // GET /api/account 失败时仍保持微信登录态（wxLogin 已写入 globalData / storage）
+      if (app.globalData.isLoggedIn) {
+        updates.isLoggedIn = true;
+        if (updates.userInfo == null && app.globalData.userInfo) {
+          updates.userInfo = app.normalizeUserInfo(app.globalData.userInfo);
+        }
+      }
+
       this.setData(updates);
       
       // 检查网站激活状态（异步，不阻塞主流程）
@@ -463,6 +471,11 @@ Page({
     try {
       const loginResult = await app.wxLogin();
       this.checkLoginStatus();
+      // 立即切到已登录 UI，不依赖后续 /api/account（可能 404 或与 credits 库不一致）
+      this.setData({
+        isLoggedIn: true,
+        userInfo: app.normalizeUserInfo(app.globalData.userInfo || {}),
+      });
       await this.loadUserData();
       this.loadListData();
       app.showToast('登录成功', 'success');

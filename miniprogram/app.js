@@ -156,25 +156,40 @@ App({
 
   // 仅从本地恢复登录态，不发起网络静默登录
   checkLoginStatus() {
-    const token = wx.getStorageSync('userToken') || wx.getStorageSync('token');
-    const userInfo = wx.getStorageSync('userInfo');
+    const tokenFromStore = wx.getStorageSync('userToken') || wx.getStorageSync('token');
+    const userInfoFromStore = wx.getStorageSync('userInfo');
+    // 以 storage 为准，并与内存合并：避免 wxLogin 刚写入 globalData 后，因 userInfo 未读到 storage 而把登录态清空
+    const token = tokenFromStore || this.globalData.token;
 
-    if (token && userInfo) {
-      this.globalData.token = token;
-      this.globalData.userInfo = this.normalizeUserInfo(userInfo);
-      this.globalData.isLoggedIn = true;
-      // 恢复accountId
-      this.globalData.accountId =
-        this.globalData.userInfo.account_id || this.globalData.userInfo.accountId || null;
-      try {
-        wx.setStorageSync('userInfo', this.globalData.userInfo);
-      } catch (_) {}
-      console.log('用户已登录:', this.globalData.userInfo.nickname || this.globalData.userInfo.account_id);
-    } else {
+    if (!token) {
       this.globalData.token = null;
       this.globalData.userInfo = null;
       this.globalData.isLoggedIn = false;
+      this.globalData.accountId = null;
+      return;
     }
+
+    this.globalData.token = token;
+
+    let raw =
+      userInfoFromStore && typeof userInfoFromStore === 'object'
+        ? userInfoFromStore
+        : this.globalData.userInfo && typeof this.globalData.userInfo === 'object'
+          ? this.globalData.userInfo
+          : {};
+    this.globalData.userInfo = this.normalizeUserInfo(raw);
+    this.globalData.accountId =
+      this.globalData.userInfo.account_id || this.globalData.userInfo.accountId || null;
+    this.globalData.isLoggedIn = true;
+
+    try {
+      if (tokenFromStore) {
+        wx.setStorageSync('userToken', token);
+        wx.setStorageSync('token', token);
+      }
+      wx.setStorageSync('userInfo', this.globalData.userInfo);
+    } catch (_) {}
+    console.log('用户已登录:', this.globalData.userInfo.nickname || this.globalData.userInfo.account_id);
   },
 
   /**
