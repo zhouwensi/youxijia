@@ -296,14 +296,12 @@ App({
         data = '{}';
       }
 
+      // 勿带 Authorization: Bearer <本站 user_token>：部分网关会按 JWT 校验 Authorization，非 JWT 会直接 401
       const baseHeader = {
         'Content-Type': 'application/json',
         'x-user-token': token,
         'x-platform': 'miniprogram',
       };
-      if (token) {
-        baseHeader['Authorization'] = 'Bearer ' + token;
-      }
 
       wx.request({
         url: fullUrl,
