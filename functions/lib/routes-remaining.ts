@@ -161,6 +161,130 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
     }
   }
 
+  if (method === "GET" && segs[0] === "user" && segs[1] === "creating-tasks") {
+    const userToken = getUserTokenFromRequest(request);
+    if (!userToken) return json({ success: false, error: "未登录" }, 401);
+    const exists = await db
+      .prepare("SELECT 1 AS x FROM user_accounts WHERE user_token = ?")
+      .bind(userToken)
+      .first();
+    if (!exists) return json({ success: false, error: "用户不存在" }, 404);
+    const r = await db
+      .prepare(
+        `SELECT id, prompt, created_at, COALESCE(draft_subscribe_notify, 0) AS draft_subscribe_notify
+         FROM games WHERE author_token = ? AND status = 'draft' ORDER BY datetime(created_at) DESC`,
+      )
+      .bind(userToken)
+      .all<{ id: string; prompt: string; created_at: string; draft_subscribe_notify: number }>();
+    const rows = r.results || [];
+    const parseCt = (s: string) => {
+      const n = Date.parse(String(s).replace(" ", "T"));
+      return Number.isFinite(n) ? n : Date.now();
+    };
+    const tasks = rows.map((g) => ({
+      taskId: `sync_${g.id}`,
+      type: "create",
+      typeName: "创建游戏",
+      status: "processing",
+      progress: 50,
+      progressText: "AI创作中...",
+      prompt: g.prompt || "",
+      createdAt: parseCt(g.created_at),
+      subscribed: (g.draft_subscribe_notify ?? 0) === 1,
+      gameId: g.id,
+    }));
+    return json({ success: true, tasks, count: tasks.length });
+  }
+
+  if (method === "POST" && segs[0] === "task" && segs[2] === "subscribe" && segs.length === 3) {
+    const taskId = segs[1] || "";
+    const userToken = getUserTokenFromRequest(request);
+    if (!userToken) return json({ success: false, error: "未登录" }, 401);
+    if (!taskId.startsWith("sync_")) {
+      return json({ success: false, error: "任务不存在或已完成" }, 404);
+    }
+    const gameId = taskId.slice("sync_".length);
+    if (!gameId) return json({ success: false, error: "无效任务" }, 400);
+
+    const game = await db
+      .prepare(
+        "SELECT id, author_token, status, COALESCE(draft_subscribe_notify, 0) AS sub FROM games WHERE id = ?",
+      )
+      .bind(gameId)
+      .first<{ id: string; author_token: string; status: string; sub: number }>();
+    if (!game) return json({ success: false, error: "任务不存在或已完成" }, 404);
+    if (game.author_token !== userToken) return json({ success: false, error: "无权操作此任务" }, 403);
+    if (game.status !== "draft") {
+      return json({ success: false, error: "任务已完成，无法订阅", taskStatus: game.status });
+    }
+    if (game.sub === 1) {
+      return json({ success: false, error: "已订阅此任务", alreadySubscribed: true });
+    }
+
+    const user = await db
+      .prepare("SELECT mp_openid FROM user_accounts WHERE user_token = ?")
+      .bind(userToken)
+      .first<{ mp_openid: string | null }>();
+    if (!user) return json({ success: false, error: "用户不存在" }, 404);
+    if (!user.mp_openid || String(user.mp_openid).trim() === "") {
+      return json({
+        success: false,
+        error: "请先在小程序中登录以获取通知权限",
+        needWechatLogin: true,
+      });
+    }
+
+    let creditsReward = 0.5;
+    try {
+      const v = await getConfig(db, "credits_subscribe_task", "0.5");
+      creditsReward = parseFloat(String(v)) || 0;
+    } catch {
+      creditsReward = 0;
+    }
+    const rewardInt = Math.max(0, Math.round(creditsReward));
+
+    await db
+      .prepare("UPDATE games SET draft_subscribe_notify = 1, updated_at = datetime('now') WHERE id = ?")
+      .bind(gameId)
+      .run();
+
+    if (rewardInt > 0) {
+      await db
+        .prepare(
+          "UPDATE user_credits SET credits = credits + ?, total_earned = total_earned + ?, updated_at = datetime('now') WHERE user_token = ?",
+        )
+        .bind(rewardInt, rewardInt, userToken)
+        .run();
+      try {
+        await db
+          .prepare(
+            "INSERT INTO credit_logs (user_token, amount, type, description) VALUES (?, ?, 'subscribe_task', ?)",
+          )
+          .bind(userToken, rewardInt, "订阅任务完成通知")
+          .run();
+      } catch {
+        /* credit_logs 可能不存在 */
+      }
+    }
+    try {
+      await db
+        .prepare(
+          "UPDATE user_accounts SET subscribe_count = COALESCE(subscribe_count, 0) + 1 WHERE user_token = ?",
+        )
+        .bind(userToken)
+        .run();
+    } catch {
+      /* subscribe_count 列可能不存在 */
+    }
+
+    return json({
+      success: true,
+      taskId,
+      creditsReward: rewardInt,
+      message: rewardInt > 0 ? `订阅成功！+${rewardInt}积分` : "订阅成功！",
+    });
+  }
+
   if (method === "POST" && segs[0] === "account" && segs[1] === "recover") {
     const b = await readBody(request);
     const accountId = String(b.accountId || "");

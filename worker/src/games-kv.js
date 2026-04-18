@@ -392,3 +392,78 @@ export async function adminDeleteGame(kv, id) {
   await removeFromAuthorIndex(kv, game.author_token, id);
   return { ok: true, body: { success: true, message: '已删除' } };
 }
+
+const DRAFT_SUB_KV_PREFIX = 'mp_draft_sub:';
+
+function parseCreatedAtMs(createdAt) {
+  if (!createdAt) return Date.now();
+  const n = Date.parse(String(createdAt).replace(' ', 'T'));
+  return Number.isFinite(n) ? n : Date.now();
+}
+
+/** 将作者的草稿列表映射为小程序「创作中任务」（与 server.js sync_<draftId> 对齐） */
+export async function listCreatingTasksFromDrafts(kv, authorToken) {
+  if (!kv || !authorToken) return [];
+  const r = await listMyGames(kv, authorToken);
+  const games = (r.body && r.body.games) || [];
+  const drafts = games.filter((g) => g.status === 'draft');
+  const tasks = [];
+  for (const g of drafts) {
+    const subRaw = await kv.get(`${DRAFT_SUB_KV_PREFIX}${g.id}`);
+    const subscribed = subRaw === '1';
+    tasks.push({
+      taskId: `sync_${g.id}`,
+      type: 'create',
+      typeName: '创建游戏',
+      status: 'processing',
+      progress: 50,
+      progressText: 'AI创作中...',
+      prompt: g.prompt || '',
+      createdAt: parseCreatedAtMs(g.created_at),
+      subscribed,
+      gameId: g.id,
+    });
+  }
+  tasks.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  return tasks;
+}
+
+/** 草稿任务订阅（KV 无微信发模板能力，仅记录订阅态供前端与后续扩展） */
+export async function subscribeDraftTaskKv(kv, gameId, authorToken, user) {
+  if (!kv || !gameId || !authorToken) {
+    return { ok: false, status: 400, body: { success: false, error: '参数无效' } };
+  }
+  const game = await getGame(kv, gameId);
+  if (!game) return { ok: false, status: 404, body: { success: false, error: '任务不存在或已完成' } };
+  if (game.author_token !== authorToken) {
+    return { ok: false, status: 403, body: { success: false, error: '无权操作此任务' } };
+  }
+  if (game.status !== 'draft') {
+    return { ok: true, body: { success: false, error: '任务已完成，无法订阅', taskStatus: game.status } };
+  }
+  const key = `${DRAFT_SUB_KV_PREFIX}${gameId}`;
+  const existed = await kv.get(key);
+  if (existed === '1') {
+    return { ok: true, body: { success: false, error: '已订阅此任务', alreadySubscribed: true } };
+  }
+  if (user && !user.wechat_openid) {
+    return {
+      ok: true,
+      body: {
+        success: false,
+        error: '请先在小程序中登录以获取通知权限',
+        needWechatLogin: true,
+      },
+    };
+  }
+  await kv.put(key, '1');
+  return {
+    ok: true,
+    body: {
+      success: true,
+      taskId: `sync_${gameId}`,
+      creditsReward: 0,
+      message: '订阅成功！',
+    },
+  };
+}

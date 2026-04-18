@@ -1,5 +1,14 @@
 import { runGenerate } from './generate.js';
-import { createGame, updateGame, getGameDetail, listGames, listMyGames, getGame } from './games-kv.js';
+import {
+  createGame,
+  updateGame,
+  getGameDetail,
+  listGames,
+  listMyGames,
+  getGame,
+  listCreatingTasksFromDrafts,
+  subscribeDraftTaskKv,
+} from './games-kv.js';
 import {
   getUserByToken,
   saveUser,
@@ -680,7 +689,32 @@ export default {
       }
 
       if (path === '/api/user/creating-tasks' && request.method === 'GET') {
-        return json(request, env, { success: true, tasks: [] });
+        const token = request.headers.get('x-user-token') || request.headers.get('X-User-Token');
+        if (!token || !String(token).trim()) {
+          return json(request, env, { success: false, error: '未登录' }, 401);
+        }
+        const user = await getUserByToken(env.USER_KV, token);
+        if (!user) return json(request, env, { success: false, error: '用户不存在' }, 404);
+        const tasks = kvGames ? await listCreatingTasksFromDrafts(kvGames, token) : [];
+        return json(request, env, { success: true, tasks, count: tasks.length });
+      }
+
+      const taskSub = path.match(/^\/api\/task\/([^/]+)\/subscribe$/);
+      if (taskSub && request.method === 'POST') {
+        const taskId = taskSub[1];
+        const token = request.headers.get('x-user-token') || request.headers.get('X-User-Token');
+        if (!token || !String(token).trim()) {
+          return json(request, env, { success: false, error: '未登录' }, 401);
+        }
+        if (!taskId || !String(taskId).startsWith('sync_')) {
+          return json(request, env, { success: false, error: '任务不存在或已完成' }, 404);
+        }
+        const gameId = taskId.slice('sync_'.length);
+        const user = await getUserByToken(env.USER_KV, token);
+        if (!user) return json(request, env, { success: false, error: '用户不存在' }, 404);
+        if (!kvGames) return json(request, env, { success: false, error: 'KV 未配置' }, 503);
+        const r = await subscribeDraftTaskKv(kvGames, gameId, token, user);
+        return json(request, env, r.body, r.ok ? 200 : r.status);
       }
 
       if (path === '/api/cancel-generation' && request.method === 'POST') {
