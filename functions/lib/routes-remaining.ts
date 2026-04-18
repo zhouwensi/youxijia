@@ -292,7 +292,72 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
   }
 
   if (method === "POST" && segs[0] === "account" && segs[1] === "secure-recover") {
-    return json({ success: false, error: "请使用 /api/account/recover" }, 400);
+    const b = await readBody(request);
+    const accountId = String(b.accountId || "").trim();
+    const password = String(b.password || "");
+    const deviceFingerprint = (b.deviceFingerprint as string) || null;
+    const clientIP = ipForRequest(request);
+    if (!accountId) return json({ success: false, error: "请输入账号ID或昵称" }, 400);
+
+    let account = await db
+      .prepare("SELECT * FROM user_accounts WHERE account_id = ?")
+      .bind(accountId)
+      .first<Record<string, unknown>>();
+    if (!account) {
+      account = await db
+        .prepare("SELECT * FROM user_accounts WHERE nickname = ? COLLATE NOCASE")
+        .bind(accountId)
+        .first();
+    }
+    if (!account) return json({ success: false, error: "账号不存在" }, 404);
+
+    const hasPassword = !!(account.has_password && account.password_hash);
+    const isSameDevice =
+      !!deviceFingerprint &&
+      !!account.device_fingerprint &&
+      String(account.device_fingerprint) === String(deviceFingerprint);
+
+    let passwordCorrect = false;
+    if (hasPassword && password) {
+      passwordCorrect = (await hashPasswordLegacy(password)) === account.password_hash;
+    }
+
+    if (hasPassword && !passwordCorrect && !isSameDevice) {
+      return json(
+        {
+          success: false,
+          error: "该账号已设置密码，请输入正确密码",
+          needPassword: true,
+        },
+        400,
+      );
+    }
+
+    await db
+      .prepare(
+        `UPDATE user_accounts SET device_fingerprint = COALESCE(?, device_fingerprint),
+         last_ip = COALESCE(?, last_ip), updated_at = datetime('now') WHERE user_token = ?`,
+      )
+      .bind(deviceFingerprint, clientIP || null, String(account.user_token))
+      .run();
+
+    const displayNickname =
+      account.nickname && account.nickname !== "游戏玩家"
+        ? String(account.nickname)
+        : String(account.account_id);
+
+    return json({
+      success: true,
+      userToken: account.user_token,
+      account: {
+        accountId: account.account_id,
+        nickname: displayNickname,
+        rawNickname: account.nickname,
+        hasPassword: !!account.has_password,
+        createdAt: account.created_at,
+      },
+      warning: !hasPassword ? "建议设置密码以保护账号安全" : null,
+    });
   }
 
   if (method === "GET" && segs[0] === "account" && segs[1] === "check" && segs[2]) {

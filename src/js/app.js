@@ -2045,6 +2045,9 @@ function showLoginDialog(defaultTab = 'existing') {
         <button class="btn btn-primary" onclick="doLogin()" style="width: 100%; padding: 0.75rem; font-size: 0.9375rem;">
           登录
         </button>
+        <button type="button" class="btn btn-secondary" onclick="doRecover()" style="width: 100%; padding: 0.65rem; font-size: 0.8125rem; margin-top: 0.75rem;">
+          已在微信小程序登录？填写上方账号 ID，无密码恢复本站
+        </button>
         <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 1rem; text-align: center;">
           没有账号？<a href="javascript:void(0)" onclick="switchLoginTab('register')" style="color: var(--accent-primary);">去注册</a>
           &nbsp;|&nbsp;
