@@ -227,8 +227,15 @@ App({
     return this.wxLogin();
   },
 
-  /** 已取消静默登录；请使用「我的」页「微信登录」 */
+  /**
+   * 已取消静默注册；若本地已有 token 则仅同步 globalData，否则提示去「我的」微信登录。
+   * 供旧页面 onShow 等调用，避免误 reject。
+   */
   silentLogin() {
+    this.checkLoginStatus();
+    if (this.globalData.isLoggedIn) {
+      return Promise.resolve({ fromStorage: true });
+    }
     return Promise.reject(new Error('请前往「我的」页点击微信登录'));
   },
 

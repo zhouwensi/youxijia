@@ -184,24 +184,42 @@ Page({
 
   // 加载用户数据
   async loadUserData() {
+    const safeRequest = async (label, fn) => {
+      try {
+        return { ok: true, data: await fn() };
+      } catch (e) {
+        console.warn(`[我的] ${label} 请求失败:`, e && e.message ? e.message : e);
+        return { ok: false, err: e };
+      }
+    };
+
     try {
       app.checkLoginStatus();
-      const myToken = app.globalData.token;
-      const creditsHidden = app.globalData.creditsEarningHidden === true;
-      
-      // 并行请求（积分隐藏时不请求积分接口）
-      const requests = [
-        creditsHidden ? Promise.resolve(null) : app.request('/api/credits'),
-        app.request('/api/account'),
-        app.request('/api/user/subscribe-count')
-      ];
-      
-      // 如果有token，请求关注统计
-      if (myToken) {
-        requests.push(app.request(`/api/users/${myToken}/follow-stats`));
+      let myToken = app.globalData.token;
+      if (!myToken) {
+        myToken = wx.getStorageSync('userToken') || wx.getStorageSync('token') || '';
+        if (myToken) app.globalData.token = myToken;
       }
+      const creditsHidden = app.globalData.creditsEarningHidden === true;
 
-      const [creditsResult, accountResult, subscribeResult, statsResult] = await Promise.all(requests);
+      // 各接口独立失败，避免 Cloudflare 版未实现或单接口 404 拖垮整页
+      const [creditsR, accountR, subscribeR, statsR] = await Promise.all([
+        creditsHidden
+          ? Promise.resolve({ ok: true, data: null })
+          : safeRequest('credits', () => app.request('/api/credits')),
+        safeRequest('account', () => app.request('/api/account')),
+        safeRequest('subscribe-count', () => app.request('/api/user/subscribe-count')),
+        myToken
+          ? safeRequest('follow-stats', () =>
+              app.request(`/api/users/${encodeURIComponent(myToken)}/follow-stats`),
+            )
+          : Promise.resolve({ ok: true, data: null }),
+      ]);
+
+      const creditsResult = creditsR.ok ? creditsR.data : null;
+      const accountResult = accountR.ok ? accountR.data : null;
+      const subscribeResult = subscribeR.ok ? subscribeR.data : null;
+      const statsResult = statsR.ok ? statsR.data : null;
 
       console.log('我的页面数据:', { creditsResult, accountResult, statsResult });
 

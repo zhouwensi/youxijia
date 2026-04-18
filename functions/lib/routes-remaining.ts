@@ -138,6 +138,28 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
     return json({ success: true, isAdmin: ok });
   }
 
+  if (method === "GET" && segs[0] === "user" && segs[1] === "subscribe-count") {
+    const userToken = h("X-User-Token");
+    if (!userToken) return json({ success: false, error: "未登录" }, 401);
+    const exists = await db
+      .prepare("SELECT 1 AS x FROM user_accounts WHERE user_token = ?")
+      .bind(userToken)
+      .first();
+    if (!exists) return json({ success: false, error: "用户不存在" }, 404);
+    try {
+      const row = await db
+        .prepare("SELECT subscribe_count FROM user_accounts WHERE user_token = ?")
+        .bind(userToken)
+        .first<{ subscribe_count: number | null }>();
+      return json({
+        success: true,
+        subscribeCount: row?.subscribe_count ?? 0,
+      });
+    } catch {
+      return json({ success: true, subscribeCount: 0 });
+    }
+  }
+
   if (method === "POST" && segs[0] === "account" && segs[1] === "recover") {
     const b = await readBody(request);
     const accountId = String(b.accountId || "");

@@ -51,14 +51,9 @@ Page({
       creditsHidden
     });
     
-    // 检查登录状态
-    if (!app.globalData.isLoggedIn) {
-      app.silentLogin().then(() => {
-        this.loadData();
-      });
-    } else {
-      this.loadData();
-    }
+    // 从本地恢复 token（已取消静默注册/静默登录；未登录时仍可加载公开列表等）
+    app.checkLoginStatus();
+    this.loadData();
   },
 
   // 下拉刷新
