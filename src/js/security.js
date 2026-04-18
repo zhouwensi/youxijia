@@ -2,6 +2,9 @@
 
 (function() {
   'use strict';
+
+  /** 设为 false 时关闭开发者工具检测与相关拦截（右键/F12 等），仍保留封禁状态拉取 */
+  const ENABLE_DEVTOOLS_DETECTION = false;
   
   // 是否允许DevTools（根据服务器响应设置）
   let allowDevTools = false;
@@ -206,7 +209,8 @@
   function startDetection() {
     // 初次检查用户状态
     checkUserStatus();
-    
+    if (!ENABLE_DEVTOOLS_DETECTION) return;
+
     // 启动DevTools检测循环
     setInterval(() => {
       if (userBanned) return; // 已封禁用户不检测DevTools
@@ -273,13 +277,17 @@
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       startDetection();
-      disableContextMenu();
-      disableShortcuts();
+      if (ENABLE_DEVTOOLS_DETECTION) {
+        disableContextMenu();
+        disableShortcuts();
+      }
     });
   } else {
     startDetection();
-    disableContextMenu();
-    disableShortcuts();
+    if (ENABLE_DEVTOOLS_DETECTION) {
+      disableContextMenu();
+      disableShortcuts();
+    }
   }
   
 })();

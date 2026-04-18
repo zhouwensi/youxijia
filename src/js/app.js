@@ -7730,8 +7730,9 @@ ${processedCode}
 })();
 </script>`;
 
-  // 仅在非白名单用户时注入安全脚本
-  if (!window.YXJ_SECURITY?.isWhitelisted) {
+  // 游戏 iframe 内 DevTools 检测已默认关闭（避免调试时清空 body 导致游戏脚本报错）
+  const injectIframeDevToolsGuard = false;
+  if (injectIframeDevToolsGuard && !window.YXJ_SECURITY?.isWhitelisted) {
     if (processedCode.includes('</head>')) {
       processedCode = processedCode.replace('</head>', securityScript + '</head>');
     } else if (processedCode.includes('<body')) {
