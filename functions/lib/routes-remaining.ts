@@ -8,6 +8,7 @@ import {
   checkAccountBannedV2,
   checkIpBannedV2,
   getAccountIdByToken,
+  getUserTokenFromRequest,
   hashPasswordLegacy,
   ipForRequest,
   isUserAdmin,
@@ -48,7 +49,7 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
   const h = (n: string) => request.headers.get(n);
 
   if (method === "GET" && segs[0] === "check-ban") {
-    const userToken = h("X-User-Token");
+    const userToken = getUserTokenFromRequest(request);
     const ip = ipForRequest(request);
     let accountId: string | null = null;
     if (userToken) accountId = await getAccountIdByToken(db, userToken);
@@ -91,7 +92,7 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
   }
 
   if (method === "GET" && segs[0] === "user" && segs[1] === "status") {
-    const userToken = h("X-User-Token");
+    const userToken = getUserTokenFromRequest(request);
     const ip = ipForRequest(request);
     let accountId: string | null = null;
     if (userToken) accountId = await getAccountIdByToken(db, userToken);
@@ -134,12 +135,12 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
   }
 
   if (method === "GET" && segs[0] === "user" && segs[1] === "is-admin") {
-    const ok = await isUserAdmin(db, h("X-User-Token"));
+    const ok = await isUserAdmin(db, getUserTokenFromRequest(request));
     return json({ success: true, isAdmin: ok });
   }
 
   if (method === "GET" && segs[0] === "user" && segs[1] === "subscribe-count") {
-    const userToken = h("X-User-Token");
+    const userToken = getUserTokenFromRequest(request);
     if (!userToken) return json({ success: false, error: "未登录" }, 401);
     const exists = await db
       .prepare("SELECT 1 AS x FROM user_accounts WHERE user_token = ?")
@@ -202,7 +203,7 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
   }
 
   if (method === "PUT" && segs[0] === "account" && segs[1] === "nickname") {
-    const userToken = h("X-User-Token");
+    const userToken = getUserTokenFromRequest(request);
     const b = await readBody(request);
     const nickname = String(b.nickname || "").trim();
     if (!userToken) return json({ success: false, error: "缺少用户标识" }, 400);
@@ -215,7 +216,7 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
   }
 
   if (method === "POST" && segs[0] === "account" && segs[1] === "password") {
-    const userToken = h("X-User-Token");
+    const userToken = getUserTokenFromRequest(request);
     const b = await readBody(request);
     const password = String(b.password || "");
     const oldPassword = b.oldPassword ? String(b.oldPassword) : "";
@@ -241,7 +242,7 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
   }
 
   if (method === "POST" && segs[0] === "account" && segs[1] === "change-password") {
-    const userToken = h("X-User-Token");
+    const userToken = getUserTokenFromRequest(request);
     const b = await readBody(request);
     const oldPassword = String(b.oldPassword || "");
     const newPassword = String(b.newPassword || "");
@@ -425,7 +426,7 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
   if (method === "POST" && segs[0] === "cancel-generation") {
     const b = await readBody(request);
     const requestId = String(b.requestId || "");
-    const userToken = h("X-User-Token");
+    const userToken = getUserTokenFromRequest(request);
     if (!requestId) return json({ success: false, error: "缺少请求ID" }, 400);
     const row = await db
       .prepare("SELECT user_token FROM generation_requests WHERE request_id = ?")
@@ -486,7 +487,7 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
   }
 
   if (method === "GET" && segs[0] === "games" && segs[2] === "can-edit" && segs.length === 3) {
-    const userToken = h("X-User-Token");
+    const userToken = getUserTokenFromRequest(request);
     if (!userToken) return json({ success: true, canEdit: false, reason: "未登录" });
     const game = await db
       .prepare("SELECT author_token, is_public, visibility FROM games WHERE id = ?")
@@ -507,7 +508,7 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
   }
 
   if (method === "DELETE" && segs[0] === "games" && segs[2] === "comments" && segs.length === 4) {
-    const userToken = h("X-User-Token");
+    const userToken = getUserTokenFromRequest(request);
     const gameId = segs[1];
     const commentId = segs[3];
     if (!userToken) return json({ success: false, error: "未登录" }, 401);
@@ -522,7 +523,7 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
 
   if (method === "DELETE" && segs[0] === "games" && segs.length === 2) {
     const id = segs[1];
-    const userToken = h("X-User-Token");
+    const userToken = getUserTokenFromRequest(request);
     const headerToken = h("X-Author-Token");
     const token = userToken || headerToken;
     const game = await db
@@ -536,7 +537,7 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
   }
 
   if (method === "GET" && segs[0] === "my-games") {
-    const userToken = h("X-User-Token");
+    const userToken = getUserTokenFromRequest(request);
     if (!userToken) return json({ success: true, games: [] });
     const games = await db
       .prepare(
@@ -548,7 +549,7 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
   }
 
   if (method === "GET" && segs[0] === "my-likes") {
-    const userToken = h("X-User-Token");
+    const userToken = getUserTokenFromRequest(request);
     if (!userToken) return json({ success: true, games: [] });
     const games = await db
       .prepare(
@@ -562,7 +563,7 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
   }
 
   if (method === "GET" && segs[0] === "my-favorites") {
-    const userToken = h("X-User-Token");
+    const userToken = getUserTokenFromRequest(request);
     if (!userToken) return json({ success: true, games: [] });
     const games = await db
       .prepare(
@@ -576,7 +577,7 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
   }
 
   if (method === "GET" && segs[0] === "my-comments") {
-    const userToken = h("X-User-Token");
+    const userToken = getUserTokenFromRequest(request);
     if (!userToken) return json({ success: true, comments: [] });
     const comments = await db
       .prepare(
@@ -589,7 +590,7 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
   }
 
   if (method === "POST" && segs[0] === "my-comments" && segs[2] === "toggle-hidden" && segs.length === 3) {
-    const userToken = h("X-User-Token");
+    const userToken = getUserTokenFromRequest(request);
     const id = segs[1];
     const row = await db
       .prepare("SELECT is_hidden FROM game_comments WHERE id = ? AND user_token = ?")
@@ -602,7 +603,7 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
   }
 
   if (method === "DELETE" && segs[0] === "my-comments" && segs.length === 2) {
-    const userToken = h("X-User-Token");
+    const userToken = getUserTokenFromRequest(request);
     await db
       .prepare("DELETE FROM game_comments WHERE id = ? AND user_token = ?")
       .bind(segs[1], userToken)
@@ -611,7 +612,7 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
   }
 
   if (method === "POST" && segs[0] === "users" && segs[2] === "follow" && segs.length === 3) {
-    const follower = h("X-User-Token");
+    const follower = getUserTokenFromRequest(request);
     const following = segs[1];
     if (!follower) return json({ success: false, error: "请先登录" }, 401);
     if (follower === following) return json({ success: false, error: "不能关注自己" }, 400);
@@ -634,7 +635,7 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
   }
 
   if (method === "GET" && segs[0] === "users" && segs[2] === "follow-status" && segs.length === 3) {
-    const follower = h("X-User-Token");
+    const follower = getUserTokenFromRequest(request);
     const following = segs[1];
     if (!follower) return json({ success: true, following: false });
     const row = await db

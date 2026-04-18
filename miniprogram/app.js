@@ -273,15 +273,45 @@ App({
     return new Promise((resolve, reject) => {
       const fullUrl = url.startsWith('http') ? url : config.baseUrl + url;
 
+      const stored = wx.getStorageSync('userToken') || wx.getStorageSync('token') || '';
+      if (!this.globalData.token && stored) {
+        this.globalData.token = stored;
+      }
+      const token =
+        (this.globalData.token && String(this.globalData.token).trim()) ||
+        (stored && String(stored).trim()) ||
+        '';
+
+      const method = (options.method || 'GET').toUpperCase();
+      let data = options.data;
+      if (
+        method !== 'GET' &&
+        method !== 'HEAD' &&
+        data != null &&
+        typeof data === 'object' &&
+        !Array.isArray(data)
+      ) {
+        data = JSON.stringify(data);
+      } else if (data == null && method !== 'GET' && method !== 'HEAD') {
+        data = '{}';
+      }
+
+      const baseHeader = {
+        'Content-Type': 'application/json',
+        'x-user-token': token,
+        'x-platform': 'miniprogram',
+      };
+      if (token) {
+        baseHeader['Authorization'] = 'Bearer ' + token;
+      }
+
       wx.request({
         url: fullUrl,
         method: options.method || 'GET',
-        data: options.data || {},
+        data: data !== undefined && data !== null ? data : {},
         timeout: options.timeout || 1800000, // 默认60秒，可通过options.timeout自定义
         header: {
-          'Content-Type': 'application/json',
-          'x-user-token': this.globalData.token || wx.getStorageSync('userToken') || wx.getStorageSync('token') || '',
-          'x-platform': 'miniprogram',
+          ...baseHeader,
           ...options.header
         },
         success: (res) => {

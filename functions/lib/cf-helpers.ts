@@ -26,6 +26,20 @@ export async function isUserAdmin(db: Db, userToken: string | null): Promise<boo
   return row?.is_admin === 1;
 }
 
+/**
+ * 读取本站 user_token：小程序发 X-User-Token；部分网关会剥自定义头，可改用 Authorization: Bearer <token>
+ */
+export function getUserTokenFromRequest(request: Request): string {
+  const x =
+    request.headers.get("X-User-Token")?.trim() || request.headers.get("x-user-token")?.trim();
+  if (x) return x;
+  const auth = request.headers.get("Authorization")?.trim();
+  if (auth?.toLowerCase().startsWith("bearer ")) {
+    return auth.slice(7).trim();
+  }
+  return "";
+}
+
 export async function getAccountIdByToken(db: Db, userToken: string): Promise<string | null> {
   const row = await db
     .prepare("SELECT account_id FROM user_accounts WHERE user_token = ?")

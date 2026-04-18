@@ -1,5 +1,6 @@
 import type { Env } from "../types";
 import { json, type Db } from "./http";
+import { getUserTokenFromRequest } from "./cf-helpers";
 import { getConfig } from "./db";
 import {
   LLM_MODELS,
@@ -189,7 +190,7 @@ export async function handleGenerate(
   const advancedSettings = body.advancedSettings as Record<string, unknown> | undefined;
   const turboModel = body.turboModel ? String(body.turboModel) : null;
   const isTurboSwitch = Boolean(body.isTurboSwitch);
-  const userToken = request.headers.get("X-User-Token");
+  const userToken = getUserTokenFromRequest(request);
   const authorToken = request.headers.get("X-Author-Token");
 
   if (!prompt) return json({ success: false, error: "请输入游戏描述" }, 400);

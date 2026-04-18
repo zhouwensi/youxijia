@@ -1,5 +1,6 @@
 import type { Env } from "../types";
 import { clientIp, json, getDb, type Db } from "./http";
+import { getUserTokenFromRequest } from "./cf-helpers";
 import { getConfig } from "./db";
 import { getTurboModelsPayload } from "./llm-models";
 import { handleGenerate } from "./generate-handler";
@@ -97,7 +98,7 @@ export async function dispatchApi(
     }
 
     if (method === "POST" && segs[0] === "account" && segs[1] === "init") {
-      const userToken = request.headers.get("X-User-Token");
+      const userToken = getUserTokenFromRequest(request);
       let body: { deviceFingerprint?: string };
       try {
         body = (await request.json()) as { deviceFingerprint?: string };
@@ -181,7 +182,7 @@ export async function dispatchApi(
     }
 
     if (method === "GET" && segs[0] === "account" && segs.length === 1) {
-      const userToken = request.headers.get("X-User-Token");
+      const userToken = getUserTokenFromRequest(request);
       if (!userToken) return json({ success: false, error: "缺少用户标识" }, 400);
       const account = await db
         .prepare(
@@ -210,7 +211,7 @@ export async function dispatchApi(
     }
 
     if (method === "GET" && segs[0] === "credits" && segs.length === 1) {
-      const userToken = request.headers.get("X-User-Token");
+      const userToken = getUserTokenFromRequest(request);
       if (!userToken) return json({ success: false, error: "缺少用户标识" }, 400);
       let user = await db
         .prepare("SELECT * FROM user_credits WHERE user_token = ?")
@@ -482,7 +483,7 @@ export async function dispatchApi(
 
     if (method === "POST" && segs[0] === "games" && segs.length === 3 && segs[2] === "play") {
       const gameId = segs[1];
-      const userToken = request.headers.get("X-User-Token");
+      const userToken = getUserTokenFromRequest(request);
       let body: { duration?: number } = {};
       try {
         body = (await request.json()) as { duration?: number };
@@ -634,7 +635,7 @@ export async function dispatchApi(
 
     if (method === "GET" && segs[0] === "games" && segs[2] === "like-status" && segs.length === 3) {
       const gameId = segs[1];
-      const userToken = request.headers.get("X-User-Token");
+      const userToken = getUserTokenFromRequest(request);
       if (!userToken) return json({ success: true, liked: false });
       const like = await db
         .prepare("SELECT id FROM user_likes WHERE user_token = ? AND game_id = ?")
@@ -645,7 +646,7 @@ export async function dispatchApi(
 
     if (method === "POST" && segs[0] === "games" && segs.length === 3 && segs[2] === "like") {
       const gameId = segs[1];
-      const userToken = request.headers.get("X-User-Token");
+      const userToken = getUserTokenFromRequest(request);
       const game = await db
         .prepare("SELECT id, like_count, author_token FROM games WHERE id = ?")
         .bind(gameId)
@@ -700,7 +701,7 @@ export async function dispatchApi(
 
     if (method === "GET" && segs[0] === "games" && segs[2] === "favorite-status" && segs.length === 3) {
       const gameId = segs[1];
-      const userToken = request.headers.get("X-User-Token");
+      const userToken = getUserTokenFromRequest(request);
       if (!userToken) return json({ success: true, favorited: false });
       const f = await db
         .prepare("SELECT id FROM user_favorites WHERE user_token = ? AND game_id = ?")
@@ -711,7 +712,7 @@ export async function dispatchApi(
 
     if (method === "POST" && segs[0] === "games" && segs.length === 3 && segs[2] === "favorite") {
       const gameId = segs[1];
-      const userToken = request.headers.get("X-User-Token");
+      const userToken = getUserTokenFromRequest(request);
       if (!userToken) return json({ success: false, error: "请先登录" }, 401);
       const game = await db
         .prepare("SELECT id, author_token FROM games WHERE id = ?")
@@ -768,7 +769,7 @@ export async function dispatchApi(
       const gameId = segs[1];
       const limit = Math.min(parseInt(url.searchParams.get("limit") || "50", 10) || 50, 100);
       const offset = parseInt(url.searchParams.get("offset") || "0", 10) || 0;
-      const userToken = request.headers.get("X-User-Token") || "";
+      const userToken = getUserTokenFromRequest(request) || "";
       const comments = await db
         .prepare(
           `SELECT id, author_name, content, created_at, user_token, is_hidden FROM game_comments
@@ -803,7 +804,7 @@ export async function dispatchApi(
 
     if (method === "POST" && segs[0] === "games" && segs[2] === "comments" && segs.length === 3) {
       const gameId = segs[1];
-      const userToken = request.headers.get("X-User-Token");
+      const userToken = getUserTokenFromRequest(request);
       if (!userToken) return json({ success: false, error: "请先登录后再留言" }, 401);
       let body: { content?: string };
       try {

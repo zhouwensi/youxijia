@@ -12,7 +12,7 @@ import {
   callOpenAiCompatible,
   callAnthropic,
 } from "./generate-handler";
-import { isUserAdmin } from "./cf-helpers";
+import { getUserTokenFromRequest, isUserAdmin } from "./cf-helpers";
 import type { RouteCtx } from "./routes-remaining";
 
 const EDIT_SYSTEM_PROMPT = `你是一个专业的HTML5游戏优化专家。用户会给你一个已有的HTML游戏代码，然后提出修改需求。
@@ -296,7 +296,7 @@ export async function tryEditRepair(ctx: RouteCtx): Promise<Response | null> {
   const tail = segs[2];
 
   const userToken =
-    request.headers.get("X-User-Token") || request.headers.get("X-Author-Token");
+    getUserTokenFromRequest(request) || request.headers.get("X-Author-Token");
 
   if (method === "POST" && tail === "edit") {
     if (!userToken) return json({ success: false, error: "请先登录" }, 401);
@@ -532,7 +532,7 @@ export async function tryEditRepair(ctx: RouteCtx): Promise<Response | null> {
   }
 
   if (method === "POST" && tail === "repair") {
-    const userHdr = request.headers.get("X-User-Token");
+    const userHdr = getUserTokenFromRequest(request);
     if (!userHdr) return json({ success: false, error: "请先登录" }, 401);
     const body = await readJson(request);
     const creditCost = typeof body.creditCost === "number" ? body.creditCost : 0.5;
@@ -620,7 +620,7 @@ export async function tryEditRepair(ctx: RouteCtx): Promise<Response | null> {
   }
 
   if (method === "GET" && tail === "repair-status") {
-    const userHdr = request.headers.get("X-User-Token");
+    const userHdr = getUserTokenFromRequest(request);
     const g = await db
       .prepare("SELECT author_token FROM games WHERE id = ?")
       .bind(gameId)
