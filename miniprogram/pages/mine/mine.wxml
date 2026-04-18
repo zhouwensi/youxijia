@@ -27,12 +27,12 @@
         </view>
         <view class="user-details">
           <view class="nickname-row" bindtap="showNicknameEditor">
-            <text class="nickname">{{userInfo.nickname || userInfo.account_id || '游戏玩家'}}</text>
+            <text class="nickname">{{userInfo.nickname || userInfo.account_id || userInfo.accountId || '游戏玩家'}}</text>
             <text class="edit-icon">✏️</text>
           </view>
           <view class="account-id-row">
-            <text class="account-id">ID: {{userInfo.account_id || '-'}}</text>
-            <view class="copy-btn" bindtap="copyAccountId" data-id="{{userInfo.account_id}}">
+            <text class="account-id">ID: {{userInfo.account_id || userInfo.accountId || '-'}}</text>
+            <view class="copy-btn" bindtap="copyAccountId" data-id="{{userInfo.account_id || userInfo.accountId}}">
               <text class="copy-icon">📋</text>
             </view>
           </view>

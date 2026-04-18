@@ -3,6 +3,16 @@
  */
 const app = getApp();
 
+/** 与 app.globalData 同步：避免仅 storage 有 token 时误判未登录 */
+function ensureAppTokenFromStorage() {
+  const t = app.globalData.token || wx.getStorageSync('userToken') || wx.getStorageSync('token') || '';
+  if (t) {
+    app.globalData.token = t;
+    app.globalData.isLoggedIn = true;
+  }
+  return t;
+}
+
 Page({
   data: {
     mode: '',
@@ -29,6 +39,7 @@ Page({
 
   onLoad(options) {
     if (options.mode === 'changepwd') {
+      ensureAppTokenFromStorage();
       if (!app.globalData.token) {
         wx.showToast({ title: '请先登录', icon: 'none' });
         setTimeout(() => wx.navigateBack(), 1500);
@@ -39,6 +50,7 @@ Page({
       return;
     }
     if (options.mode === 'bindEmail') {
+      ensureAppTokenFromStorage();
       if (!app.globalData.token) {
         wx.showToast({ title: '请先登录', icon: 'none' });
         setTimeout(() => wx.navigateBack(), 1500);
@@ -53,6 +65,7 @@ Page({
   },
 
   async initChangepwdMode() {
+    ensureAppTokenFromStorage();
     wx.showLoading({ title: '加载中', mask: true });
     try {
       const d = await app.request('/api/account');
@@ -69,6 +82,7 @@ Page({
   },
 
   async checkBoundEmail() {
+    ensureAppTokenFromStorage();
     try {
       const d = await app.request('/api/account');
       const acc = d.account || d.data || d;
@@ -125,12 +139,17 @@ Page({
   },
 
   applySession(token, account) {
+    const acc = account || {};
+    const base = app.normalizeUserInfo({
+      ...acc,
+      account_id: acc.accountId || acc.account_id,
+      nickname: acc.nickname || acc.accountId || acc.account_id,
+    });
     const userInfo = {
-      account_id: account.accountId || account.account_id,
-      nickname: account.nickname || account.account_id,
-      avatar_emoji: '🎮',
-      credits: account.credits ?? 0,
-      email: account.email || ''
+      ...base,
+      avatar_emoji: base.avatar_emoji || '🎮',
+      credits: acc.credits ?? 0,
+      email: acc.email || base.email || '',
     };
     app.globalData.token = token;
     app.globalData.userInfo = userInfo;

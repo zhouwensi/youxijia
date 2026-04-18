@@ -139,6 +139,21 @@ App({
     return this.globalData.config.miniprogramName || '一句话游戏';
   },
 
+  /**
+   * 统一 userInfo：Worker 返回 camelCase（accountId），WXML 等多处用 account_id
+   */
+  normalizeUserInfo(raw) {
+    if (!raw || typeof raw !== 'object') return raw;
+    const id = String(raw.account_id || raw.accountId || '').trim();
+    const nick = String(raw.nickname || raw.nickName || id || '游戏玩家').trim();
+    return {
+      ...raw,
+      account_id: id,
+      accountId: id || raw.accountId || raw.account_id,
+      nickname: nick,
+    };
+  },
+
   // 仅从本地恢复登录态，不发起网络静默登录
   checkLoginStatus() {
     const token = wx.getStorageSync('userToken') || wx.getStorageSync('token');
@@ -146,11 +161,15 @@ App({
 
     if (token && userInfo) {
       this.globalData.token = token;
-      this.globalData.userInfo = userInfo;
+      this.globalData.userInfo = this.normalizeUserInfo(userInfo);
       this.globalData.isLoggedIn = true;
       // 恢复accountId
-      this.globalData.accountId = userInfo.account_id || userInfo.accountId || null;
-      console.log('用户已登录:', userInfo.nickname || userInfo.account_id);
+      this.globalData.accountId =
+        this.globalData.userInfo.account_id || this.globalData.userInfo.accountId || null;
+      try {
+        wx.setStorageSync('userInfo', this.globalData.userInfo);
+      } catch (_) {}
+      console.log('用户已登录:', this.globalData.userInfo.nickname || this.globalData.userInfo.account_id);
     } else {
       this.globalData.token = null;
       this.globalData.userInfo = null;
@@ -181,11 +200,11 @@ App({
                 const result = res.data;
                 if (res.statusCode === 200 && result && result.success) {
                   const token = result.userToken;
-                  const acc = result.account;
+                  const acc = this.normalizeUserInfo(result.account || {});
                   this.globalData.token = token;
                   this.globalData.userInfo = acc;
                   this.globalData.isLoggedIn = true;
-                  this.globalData.accountId = acc && (acc.account_id || acc.accountId || null);
+                  this.globalData.accountId = acc.account_id || acc.accountId || null;
                   wx.setStorageSync('userToken', token);
                   wx.setStorageSync('token', token);
                   wx.setStorageSync('userInfo', acc);

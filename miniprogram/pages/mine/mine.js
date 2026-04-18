@@ -170,18 +170,22 @@ Page({
 
   // 检查登录状态
   checkLoginStatus() {
+    app.checkLoginStatus();
     const isLoggedIn = app.globalData.isLoggedIn;
-    const userInfo = app.globalData.userInfo;
-    
+    const userInfo = app.globalData.userInfo
+      ? app.normalizeUserInfo(app.globalData.userInfo)
+      : null;
+
     this.setData({
       isLoggedIn,
-      userInfo
+      userInfo,
     });
   },
 
   // 加载用户数据
   async loadUserData() {
     try {
+      app.checkLoginStatus();
       const myToken = app.globalData.token;
       const creditsHidden = app.globalData.creditsEarningHidden === true;
       
@@ -212,13 +216,18 @@ Page({
         const account = accountResult.account || accountResult.data || accountResult;
         const aid = account && (account.accountId || account.account_id);
         if (account && aid) {
-          updates.userInfo = account;
+          const merged = app.normalizeUserInfo({
+            ...(this.data.userInfo || {}),
+            ...account,
+            avatar_emoji: (this.data.userInfo && this.data.userInfo.avatar_emoji) || '🎮',
+          });
+          updates.userInfo = merged;
           updates['stats.games'] = account.games_count || 0;
           updates.hasWebPassword = !!(account.hasPassword === true || account.has_password === true);
 
           // 更新全局状态
-          app.globalData.userInfo = account;
-          wx.setStorageSync('userInfo', account);
+          app.globalData.userInfo = merged;
+          wx.setStorageSync('userInfo', merged);
         }
       }
 
@@ -456,11 +465,12 @@ Page({
     if (!userInfo) return;
     
     const nickname = userInfo.nickname || '';
+    const accId = userInfo.account_id || userInfo.accountId || '';
     // 如果昵称是默认值，引导用户设置
     const isDefaultNickname = !nickname || 
       nickname === '微信用户' || 
       nickname === '游戏玩家' ||
-      nickname === userInfo.account_id;
+      nickname === accId;
     
     if (isDefaultNickname) {
       // 延迟弹出，避免与登录成功提示冲突
