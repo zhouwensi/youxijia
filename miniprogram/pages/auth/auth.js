@@ -22,7 +22,9 @@ Page({
     alreadyBound: false,
     boundEmail: '',
     error: '',
-    loading: false
+    loading: false,
+    /** 微信登录后尚未设密：只填新密码，走 POST /api/account/password */
+    firstTimePassword: false
   },
 
   onLoad(options) {
@@ -32,8 +34,8 @@ Page({
         setTimeout(() => wx.navigateBack(), 1500);
         return;
       }
-      wx.setNavigationBarTitle({ title: '修改密码' });
-      this.setData({ mode: 'changepwd' });
+      this.setData({ mode: 'changepwd', firstTimePassword: false });
+      this.initChangepwdMode();
       return;
     }
     if (options.mode === 'bindEmail') {
@@ -48,6 +50,22 @@ Page({
       return;
     }
     this.setData({ mode: '', authTab: options.tab === 'register' ? 'register' : 'login' });
+  },
+
+  async initChangepwdMode() {
+    wx.showLoading({ title: '加载中', mask: true });
+    try {
+      const d = await app.request('/api/account');
+      const acc = d.account || d.data || d;
+      const hasPwd = !!(acc && (acc.hasPassword === true || acc.has_password === true));
+      this.setData({ firstTimePassword: !hasPwd });
+      wx.setNavigationBarTitle({ title: !hasPwd ? '设置网站登录密码' : '修改登录密码' });
+    } catch (e) {
+      wx.showToast({ title: '无法获取账号信息', icon: 'none' });
+      setTimeout(() => wx.navigateBack(), 1500);
+    } finally {
+      wx.hideLoading();
+    }
   },
 
   async checkBoundEmail() {
@@ -258,6 +276,37 @@ Page({
         setTimeout(() => wx.navigateBack(), 400);
       } else {
         this.setData({ error: data.error || '修改失败' });
+      }
+    } catch (err) {
+      this.setData({ error: err.message || '网络错误' });
+    } finally {
+      this.setData({ loading: false });
+    }
+  },
+
+  /** 仅微信登录、尚未设置密码：首次设置，与网站 POST /api/account/password 一致 */
+  async submitFirstPassword() {
+    const newPassword = this.data.newPassword || '';
+    const newPassword2 = this.data.newPassword2 || '';
+    if (!newPassword || newPassword.length < 8) {
+      this.setData({ error: '密码至少 8 位' });
+      return;
+    }
+    if (newPassword !== newPassword2) {
+      this.setData({ error: '两次密码不一致' });
+      return;
+    }
+    this.setData({ loading: true, error: '' });
+    try {
+      const data = await app.request('/api/account/password', {
+        method: 'POST',
+        data: { password: newPassword }
+      });
+      if (data.success) {
+        wx.showToast({ title: '已设置，可在网站用密码登录', icon: 'success' });
+        setTimeout(() => wx.navigateBack(), 500);
+      } else {
+        this.setData({ error: data.error || '设置失败' });
       }
     } catch (err) {
       this.setData({ error: err.message || '网络错误' });

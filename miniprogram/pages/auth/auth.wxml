@@ -18,15 +18,22 @@
   </view>
 
   <view wx:elif="{{mode === 'changepwd'}}">
-    <view class="label">当前密码</view>
-    <input class="input form-group" type="password" password="{{true}}" placeholder="原密码" value="{{oldPassword}}" bindinput="onOldPwd" />
-    <view class="label">新密码（至少 8 位）</view>
-    <input class="input form-group" type="password" password="{{true}}" placeholder="新密码" value="{{newPassword}}" bindinput="onNewPwd" />
-    <view class="label">确认新密码</view>
+    <view wx:if="{{firstTimePassword}}" class="hint" style="margin-bottom: 24rpx;">
+      您当前为<strong>微信登录</strong>账号。设置密码后，可在<strong>电脑浏览器打开网站</strong>，用「账号 ID 或已绑邮箱 + 此密码」登录<strong>同一账号</strong>（积分与作品同步）。
+    </view>
+    <block wx:if="{{!firstTimePassword}}">
+      <view class="label">当前密码</view>
+      <input class="input form-group" type="password" password="{{true}}" placeholder="原密码" value="{{oldPassword}}" bindinput="onOldPwd" />
+    </block>
+    <view class="label">{{firstTimePassword ? '登录密码（至少 8 位）' : '新密码（至少 8 位）'}}</view>
+    <input class="input form-group" type="password" password="{{true}}" placeholder="{{firstTimePassword ? '设置网站登录密码' : '新密码'}}" value="{{newPassword}}" bindinput="onNewPwd" />
+    <view class="label">确认密码</view>
     <input class="input form-group" type="password" password="{{true}}" placeholder="再次输入" value="{{newPassword2}}" bindinput="onNewPwd2" />
     <view class="error" wx:if="{{error}}">{{error}}</view>
-    <button class="btn-primary" loading="{{loading}}" bindtap="submitChangePwd">保存新密码</button>
-    <view class="hint">忘记密码且无法登录时，请使用邮箱重新注册或联系管理员。</view>
+    <button wx:if="{{firstTimePassword}}" class="btn-primary" loading="{{loading}}" bindtap="submitFirstPassword">保存密码</button>
+    <button wx:else class="btn-primary" loading="{{loading}}" bindtap="submitChangePwd">保存新密码</button>
+    <view class="hint" wx:if="{{firstTimePassword}}">也可在「我的 → 绑定邮箱」同时绑定邮箱，网站侧可用邮箱登录。</view>
+    <view class="hint" wx:else>忘记密码且无法登录时，请使用邮箱重新注册或联系管理员。</view>
   </view>
 
   <view wx:else>

@@ -54,7 +54,9 @@ Page({
     llmDisabled: false,
     creditsHidden: false,  // 为 true 时完全隐藏积分相关
     // 网站激活状态
-    webActivated: false
+    webActivated: false,
+    /** 是否已设置网站登录密码（与 GET /api/account hasPassword 一致） */
+    hasWebPassword: false
   },
 
   onLoad() {
@@ -208,10 +210,12 @@ Page({
 
       if (accountResult && accountResult.success !== false) {
         const account = accountResult.account || accountResult.data || accountResult;
-        if (account && account.account_id) {
+        const aid = account && (account.accountId || account.account_id);
+        if (account && aid) {
           updates.userInfo = account;
           updates['stats.games'] = account.games_count || 0;
-          
+          updates.hasWebPassword = !!(account.hasPassword === true || account.has_password === true);
+
           // 更新全局状态
           app.globalData.userInfo = account;
           wx.setStorageSync('userInfo', account);
@@ -489,8 +493,10 @@ Page({
     menuItems.push('🌐 访问网页版');
     menuActions.push('web');
     
-    // 修改登录密码（邮箱与网站共用）
-    menuItems.push('🔐 修改登录密码');
+    // 设置 / 修改网站登录密码（与浏览器网站同一套密码）
+    menuItems.push(
+      this.data.hasWebPassword ? '🔐 修改登录密码' : '🔐 设置网站登录密码（网页登录用）'
+    );
     menuActions.push('changepwd');
 
     // 微信用户绑定邮箱，与网站同一账号
