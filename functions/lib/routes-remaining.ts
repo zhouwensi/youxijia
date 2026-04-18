@@ -784,35 +784,152 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
 
   if (method === "GET" && segs[0] === "author-leaderboard" && segs[1]) {
     const type = segs[1];
+    const validTypes = ["fans", "works", "credits", "popularity", "newstar"];
+    if (!validTypes.includes(type)) {
+      return json({ success: false, error: "无效的榜单类型" }, 400);
+    }
     const limit = Math.min(parseInt(url.searchParams.get("limit") || "20", 10) || 20, 100);
     const offset = parseInt(url.searchParams.get("offset") || "0", 10) || 0;
-    const ex = await db.prepare("SELECT user_token FROM leaderboard_excludes").all();
+    const period = url.searchParams.get("period") || "all";
+
+    let periodCondition = "";
+    let periodLabel = "总榜";
+    if (period === "week") {
+      periodCondition = "AND ua.created_at >= datetime('now', '-7 days')";
+      periodLabel = "周榜";
+    } else if (period === "month") {
+      periodCondition = "AND ua.created_at >= datetime('now', '-30 days')";
+      periodLabel = "月榜";
+    }
+
+    const ex = await db
+      .prepare(
+        `SELECT user_token FROM leaderboard_excludes
+         WHERE exclude_types LIKE '%all%' OR exclude_types LIKE ?`
+      )
+      .bind(`%${type}%`)
+      .all();
     const excludeTokens = (ex.results || [])
       .map((r) => (r as { user_token?: string }).user_token)
       .filter((t): t is string => Boolean(t));
-    const notIn =
+    const excludeCondition =
       excludeTokens.length > 0
         ? `AND ua.user_token NOT IN (${excludeTokens.map(() => "?").join(",")})`
         : "";
-    let sql = "";
-    if (type === "fans") {
-      sql = `SELECT ua.user_token, ua.account_id, ua.nickname,
-        (SELECT COUNT(*) FROM user_follows WHERE following_token = ua.user_token) AS value
-        FROM user_accounts ua WHERE 1=1 ${notIn} ORDER BY value DESC LIMIT ? OFFSET ?`;
-    } else if (type === "works") {
-      sql = `SELECT ua.user_token, ua.account_id, ua.nickname,
-        (SELECT COUNT(*) FROM games WHERE author_token = ua.user_token AND COALESCE(is_hidden,0)=0) AS value
-        FROM user_accounts ua WHERE 1=1 ${notIn} ORDER BY value DESC LIMIT ? OFFSET ?`;
-    } else {
-      sql = `SELECT ua.user_token, ua.account_id, ua.nickname, COALESCE(uc.credits,0) AS value
-        FROM user_accounts ua LEFT JOIN user_credits uc ON uc.user_token = ua.user_token
-        WHERE 1=1 ${notIn} ORDER BY value DESC LIMIT ? OFFSET ?`;
+
+    let query = "";
+    let countQuery = "";
+    let title = "";
+    let valueLabel = "";
+
+    switch (type) {
+      case "fans":
+        title = "🏆 粉丝榜";
+        valueLabel = "粉丝";
+        query = `
+          SELECT ua.user_token, ua.account_id, ua.nickname,
+            (SELECT COUNT(*) FROM user_follows WHERE following_token = ua.user_token) AS value
+          FROM user_accounts ua
+          WHERE 1=1 ${excludeCondition}
+          ORDER BY value DESC
+          LIMIT ? OFFSET ?`;
+        countQuery = `SELECT COUNT(*) AS total FROM user_accounts ua WHERE 1=1 ${excludeCondition}`;
+        break;
+      case "works":
+        title = "📚 作品榜";
+        valueLabel = "作品";
+        query = `
+          SELECT ua.user_token, ua.account_id, ua.nickname,
+            (SELECT COUNT(*) FROM games WHERE author_token = ua.user_token AND COALESCE(is_hidden,0)=0) AS value
+          FROM user_accounts ua
+          WHERE 1=1 ${excludeCondition}
+          ORDER BY value DESC
+          LIMIT ? OFFSET ?`;
+        countQuery = `SELECT COUNT(*) AS total FROM user_accounts ua WHERE 1=1 ${excludeCondition}`;
+        break;
+      case "credits":
+        title = "💎 积分榜";
+        valueLabel = "积分";
+        query = `
+          SELECT ua.user_token, ua.account_id, ua.nickname,
+            COALESCE(uc.credits, 0) AS value
+          FROM user_accounts ua
+          LEFT JOIN user_credits uc ON ua.user_token = uc.user_token
+          WHERE 1=1 ${excludeCondition}
+          ORDER BY value DESC
+          LIMIT ? OFFSET ?`;
+        countQuery = `SELECT COUNT(*) AS total FROM user_accounts ua WHERE 1=1 ${excludeCondition}`;
+        break;
+      case "popularity":
+        title = "🔥 人气榜";
+        valueLabel = "人气值";
+        query = `
+          SELECT ua.user_token, ua.account_id, ua.nickname,
+            COALESCE(SUM(g.like_count), 0) * 10 + COALESCE(SUM(g.play_count), 0) AS value
+          FROM user_accounts ua
+          LEFT JOIN games g ON g.author_token = ua.user_token AND COALESCE(g.is_hidden,0)=0
+          WHERE 1=1 ${excludeCondition} ${periodCondition}
+          GROUP BY ua.user_token, ua.account_id, ua.nickname
+          ORDER BY value DESC
+          LIMIT ? OFFSET ?`;
+        countQuery = `SELECT COUNT(*) AS total FROM user_accounts ua WHERE 1=1 ${excludeCondition} ${periodCondition}`;
+        break;
+      case "newstar":
+        title = "⭐ 新星榜";
+        valueLabel = "综合分";
+        query = `
+          SELECT ua.user_token, ua.account_id, ua.nickname, ua.created_at,
+            (
+              (SELECT COUNT(*) FROM user_follows WHERE following_token = ua.user_token) * 5 +
+              (SELECT COUNT(*) FROM games WHERE author_token = ua.user_token AND COALESCE(is_hidden,0)=0) * 10 +
+              COALESCE((SELECT SUM(like_count) FROM games WHERE author_token = ua.user_token AND COALESCE(is_hidden,0)=0), 0) * 2
+            ) AS value
+          FROM user_accounts ua
+          WHERE ua.created_at >= datetime('now', '-30 days') ${excludeCondition}
+          ORDER BY value DESC
+          LIMIT ? OFFSET ?`;
+        countQuery = `SELECT COUNT(*) AS total FROM user_accounts ua WHERE ua.created_at >= datetime('now', '-30 days') ${excludeCondition}`;
+        break;
+      default:
+        return json({ success: false, error: "无效的榜单类型" }, 400);
     }
-    const rows = await db
-      .prepare(sql)
+
+    const listRes = await db
+      .prepare(query)
       .bind(...excludeTokens, limit, offset)
       .all();
-    return json({ success: true, type, rankings: rows.results });
+    const raw = (listRes.results || []) as Array<{
+      user_token: string;
+      account_id: string;
+      nickname: string | null;
+      value: number | null;
+    }>;
+
+    const totalRow = await db.prepare(countQuery).bind(...excludeTokens).first<{ total: number }>();
+
+    const avatarEmojis = ["🎮", "🎯", "🎲", "🎪", "🎨", "🎭", "🎸", "🎺", "🎻", "🎹"];
+    const list = raw.map((item, index) => ({
+      rank: offset + index + 1,
+      user_token: item.user_token,
+      account_id: item.account_id,
+      nickname: item.nickname || item.account_id,
+      avatar_emoji: avatarEmojis[Math.abs(item.user_token?.charCodeAt(0) || 0) % avatarEmojis.length],
+      value: item.value ?? 0,
+      label: valueLabel,
+    }));
+
+    const displayTitle = period !== "all" ? `${title}·${periodLabel}` : title;
+
+    return json({
+      success: true,
+      type,
+      title: displayTitle,
+      period,
+      periodLabel,
+      list,
+      total: totalRow?.total ?? 0,
+      updated_at: new Date().toISOString(),
+    });
   }
 
   return null;

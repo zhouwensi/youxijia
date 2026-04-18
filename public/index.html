@@ -2888,9 +2888,10 @@
             : `/api/author-leaderboard/${type}?limit=3`;
         const response = await fetch(lbUrl);
         const data = await response.json();
-        
-        if (data.success && data.list.length > 0) {
-          const html = data.list.map((user, idx) => `
+        const previewList = Array.isArray(data.list) ? data.list : [];
+
+        if (data.success && previewList.length > 0) {
+          const html = previewList.map((user, idx) => `
             <div class="lp-top3-item">
               <span class="lp-rank rank-${idx + 1}">${idx + 1}</span>
               <span class="lp-nickname">${escapeHtml(user.nickname)}</span>
@@ -3011,7 +3012,8 @@
         headers: { 'x-user-token': userToken }
       });
       const data = await response.json();
-      
+      const pageList = Array.isArray(data.list) ? data.list : [];
+
       if (data.success) {
         // 更新标题
         document.getElementById('leaderboard-page-title').textContent = data.title || '🏆 作者榜单';
@@ -3031,7 +3033,7 @@
           listEl.innerHTML = '';
         }
         
-        if (data.list.length === 0 && lbOffset === 0) {
+        if (pageList.length === 0 && lbOffset === 0) {
           listEl.innerHTML = `
             <div class="lb-empty">
               <div class="lb-empty-icon">🏆</div>
@@ -3040,7 +3042,7 @@
           `;
         } else {
           const rankIcons = ['🥇', '🥈', '🥉'];
-          data.list.forEach(item => {
+          pageList.forEach(item => {
             const rankClass = item.rank === 1 ? 'top1' : item.rank === 2 ? 'top2' : item.rank === 3 ? 'top3' : 'normal';
             const rankDisplay = item.rank <= 3 ? rankIcons[item.rank - 1] : `#${item.rank}`;
             const itemClass = currentLbType === 'newstar' ? 'lb-item newstar-item' : 'lb-item';
@@ -3061,8 +3063,8 @@
             `;
           });
           
-          lbOffset += data.list.length;
-          lbHasMore = data.list.length === 20;
+          lbOffset += pageList.length;
+          lbHasMore = pageList.length === 20;
         }
         
         if (!lbHasMore && lbOffset > 0) {
