@@ -32,10 +32,7 @@ Page({
   onShow() {
     // 更新应用名称
     this.setData({ appName: app.getAppName() });
-    // 页面显示时检查登录状态
-    if (!app.globalData.isLoggedIn) {
-      app.silentLogin();
-    }
+    // 浏览游戏列表无需登录；登录请前往「我的」
   },
 
   // 切换Tab

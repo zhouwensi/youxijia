@@ -733,6 +733,48 @@ function saveUserToken(token) {
   localStorage.setItem('aigame-author-token', token);
 }
 
+/** 清除本地登录态（不刷新页面） */
+function clearStoredAuth() {
+  localStorage.removeItem('aigame-user-token');
+  localStorage.removeItem('aigame-author-token');
+  localStorage.removeItem('aigame-account-id');
+  state.account = { accountId: '', nickname: '', hasPassword: false, loaded: false };
+}
+
+/**
+ * 启动时：仅当本地已有 token 时请求 /api/account 校验；
+ * 不再调用 /api/account/init 静默创建账号（新用户需点「创建账号」或恢复/密码登录）。
+ */
+async function restoreSessionFromStorage() {
+  const token = getUserToken();
+  if (!token) {
+    state.account = { accountId: '', nickname: '', hasPassword: false, loaded: false };
+    return;
+  }
+  try {
+    const response = await fetch('/api/account', {
+      headers: { 'X-User-Token': token },
+    });
+    const data = await response.json();
+    if (response.ok && data.success && data.account) {
+      const a = data.account;
+      state.account = {
+        accountId: a.accountId || a.account_id || '',
+        nickname: a.nickname || '',
+        hasPassword: !!a.hasPassword,
+        loaded: true,
+      };
+      await loadCredits();
+      if (typeof loadTrialInfo === 'function') await loadTrialInfo();
+    } else {
+      clearStoredAuth();
+    }
+  } catch (e) {
+    console.warn('恢复登录态失败', e);
+    clearStoredAuth();
+  }
+}
+
 // 初始化账号（支持设备指纹自动恢复）
 async function initAccount() {
   try {
@@ -816,19 +858,19 @@ async function initAccount() {
       loadCredits();
       loadTrialInfo();
 
+      // 留言区等使用与主站一致的 token；若游戏页已挂载则刷新「是否已登录」展示
+      if (typeof updateCommentInputUI === 'function') {
+        updateCommentInputUI();
+      }
+
       return data.userToken;
     } else {
       console.error('账号初始化失败');
-      // 降级处理：生成本地 token
-      const fallbackToken = generateUUID();
-      saveUserToken(fallbackToken);
-      return fallbackToken;
+      return null;
     }
   } catch (error) {
     console.error('账号初始化出错:', error);
-    const fallbackToken = getUserToken() || generateUUID();
-    saveUserToken(fallbackToken);
-    return fallbackToken;
+    return null;
   }
 }
 
@@ -882,6 +924,10 @@ async function recoverAccount(accountId, password = null) {
       loadTrialInfo();
       
       // 注意：loadProfilePageData 由 doRecover 在关闭弹窗后调用
+
+      if (typeof updateCommentInputUI === 'function') {
+        updateCommentInputUI();
+      }
 
       return true;
     } else {
@@ -1197,14 +1243,25 @@ function handleModalBackgroundClick(e) {
   }
 }
 
-// 关闭所有弹窗
+// 关闭所有弹窗（切换底部 Tab 等场景会调用；账号类弹窗需保留，避免输入中途被误关）
+const AUTH_MODAL_IDS = new Set([
+  'login-dialog',
+  'password-dialog',
+  'logout-confirm',
+  'change-password-dialog'
+]);
+
 function closeAllModals() {
   document.querySelectorAll('.modal.active').forEach(modal => {
+    if (AUTH_MODAL_IDS.has(modal.id)) return;
     modal.classList.remove('active');
     modal.removeEventListener('click', handleModalBackgroundClick);
     modal.removeEventListener('touchmove', handleModalTouchMove);
   });
-  document.body.classList.remove('modal-open');
+  const stillOpen = document.querySelector('.modal.active');
+  if (!stillOpen) {
+    document.body.classList.remove('modal-open');
+  }
 }
 
 // ==================== 封禁状态检查 ====================
@@ -1215,10 +1272,15 @@ let userBanStatus = { banned: false, type: null, reason: null, expireAt: null };
 // 检查用户封禁状态
 async function checkUserBanStatus() {
   try {
+    const tok = getUserToken();
+    if (!tok) {
+      userBanStatus = { banned: false, type: null, reason: null, expireAt: null };
+      return;
+    }
     const response = await fetch(buildApiUrl('/api/check-ban'), {
       headers: {
-        'X-User-Token': state.token || ''
-      }
+        'X-User-Token': tok,
+      },
     });
     
     if (response.ok) {
@@ -1323,28 +1385,37 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   // 加载网站配置（包括写操作禁用状态）
   await loadSiteConfig();
-  
-  // 初始化账号（等待完成，支持设备指纹自动恢复）
-  await initAccount();
-  
-  // 账号初始化后更新UI显示
+
+  // 仅恢复已有 token 对应账号，不静默创建新账号
+  await restoreSessionFromStorage();
+
+  // 账号状态更新 UI
   updateAccountIdDisplay();
-  log('账号信息加载成功: ' + state.account.accountId, 'info');
-  
+  if (state.account.loaded) {
+    log('账号信息加载成功: ' + state.account.accountId, 'info');
+  } else {
+    log('未登录：浏览可继续，生成/留言等需先登录或创建账号', 'info');
+  }
+
   // 检查封禁状态
   await checkUserBanStatus();
-  
-  // 账号初始化后再加载积分
+
+  // 积分展示（本地缓存）；登录后再拉服务端
   initCredits();
-  
+  if (state.account.loaded) {
+    await loadCredits();
+  }
+
   // 处理邀请链接和分享链接参数
   await handleReferralParams();
-  
+
   // 检测URL中的文章推广参数
   checkArticlePromoFromURL();
-  
-  // 每日登录积分检查
-  await checkDailyLoginCredit();
+
+  // 每日登录积分（需已登录）
+  if (state.account.loaded && getUserToken()) {
+    await checkDailyLoginCredit();
+  }
   
   // 加载模型预计生成时间配置
   await loadModelEstimatedTimes();
@@ -1534,7 +1605,9 @@ function saveCredits() {
 
 // 更新所有账号ID显示
 function updateAccountIdDisplay() {
-  const accountId = state.account.accountId || '加载中...';
+  const accountId = state.account.loaded
+    ? state.account.accountId || '—'
+    : '未登录';
   
   // 更新各处的账号ID显示
   const elements = [
@@ -1558,7 +1631,7 @@ function updateAccountIdDisplay() {
       if (state.account.loaded && state.account.accountId) {
         el.innerHTML = '<span class="status-tag protected">🔐 已绑定设备</span>';
       } else {
-        el.innerHTML = '<span class="status-tag guest">加载中...</span>';
+        el.innerHTML = '<span class="status-tag guest">未登录</span>';
       }
     }
   });
@@ -1889,6 +1962,11 @@ async function loginWithAccount(accountId, password) {
       loadUserFollowStats();
       // 重新加载我的页面数据
       loadProfilePageData();
+
+      if (typeof updateCommentInputUI === 'function') {
+        updateCommentInputUI();
+      }
+
       return true;
     } else {
       const data = await response.json();
@@ -1916,7 +1994,9 @@ function showLoginDialog(defaultTab = 'existing') {
   const dialog = document.createElement('div');
   dialog.className = 'modal active';
   dialog.id = 'login-dialog';
-  dialog.onclick = (e) => { if (e.target === dialog) closeLoginDialog(); };
+  dialog.onclick = (e) => {
+    if (e.target === dialog) closeLoginDialog();
+  };
   dialog.innerHTML = `
     <div class="modal-content" style="max-width: 420px;">
       <div class="modal-header" style="padding-bottom: 0; border-bottom: none;">
@@ -4831,9 +4911,8 @@ function loadProfilePageSettings() {
   // 更新账号ID显示（使用统一函数）
   updateAccountIdDisplay();
   
-  // 如果账号还没加载完成，稍后再试
+  // 未登录时不再轮询等待（已不再静默 initAccount）
   if (!state.account.loaded) {
-    setTimeout(loadProfilePageSettings, 500);
     return;
   }
   
@@ -6579,9 +6658,9 @@ async function generateGame(advancedSettings = null) {
     return;
   }
   
-  // 确保用户已登录
-  if (!state.account.loggedIn || !getUserToken()) {
-    // 弹出统一登录弹窗
+  // 需已登录（或已创建账号），不再静默 initAccount
+  if (!state.account.loaded || !getUserToken()) {
+    showToast('请先登录或注册后再生成游戏', 'info');
     showLoginDialog();
     return;
   }
@@ -8612,10 +8691,11 @@ function generateUUID() {
 // @param {string} options.reason - 变化原因描述
 async function loadCredits(options = {}) {
   try {
+    if (!getUserToken() || !state.account.loaded) return;
     const oldCredits = state.credits;
-    
+
     const response = await fetch(buildApiUrl('/api/credits'), {
-      headers: { 'X-User-Token': getUserToken() }
+      headers: { 'X-User-Token': getUserToken() },
     });
     const data = await response.json();
     
@@ -11099,8 +11179,9 @@ function onModelSelectChange() {
 // 加载游客模式信息
 async function loadTrialInfo() {
   try {
+    if (!getUserToken()) return;
     const response = await fetch(buildApiUrl('/api/trial/status'), {
-      headers: { 'X-User-Token': getUserToken() }
+      headers: { 'X-User-Token': getUserToken() },
     });
     const data = await response.json();
     
@@ -11218,11 +11299,10 @@ async function handleReferralParams() {
   const refCode = urlParams.get('ref');
   if (refCode) {
     try {
-      // 确保账户已初始化
-      if (!state.account.accountId) {
-        await initAccount();
+      if (!state.account.loaded || !getUserToken()) {
+        console.log('[REFERRAL] 未登录，跳过邀请记录（登录后可从邀请链接再进入）');
+        return;
       }
-      
       const response = await fetch(buildApiUrl('/api/referral/record'), {
         method: 'POST',
         headers: {
@@ -14113,7 +14193,7 @@ function updateCommentInputUI() {
   
   if (!loginHint || !inputArea) return;
   
-  const userToken = localStorage.getItem('user_token');
+  const userToken = getUserToken();
   
   if (userToken) {
     loginHint.style.display = 'none';
@@ -14132,7 +14212,7 @@ async function loadComments(isRefresh = false) {
   commentsState.isLoading = true;
   
   try {
-    const userToken = localStorage.getItem('user_token') || '';
+    const userToken = getUserToken() || '';
     const limit = 20;
     const offset = isRefresh ? 0 : commentsState.offset;
     
@@ -14276,7 +14356,7 @@ async function submitComment() {
     return;
   }
   
-  const userToken = localStorage.getItem('user_token');
+  const userToken = getUserToken();
   if (!userToken) {
     showToast('请先登录', 'error');
     showLoginModal();
@@ -14332,7 +14412,7 @@ async function submitComment() {
 async function deleteComment(commentId) {
   if (!confirm('确定要删除这条留言吗？')) return;
   
-  const userToken = localStorage.getItem('user_token');
+  const userToken = getUserToken();
   if (!userToken) {
     showToast('请先登录', 'error');
     return;

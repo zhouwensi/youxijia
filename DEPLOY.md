@@ -77,6 +77,46 @@ open http://localhost:80
 
 ---
 
+---
+
+
+## ☁️ 部署到 Cloudflare Pages + D1（推荐：无自有服务器）
+
+与 `xiyouce` 相同思路：**静态资源走 `public/`，API 走 `functions/api`，数据在 D1**，域名可绑 Cloudflare 或自定义域；小程序 `baseUrl` 指向同一域名即可（需在小程序后台配置 request 合法域名）。
+
+### 1. 本机一次性准备
+
+```bash
+npm install
+npm run login
+npm run cf:provision
+npm run cf:db:remote
+```
+
+在 Cloudflare 控制台为 Pages 项目绑定 D1（若控制台提示未绑定，选择与 `wrangler.toml` 中一致的 `youxijia-db`）。
+
+### 2. 大模型 API Key（二选一或同时）
+
+- **推荐**：`npx wrangler secret put LLM_DEFAULT_API_KEY`（生产密钥，不写进仓库）
+- 或在 D1 表 `system_config` 中维护 `llm_default_api_key`（适合后台改配置）
+
+可选：`npx wrangler secret put LLM_DEFAULT_BASE_URL` 覆盖默认 OpenAI 兼容基址。
+
+### 3. 部署
+
+```bash
+npm run cf:deploy
+```
+
+### 4. GitHub Actions
+
+仓库 Settings → Secrets → 添加 `CLOUDFLARE_API_TOKEN`（需含 D1、Pages 写权限）。推送 `main`/`master` 时工作流会执行 `npm ci`、`npm run build`、远程 D1 迁移与 `pages deploy`。
+
+**从旧 SQLite 迁数据**：用 `wrangler d1 execute youxijia-db --remote --file=...sql` 或导出 `games.db` 为 SQL 后导入（注意与 `migrations/0001_init.sql` 表结构一致）。
+
+---
+
+
 ## GitHub Pages + Cloudflare Worker（推荐：无自有服务器）
 
 架构：**静态站点**（`public/`）由 GitHub Actions 发布到 Pages；**API** 在 Cloudflare Worker（建议子域 `api.yijuhuayouxi.com`）。`npm run build` 未设置 `API_BASE_URL` 时也会默认写入该 API 地址到 `public/js/api-base.js`，静态站不再误走「同域 /api」从而依赖本机 Node。
@@ -194,3 +234,4 @@ cd worker && npx wrangler login
 
 - 当前 Worker 已实现：**健康检查、站点配置、`/api/generate`、微信登录（KV 用户）、大量只读桩接口**；**游戏库、编辑、管理后台等**仍返回空数据或 501，需后续接 D1/R2 或从旧 `server.js` 逐步迁移。
 - 旧 **`games.db` / `public/g/`** 可按需做一次性导入（不在本流程内自动完成）。
+

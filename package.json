@@ -8,7 +8,13 @@
     "dev": "nodemon server.js",
     "build": "node build.js",
     "build:prod": "cross-env NODE_ENV=production node build.js",
-    "vercel-dev": "vercel dev"
+    "vercel-dev": "vercel dev",
+    "login": "npx wrangler login",
+    "cf:provision": "node scripts/provision-cloudflare.mjs",
+    "cf:dev": "npm run build && npx wrangler pages dev public --local --persist-to=.wrangler/state --port 8788",
+    "cf:db:local": "npx wrangler d1 migrations apply youxijia-db --local --persist-to=.wrangler/state",
+    "cf:db:remote": "npx wrangler d1 migrations apply youxijia-db --remote",
+    "cf:deploy": "npm run build && npm run cf:provision && npm run cf:db:remote && npx wrangler pages deploy public --project-name youxijia"
   },
   "dependencies": {
     "@vercel/kv": "^1.0.1",
@@ -26,10 +32,13 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240405.0",
     "cross-env": "^7.0.3",
-    "javascript-obfuscator": "^4.1.1",
+    "javascript-obfuscator": "^4.2.2",
     "nodemon": "^3.0.3",
-    "vercel": "^33.0.0"
+    "typescript": "^5.4.2",
+    "vercel": "^33.0.0",
+    "wrangler": "^3.78.0"
   },
   "engines": {
     "node": ">=18.0.0"

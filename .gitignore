@@ -36,6 +36,10 @@ tmp/
 temp/
 *.tmp
 
+# 本地/临时清单（勿入库）
+api-routes-list.txt
+miniprogram/project.private.config.json
+
 # Cloudflare
 .wrangler/
 worker/wrangler.deploy.toml

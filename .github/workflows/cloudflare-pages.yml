@@ -1,0 +1,35 @@
+# 将 public 静态站 + functions/api 部署到 Cloudflare Pages（需仓库 Secrets）
+name: Deploy Cloudflare Pages
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install and build
+        run: npm ci && npm run build
+
+      - name: Apply D1 migrations (remote)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          command: d1 migrations apply youxijia-db --remote
+
+      - name: Deploy Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          command: pages deploy public --project-name youxijia

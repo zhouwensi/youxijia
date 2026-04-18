@@ -1,22 +1,15 @@
+# Cloudflare Pages：静态目录 public + functions/api 提供后端 API（D1）
+# 对齐 xiyouce：GitHub 推送 + wrangler pages deploy，无自建 Node / 无微信云开发依赖
 name = "youxijia"
-main = "src/worker.js"
+pages_build_output_dir = "public"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
-# 静态资源目录
-[site]
-bucket = "./public"
-
-# D1 数据库绑定
+# 占位 ID：首次部署前执行 npm run cf:provision 写入真实 database_id
 [[d1_databases]]
-binding = "DB"
+binding = "YOUXIJIA_DB"
 database_name = "youxijia-db"
-database_id = "" # 创建后填入
+database_id = "2fcbd735-8a23-4550-a98c-22adbdd55b21"
 
-# 环境变量
 [vars]
-ADMIN_KEY = "your-admin-key-here"
-
-# 生产环境
-[env.production]
-vars = { NODE_ENV = "production" }
+# 可选：在控制台用 wrangler secret 设置 LLM_DEFAULT_API_KEY，会优先于 D1 system_config

@@ -1,0 +1,28 @@
+---
+description: 改完影响线上或仓库时，默认构建、部署 Cloudflare Pages 并提交 Git
+alwaysApply: true
+---
+
+# 部署与 Git（会话收尾）
+
+在**一次任务收尾**、且改动已可交付时，除非用户明确说「不要部署 / 不要提交」，否则应主动完成下面步骤（在终端执行并核对输出）。
+
+## 1. 前端构建
+
+若修改了 `src/js/` 或会影响 `public/js/` 的构建逻辑：先执行 `npm run build`，确保 `public/js/` 与源码一致后再部署或提交。
+
+## 2. Cloudflare Pages 部署
+
+若本次改动影响网站或 `functions/`（用户可见行为、API、静态资源）：部署到当前项目，例如：
+
+`npx wrangler pages deploy public --project-name youxijia --commit-dirty=true`
+
+以命令输出出现 **Deployment complete** 为准；若仅发起命令未确认成功，不算完成。
+
+## 3. Git 提交
+
+若工作区有应入库的改动：使用 `git status` 核对后 `git add`（**不要**提交 `node_modules/`、`.env*`、私钥、仅本机配置如 `miniprogram/project.private.config.json`），再 `git commit`（信息写清本次做什么）。若远程已配置且用户未禁止推送，执行 `git push`。
+
+## 4. 做不到时
+
+若环境无 Wrangler 登录、无网络、或用户禁止提交：在回复中**明确说明**未完成的是哪一步及原因，不要假装已部署或已提交。
