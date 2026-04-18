@@ -32,4 +32,4 @@ ALLOWED_ORIGINS = "https://www.yijuhuayouxi.com,https://yijuhuayouxi.com,http://
 #
 # 若 api 子域仍绑在本 KV Worker，但小程序微信登录已用 Pages+D1，请设置转发源（Cloudflare 控制台 → Worker → Settings → Variables）：
 # PAGES_API_ORIGIN = https://youxijia.pages.dev
-# 设置后 /api/wechat/login、GET /api/account、PUT /api/account/nickname 会转发到 Pages Functions。
+# 设置后还会转发：GET /api/credits、POST /api/user/checkin、GET /api/user/checkin-status（与 D1 积分一致）。
