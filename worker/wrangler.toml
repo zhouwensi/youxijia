@@ -35,7 +35,7 @@ ALLOWED_ORIGINS = "https://www.yijuhuayouxi.com,https://yijuhuayouxi.com,http://
 # MINI_BANNER_AD_UNIT_ID = ""
 # MINI_BANNER_MINE_AD_UNIT_ID = ""
 # INTERSTITIAL_AD_UNIT_ID = ""
-# SPLASH_AD_UNIT_ID = ""
+# SPLASH_AD_UNIT_ID = ""   # 与「流量主-封面广告」开关不是一回事；封面广告通常无 adunit，见 doc/通行证与核销-联调说明.md
 #
 # 若 api 子域仍绑在本 KV Worker，但小程序微信登录已用 Pages+D1，请设置转发源（Cloudflare 控制台 → Worker → Settings → Variables）：
 # PAGES_API_ORIGIN = https://youxijia.pages.dev
