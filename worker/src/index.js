@@ -164,6 +164,12 @@ async function handleWechatLogin(request, env) {
 }
 
 function siteConfig(env) {
+  const rewardedVideoAdUnitId = String(env.REWARDED_VIDEO_AD_UNIT_ID || '').trim();
+  const miniBannerAdUnitId = String(env.MINI_BANNER_AD_UNIT_ID || '').trim();
+  const miniBannerMineAdUnitId = String(env.MINI_BANNER_MINE_AD_UNIT_ID || '').trim();
+  const interstitialAdUnitId = String(env.INTERSTITIAL_AD_UNIT_ID || '').trim();
+  const splashAdUnitId = String(env.SPLASH_AD_UNIT_ID || '').trim();
+
   return {
     success: true,
     siteName: env.SITE_NAME || '一句话游戏',
@@ -180,10 +186,18 @@ function siteConfig(env) {
     creditsRedeemMiniprogramOnly: true,
     inviteReward: 3,
     wxSubscribeTmplId: env.WX_SUBSCRIBE_TMPL_GAME_CREATED || '',
-    rewardedVideoAdUnitId: '',
+    rewardedVideoAdUnitId: rewardedVideoAdUnitId,
+    miniBannerAdUnitId: miniBannerAdUnitId,
+    miniBannerMineAdUnitId: miniBannerMineAdUnitId,
     extraConfig: {
       ad: { reward: 3, dailyLimit: 30, enabled: false },
-      ads: { rewardedVideoAdUnitId: '' },
+      ads: {
+        rewardedVideoAdUnitId: rewardedVideoAdUnitId,
+        miniBannerAdUnitId: miniBannerAdUnitId,
+        miniBannerMineAdUnitId: miniBannerMineAdUnitId,
+        interstitialAdUnitId: interstitialAdUnitId,
+        splashAdUnitId: splashAdUnitId,
+      },
     },
     config: {
       webWriteDisabled: false,
