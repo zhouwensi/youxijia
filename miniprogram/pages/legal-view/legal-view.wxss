@@ -1,0 +1,13 @@
+.scroll {
+  height: 100vh;
+  padding: 24rpx;
+  box-sizing: border-box;
+  background: #0a0a10;
+}
+.body {
+  white-space: pre-wrap;
+  font-size: 26rpx;
+  line-height: 1.65;
+  color: #e2e6f5;
+  display: block;
+}

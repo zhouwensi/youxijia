@@ -1,38 +1,26 @@
 {
   "pages": [
-    "pages/create/create",
-    "pages/works/works",
+    "pages/consent/consent",
+    "pages/home/home",
     "pages/mine/mine",
-    "pages/auth/auth",
-    "pages/credits/credits",
-    "pages/game-detail/game-detail",
-    "pages/game-edit/game-edit",
-    "pages/index/index",
-    "pages/user/user",
-    "pages/search/search",
-    "pages/works-list/works-list"
+    "pages/legal-view/legal-view"
   ],
   "window": {
-    "navigationBarBackgroundColor": "#1a1a2e",
-    "navigationBarTitleText": "游戏家",
+    "navigationBarBackgroundColor": "#12121a",
+    "navigationBarTitleText": "Just One Word",
     "navigationBarTextStyle": "white",
-    "backgroundColor": "#0f0f1a",
+    "backgroundColor": "#0a0a10",
     "backgroundTextStyle": "light"
   },
   "tabBar": {
-    "custom": true,
     "color": "#8b8b8b",
     "selectedColor": "#00d4ff",
-    "backgroundColor": "#1a1a2e",
+    "backgroundColor": "#12121a",
     "borderStyle": "black",
     "list": [
       {
-        "pagePath": "pages/create/create",
-        "text": "创作"
-      },
-      {
-        "pagePath": "pages/works/works",
-        "text": "作品"
+        "pagePath": "pages/home/home",
+        "text": "首页"
       },
       {
         "pagePath": "pages/mine/mine",

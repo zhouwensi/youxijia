@@ -1,0 +1,28 @@
+<view class="page">
+  <view class="hero">
+    <text class="title">Just One Word</text>
+    <text class="sub">游戏人专属创作与纪念权益工具</text>
+  </view>
+
+  <scroll-view scroll-y class="scroll">
+    <view class="card">
+      <text class="card-title">首次使用须知</text>
+      <text class="p">为遵守平台规范并保护您的权益，请先阅读并同意以下协议。同意后我们将通过微信登录获取必要标识（OpenID），用于兑换码发放与防刷，不会用于与约定无关的目的。</text>
+    </view>
+    <view class="links">
+      <view class="link-row" bindtap="openDoc" data-type="userAgreement">《用户服务协议》</view>
+      <view class="link-row" bindtap="openDoc" data-type="privacyPolicy">《隐私政策》</view>
+      <view class="link-row" bindtap="openDoc" data-type="redeemRules">《兑换码使用规则》</view>
+    </view>
+    <checkbox-group bindchange="onAgreeChange">
+      <label class="check-line">
+        <checkbox value="ok" checked="{{agreed}}" />
+        <text>我已阅读并同意上述协议与规则</text>
+      </label>
+    </checkbox-group>
+  </scroll-view>
+
+  <view class="footer">
+    <button class="btn primary" disabled="{{!agreed || loading}}" bindtap="onEnter">{{loading ? '登录中…' : '同意并进入'}}</button>
+  </view>
+</view>

@@ -9,4 +9,8 @@ export interface Env {
   WX_MINI_APPID?: string;
   /** 微信小程序 AppSecret（Secret） */
   WX_MINI_SECRET?: string;
+  /** 游戏墓地 Worker 调用内部核销接口时的共享密钥（Secret） */
+  HUB_SITE_SECRET_YOUXIMUDI?: string;
+  /** 本命测站点 Worker 调用内部核销接口时的共享密钥（Secret） */
+  HUB_SITE_SECRET_XIYOU?: string;
 }

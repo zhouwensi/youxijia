@@ -1,23 +1,17 @@
 /**
- * 一句话游戏 - 微信小程序
- * 全局入口文件
- *
- * 登录：不在启动时静默注册；用户仅在「我的」页点击「微信登录」后，
- * 通过 wx.login → POST /api/wechat/login 换取本站 user_token（需云端配置 WX_MINI_APPID / WX_MINI_SECRET）。
+ * Just One Word — 微信小程序（个人主体合规：权益兑换码工具 + 官方广告组件）
+ * 登录：wx.login → POST /api/wechat/login 换取 user_token（需云端 WX_MINI_APPID / WX_MINI_SECRET）。
  */
 
-// 全局配置
 const config = {
-  // API：Cloudflare Worker 子域（与微信公众平台 request 合法域名一致）
   baseUrl: 'https://api.yijuhuayouxi.com',
-  // 网站：GitHub Pages / 自定义域（复制链接、webview 用）
-  webUrl: 'https://www.yijuhuayouxi.com',
-  // 版本号
-  version: '1.0.0',
-  // 站点名称（从后台加载）
-  siteName: '一句话游戏',
-  miniprogramName: 'JustOneWord',
-  siteSlogan: '一句话生成游戏'
+  webUrl: '',
+  version: '2.0.0-compliance',
+  siteName: 'Just One Word',
+  miniprogramName: 'Just One Word',
+  siteSlogan: '游戏人专属创作与纪念权益工具',
+  miniBannerAdUnitId: '',
+  miniBannerMineAdUnitId: '',
 };
 
 /** 在用户同意隐私指引后再执行回调（基础库支持时） */
@@ -113,6 +107,24 @@ App({
         // 也支持从 extraConfig 中读取
         if (result.extraConfig?.ads?.rewardedVideoAdUnitId) {
           this.globalData.config.rewardedVideoAdUnitId = result.extraConfig.ads.rewardedVideoAdUnitId;
+        }
+        if (result.miniBannerAdUnitId) {
+          this.globalData.config.miniBannerAdUnitId = result.miniBannerAdUnitId;
+        }
+        if (result.miniBannerMineAdUnitId) {
+          this.globalData.config.miniBannerMineAdUnitId = result.miniBannerMineAdUnitId;
+        }
+        if (result.extraConfig?.ads?.miniBannerAdUnitId) {
+          this.globalData.config.miniBannerAdUnitId = result.extraConfig.ads.miniBannerAdUnitId;
+        }
+        if (result.extraConfig?.ads?.miniBannerMineAdUnitId) {
+          this.globalData.config.miniBannerMineAdUnitId = result.extraConfig.ads.miniBannerMineAdUnitId;
+        }
+        if (result.extraConfig?.ads?.interstitialAdUnitId) {
+          this.globalData.config.interstitialAdUnitId = result.extraConfig.ads.interstitialAdUnitId;
+        }
+        if (result.extraConfig?.ads?.splashAdUnitId) {
+          this.globalData.config.splashAdUnitId = result.extraConfig.ads.splashAdUnitId;
         }
         
         // 保存完整的站点配置（供其他页面使用）

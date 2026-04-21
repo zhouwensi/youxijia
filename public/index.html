@@ -923,6 +923,42 @@
     .lb-empty-text {
       font-size: 14px;
     }
+    .hub-nav-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .hub-nav-btn:hover {
+      background: rgba(0, 212, 255, 0.12);
+      border-color: rgba(0, 212, 255, 0.35);
+    }
+    .home-credits-hint {
+      margin-top: 12px;
+      font-size: 13px;
+      color: rgba(0, 212, 255, 0.95);
+      line-height: 1.5;
+    }
+    #credits-hub-page .hub-balance {
+      font-size: 2rem;
+      font-weight: 700;
+      text-align: center;
+      margin: 12px 0 4px;
+    }
+    #redeem-hub-modal .redeem-input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      background: rgba(0,0,0,0.25);
+      color: var(--text-primary);
+      font-size: 15px;
+      box-sizing: border-box;
+    }
   </style>
 </head>
 <body>
@@ -943,6 +979,8 @@
           <span class="brand-name">一句话游戏</span>
         </div>
         <div class="top-bar-actions">
+          <button type="button" class="hub-nav-btn" onclick="openRedeemHubModal()">兑换码核销</button>
+          <button type="button" class="hub-nav-btn" onclick="openCreditsHubPage()">我的积分</button>
           <button class="search-trigger-btn" onclick="openSearchPanel()">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="8"></circle>
@@ -991,6 +1029,7 @@
                 <button class="chip" onclick="setPrompt('飞机大战')">🚀 飞机大战</button>
                 <button class="chip" onclick="setPrompt('翻牌配对')">🃏 翻牌</button>
               </div>
+              <p id="home-credits-balance-hint" class="home-credits-hint" aria-live="polite"></p>
             </div>
           </div>
         </section>
@@ -1378,6 +1417,55 @@
       </div>
     </div>
 
+    <!-- 兑换码核销（全站不提及小程序） -->
+    <div id="redeem-hub-modal" class="modal" onclick="if(event.target===this)closeRedeemHubModal()">
+      <div class="modal-content" style="max-width: 520px;" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h3>兑换码核销</h3>
+          <button type="button" class="btn btn-icon btn-close" onclick="closeRedeemHubModal()">×</button>
+        </div>
+        <div class="modal-body" style="padding: 1rem 1.25rem;">
+          <input id="redeem-code-input" class="redeem-input" type="text" maxlength="16" autocomplete="off" placeholder="请输入从公众号获取的兑换码" />
+          <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary" onclick="submitRedeemHubCode()">立即核销</button>
+            <button type="button" class="btn" onclick="pasteRedeemHubCode()">一键粘贴</button>
+          </div>
+          <p id="redeem-hub-msg" style="margin-top:12px; font-size:14px; min-height:1.2em;"></p>
+          <p style="margin-top:8px; font-size:12px; color: var(--text-muted); line-height:1.5;">兑换码可通过【游戏开发技术教程】官方公众号获取。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 我的积分（三站通用流水） -->
+    <div id="credits-hub-page" class="page">
+      <div class="list-page-header">
+        <button type="button" class="btn btn-back" onclick="closeCreditsHubPage()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M19 12H5M12 19l-7-7 7-7"></path>
+          </svg>
+        </button>
+        <h2>我的积分</h2>
+        <div class="list-page-actions"></div>
+      </div>
+      <div class="list-page-content" style="padding:16px;">
+        <div class="hub-balance" id="hub-credits-balance">--</div>
+        <p style="text-align:center; font-size:13px; color: var(--text-muted); margin-bottom:16px;">三站通用「游戏人积分」· 1 积分 = 1 次 AI 游戏生成</p>
+        <div class="hub-tip-card" style="padding:14px; border-radius:12px; border:1px solid rgba(99,102,241,0.35); margin-bottom:16px;">
+          <strong>积分获取指南</strong>
+          <p style="margin:8px 0 0; font-size:13px; color: var(--text-muted); line-height:1.55;">通过【游戏开发技术教程】官方公众号获取兑换码，在本站「兑换码核销」入口兑换后发放积分；积分在三站实时一致（以服务端为准）。</p>
+          <p style="margin:10px 0 0; font-size:13px; color: var(--text-muted); line-height:1.55;">若需在其它合作站点使用同一积分，请先在下方生成「通行证密钥」，并在对应站点的「背包 / 我的权益」中粘贴绑定。</p>
+          <button type="button" class="btn btn-primary" style="margin-top:10px;" onclick="createHubLinkToken()">生成通行证密钥</button>
+          <p id="hub-link-token-out" style="margin-top:8px; font-size:13px; word-break:break-all;"></p>
+        </div>
+        <h3 style="font-size:15px; margin:8px 0;">积分收支明细</h3>
+        <div id="hub-ledger-list" style="font-size:13px; color: var(--text-muted);">加载中…</div>
+        <div class="hub-tip-card" style="margin-top:16px; padding:14px; border-radius:12px; border:1px solid rgba(255,255,255,0.12);">
+          <strong>积分消耗说明</strong>
+          <p style="margin:8px 0 0; font-size:13px; color: var(--text-muted); line-height:1.55;">在本站生成游戏时按所选模型消耗积分；不足时可按上方指引获取兑换码。</p>
+        </div>
+      </div>
+    </div>
+
     <!-- 底部导航栏 -->
     <nav class="bottom-nav" id="bottom-nav">
       <button class="nav-item active" data-nav="home" onclick="switchBottomNav('home')">
@@ -1439,6 +1527,10 @@
         </div>
         <div class="list-no-more" id="lb-no-more" style="display:none;">
           <span>没有更多了</span>
+        </div>
+        <div class="hub-tip-card" style="margin: 16px; padding: 14px; border-radius: 12px; border: 1px solid rgba(0,212,255,0.25); background: rgba(0,212,255,0.06);">
+          <strong>榜单曝光特权说明</strong>
+          <p style="margin:8px 0 0; font-size:13px; color: var(--text-muted); line-height:1.55;">高级兑换码可解锁 7 天作品榜单曝光特权。兑换码获取渠道：<strong>【游戏开发技术教程】官方公众号</strong></p>
         </div>
       </div>
     </div>
@@ -3147,6 +3239,145 @@
   }
   
   // 登录功能已移至 /js/auth.js
+
+  // ---------- 兑换码核销 / 我的积分（通行证）----------
+  function openRedeemHubModal() {
+    const m = document.getElementById('redeem-hub-modal');
+    if (!m) return;
+    const inp = document.getElementById('redeem-code-input');
+    const msg = document.getElementById('redeem-hub-msg');
+    if (inp) inp.value = '';
+    if (msg) msg.textContent = '';
+    m.classList.add('active');
+  }
+  function closeRedeemHubModal() {
+    const m = document.getElementById('redeem-hub-modal');
+    if (m) m.classList.remove('active');
+  }
+  async function pasteRedeemHubCode() {
+    const inp = document.getElementById('redeem-code-input');
+    if (!inp) return;
+    try {
+      const t = await navigator.clipboard.readText();
+      inp.value = (t || '').trim().slice(0, 16);
+    } catch (_) {
+      alert('请手动粘贴：浏览器可能未授权剪贴板读取');
+    }
+  }
+  async function submitRedeemHubCode() {
+    const msg = document.getElementById('redeem-hub-msg');
+    const inp = document.getElementById('redeem-code-input');
+    const code = (inp && inp.value ? inp.value : '').trim().toUpperCase();
+    if (!code) {
+      if (msg) msg.textContent = '请输入兑换码';
+      return;
+    }
+    if (typeof getUserToken !== 'function' || !getUserToken()) {
+      if (msg) msg.textContent = '请先登录本站账号';
+      if (typeof showLoginDialog === 'function') showLoginDialog();
+      return;
+    }
+    if (msg) msg.textContent = '核销中…';
+    try {
+      const res = await fetch(buildApiUrl('/api/hub/privilege/redeem'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-User-Token': getUserToken() },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+        if (data.success) {
+        if (msg) msg.textContent = data.message || '核销成功';
+        if (typeof loadCredits === 'function') await loadCredits();
+        if (typeof updateCreditsDisplay === 'function') updateCreditsDisplay();
+        setTimeout(function () { closeRedeemHubModal(); }, 3000);
+      } else {
+        if (msg) msg.textContent = data.error || '核销失败';
+      }
+    } catch (e) {
+      if (msg) msg.textContent = '网络异常，请稍后重试';
+    }
+  }
+
+  function openCreditsHubPage() {
+    const p = document.getElementById('credits-hub-page');
+    if (!p) return;
+    document.querySelectorAll('.page.active').forEach(function (el) { el.classList.remove('active'); });
+    p.classList.add('active');
+    const nav = document.getElementById('bottom-nav');
+    if (nav) nav.style.display = 'none';
+    loadCreditsHubData();
+  }
+  function closeCreditsHubPage() {
+    const p = document.getElementById('credits-hub-page');
+    if (p) p.classList.remove('active');
+    const home = document.getElementById('home-page');
+    if (home) home.classList.add('active');
+    const nav = document.getElementById('bottom-nav');
+    if (nav) nav.style.display = '';
+  }
+  async function loadCreditsHubData() {
+    const balEl = document.getElementById('hub-credits-balance');
+    const listEl = document.getElementById('hub-ledger-list');
+    if (!balEl || !listEl) return;
+    if (typeof getUserToken !== 'function' || !getUserToken()) {
+      balEl.textContent = '--';
+      listEl.textContent = '请先登录';
+      return;
+    }
+    listEl.textContent = '加载中…';
+    try {
+      const res = await fetch(buildApiUrl('/api/hub/points-ledger'), {
+        headers: { 'X-User-Token': getUserToken() },
+      });
+      const data = await res.json();
+      if (!data.success) {
+        listEl.textContent = data.error || '加载失败';
+        return;
+      }
+      balEl.textContent = typeof data.balance === 'number' ? data.balance : String(data.balance ?? '--');
+      const rows = data.items || [];
+      if (!rows.length) {
+        listEl.innerHTML = '<p style="color:var(--text-muted)">暂无流水</p>';
+        return;
+      }
+      listEl.innerHTML = rows.map(function (r) {
+        var t = r.createdAt || '';
+        var d = r.delta >= 0 ? ('+' + r.delta) : String(r.delta);
+        var bal = r.balanceAfter != null ? r.balanceAfter : '';
+        var reason = escapeHtml(r.reason || '');
+        return '<div style="padding:10px 0;border-bottom:1px solid var(--border-color);">' +
+          '<div style="color:var(--text-primary);font-size:13px;">' + reason + '</div>' +
+          '<div style="font-size:12px;color:var(--text-muted);margin-top:4px;">' + escapeHtml(t) +
+          ' · 变动 <strong>' + d + '</strong> · 余额 ' + bal + '</div></div>';
+      }).join('');
+    } catch (e) {
+      listEl.textContent = '网络异常';
+    }
+  }
+  async function createHubLinkToken() {
+    const out = document.getElementById('hub-link-token-out');
+    if (!out) return;
+    if (typeof getUserToken !== 'function' || !getUserToken()) {
+      out.textContent = '请先登录';
+      return;
+    }
+    out.textContent = '生成中…';
+    try {
+      const res = await fetch(buildApiUrl('/api/hub/link-token/create'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-User-Token': getUserToken() },
+        body: '{}',
+      });
+      const data = await res.json();
+      if (data.success && data.linkToken) {
+        out.textContent = '通行证密钥（请妥善保管）：' + data.linkToken;
+      } else {
+        out.textContent = data.error || '生成失败';
+      }
+    } catch (e) {
+      out.textContent = '网络异常';
+    }
+  }
   </script>
 </body>
 </html>

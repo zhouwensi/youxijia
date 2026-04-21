@@ -14,6 +14,7 @@ import {
   isUserAdmin,
 } from "./cf-helpers";
 import { tryCheckinRoutes } from "./checkin-routes";
+import { tryPrivilegeRoutes } from "./privilege-redeem";
 
 export type RouteCtx = {
   request: Request;
@@ -51,6 +52,9 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
 
   const checkinRes = await tryCheckinRoutes({ request, db, method, segs });
   if (checkinRes) return checkinRes;
+
+  const privRes = await tryPrivilegeRoutes(ctx);
+  if (privRes) return privRes;
 
   if (method === "GET" && segs[0] === "check-ban") {
     const userToken = getUserTokenFromRequest(request);

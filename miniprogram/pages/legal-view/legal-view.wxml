@@ -1,0 +1,3 @@
+<scroll-view scroll-y class="scroll">
+  <text class="body">{{content}}</text>
+</scroll-view>

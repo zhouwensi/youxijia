@@ -1,284 +1,67 @@
-<!--
-  我的页面 - 增强版
--->
-<view class="page-container">
-  <!-- 用户信息卡片 -->
-  <view class="user-card">
-    <!-- 未登录状态 -->
-    <view class="login-prompt" wx:if="{{!isLoggedIn}}">
-      <view class="avatar-placeholder">
-        <text>👤</text>
+<view class="page">
+  <scroll-view scroll-y class="scroll">
+    <view class="user-card">
+      <view class="avatar" bindtap="onTapAvatar">
+        <image wx:if="{{avatarUrl}}" class="img" src="{{avatarUrl}}" mode="aspectFill" />
+        <text wx:else class="ph">头像</text>
       </view>
-      <view class="login-info">
-        <text class="login-title">登录体验更多功能</text>
-        <text class="login-desc">邮箱登录与网站同一账号；积分在「积分」页领取</text>
-      </view>
-      <view class="login-actions">
-        <button class="login-btn" bindtap="goEmailAuth">邮箱登录 / 注册</button>
-        <button class="login-btn login-btn-wx" bindtap="handleLogin">微信一键登录</button>
-      </view>
-    </view>
-    
-    <!-- 已登录状态 -->
-    <view class="user-info" wx:else>
-      <view class="user-top">
-        <view class="avatar">
-          <text>{{userInfo.avatar_emoji || '🎮'}}</text>
-        </view>
-        <view class="user-details">
-          <view class="nickname-row" bindtap="showNicknameEditor">
-            <text class="nickname">{{userInfo.nickname || userInfo.account_id || userInfo.accountId || '游戏玩家'}}</text>
-            <text class="edit-icon">✏️</text>
-          </view>
-          <view class="account-id-row">
-            <text class="account-id">ID: {{userInfo.account_id || userInfo.accountId || '-'}}</text>
-            <view class="copy-btn" bindtap="copyAccountId" data-id="{{userInfo.account_id || userInfo.accountId}}">
-              <text class="copy-icon">📋</text>
-            </view>
-          </view>
-        </view>
-        <view class="settings-btn" bindtap="goToSettings">
-          <text>⚙️</text>
-        </view>
-      </view>
-      
-      <!-- 关注/粉丝统计 -->
-      <view class="user-stats">
-        <view class="stat-item" bindtap="showFollowing">
-          <text class="stat-value">{{stats.following}}</text>
-          <text class="stat-label">关注</text>
-        </view>
-        <view class="stat-divider"></view>
-        <view class="stat-item" bindtap="showFollowers">
-          <text class="stat-value">{{stats.followers}}</text>
-          <text class="stat-label">粉丝</text>
-        </view>
-      </view>
-    </view>
-  </view>
-
-  <!-- 订阅通知提示（只有在创作中有任务时才显示；积分隐藏时不显示积分文案） -->
-  <view class="subscribe-tip-card" wx:if="{{isLoggedIn && creatingTasks.length > 0}}">
-    <view class="subscribe-tip-content">
-      <text class="subscribe-tip-icon">💡</text>
-      <text class="subscribe-tip-text">点击任务右侧🔔可订阅完成通知</text>
-      <text class="subscribe-tip-text" wx:if="{{!creditsHidden}}">（+{{subscribeReward || 0.5}}积分）</text>
-    </view>
-  </view>
-
-  <!-- Tab切换 -->
-  <view class="tab-bar" wx:if="{{isLoggedIn}}">
-    <view 
-      class="tab-item {{currentTab === item.id ? 'active' : ''}}"
-      wx:for="{{tabs}}"
-      wx:key="id"
-      data-tab="{{item.id}}"
-      bindtap="switchTab"
-    >
-      <text class="tab-icon">{{item.icon}}</text>
-      <text class="tab-name">{{item.name}}</text>
-    </view>
-  </view>
-
-  <!-- 列表内容 -->
-  <scroll-view 
-    class="list-container"
-    scroll-y
-    wx:if="{{isLoggedIn}}"
-    bindscrolltolower="onReachBottom"
-  >
-    <!-- 创作中的任务列表（仅在"我的作品"Tab显示） -->
-    <view class="creating-tasks" wx:if="{{currentTab === 'games' && creatingTasks.length > 0}}">
-      <view class="creating-header">
-        <text class="creating-title">⏳ 创作中 ({{creatingTasks.length}})</text>
-      </view>
-      <view 
-        class="creating-item" 
-        wx:for="{{creatingTasks}}" 
-        wx:key="taskId"
-      >
-        <view class="creating-cover">
-          <text class="creating-emoji">🎮</text>
-        </view>
-        <view class="creating-info">
-          <view class="creating-name ellipsis">{{item.gameTitle || item.prompt || '新游戏'}}</view>
-          <view class="creating-status">
-            <text class="status-text">{{item.progressText || '创作中...'}}</text>
-          </view>
-          <view class="creating-progress">
-            <view class="progress-bar">
-              <view class="progress-fill" style="width: {{item.progress || 0}}%;"></view>
-            </view>
-            <text class="progress-text">{{item.progress || 0}}%</text>
-          </view>
-        </view>
-        <button 
-          class="creating-subscribe-btn {{item.subscribed ? 'subscribed' : ''}}"
-          catchtap="handleTaskSubscribe"
-          data-task="{{item}}"
-          wx:if="{{!item.subscribed}}"
-        >
-          <text>🔔 订阅</text>
-        </button>
-        <view class="creating-subscribed" wx:else>
-          <text>✅ 已订阅</text>
-        </view>
+      <view class="meta">
+        <text class="nick">{{nickname}}</text>
+        <text class="sub">微信登录账号 · 兑换记录与积分以服务端为准</text>
       </view>
     </view>
 
-    <!-- 游戏列表 -->
-    <view class="game-list">
-      <view 
-        class="game-item {{item.status === 'draft' ? 'game-item-draft' : ''}}" 
-        wx:for="{{listData}}" 
-        wx:key="id"
-        data-game="{{item}}"
-        bindtap="{{item.status === 'draft' ? 'handleDraftTap' : 'goToGameDetail'}}"
-      >
-        <view class="game-cover {{item.status === 'draft' ? 'draft-cover' : ''}}">
-          <text class="game-emoji">{{item.status === 'draft' ? '⏳' : '🎮'}}</text>
-          <!-- 草稿标识 -->
-          <view class="draft-badge" wx:if="{{item.status === 'draft'}}">创作中</view>
+    <view class="oa-wrap">
+      <text class="oa-tip">关注【游戏开发技术教程】公众号，解锁权益使用全指南</text>
+      <official-account></official-account>
+    </view>
+
+    <view class="section">
+      <view class="sec-head">
+        <text class="sec-title">我的兑换码记录</text>
+        <view class="filters">
+          <picker mode="selector" range="{{typeLabels}}" value="{{typeIdx}}" bindchange="onTypePick">
+            <view class="pick">类型 ▾</view>
+          </picker>
+          <picker mode="selector" range="{{statusLabels}}" value="{{statusIdx}}" bindchange="onStatusPick">
+            <view class="pick">状态 ▾</view>
+          </picker>
         </view>
-        <view class="game-info">
-          <view class="game-title ellipsis">{{item.title || '未命名游戏'}}</view>
-          <view class="game-desc ellipsis">{{item.prompt || '暂无描述'}}</view>
-          <!-- 草稿状态提示 -->
-          <view class="draft-status" wx:if="{{item.status === 'draft'}}">
-            <text class="draft-hint">🔄 AI正在创作中...</text>
+      </view>
+      <view wx:if="{{!records.length}}" class="empty">暂无记录</view>
+      <block wx:for="{{records}}" wx:key="code">
+        <view class="row {{item.dim ? 'dim' : ''}}">
+          <view class="row-top">
+            <text class="k">{{item.kindLabel}}</text>
+            <text class="s">{{item.statusLabel}}</text>
           </view>
-          <!-- 对于点赞/收藏的游戏显示作者 -->
-          <view class="game-author" wx:if="{{currentTab !== 'games' && item.author_name && item.status !== 'draft'}}">
-            <text class="author-text">👤 {{item.author_name}}</text>
+          <text class="code">{{item.code}}</text>
+          <view class="row-meta">
+            <text>领取：{{item.createdAt}}</text>
+            <text>到期：{{item.expiresAt}}</text>
+            <text>积分：{{item.creditsOnRedeem}}</text>
           </view>
-          <view class="game-meta" wx:if="{{item.status !== 'draft'}}">
-            <text class="meta-item">❤️ {{item.likes || 0}}</text>
-            <text class="meta-item">👁️ {{item.plays || 0}}</text>
-            <text class="meta-item">⭐ {{item.favorites || 0}}</text>
-          </view>
+          <button size="mini" class="mini-copy" disabled="{{item.dim}}" data-code="{{item.code}}" bindtap="copyCode">一键复制</button>
         </view>
-        <!-- 草稿游戏显示订阅按钮 -->
-        <button 
-          class="draft-subscribe-btn" 
-          wx:if="{{item.status === 'draft'}}"
-          catchtap="handleDraftSubscribe"
-          data-game="{{item}}"
-        >🔔</button>
-        <view class="game-arrow" wx:else>›</view>
-      </view>
+      </block>
     </view>
 
-    <!-- 加载状态 -->
-    <view class="loading-more" wx:if="{{loading}}">
-      <view class="loading-spinner"></view>
-      <text class="loading-text">加载中...</text>
+    <view class="section">
+      <text class="sec-title">规则中心</text>
+      <view class="menu" bindtap="openDoc" data-type="redeemRules">《兑换码使用规则》</view>
+      <view class="menu" bindtap="openDoc" data-type="userAgreement">《用户服务协议》</view>
+      <view class="menu" bindtap="openDoc" data-type="privacyPolicy">《隐私政策》</view>
     </view>
 
-    <!-- 没有更多 -->
-    <view class="no-more" wx:if="{{!hasMore && listData.length > 0}}">
-      <text>— 已经到底啦 —</text>
+    <view class="section">
+      <text class="sec-title">帮助与反馈</text>
+      <text class="help">使用问题请关注【游戏开发技术教程】公众号咨询</text>
     </view>
 
-    <!-- 空状态 -->
-    <view class="empty-state" wx:if="{{!loading && listData.length === 0}}">
-      <text class="empty-icon" wx:if="{{currentTab === 'games'}}">🎮</text>
-      <text class="empty-icon" wx:elif="{{currentTab === 'likes'}}">❤️</text>
-      <text class="empty-icon" wx:else>⭐</text>
-      <text class="empty-text" wx:if="{{currentTab === 'games'}}">还没有创作游戏哦</text>
-      <text class="empty-text" wx:elif="{{currentTab === 'likes'}}">还没有点赞游戏</text>
-      <text class="empty-text" wx:else>还没有收藏游戏</text>
-      <view class="empty-btn" bindtap="goToCreate" wx:if="{{currentTab === 'games'}}">
-        <text>✨ 去创作</text>
-      </view>
-    </view>
+    <view class="pad"></view>
   </scroll-view>
 
-  <!-- 设置菜单已移至右上角设置图标⚙️ -->
-
-  <!-- 底部安全区 -->
-  <view class="safe-area-bottom"></view>
-
-  <!-- 昵称编辑弹窗 -->
-  <view class="modal-mask" wx:if="{{showNicknameModal}}" bindtap="closeNicknameModal">
-    <view class="modal-content nickname-modal" catchtap="preventClose">
-      <view class="modal-header">
-        <view class="modal-title">设置昵称</view>
-        <view class="modal-close" bindtap="closeNicknameModal">×</view>
-      </view>
-      <view class="modal-body">
-        <view class="nickname-input-wrap">
-          <input 
-            class="nickname-input" 
-            type="text"
-            placeholder="请输入昵称"
-            value="{{nicknameInput}}"
-            bindinput="onNicknameInput"
-            bindblur="onNicknameBlur"
-            maxlength="20"
-          />
-        </view>
-        <view class="nickname-tip">
-          <text>💡 昵称长度1-20个字符</text>
-        </view>
-        <view class="nickname-actions">
-          <button class="btn-cancel" bindtap="closeNicknameModal">取消</button>
-          <button class="btn-confirm" bindtap="saveNickname">保存</button>
-        </view>
-      </view>
-    </view>
-  </view>
-
-  <!-- 关注/粉丝弹窗 -->
-  <view class="modal-mask" wx:if="{{showFollowModal}}" bindtap="closeFollowModal">
-    <view class="modal-content" catchtap="preventClose">
-      <view class="modal-header">
-        <view class="modal-tabs">
-          <view 
-            class="modal-tab {{followModalTab === 'following' ? 'active' : ''}}"
-            data-tab="following"
-            bindtap="switchFollowTab"
-          >关注 {{stats.following}}</view>
-          <view 
-            class="modal-tab {{followModalTab === 'followers' ? 'active' : ''}}"
-            data-tab="followers"
-            bindtap="switchFollowTab"
-          >粉丝 {{stats.followers}}</view>
-        </view>
-        <view class="modal-close" bindtap="closeFollowModal">×</view>
-      </view>
-      
-      <scroll-view class="modal-body" scroll-y>
-        <!-- 用户列表 -->
-        <view 
-          class="follow-item"
-          wx:for="{{followList}}"
-          wx:key="token"
-          data-user="{{item}}"
-          bindtap="goToUserProfile"
-        >
-          <view class="follow-avatar">
-            <text>{{item.avatar_emoji || '🎮'}}</text>
-          </view>
-          <view class="follow-info">
-            <view class="follow-name">{{item.nickname || '游戏家用户'}}</view>
-            <view class="follow-meta">🎮 {{item.games_count || 0}} 作品</view>
-          </view>
-          <view class="follow-arrow">›</view>
-        </view>
-
-        <!-- 加载状态 -->
-        <view class="loading-more" wx:if="{{loadingFollow}}">
-          <view class="loading-spinner"></view>
-          <text class="loading-text">加载中...</text>
-        </view>
-
-        <!-- 空状态 -->
-        <view class="modal-empty" wx:if="{{!loadingFollow && followList.length === 0}}">
-          <text class="empty-icon">👥</text>
-          <text class="empty-text" wx:if="{{followModalTab === 'following'}}">还没有关注任何人</text>
-          <text class="empty-text" wx:else>还没有粉丝</text>
-        </view>
-      </scroll-view>
-    </view>
+  <view class="dock">
+    <ad wx:if="{{bannerUnitId}}" unit-id="{{bannerUnitId}}" ad-intervals="30" binderror="onBannerErr"></ad>
   </view>
 </view>

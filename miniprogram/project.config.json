@@ -48,7 +48,7 @@
     "disableSWC": true
   },
   "compileType": "miniprogram",
-  "libVersion": "3.3.4",
+  "libVersion": "2.30.0",
   "appid": "wx12b4056e7c4f319a",
   "projectname": "ai-game-workshop",
   "condition": {},

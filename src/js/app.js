@@ -6702,7 +6702,7 @@ async function generateGame(advancedSettings = null) {
   
   // 检查积分是否足够
   if (creditCostThisTime > 0 && state.credits < creditCostThisTime) {
-    openNoCreditsModal();
+    showCreditsShortageForGenerateModal();
     return;
   }
   
@@ -8834,6 +8834,34 @@ function showCreditsChangeToast(delta, reason = '') {
   showToast(message, type);
 }
 
+/** 生成页积分不足时的友好提示（不出现「小程序」字样） */
+function showCreditsShortageForGenerateModal() {
+  const existing = document.getElementById('credits-low-gen-modal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.id = 'credits-low-gen-modal';
+  modal.onclick = (e) => {
+    if (e.target === modal) modal.remove();
+  };
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 420px;">
+      <div class="modal-header">
+        <h3>积分不足</h3>
+        <button type="button" class="btn btn-icon btn-close" onclick="document.getElementById('credits-low-gen-modal')?.remove()">×</button>
+      </div>
+      <div class="modal-body" style="padding: 1rem 1.25rem;">
+        <p style="font-size: 0.9375rem; line-height: 1.6; color: var(--text-primary);">
+          当前积分不足，可前往<strong>【游戏开发技术教程】官方公众号</strong>获取兑换码兑换积分。
+        </p>
+        <p style="margin-top: 10px; font-size: 0.8125rem; color: var(--text-muted); line-height: 1.55;">
+          您仍可在本站浏览与体验其它功能；本提示不会强制跳转。
+        </p>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
 // 更新积分显示（全局所有位置）
 function updateCreditsDisplay() {
   const credits = state.credits;
@@ -8860,6 +8888,11 @@ function updateCreditsDisplay() {
   if (profileCreditsValue) profileCreditsValue.textContent = formattedCredits;
   
   log(`积分显示已更新: ${formattedCredits}`, 'info');
+
+  const homeHint = document.getElementById('home-credits-balance-hint');
+  if (homeHint) {
+    homeHint.textContent = `当前三站通用「游戏人积分」余额：${formattedCredits} · 生成游戏按所选模型扣除积分（多为 1 积分/次）`;
+  }
   
   // 检查可领取奖励数量（异步更新红点）
   checkClaimableRewardsCount();

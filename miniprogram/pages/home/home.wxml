@@ -1,0 +1,61 @@
+<view class="page">
+  <scroll-view scroll-y class="scroll" enhanced="true" show-scrollbar="{{false}}">
+    <view class="welcome">
+      <text class="h1">嗨，游戏人！这里是你的专属权益补给站</text>
+      <text class="h2">4万游戏从业者都在用的专属权益工具</text>
+      <view class="role-row">
+        <text class="role-label">身份（仅统计）</text>
+        <radio-group class="role-group" bindchange="onRoleChange">
+          <label class="role-opt"><radio value="dev" checked="{{role==='dev'}}" />游戏开发者</label>
+          <label class="role-opt"><radio value="player" checked="{{role==='player'}}" />游戏玩家</label>
+        </radio-group>
+      </view>
+    </view>
+
+    <block wx:for="{{cards}}" wx:key="id">
+      <view class="card">
+        <view class="card-head">
+          <text class="emoji">{{item.emoji}}</text>
+          <view class="card-titles">
+            <text class="card-title">{{item.title}}</text>
+            <text class="card-sub">{{item.sub}}</text>
+          </view>
+        </view>
+        <view class="btn-row">
+          <button
+            class="btn main {{item.basicDisabled ? 'disabled' : ''}}"
+            disabled="{{item.basicDisabled}}"
+            data-kind="{{item.kindB}}"
+            bindtap="onClaimBasic"
+          >{{item.basicLabel}}</button>
+          <button
+            class="btn sub {{item.premiumDisabled ? 'disabled' : ''}}"
+            disabled="{{item.premiumDisabled}}"
+            data-kind="{{item.kindP}}"
+            bindtap="onClaimPremiumTap"
+          >{{item.premiumLabel}}</button>
+        </view>
+      </view>
+    </block>
+
+    <view class="scroll-pad"></view>
+  </scroll-view>
+
+  <view class="dock">
+    <view class="oa-wrap">
+      <text class="oa-tip">关注【游戏开发技术教程】公众号，解锁权益使用全指南</text>
+      <official-account></official-account>
+    </view>
+    <ad wx:if="{{bannerUnitId}}" unit-id="{{bannerUnitId}}" ad-intervals="30" binderror="onBannerErr"></ad>
+  </view>
+
+  <view class="mask" wx:if="{{showCode}}">
+    <view class="dialog" catchtap="noop">
+      <text class="dlg-title">兑换码已生成</text>
+      <text class="dlg-code">{{dlgCode}}</text>
+      <button size="mini" class="copy-btn" bindtap="copyDlg">一键复制</button>
+      <text class="dlg-hint">关注公众号，即可使用兑换码解锁对应权益</text>
+      <button class="dlg-close" bindtap="closeDlg">关闭</button>
+    </view>
+  </view>
+</view>

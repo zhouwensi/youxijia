@@ -5,7 +5,7 @@ export function corsHeaders(): Record<string, string> {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
     "Access-Control-Allow-Headers":
-      "Content-Type, X-User-Token, X-Author-Token, x-user-token, x-platform, Authorization",
+      "Content-Type, X-User-Token, X-Author-Token, x-user-token, x-platform, Authorization, X-Internal-Site, X-Internal-Signature, x-internal-site, x-internal-signature",
     "Access-Control-Max-Age": "86400",
   };
 }
