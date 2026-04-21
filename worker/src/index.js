@@ -163,12 +163,23 @@ async function handleWechatLogin(request, env) {
   });
 }
 
+/** Cloudflare 控制台有时不能保存「空值」变量，可用 - / none / off 等表示未使用 */
+function adUnitIdOrEmpty(raw) {
+  const s = String(raw ?? "").trim();
+  if (!s) return "";
+  const lower = s.toLowerCase();
+  if (["-", "—", "none", "null", "n/a", "na", "unused", "off", "no", "skip", "disabled"].includes(lower)) {
+    return "";
+  }
+  return s;
+}
+
 function siteConfig(env) {
-  const rewardedVideoAdUnitId = String(env.REWARDED_VIDEO_AD_UNIT_ID || '').trim();
-  const miniBannerAdUnitId = String(env.MINI_BANNER_AD_UNIT_ID || '').trim();
-  const miniBannerMineAdUnitId = String(env.MINI_BANNER_MINE_AD_UNIT_ID || '').trim();
-  const interstitialAdUnitId = String(env.INTERSTITIAL_AD_UNIT_ID || '').trim();
-  const splashAdUnitId = String(env.SPLASH_AD_UNIT_ID || '').trim();
+  const rewardedVideoAdUnitId = adUnitIdOrEmpty(env.REWARDED_VIDEO_AD_UNIT_ID);
+  const miniBannerAdUnitId = adUnitIdOrEmpty(env.MINI_BANNER_AD_UNIT_ID);
+  const miniBannerMineAdUnitId = adUnitIdOrEmpty(env.MINI_BANNER_MINE_AD_UNIT_ID);
+  const interstitialAdUnitId = adUnitIdOrEmpty(env.INTERSTITIAL_AD_UNIT_ID);
+  const splashAdUnitId = adUnitIdOrEmpty(env.SPLASH_AD_UNIT_ID);
 
   return {
     success: true,
