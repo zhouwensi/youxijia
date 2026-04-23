@@ -38,6 +38,6 @@ ALLOWED_ORIGINS = "https://www.yijuhuayouxi.com,https://yijuhuayouxi.com,http://
 # SPLASH_AD_UNIT_ID = ""   # 与「流量主-封面广告」开关不是一回事；见 doc/通行证与核销-联调说明.md
 # Cloudflare 不能留空时可填 - 或 none，Worker 会当作未配置。
 #
-# 若 api 子域仍绑在本 KV Worker，但小程序微信登录已用 Pages+D1，请设置转发源（Cloudflare 控制台 → Worker → Settings → Variables）：
+# 若 api 子域仍绑在本 KV Worker，转发到 Pages Functions+D1（代码默认 https://youxijia.pages.dev，可省略）：
 # PAGES_API_ORIGIN = https://youxijia.pages.dev
-# 设置后还会转发：微信登录/账户/积分/签到，以及 /api/mp/privilege/*（小程序兑换码配额等，见 worker shouldForwardToPages）。
+# 覆盖默认：控制台 Variables 设置 PAGES_API_ORIGIN（项目名非 youxijia 时必须设）。

@@ -260,12 +260,14 @@ function turboModels(env) {
 }
 
 /**
- * 自定义域仍挂在旧 KV Worker、但微信登录已走 Pages Functions+D1 时，将账号类请求转发到 Pages 源站。
- * 在 Worker 环境变量中设置 PAGES_API_ORIGIN，例如 https://youxijia.pages.dev（勿尾斜杠）
+ * 自定义域仍挂在旧 KV Worker、但微信登录 / 小程序特权 / D1 积分等走 Pages Functions 时，将请求转发到 Pages 源站。
+ * 优先读环境变量 PAGES_API_ORIGIN（勿尾斜杠）；未配置时用与 Pages 项目名一致的 *.pages.dev，避免忘配导致 501。
  */
+const DEFAULT_PAGES_API_ORIGIN = 'https://youxijia.pages.dev';
+
 function pagesAccountForwardBase(env) {
   const raw = (env.PAGES_API_ORIGIN || '').trim().replace(/\/$/, '');
-  return raw || '';
+  return raw || DEFAULT_PAGES_API_ORIGIN;
 }
 
 function shouldForwardToPages(path, method) {
