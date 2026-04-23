@@ -276,6 +276,8 @@ function shouldForwardToPages(path, method) {
   if (path === '/api/credits' && method === 'GET') return true;
   if (path === '/api/user/checkin' && method === 'POST') return true;
   if (path === '/api/user/checkin-status' && method === 'GET') return true;
+  // 小程序兑换码/配额/插屏计数仅在 Pages Functions + D1 实现
+  if (path.startsWith('/api/mp/privilege/')) return true;
   return false;
 }
 
