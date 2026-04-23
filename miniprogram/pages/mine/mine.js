@@ -76,7 +76,7 @@ Page({
 
   async loadCodes() {
     try {
-      if (!app.globalData?.isLoggedIn) await app.wxLogin();
+      await app.wxLogin();
     } catch (_) {}
     try {
       const res = await app.request('/api/mp/privilege/my-codes', {

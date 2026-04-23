@@ -367,7 +367,7 @@ export async function tryPrivilegeRoutes(ctx: PrivilegeRouteCtx): Promise<Respon
     const userToken = getUserTokenFromRequest(request);
     if (!userToken) return json({ success: false, error: "请先登录" }, 401);
     const openid = await getOpenidForToken(db, userToken);
-    if (!openid) return json({ success: false, error: "缺少微信标识，请重新登录" }, 400);
+    if (!openid) return json({ success: false, error: "请重新微信登录" }, 401);
 
     const body = await readBody<{ kind?: string }>(request);
     const kind = String(body.kind || "").toUpperCase() as ClaimKind;
@@ -422,7 +422,7 @@ export async function tryPrivilegeRoutes(ctx: PrivilegeRouteCtx): Promise<Respon
     const userToken = getUserTokenFromRequest(request);
     if (!userToken) return json({ success: false, error: "请先登录" }, 401);
     const openid = await getOpenidForToken(db, userToken);
-    if (!openid) return json({ success: false, error: "缺少微信标识" }, 400);
+    if (!openid) return json({ success: false, error: "请重新微信登录" }, 401);
     const date = todayUtcDate();
     const quotas: Record<string, { used: number; limit: number }> = {};
     for (const kind of Object.keys(CLAIM_SPECS) as ClaimKind[]) {
@@ -620,7 +620,7 @@ export async function tryPrivilegeRoutes(ctx: PrivilegeRouteCtx): Promise<Respon
     const userToken = getUserTokenFromRequest(request);
     if (!userToken) return json({ success: false, error: "请先登录" }, 401);
     const openid = await getOpenidForToken(db, userToken);
-    if (!openid) return json({ success: false, error: "no openid" }, 400);
+    if (!openid) return json({ success: false, error: "请重新微信登录" }, 401);
     const date = todayUtcDate();
     const row = await db
       .prepare("SELECT show_count FROM mp_interstitial_daily WHERE mp_openid = ? AND ad_date = ?")

@@ -60,8 +60,8 @@ App({
 
   onLaunch() {
     console.log('小程序启动');
-    // 升级策略：清除旧版「设备指纹静默登录」留下的 token，强制走一次微信登录
-    const AUTH_VER = 2;
+    // 升级策略：清除无 mp_openid 的旧 token（兑换码 quotas/claim 依赖 D1 微信绑定）
+    const AUTH_VER = 3;
     const v = wx.getStorageSync('mp_auth_policy_version');
     if (!v || v < AUTH_VER) {
       wx.removeStorageSync('userToken');

@@ -134,9 +134,8 @@ Page({
 
   async ensureLoginAndRefresh() {
     try {
-      if (!app.globalData?.isLoggedIn) {
-        await app.wxLogin();
-      }
+      // 每次静默换 code：避免本地仅有旧 user_token、D1 无 mp_openid 时 quotas 返回 400
+      await app.wxLogin();
     } catch (e) {
       wx.showToast({ title: '请先完成微信登录', icon: 'none' });
     }
