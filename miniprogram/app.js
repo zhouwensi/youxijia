@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Just One Word — 微信小程序（个人主体合规：权益兑换码工具 + 官方广告组件）
  * 登录：wx.login → POST /api/wechat/login 换取 user_token（需云端 WX_MINI_APPID / WX_MINI_SECRET）。
  */
@@ -211,49 +211,59 @@ App({
   wxLogin() {
     return new Promise((resolve, reject) => {
       runAfterPrivacyAuthorize(() => {
-        wx.login({
-          success: (loginRes) => {
-            const code = loginRes.code;
-            if (!code) {
-              reject(new Error('未获取到微信 code'));
-              return;
-            }
-            wx.request({
-              url: config.baseUrl + '/api/wechat/login',
-              method: 'POST',
-              data: { code },
-              header: { 'Content-Type': 'application/json' },
-              success: (res) => {
-                const result = res.data;
-                if (res.statusCode === 200 && result && result.success) {
-                  // Pages+D1：{ userToken, account }；旧 KV Worker：{ data: { token, userInfo } }
-                  const token =
-                    result.userToken ||
-                    (result.data && (result.data.token || result.data.userToken)) ||
-                    '';
-                  const rawAcc = result.account || (result.data && result.data.userInfo) || {};
-                  const acc = this.normalizeUserInfo(rawAcc);
-                  if (!token) {
-                    reject(new Error((result && result.error) || '登录失败：未返回 token'));
+        const doLogin = (retryLeft) => {
+          wx.login({
+            success: (loginRes) => {
+              const code = loginRes.code;
+              if (!code) {
+                reject(new Error('未获取到微信 code'));
+                return;
+              }
+              wx.request({
+                url: config.baseUrl + '/api/wechat/login',
+                method: 'POST',
+                data: { code },
+                header: { 'Content-Type': 'application/json' },
+                success: (res) => {
+                  const result = res.data;
+                  if (res.statusCode === 200 && result && result.success) {
+                    // Pages+D1：{ userToken, account }；旧 KV Worker：{ data: { token, userInfo } }
+                    const token =
+                      result.userToken ||
+                      (result.data && (result.data.token || result.data.userToken)) ||
+                      '';
+                    const rawAcc = result.account || (result.data && result.data.userInfo) || {};
+                    const acc = this.normalizeUserInfo(rawAcc);
+                    if (!token) {
+                      reject(new Error((result && result.error) || '登录失败：未返回 token'));
+                      return;
+                    }
+                    this.globalData.token = token;
+                    this.globalData.userInfo = acc;
+                    this.globalData.isLoggedIn = true;
+                    this.globalData.accountId = acc.account_id || acc.accountId || null;
+                    wx.setStorageSync('userToken', token);
+                    wx.setStorageSync('token', token);
+                    wx.setStorageSync('userInfo', acc);
+                    resolve(result);
                     return;
                   }
-                  this.globalData.token = token;
-                  this.globalData.userInfo = acc;
-                  this.globalData.isLoggedIn = true;
-                  this.globalData.accountId = acc.account_id || acc.accountId || null;
-                  wx.setStorageSync('userToken', token);
-                  wx.setStorageSync('token', token);
-                  wx.setStorageSync('userInfo', acc);
-                  resolve(result);
-                } else {
-                  reject(new Error((result && result.error) || '登录失败'));
-                }
-              },
-              fail: reject
-            });
-          },
-          fail: reject
-        });
+                  // 微信 code 偶发失效（400）时自动重试一次，减少首屏登录抖动
+                  if (res.statusCode === 400 && retryLeft > 0) {
+                    doLogin(retryLeft - 1);
+                    return;
+                  }
+                  const errcode = result && result.errcode ? ` [errcode=${result.errcode}]` : '';
+                  const msg = (result && result.error) || `登录失败(${res.statusCode})`;
+                  reject(new Error(`${msg}${errcode}`));
+                },
+                fail: reject
+              });
+            },
+            fail: reject
+          });
+        };
+        doLogin(1);
       });
     });
   },
@@ -341,7 +351,10 @@ App({
             this.clearLoginStatus();
             reject(new Error('登录已过期，请重新登录'));
           } else {
-            reject(new Error(`请求失败: ${res.statusCode}`));
+            const msg =
+              (res.data && (res.data.error || res.data.message)) ||
+              `请求失败: ${res.statusCode}`;
+            reject(new Error(String(msg)));
           }
         },
         fail: (err) => {
@@ -405,3 +418,5 @@ App({
     return rounded.toFixed(1);
   }
 });
+
+
