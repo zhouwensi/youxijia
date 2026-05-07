@@ -1,8 +1,8 @@
 <view class="page">
   <scroll-view scroll-y class="scroll" enhanced="true" show-scrollbar="{{false}}">
     <view class="welcome">
-      <text class="h1">嗨，游戏人！这里是你的专属权益补给站</text>
-      <text class="h2">4万游戏从业者都在用的专属权益工具</text>
+      <text class="h1">权益兑换码领取与查询</text>
+      <text class="h2">在本小程序内领取兑换码、查看记录；使用范围以《兑换码使用规则》为准</text>
       <view class="role-row">
         <text class="role-label">身份（仅统计）</text>
         <radio-group class="role-group" bindchange="onRoleChange">
@@ -42,10 +42,6 @@
   </scroll-view>
 
   <view class="dock">
-    <view class="oa-wrap">
-      <text class="oa-tip">关注【游戏开发技术教程】公众号，解锁权益使用全指南</text>
-      <official-account></official-account>
-    </view>
     <ad wx:if="{{bannerUnitId}}" unit-id="{{bannerUnitId}}" ad-intervals="30" binderror="onBannerErr"></ad>
   </view>
 
@@ -54,7 +50,7 @@
       <text class="dlg-title">兑换码已生成</text>
       <text class="dlg-code">{{dlgCode}}</text>
       <button size="mini" class="copy-btn" bindtap="copyDlg">一键复制</button>
-      <text class="dlg-hint">关注公众号，即可使用兑换码解锁对应权益</text>
+      <text class="dlg-hint">请妥善保存兑换码，并按《兑换码使用规则》在对应场景完成核销</text>
       <button class="dlg-close" bindtap="closeDlg">关闭</button>
     </view>
   </view>

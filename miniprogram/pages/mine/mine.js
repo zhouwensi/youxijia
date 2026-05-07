@@ -4,12 +4,12 @@
 const app = getApp();
 
 const KIND_LABEL = {
-  YXS_BASIC: '创作权益·基础',
-  YXS_PREMIUM: '创作权益·高级',
-  MYN_BASIC: '墓园祭奠·基础',
-  MYN_PREMIUM: '墓园祭奠·高级',
-  CSC_BASIC: 'SBTI测试·基础',
-  CSC_PREMIUM: 'SBTI测试·高级',
+  YXS_BASIC: '创作类·基础',
+  YXS_PREMIUM: '创作类·高级',
+  MYN_BASIC: '纪念类·基础',
+  MYN_PREMIUM: '纪念类·高级',
+  CSC_BASIC: '趣味测试类·基础',
+  CSC_PREMIUM: '趣味测试类·高级',
 };
 
 const KIND_ORDER = [

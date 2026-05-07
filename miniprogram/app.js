@@ -9,7 +9,7 @@ const config = {
   version: '2.0.0-compliance',
   siteName: 'Just One Word',
   miniprogramName: 'Just One Word',
-  siteSlogan: '游戏人专属创作与纪念权益工具',
+  siteSlogan: '权益兑换码领取与记录查询',
   miniBannerAdUnitId: '',
   miniBannerMineAdUnitId: '',
 };
@@ -255,6 +255,8 @@ App({
                   }
                   const errcode = result && result.errcode ? ` [errcode=${result.errcode}]` : '';
                   const msg = (result && result.error) || `登录失败(${res.statusCode})`;
+                  console.error('wxLogin failed:', res.statusCode, result);
+                  wx.showToast({ title: (`${msg}${errcode}`).slice(0, 30), icon: 'none' });
                   reject(new Error(`${msg}${errcode}`));
                 },
                 fail: reject
@@ -418,5 +420,6 @@ App({
     return rounded.toFixed(1);
   }
 });
+
 
 

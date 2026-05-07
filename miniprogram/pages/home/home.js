@@ -8,7 +8,7 @@ const CARDS_DEF = [
   {
     id: 'yx',
     emoji: '🎮',
-    title: '一句话游戏创作权益',
+    title: '创作类兑换码',
     sub: '基础：每日1次 · 高级：每日最多3次（需主动观看激励视频）',
     kindB: 'YXS_BASIC',
     kindP: 'YXS_PREMIUM',
@@ -16,7 +16,7 @@ const CARDS_DEF = [
   {
     id: 'md',
     emoji: '🪦',
-    title: '停服游戏墓园祭奠权益',
+    title: '纪念类兑换码',
     sub: '基础：每日1次 · 高级：每日最多2次（需主动观看激励视频）',
     kindB: 'MYN_BASIC',
     kindP: 'MYN_PREMIUM',
@@ -24,7 +24,7 @@ const CARDS_DEF = [
   {
     id: 'cs',
     emoji: '📊',
-    title: '游戏圈SBTI人设测试权益',
+    title: '趣味测试类兑换码',
     sub: '基础：每日1次 · 高级：每日最多2次（需主动观看激励视频）',
     kindB: 'CSC_BASIC',
     kindP: 'CSC_PREMIUM',

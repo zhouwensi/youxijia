@@ -53,16 +53,6 @@
   line-height: 1.4;
   display: block;
 }
-.oa-wrap {
-  margin-bottom: 20rpx;
-}
-.oa-tip {
-  font-size: 22rpx;
-  color: #9aa3b8;
-  display: block;
-  margin-bottom: 8rpx;
-  text-align: center;
-}
 .section {
   background: #12121c;
   border: 1px solid #252538;

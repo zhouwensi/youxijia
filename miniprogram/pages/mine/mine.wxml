@@ -11,11 +11,6 @@
       </view>
     </view>
 
-    <view class="oa-wrap">
-      <text class="oa-tip">关注【游戏开发技术教程】公众号，解锁权益使用全指南</text>
-      <official-account></official-account>
-    </view>
-
     <view class="section">
       <view class="sec-head">
         <text class="sec-title">我的兑换码记录</text>
@@ -55,7 +50,7 @@
 
     <view class="section">
       <text class="sec-title">帮助与反馈</text>
-      <text class="help">使用问题请关注【游戏开发技术教程】公众号咨询</text>
+      <text class="help">请先阅读《兑换码使用规则》。如需协助，可通过微信「小程序」右上角菜单中的「反馈与投诉」提交</text>
     </view>
 
     <view class="pad"></view>

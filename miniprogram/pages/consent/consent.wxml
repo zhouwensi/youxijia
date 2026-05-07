@@ -1,7 +1,7 @@
 <view class="page">
   <view class="hero">
     <text class="title">Just One Word</text>
-    <text class="sub">游戏人专属创作与纪念权益工具</text>
+    <text class="sub">权益兑换码领取与记录查询工具</text>
   </view>
 
   <scroll-view scroll-y class="scroll">
