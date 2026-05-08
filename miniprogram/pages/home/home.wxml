@@ -45,6 +45,12 @@
     <ad wx:if="{{bannerUnitId}}" unit-id="{{bannerUnitId}}" ad-intervals="30" binderror="onBannerErr"></ad>
   </view>
 
+  <view class="claim-mask" wx:if="{{claiming}}" catchtouchmove="noop" catchtap="noop">
+    <view class="claim-box">
+      <text class="claim-tip">领取中…</text>
+    </view>
+  </view>
+
   <view class="mask" wx:if="{{showCode}}">
     <view class="dialog" catchtap="noop">
       <text class="dlg-title">兑换码已生成</text>

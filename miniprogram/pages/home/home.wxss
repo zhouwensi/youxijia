@@ -117,6 +117,28 @@
   border-top: 1px solid #222336;
   z-index: 50;
 }
+.claim-mask {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 160;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.claim-box {
+  background: rgba(22, 22, 34, 0.95);
+  border: 1px solid #35354a;
+  border-radius: 16rpx;
+  padding: 32rpx 48rpx;
+}
+.claim-tip {
+  font-size: 28rpx;
+  color: #dfe4f2;
+}
 .mask {
   position: fixed;
   left: 0;

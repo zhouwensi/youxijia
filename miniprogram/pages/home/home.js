@@ -4,8 +4,11 @@
  */
 const app = getApp();
 
-/** 激励视频全屏关闭后立刻弹 Toast/Loading 易触发基础库 insertTextView 类错误，需延后一帧再动 UI */
-function afterRewardedAdUi(fn, delayMs = 420) {
+/**
+ * 激励视频全屏关闭后，基础库仍会占用一层原生布局；此时 onShow 里 setData、wx.showLoading、wx.showToast
+ * 极易触发 insertTextView / position.top 类系统错误。必须延后足够长，并与「推迟 onShow 重刷新」配合。
+ */
+function afterRewardedAdUi(fn, delayMs = 960) {
   const run = () => {
     try {
       fn();
@@ -52,6 +55,8 @@ Page({
     bannerUnitId: '',
     showCode: false,
     dlgCode: '',
+    /** 看视频领码：不用 wx.showLoading，避免与激励视频关闭层冲突 */
+    claiming: false,
   },
 
   rewardedVideoAd: null,
@@ -60,6 +65,13 @@ Page({
   _coldSplashDone: false,
   _rewardedVideoUnitId: '',
   _interstitialUnitId: '',
+  /** 时间戳前推迟 onShow 里的 refreshAds + refreshQuotas，避免与广告关闭并发 setData */
+  _rewardedUiQuietUntil: 0,
+
+  _extendRewardedUiQuiet(extraMs) {
+    const t = Date.now() + extraMs;
+    if (t > (this._rewardedUiQuietUntil || 0)) this._rewardedUiQuietUntil = t;
+  },
 
   rewardedVideoUnitId() {
     const g = app.globalData || {};
@@ -124,20 +136,29 @@ Page({
       const kind = this.pendingPremiumKind;
       this.pendingPremiumKind = '';
       const aborted = res && res.isEnded === false;
-      afterRewardedAdUi(() => {
-        if (aborted) {
-          wx.showToast({ title: '未看完视频，未发放高级兑换码', icon: 'none' });
-          return;
-        }
-        if (!kind) return;
-        this.claimKind(kind, true);
-      });
+      if (!aborted && kind) {
+        this._extendRewardedUiQuiet(8500);
+      } else if (aborted) {
+        this._extendRewardedUiQuiet(3200);
+      }
+      afterRewardedAdUi(
+        () => {
+          if (aborted) {
+            wx.showToast({ title: '未看完视频，未发放高级兑换码', icon: 'none' });
+            return;
+          }
+          if (!kind) return;
+          this.claimKind(kind, true);
+        },
+        aborted ? 720 : 1020
+      );
     });
     ad.onError(() => {
       this.pendingPremiumKind = '';
+      this._extendRewardedUiQuiet(3200);
       afterRewardedAdUi(() => {
         wx.showToast({ title: '广告暂时不可用', icon: 'none' });
-      }, 280);
+      }, 640);
     });
   },
 
@@ -168,8 +189,17 @@ Page({
       wx.reLaunch({ url: '/pages/consent/consent' });
       return;
     }
-    this.refreshAdsFromConfig();
-    this.ensureLoginAndRefresh();
+    const quietUntil = this._rewardedUiQuietUntil || 0;
+    const now = Date.now();
+    const runHeavy = () => {
+      this.refreshAdsFromConfig();
+      this.ensureLoginAndRefresh();
+    };
+    if (now < quietUntil) {
+      setTimeout(runHeavy, quietUntil - now + 160);
+    } else {
+      runHeavy();
+    }
     if (!this._coldSplashDone) {
       this._coldSplashDone = true;
       setTimeout(() => this.tryColdSplash(), 800);
@@ -177,6 +207,7 @@ Page({
   },
 
   tryColdSplash() {
+    if (Date.now() < (this._rewardedUiQuietUntil || 0)) return;
     const uid =
       app.globalData?.config?.splashAdUnitId ||
       app.globalData?.siteConfig?.extraConfig?.ads?.splashAdUnitId ||
@@ -275,41 +306,62 @@ Page({
           return;
         }
         this.pendingPremiumKind = kind;
+        this._extendRewardedUiQuiet(6500);
         this.rewardedVideoAd
           .show()
           .catch(() => {
             this.pendingPremiumKind = '';
+            this._extendRewardedUiQuiet(2800);
             afterRewardedAdUi(() => {
               wx.showToast({ title: '广告加载失败', icon: 'none' });
-            }, 200);
+            }, 400);
           });
       },
     });
   },
 
   async claimKind(kind, fromVideo) {
+    const toastLater = (title) => {
+      setTimeout(() => {
+        wx.showToast({ title, icon: 'none' });
+      }, fromVideo ? 520 : 0);
+    };
     try {
-      wx.showLoading({ title: '领取中', mask: true });
+      if (fromVideo) {
+        this.setData({ claiming: true });
+      } else {
+        wx.showLoading({ title: '领取中', mask: true });
+      }
       const res = await app.request('/api/mp/privilege/claim', {
         method: 'POST',
         header: { 'x-platform': 'miniprogram' },
         data: { kind },
       });
-      wx.hideLoading();
+      if (!fromVideo) wx.hideLoading();
       if (!res || !res.success) {
-        wx.showToast({ title: (res && res.error) || '领取失败', icon: 'none' });
-        await this.refreshQuotas();
+        if (fromVideo) this.setData({ claiming: false });
+        toastLater((res && res.error) || '领取失败');
+        setTimeout(() => this.refreshQuotas(), fromVideo ? 360 : 0);
         return;
       }
-      this.setData({ showCode: true, dlgCode: res.code || '' });
-      await this.refreshQuotas();
       if (fromVideo) {
-        // 合规：激励视频仅绑定高级码，不在此重复扣视频
+        this.setData({ claiming: false, showCode: true, dlgCode: res.code || '' });
+        setTimeout(() => this.refreshQuotas(), 380);
+      } else {
+        this.setData({ showCode: true, dlgCode: res.code || '' });
+        await this.refreshQuotas();
       }
     } catch (err) {
-      wx.hideLoading();
-      wx.showToast({ title: (err && err.message) || '网络异常', icon: 'none' });
-      await this.refreshQuotas();
+      if (!fromVideo) wx.hideLoading();
+      else this.setData({ claiming: false });
+      toastLater((err && err.message) || '网络异常');
+      setTimeout(() => this.refreshQuotas(), fromVideo ? 360 : 0);
+    } finally {
+      if (fromVideo) {
+        setTimeout(() => {
+          this._rewardedUiQuietUntil = 0;
+        }, 600);
+      }
     }
   },
 
