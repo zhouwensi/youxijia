@@ -185,6 +185,13 @@ cd worker && npx wrangler login
 | Secret | `DEEPSEEK_API_KEY` | 默认 LLM Key（可选；不配则仅靠用户自带 Key 调生成） |
 | Secret | `ADMIN_KEY` | 管理后台密钥（可选；不配则 `/admin.html` 无法通过 Worker 校验） |
 | Variable | `WX_APPID` | 小程序 AppID（可选；与 `WX_APPSECRET` 成对使用） |
+| Variable | `REWARDED_VIDEO_AD_UNIT_ID` | 激励视频广告单元 ID（微信公众平台 **流量主 → 激励式视频广告** 创建后复制 `adunit-…`；写入后 `GET https://api.yijuhuayouxi.com/api/site-config` 的 `rewardedVideoAdUnitId` 非空） |
+| Variable | `MINI_BANNER_AD_UNIT_ID` | 小程序首页 Banner 原生模板广告位 ID（可选） |
+| Variable | `MINI_BANNER_MINE_AD_UNIT_ID` | 「我的」页 Banner 广告位 ID（可选） |
+| Variable | `INTERSTITIAL_AD_UNIT_ID` | 插屏广告位 ID（可选） |
+| Variable | `SPLASH_AD_UNIT_ID` | 开屏 `wx.createSplashAd` 用广告位 ID（可选；与公众平台「封面广告」不是同一套配置） |
+
+**不配 GitHub Variables 时**：可在 Cloudflare → **Workers & Pages** → **yijuhuayouxi-api**（`worker/wrangler.toml` 的 `name`）→ **Settings → Variables and Secrets** 里添加同名 **Environment variables**（明文即可），保存后同样会进 `site-config`。Agent 无法代你填写：广告位 ID 只在你自己的微信后台生成，且需你的 Cloudflare / GitHub 账号权限。
 
 说明：流水线会在构建时用 `CF_KV_NAMESPACE_ID` **替换** `wrangler.toml` 里的占位符；**仓库里的 `wrangler.toml` 仍可保留 `REPLACE_WITH_KV_NAMESPACE_ID`**，勿把真实 id 提交进公开仓库。
 

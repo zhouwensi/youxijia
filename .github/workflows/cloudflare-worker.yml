@@ -46,16 +46,25 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           WX_APPID: ${{ vars.WX_APPID }}
+          # 小程序流量主广告单元 ID（非密钥，用 GitHub Actions Variables 即可；也可只在 Cloudflare 控制台配置）
+          REWARDED_VIDEO_AD_UNIT_ID: ${{ vars.REWARDED_VIDEO_AD_UNIT_ID }}
+          MINI_BANNER_AD_UNIT_ID: ${{ vars.MINI_BANNER_AD_UNIT_ID }}
+          MINI_BANNER_MINE_AD_UNIT_ID: ${{ vars.MINI_BANNER_MINE_AD_UNIT_ID }}
+          INTERSTITIAL_AD_UNIT_ID: ${{ vars.INTERSTITIAL_AD_UNIT_ID }}
+          SPLASH_AD_UNIT_ID: ${{ vars.SPLASH_AD_UNIT_ID }}
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
             echo "::error::请添加 Secret：CLOUDFLARE_API_TOKEN（Cloudflare → My Profile → API Tokens，需 Edit Cloudflare Workers）"
             exit 1
           fi
-          if [ -n "$WX_APPID" ]; then
-            npx wrangler deploy --var "WX_APPID:$WX_APPID"
-          else
-            npx wrangler deploy
-          fi
+          deploy_args=()
+          [ -n "$WX_APPID" ] && deploy_args+=(--var "WX_APPID:${WX_APPID}")
+          [ -n "$REWARDED_VIDEO_AD_UNIT_ID" ] && deploy_args+=(--var "REWARDED_VIDEO_AD_UNIT_ID:${REWARDED_VIDEO_AD_UNIT_ID}")
+          [ -n "$MINI_BANNER_AD_UNIT_ID" ] && deploy_args+=(--var "MINI_BANNER_AD_UNIT_ID:${MINI_BANNER_AD_UNIT_ID}")
+          [ -n "$MINI_BANNER_MINE_AD_UNIT_ID" ] && deploy_args+=(--var "MINI_BANNER_MINE_AD_UNIT_ID:${MINI_BANNER_MINE_AD_UNIT_ID}")
+          [ -n "$INTERSTITIAL_AD_UNIT_ID" ] && deploy_args+=(--var "INTERSTITIAL_AD_UNIT_ID:${INTERSTITIAL_AD_UNIT_ID}")
+          [ -n "$SPLASH_AD_UNIT_ID" ] && deploy_args+=(--var "SPLASH_AD_UNIT_ID:${SPLASH_AD_UNIT_ID}")
+          npx wrangler deploy "${deploy_args[@]}"
 
       - name: 同步 Worker Secrets（微信 / LLM / 管理后台）
         env:
