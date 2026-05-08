@@ -42,7 +42,11 @@
   </scroll-view>
 
   <view class="dock">
-    <ad wx:if="{{bannerUnitId}}" unit-id="{{bannerUnitId}}" ad-intervals="30" binderror="onBannerErr"></ad>
+    <ad wx:if="{{bannerUnitId && !adsSuppressed}}" unit-id="{{bannerUnitId}}" ad-intervals="30" binderror="onBannerErr"></ad>
+  </view>
+
+  <view class="inline-toast" wx:if="{{inlineToast}}">
+    <text class="inline-toast-text">{{inlineToast}}</text>
   </view>
 
   <view class="claim-mask" wx:if="{{claiming}}" catchtouchmove="noop" catchtap="noop">

@@ -117,6 +117,26 @@
   border-top: 1px solid #222336;
   z-index: 50;
 }
+.inline-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(200rpx + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  max-width: 86%;
+  z-index: 220;
+  pointer-events: none;
+}
+.inline-toast-text {
+  display: block;
+  background: rgba(34, 34, 48, 0.96);
+  border: 1px solid #3d3d56;
+  color: #e8ebf4;
+  font-size: 26rpx;
+  line-height: 1.45;
+  padding: 18rpx 28rpx;
+  border-radius: 12rpx;
+  text-align: center;
+}
 .claim-mask {
   position: fixed;
   left: 0;
