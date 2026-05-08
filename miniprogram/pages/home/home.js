@@ -4,6 +4,20 @@
  */
 const app = getApp();
 
+/** 激励视频全屏关闭后立刻弹 Toast/Loading 易触发基础库 insertTextView 类错误，需延后一帧再动 UI */
+function afterRewardedAdUi(fn, delayMs = 420) {
+  const run = () => {
+    try {
+      fn();
+    } catch (_) {}
+  };
+  if (typeof wx.nextTick === 'function') {
+    wx.nextTick(() => setTimeout(run, delayMs));
+  } else {
+    setTimeout(run, delayMs);
+  }
+}
+
 const CARDS_DEF = [
   {
     id: 'yx',
@@ -107,19 +121,23 @@ Page({
     const ad = wx.createRewardedVideoAd({ adUnitId: uid });
     this.rewardedVideoAd = ad;
     ad.onClose((res) => {
-      if (res && res.isEnded === false) {
-        wx.showToast({ title: '未看完视频，未发放高级兑换码', icon: 'none' });
-        this.pendingPremiumKind = '';
-        return;
-      }
       const kind = this.pendingPremiumKind;
       this.pendingPremiumKind = '';
-      if (!kind) return;
-      this.claimKind(kind, true);
+      const aborted = res && res.isEnded === false;
+      afterRewardedAdUi(() => {
+        if (aborted) {
+          wx.showToast({ title: '未看完视频，未发放高级兑换码', icon: 'none' });
+          return;
+        }
+        if (!kind) return;
+        this.claimKind(kind, true);
+      });
     });
     ad.onError(() => {
-      wx.showToast({ title: '广告暂时不可用', icon: 'none' });
       this.pendingPremiumKind = '';
+      afterRewardedAdUi(() => {
+        wx.showToast({ title: '广告暂时不可用', icon: 'none' });
+      }, 280);
     });
   },
 
@@ -260,8 +278,10 @@ Page({
         this.rewardedVideoAd
           .show()
           .catch(() => {
-            wx.showToast({ title: '广告加载失败', icon: 'none' });
             this.pendingPremiumKind = '';
+            afterRewardedAdUi(() => {
+              wx.showToast({ title: '广告加载失败', icon: 'none' });
+            }, 200);
           });
       },
     });
