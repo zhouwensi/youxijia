@@ -1155,8 +1155,10 @@ Page({
     
     try {
       // 获取广告单元ID（从站点配置或全局配置读取）
-      const adUnitId = app.globalData.config?.rewardedVideoAdUnitId || 
-                       app.globalData.siteConfig?.rewardedVideoAdUnitId;
+      const adUnitId =
+        app.globalData.config?.rewardedVideoAdUnitId ||
+        app.globalData.siteConfig?.rewardedVideoAdUnitId ||
+        app.globalData.siteConfig?.extraConfig?.ads?.rewardedVideoAdUnitId;
       
       if (!adUnitId) {
         app.showToast('广告配置未完成，请联系管理员');

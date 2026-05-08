@@ -44,12 +44,23 @@ Page({
   interstitialAd: null,
   pendingPremiumKind: '',
   _coldSplashDone: false,
+  _rewardedVideoUnitId: '',
+  _interstitialUnitId: '',
+
+  rewardedVideoUnitId() {
+    const g = app.globalData || {};
+    const uid = String(
+      g.config?.rewardedVideoAdUnitId ||
+        g.siteConfig?.rewardedVideoAdUnitId ||
+        g.siteConfig?.extraConfig?.ads?.rewardedVideoAdUnitId ||
+        ''
+    ).trim();
+    return uid;
+  },
 
   onLoad() {
     this.onLoadRole();
-    this.syncAdUnits();
-    this.initRewarded();
-    this.initInterstitial();
+    this.refreshAdsFromConfig();
   },
 
   syncAdUnits() {
@@ -66,12 +77,33 @@ Page({
     this.setData({ bannerUnitId: banner || '' });
   },
 
+  /** 站点配置在 App.onLaunch 里异步加载，onLoad 常早于配置返回，需在 onShow / 配置回调里再次执行 */
+  refreshAdsFromConfig() {
+    this.syncAdUnits();
+    this.initRewarded();
+    this.initInterstitial();
+  },
+
   initRewarded() {
-    const uid =
-      app.globalData?.config?.rewardedVideoAdUnitId ||
-      app.globalData?.siteConfig?.rewardedVideoAdUnitId ||
-      '';
-    if (!uid || !wx.createRewardedVideoAd) return;
+    const uid = this.rewardedVideoUnitId();
+    if (!uid || !wx.createRewardedVideoAd) {
+      if (this.rewardedVideoAd) {
+        try {
+          this.rewardedVideoAd.destroy();
+        } catch (_) {}
+        this.rewardedVideoAd = null;
+      }
+      this._rewardedVideoUnitId = '';
+      return;
+    }
+    if (this._rewardedVideoUnitId === uid && this.rewardedVideoAd) return;
+    if (this.rewardedVideoAd) {
+      try {
+        this.rewardedVideoAd.destroy();
+      } catch (_) {}
+      this.rewardedVideoAd = null;
+    }
+    this._rewardedVideoUnitId = uid;
     const ad = wx.createRewardedVideoAd({ adUnitId: uid });
     this.rewardedVideoAd = ad;
     ad.onClose((res) => {
@@ -92,15 +124,25 @@ Page({
   },
 
   initInterstitial() {
-    const uid =
+    const uid = String(
       app.globalData?.config?.interstitialAdUnitId ||
-      app.globalData?.siteConfig?.extraConfig?.ads?.interstitialAdUnitId ||
-      '';
-    if (!uid || !wx.createInterstitialAd) return;
+        app.globalData?.siteConfig?.extraConfig?.ads?.interstitialAdUnitId ||
+        ''
+    ).trim();
+    if (!uid || !wx.createInterstitialAd) {
+      this.interstitialAd = null;
+      this._interstitialUnitId = '';
+      return;
+    }
+    if (this._interstitialUnitId === uid && this.interstitialAd) return;
+    this.interstitialAd = null;
+    this._interstitialUnitId = uid;
     try {
       this.interstitialAd = wx.createInterstitialAd({ adUnitId: uid });
       this.interstitialAd.onError(() => {});
-    } catch (_) {}
+    } catch (_) {
+      this.interstitialAd = null;
+    }
   },
 
   onShow() {
@@ -108,6 +150,7 @@ Page({
       wx.reLaunch({ url: '/pages/consent/consent' });
       return;
     }
+    this.refreshAdsFromConfig();
     this.ensureLoginAndRefresh();
     if (!this._coldSplashDone) {
       this._coldSplashDone = true;
@@ -202,8 +245,15 @@ Page({
       cancelText: '取消',
       success: (r) => {
         if (!r.confirm) return;
+        this.initRewarded();
         if (!this.rewardedVideoAd) {
-          wx.showToast({ title: '未配置激励视频广告位', icon: 'none' });
+          wx.showModal({
+            title: '暂无法播放激励视频',
+            content:
+              '当前未获取到激励视频广告位 ID。请确认：1）小程序已开通流量主并创建「激励式视频广告」；2）将广告单元 ID 配置到服务端环境变量 REWARDED_VIDEO_AD_UNIT_ID（Cloudflare Worker / Pages 控制台），保存后下拉首页重试。',
+            showCancel: false,
+            confirmText: '知道了',
+          });
           return;
         }
         this.pendingPremiumKind = kind;

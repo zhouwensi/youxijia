@@ -139,6 +139,15 @@ App({
           creditsEarningLimited: this.globalData.creditsEarningLimited,
           wxSubscribeTmplId: this.globalData.config.wxSubscribeTmplId ? '已配置' : '未配置'
         });
+
+        // 首页 onLoad 往往早于本请求返回，需补一次广告位初始化
+        try {
+          const pages = getCurrentPages();
+          const cur = pages[pages.length - 1];
+          if (cur && cur.route === 'pages/home/home' && typeof cur.refreshAdsFromConfig === 'function') {
+            cur.refreshAdsFromConfig();
+          }
+        } catch (_) {}
       }
     } catch (err) {
       console.error('加载站点配置失败:', err);
