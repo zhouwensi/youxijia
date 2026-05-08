@@ -21,8 +21,7 @@
   display: block;
 }
 .scroll {
-  flex: 1;
-  height: 0;
+  width: 100%;
   padding: 0 24rpx;
   box-sizing: border-box;
 }
