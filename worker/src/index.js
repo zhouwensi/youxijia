@@ -280,6 +280,11 @@ function shouldForwardToPages(path, method) {
   if (path === '/api/user/checkin-status' && method === 'GET') return true;
   // 小程序兑换码/配额/插屏计数仅在 Pages Functions + D1 实现
   if (path.startsWith('/api/mp/privilege/')) return true;
+  // 本站 / 通行证：兑换码核销、积分总账、通行证密钥、跨站权益（见 functions/lib/privilege-redeem.ts）
+  if (path === '/api/hub/privilege/redeem' && method === 'POST') return true;
+  if (path === '/api/hub/points-ledger' && method === 'GET') return true;
+  if (path === '/api/hub/link-token/create' && method === 'POST') return true;
+  if (path === '/api/hub/cross-entitlements' && method === 'GET') return true;
   return false;
 }
 
