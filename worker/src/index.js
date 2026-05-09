@@ -289,6 +289,7 @@ function shouldForwardToPages(path, method) {
   if (path === '/api/hub/points-ledger' && method === 'GET') return true;
   if (path === '/api/hub/link-token/create' && method === 'POST') return true;
   if (path === '/api/hub/cross-entitlements' && method === 'GET') return true;
+  if (path === '/api/hub/redeem-proxy' && method === 'POST') return true;
   return false;
 }
 

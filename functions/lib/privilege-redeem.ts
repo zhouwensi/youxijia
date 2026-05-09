@@ -595,6 +595,20 @@ export async function tryPrivilegeRoutes(ctx: PrivilegeRouteCtx): Promise<Respon
     return doRedeem(code, redeemerToken, "YIJUHUA");
   }
 
+  /** 游戏墓地 / 本命测等：浏览器 POST 至中心 api；与 privilege/redeem 鉴权一致，核销记录写入 used_site（YOUXIMUDI / XIYOU） */
+  if (method === "POST" && segs[0] === "hub" && segs[1] === "redeem-proxy") {
+    const body = await readBody<{ code?: string; linkToken?: string; clientSite?: string }>(request);
+    const code = String(body.code || "");
+    let redeemerToken = getUserTokenFromRequest(request);
+    const link = String(body.linkToken || "").trim();
+    if (!redeemerToken && link) redeemerToken = (await resolveUserTokenFromLink(db, link)) || "";
+    if (!redeemerToken) return json({ success: false, error: "请先登录本站账号，或在表单中填写通行证密钥" }, 401);
+    const cs = String(body.clientSite || "").trim().toLowerCase();
+    const usedSite =
+      cs === "xiyou" || cs === "xiyouce" || cs === "benming" || cs === "xi_you" ? "XIYOU" : "YOUXIMUDI";
+    return doRedeem(code, redeemerToken, usedSite);
+  }
+
   if (method === "POST" && segs[0] === "internal" && segs[1] === "hub" && segs[2] === "redeem") {
     const site = String(h("x-internal-site") || "").trim().toLowerCase();
     const sig = String(h("x-internal-signature") || "").trim();
