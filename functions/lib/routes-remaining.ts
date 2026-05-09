@@ -34,6 +34,13 @@ async function readBody<T = Record<string, unknown>>(request: Request): Promise<
   }
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function normalizeRegisterEmail(email: string): string {
+  const s = email.trim().toLowerCase();
+  if (!s || !EMAIL_RE.test(s)) return "";
+  return s;
+}
+
 const CREDITS_STATIC = {
   initial: 3,
   followWechat: 3,
@@ -414,6 +421,15 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
         .first();
     }
     if (!account) {
+      const em = normalizeRegisterEmail(accountId);
+      if (em) {
+        account = await db
+          .prepare("SELECT * FROM user_accounts WHERE email IS NOT NULL AND lower(trim(email)) = ?")
+          .bind(em)
+          .first();
+      }
+    }
+    if (!account) {
       const game = await db
         .prepare("SELECT author_token FROM games WHERE author_name = ? COLLATE NOCASE LIMIT 1")
         .bind(accountId)
@@ -441,6 +457,65 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
         accountId: account.account_id,
         nickname: displayNickname,
         rawNickname: account.nickname,
+        hasPassword: true,
+      },
+    });
+  }
+
+  if (method === "POST" && segs[0] === "account" && segs[1] === "register") {
+    const b = await readBody<{ email?: string; password?: string; nickname?: string }>(request);
+    const emailNorm = normalizeRegisterEmail(String(b.email || ""));
+    const password = String(b.password || "");
+    const nicknameRaw = String(b.nickname || "").trim();
+
+    if (!emailNorm) return json({ success: false, error: "请输入有效邮箱地址" }, 400);
+    if (!password || password.length < 8) return json({ success: false, error: "密码至少 8 位" }, 400);
+    if (nicknameRaw.length > 20) return json({ success: false, error: "昵称最长 20 个字符" }, 400);
+
+    const dup = await db
+      .prepare("SELECT 1 AS x FROM user_accounts WHERE email IS NOT NULL AND lower(trim(email)) = ?")
+      .bind(emailNorm)
+      .first();
+    if (dup) return json({ success: false, error: "该邮箱已注册，请直接登录" }, 400);
+
+    const userToken = crypto.randomUUID();
+    let accountId = "";
+    for (let attempt = 0; attempt < 40; attempt++) {
+      const cand = `U${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+      const clash = await db.prepare("SELECT 1 AS x FROM user_accounts WHERE account_id = ?").bind(cand).first();
+      if (!clash) {
+        accountId = cand;
+        break;
+      }
+    }
+    if (!accountId) return json({ success: false, error: "请稍后重试" }, 500);
+
+    const passwordHash = await hashPasswordLegacy(password);
+    const nick = nicknameRaw || "游戏玩家";
+    const ip = ipForRequest(request);
+
+    await db
+      .prepare(
+        `INSERT INTO user_accounts (account_id, nickname, user_token, password_hash, email, has_password, last_ip)
+         VALUES (?, ?, ?, ?, ?, 1, ?)`,
+      )
+      .bind(accountId, nick, userToken, passwordHash, emailNorm, ip || null)
+      .run();
+
+    const initial = parseInt((await getConfig(db, "credits_initial", "3")) || "3", 10);
+    await db
+      .prepare("INSERT OR IGNORE INTO user_credits (user_token, credits, total_earned) VALUES (?, ?, ?)")
+      .bind(userToken, initial, initial)
+      .run();
+
+    const displayNickname = nick && nick !== "游戏玩家" ? nick : accountId;
+    return json({
+      success: true,
+      userToken,
+      account: {
+        accountId,
+        nickname: displayNickname,
+        rawNickname: nick,
         hasPassword: true,
       },
     });

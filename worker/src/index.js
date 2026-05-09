@@ -274,6 +274,10 @@ function shouldForwardToPages(path, method) {
   if (path === '/api/wechat/login' && method === 'POST') return true;
   if (path === '/api/account' && method === 'GET') return true;
   if (path === '/api/account/nickname' && method === 'PUT') return true;
+  // 登录/注册/初始化必须与 GET /api/account 同源（D1），否则 KV token 在 Pages 查账号会 404
+  if (path === '/api/account/login' && method === 'POST') return true;
+  if (path === '/api/account/register' && method === 'POST') return true;
+  if (path === '/api/account/init' && method === 'POST') return true;
   // 积分与签到以 Pages+D1 为准（避免本 Worker 桩数据与真实账户不一致）
   if (path === '/api/credits' && method === 'GET') return true;
   if (path === '/api/user/checkin' && method === 'POST') return true;
