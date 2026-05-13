@@ -30,8 +30,8 @@ ALLOWED_ORIGINS = "https://www.yijuhuayouxi.com,https://yijuhuayouxi.com,http://
 
 # DEEPSEEK_BASE_URL 默认已在代码里；如需覆盖可在此加 [vars]
 #
-# 小程序流量主广告位（写入后 GET /api/site-config 会返回非空 ID；也可在控制台 Variables 配置而不提交仓库）：
-# REWARDED_VIDEO_AD_UNIT_ID = ""
+# 小程序流量主广告位（GET /api/site-config → rewardedVideoAdUnitId；GitHub Actions 仍可用 vars 覆盖）
+REWARDED_VIDEO_AD_UNIT_ID = "adunit-a15a5cb857c99134"
 # MINI_BANNER_AD_UNIT_ID = ""
 # MINI_BANNER_MINE_AD_UNIT_ID = ""
 # INTERSTITIAL_AD_UNIT_ID = ""
