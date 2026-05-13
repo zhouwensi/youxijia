@@ -532,6 +532,14 @@ body {
   animation: slideDown 0.3s ease;
 }
 
+@media (max-width: 640px) {
+  .advanced-settings-panel {
+    max-height: min(70vh, 520px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 @keyframes slideDown {
   from {
     opacity: 0;

@@ -937,6 +937,159 @@
       background: rgba(0, 212, 255, 0.12);
       border-color: rgba(0, 212, 255, 0.35);
     }
+    .top-bar-more-wrap {
+      position: relative;
+    }
+    .top-bar-more-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .top-bar-more-btn:hover {
+      background: rgba(0, 212, 255, 0.12);
+      border-color: rgba(0, 212, 255, 0.35);
+    }
+    .top-bar-more-menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      min-width: 148px;
+      background: rgba(22, 24, 34, 0.98);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+      z-index: 200;
+      flex-direction: column;
+      padding: 6px;
+      gap: 4px;
+    }
+    .top-bar-more-menu.is-open {
+      display: flex;
+    }
+    .top-bar-more-menu button {
+      background: transparent;
+      border: none;
+      color: #fff;
+      text-align: left;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .top-bar-more-menu button:hover {
+      background: rgba(99, 102, 241, 0.2);
+    }
+    .home-discover-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .home-disc-tab {
+      flex: 1;
+      text-align: center;
+      padding: 10px 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.04);
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .home-disc-tab.active {
+      border-color: rgba(0, 212, 255, 0.45);
+      background: rgba(0, 212, 255, 0.12);
+      color: #fff;
+    }
+    .home-discover-secondary {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 12px;
+      margin-bottom: 12px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.55);
+    }
+    .home-discover-secondary button {
+      background: none;
+      border: none;
+      color: rgba(0, 212, 255, 0.95);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      cursor: pointer;
+      padding: 0;
+      font-size: 13px;
+    }
+    .leaderboard-compact-card {
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.04);
+      padding: 14px 16px;
+      cursor: pointer;
+    }
+    .leaderboard-compact-card:active {
+      transform: scale(0.99);
+    }
+    .leaderboard-compact-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .leaderboard-compact-sub {
+      margin: 8px 0 0;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+    .leaderboard-compact-chev {
+      color: rgba(255, 255, 255, 0.35);
+      font-size: 20px;
+    }
+    .hero-to-create-wrap {
+      margin-top: 12px;
+      text-align: center;
+    }
+    .hero-to-create-btn {
+      font-size: 14px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid rgba(99, 102, 241, 0.45);
+      color: #e8e8ff;
+      cursor: pointer;
+    }
+    .profile-hub-actions {
+      display: flex;
+      gap: 10px;
+      padding: 12px 16px 4px;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .profile-hub-actions .btn {
+      flex: 1;
+      padding: 12px 10px;
+      font-size: 14px;
+      border-radius: 12px;
+    }
+    @media (max-width: 640px) {
+      .hero .quick-prompts {
+        display: none;
+      }
+    }
     .home-credits-hint {
       margin-top: 12px;
       font-size: 13px;
@@ -959,6 +1112,17 @@
       font-size: 15px;
       box-sizing: border-box;
     }
+    .redeem-sheet-grab {
+      width: 40px;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.2);
+      margin: 0 auto 12px;
+      display: none;
+    }
+    @media (max-width: 639px) {
+      .redeem-sheet-grab { display: block; }
+    }
   </style>
 </head>
 <body>
@@ -979,8 +1143,13 @@
           <span class="brand-name">一句话游戏</span>
         </div>
         <div class="top-bar-actions">
-          <button type="button" class="hub-nav-btn" onclick="openRedeemHubModal()">兑换码核销</button>
-          <button type="button" class="hub-nav-btn" onclick="openCreditsHubPage()">我的积分</button>
+          <div class="top-bar-more-wrap">
+            <button type="button" class="top-bar-more-btn" id="home-top-more-btn" aria-expanded="false" aria-haspopup="true" aria-label="更多菜单">⋯</button>
+            <div class="top-bar-more-menu" id="home-top-more-menu" role="menu">
+              <button type="button" role="menuitem" onclick="closeHomeTopMoreMenu(); openRedeemHubModal();">兑换码核销</button>
+              <button type="button" role="menuitem" onclick="closeHomeTopMoreMenu(); openCreditsHubPage();">我的积分</button>
+            </div>
+          </div>
           <button class="search-trigger-btn" onclick="openSearchPanel()">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="8"></circle>
@@ -1029,122 +1198,42 @@
                 <button class="chip" onclick="setPrompt('飞机大战')">🚀 飞机大战</button>
                 <button class="chip" onclick="setPrompt('翻牌配对')">🃏 翻牌</button>
               </div>
+              <p class="hero-to-create-wrap"><button type="button" class="hero-to-create-btn" onclick="switchBottomNav('create')">更多灵感模板 → 去创作页</button></p>
               <p id="home-credits-balance-hint" class="home-credits-hint" aria-live="polite"></p>
             </div>
           </div>
         </section>
 
-        <!-- 作者榜单入口 -->
+        <!-- 作者榜单入口（单卡片，减轻首屏复杂度） -->
         <section class="home-section leaderboard-entry-section" id="section-leaderboard-entry">
-          <div class="section-header">
-            <h3 class="section-title">🏆 作者榜单</h3>
-            <button class="btn-more" onclick="openLeaderboardPage()">查看全部 →</button>
-          </div>
-          <div class="leaderboard-preview-cards">
-            <div class="leaderboard-preview-card" onclick="openLeaderboardPage('fans')">
-              <div class="lp-header">
-                <span class="lp-icon">👥</span>
-                <span class="lp-title">粉丝榜</span>
-              </div>
-              <div class="lp-top3" id="lp-fans-top3">
-                <div class="lp-loading">加载中...</div>
-              </div>
+          <div class="leaderboard-compact-card" onclick="openLeaderboardPage()" role="button" tabindex="0">
+            <div class="leaderboard-compact-row">
+              <span>🏆 作者榜单</span>
+              <span class="leaderboard-compact-chev">›</span>
             </div>
-            <div class="leaderboard-preview-card" onclick="openLeaderboardPage('works')">
-              <div class="lp-header">
-                <span class="lp-icon">📚</span>
-                <span class="lp-title">作品榜</span>
-              </div>
-              <div class="lp-top3" id="lp-works-top3">
-                <div class="lp-loading">加载中...</div>
-              </div>
-            </div>
-            <div class="leaderboard-preview-card" onclick="openLeaderboardPage('popularity')">
-              <div class="lp-header">
-                <span class="lp-icon">🔥</span>
-                <span class="lp-title">人气榜</span>
-              </div>
-              <div class="lp-top3" id="lp-popularity-top3">
-                <div class="lp-loading">加载中...</div>
-              </div>
-            </div>
-            <div class="leaderboard-preview-card newstar" onclick="openLeaderboardPage('newstar')">
-              <div class="lp-header">
-                <span class="lp-icon">⭐</span>
-                <span class="lp-title">新星榜</span>
-              </div>
-              <div class="lp-top3" id="lp-newstar-top3">
-                <div class="lp-loading">加载中...</div>
-              </div>
-            </div>
+            <p class="leaderboard-compact-sub">粉丝 · 作品 · 人气 · 积分 · 新星</p>
           </div>
         </section>
 
-        <!-- 首页游戏分类展示 -->
+        <!-- 首页发现：主 Tab 单流 + 次要榜单入口 -->
         <div class="home-sections">
-          <!-- 最新游戏 -->
-          <section class="home-section" id="section-recent">
-            <div class="section-header">
-              <h3 class="section-title">🆕 最新</h3>
-              <button class="btn-more" onclick="showMoreGames('recent')">更多 →</button>
+          <section class="home-section" id="section-home-discover">
+            <div class="home-discover-tabs" role="tablist" aria-label="首页内容分类">
+              <button type="button" class="home-disc-tab active" data-tab="featured" role="tab" aria-selected="true">推荐</button>
+              <button type="button" class="home-disc-tab" data-tab="recent" role="tab" aria-selected="false">最新</button>
+              <button type="button" class="home-disc-tab" data-tab="hot" role="tab" aria-selected="false">热门</button>
             </div>
-            <div class="games-grid-home" id="list-recent">
-              <!-- 动态加载 -->
+            <div class="home-discover-secondary">
+              <span>更多榜单</span>
+              <button type="button" onclick="showMoreGames('likes')">点赞</button>
+              <span aria-hidden="true">·</span>
+              <button type="button" onclick="showMoreGames('favorites')">收藏</button>
+              <span aria-hidden="true">·</span>
+              <button type="button" onclick="showMoreGames('comments')">评论</button>
             </div>
-          </section>
-
-          <!-- 推荐游戏 -->
-          <section class="home-section" id="section-featured">
-            <div class="section-header">
-              <h3 class="section-title">✨ 推荐</h3>
-              <button class="btn-more" onclick="showMoreGames('featured')">更多 →</button>
-            </div>
-            <div class="games-grid-home" id="list-featured">
-              <!-- 动态加载 -->
-            </div>
-          </section>
-
-          <!-- 热门游戏 -->
-          <section class="home-section" id="section-hot">
-            <div class="section-header">
-              <h3 class="section-title">🔥 热门</h3>
-              <button class="btn-more" onclick="showMoreGames('hot')">更多 →</button>
-            </div>
-            <div class="games-grid-home" id="list-hot">
-              <!-- 动态加载 -->
-            </div>
-          </section>
-
-          <!-- 点赞榜 -->
-          <section class="home-section" id="section-likes">
-            <div class="section-header">
-              <h3 class="section-title">❤️ 点赞</h3>
-              <button class="btn-more" onclick="showMoreGames('likes')">更多 →</button>
-            </div>
-            <div class="games-grid-home" id="list-likes">
-              <!-- 动态加载 -->
-            </div>
-          </section>
-
-          <!-- 收藏榜 -->
-          <section class="home-section" id="section-favorites">
-            <div class="section-header">
-              <h3 class="section-title">⭐ 收藏</h3>
-              <button class="btn-more" onclick="showMoreGames('favorites')">更多 →</button>
-            </div>
-            <div class="games-grid-home" id="list-favorites">
-              <!-- 动态加载 -->
-            </div>
-          </section>
-
-          <!-- 评论榜 -->
-          <section class="home-section" id="section-comments">
-            <div class="section-header">
-              <h3 class="section-title">💬 评论</h3>
-              <button class="btn-more" onclick="showMoreGames('comments')">更多 →</button>
-            </div>
-            <div class="games-grid-home" id="list-comments">
-              <!-- 动态加载 -->
+            <div class="games-grid-home" id="list-home-discover"></div>
+            <div class="section-header" style="margin-top:4px;">
+              <button type="button" class="btn-more" id="btn-home-discover-more">当前分类 更多 →</button>
             </div>
           </section>
         </div>
@@ -1352,6 +1441,10 @@
           </div>
         </div>
       </div>
+      <div class="profile-hub-actions">
+        <button type="button" class="btn btn-primary" onclick="openRedeemHubModal()">兑换码核销</button>
+        <button type="button" class="btn" onclick="openCreditsHubPage()">我的积分</button>
+      </div>
       <!-- 竖向标签布局 - 每个标签占一行 -->
       <div class="profile-sections-vertical">
         <!-- 我的作品 -->
@@ -1418,13 +1511,14 @@
     </div>
 
     <!-- 兑换码核销（全站不提及小程序） -->
-    <div id="redeem-hub-modal" class="modal" onclick="if(event.target===this)closeRedeemHubModal()">
-      <div class="modal-content" style="max-width: 520px;" onclick="event.stopPropagation()">
+    <div id="redeem-hub-modal" class="modal redeem-hub-modal" onclick="if(event.target===this)closeRedeemHubModal()">
+      <div class="modal-content redeem-hub-modal-content" style="max-width: 520px;" onclick="event.stopPropagation()">
         <div class="modal-header">
           <h3>兑换码核销</h3>
           <button type="button" class="btn btn-icon btn-close" onclick="closeRedeemHubModal()">×</button>
         </div>
         <div class="modal-body" style="padding: 1rem 1.25rem;">
+          <div class="redeem-sheet-grab" aria-hidden="true"></div>
           <input id="redeem-code-input" class="redeem-input" type="text" maxlength="16" autocomplete="off" placeholder="请输入从公众号获取的兑换码" />
           <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
             <button type="button" class="btn btn-primary" onclick="submitRedeemHubCode()">立即核销</button>
@@ -3242,7 +3336,14 @@
   // 登录功能已移至 /js/auth.js
 
   // ---------- 兑换码核销 / 我的积分（通行证）----------
+  function closeHomeTopMoreMenu() {
+    var menu = document.getElementById('home-top-more-menu');
+    var btn = document.getElementById('home-top-more-btn');
+    if (menu) menu.classList.remove('is-open');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  }
   function openRedeemHubModal() {
+    closeHomeTopMoreMenu();
     const m = document.getElementById('redeem-hub-modal');
     if (!m) return;
     const inp = document.getElementById('redeem-code-input');
@@ -3300,6 +3401,7 @@
   }
 
   function openCreditsHubPage() {
+    closeHomeTopMoreMenu();
     const p = document.getElementById('credits-hub-page');
     if (!p) return;
     document.querySelectorAll('.page.active').forEach(function (el) { el.classList.remove('active'); });

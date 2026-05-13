@@ -3443,17 +3443,24 @@ function showHome() {
 // 首页每个分类显示的游戏数量（3行2列=6个）
 const HOME_SECTION_LIMIT = 6;
 
-// 加载首页所有分类数据
+/** 首页「发现」主 Tab：推荐 / 最新 / 热门（单列表容器 #list-home-discover） */
+let homeDiscoverActiveTab = 'featured';
+if (typeof window !== 'undefined') window.__homeDiscoverTab = homeDiscoverActiveTab;
+
+// 加载首页：优先单流发现区；若无 DOM 则回退旧版六段并行（兼容）
 async function loadHomeSections() {
+  const listDiscover = document.getElementById('list-home-discover');
+  if (listDiscover) {
+    await loadHomeSection(homeDiscoverActiveTab, listDiscover);
+    return;
+  }
   const sections = ['recent', 'featured', 'hot', 'likes', 'favorites', 'comments'];
-  
-  // 并行加载所有分类
   await Promise.all(sections.map(section => loadHomeSection(section)));
 }
 
-// 加载单个分类数据
-async function loadHomeSection(sectionName) {
-  const list = document.getElementById(`list-${sectionName}`);
+// 加载单个分类数据；listOverride 用于首页单流等多处复用同一 API
+async function loadHomeSection(sectionName, listOverride) {
+  const list = listOverride || document.getElementById(`list-${sectionName}`);
   if (!list) return;
   
   list.innerHTML = '<div class="list-loading"><div class="loading-spinner-small"></div><span>加载中...</span></div>';
@@ -3583,6 +3590,48 @@ function extractEmoji(text) {
   return match ? match[0] : null;
 }
 
+// 首页发现区 Tab 切换（单列表）
+function initHomeDiscoverTabs() {
+  const wrap = document.querySelector('.home-discover-tabs');
+  if (!wrap) return;
+  wrap.addEventListener('click', (e) => {
+    const btn = e.target.closest('.home-disc-tab');
+    if (!btn || !btn.dataset.tab) return;
+    e.preventDefault();
+    const tab = btn.dataset.tab;
+    homeDiscoverActiveTab = tab;
+    if (typeof window !== 'undefined') window.__homeDiscoverTab = tab;
+    wrap.querySelectorAll('.home-disc-tab').forEach((b) => {
+      b.classList.toggle('active', b === btn);
+      b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+    });
+    const listDiscover = document.getElementById('list-home-discover');
+    if (listDiscover) loadHomeSection(tab, listDiscover);
+  });
+  const moreBtn = document.getElementById('btn-home-discover-more');
+  if (moreBtn) {
+    moreBtn.addEventListener('click', () => {
+      showMoreGames(homeDiscoverActiveTab);
+    });
+  }
+}
+
+function initHomeTopMoreMenu() {
+  const btn = document.getElementById('home-top-more-btn');
+  const menu = document.getElementById('home-top-more-menu');
+  if (!btn || !menu) return;
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = menu.classList.toggle('is-open');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  document.addEventListener('click', () => {
+    menu.classList.remove('is-open');
+    btn.setAttribute('aria-expanded', 'false');
+  });
+  menu.addEventListener('click', (e) => e.stopPropagation());
+}
+
 // 初始化首页分类
 function initMainTabs() {
   // 初始化下拉刷新
@@ -3590,6 +3639,9 @@ function initMainTabs() {
     // 刷新所有分类
     await loadHomeSections();
   });
+
+  initHomeDiscoverTabs();
+  initHomeTopMoreMenu();
 
   // 加载首页所有分类
   loadHomeSections();
