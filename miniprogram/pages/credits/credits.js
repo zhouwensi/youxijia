@@ -1154,6 +1154,9 @@ Page({
     this.setData({ adLoading: true });
     
     try {
+      try {
+        await app.loadSiteConfig();
+      } catch (_) {}
       // 获取广告单元ID（从站点配置或全局配置读取）
       const adUnitId =
         app.globalData.config?.rewardedVideoAdUnitId ||

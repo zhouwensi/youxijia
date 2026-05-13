@@ -193,6 +193,8 @@ cd worker && npx wrangler login
 
 **不配 GitHub Variables 时**：可在 Cloudflare → **Workers & Pages** → **yijuhuayouxi-api**（`worker/wrangler.toml` 的 `name`）→ **Settings → Variables and Secrets** 里添加同名 **Environment variables**（明文即可），保存后同样会进 `site-config`。Agent 无法代你填写：广告位 ID 只在你自己的微信后台生成，且需你的 Cloudflare / GitHub 账号权限。
 
+**`GET /api/site-config` 广告位兜底**：若未配置 `REWARDED_VIDEO_AD_UNIT_ID`（等）环境变量，Worker 会读取 KV **`admin:credits_all_config`** 里管理端保存的 `ad.rewardedVideoAdUnitId` 等字段并合并进返回 JSON（与「积分总配置」保存路径一致），避免仅写 KV、忘写环境变量时小程序一直拿不到 ID。
+
 说明：流水线会在构建时用 `CF_KV_NAMESPACE_ID` **替换** `wrangler.toml` 里的占位符；**仓库里的 `wrangler.toml` 仍可保留 `REPLACE_WITH_KV_NAMESPACE_ID`**，勿把真实 id 提交进公开仓库。
 
 ### 2. GitHub Pages

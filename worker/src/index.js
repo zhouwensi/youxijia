@@ -229,6 +229,65 @@ function siteConfig(env) {
   };
 }
 
+const KV_CREDITS_ALL_CONFIG = 'admin:credits_all_config';
+
+/** 与 admin「积分总配置」KV 一致：内含 ad.rewardedVideoAdUnitId 等 */
+async function readCreditsAllAdFromKv(kv) {
+  if (!kv) return null;
+  try {
+    const raw = await kv.get(KV_CREDITS_ALL_CONFIG);
+    if (!raw) return null;
+    const o = JSON.parse(raw);
+    return o && typeof o === 'object' && o.ad && typeof o.ad === 'object' ? o.ad : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 环境变量未配广告位时，合并 USER_KV 中管理端保存的配置，避免「控制台忘加 REWARDED_VIDEO_AD_UNIT_ID」导致小程序永远拿不到 ID。
+ */
+async function siteConfigWithKvMerge(env) {
+  const cfg = siteConfig(env);
+  const kv = env.USER_KV;
+  if (!kv) return cfg;
+  const ad = await readCreditsAllAdFromKv(kv);
+  if (!ad || typeof ad !== 'object') return cfg;
+
+  if (cfg.extraConfig && cfg.extraConfig.ad) {
+    if (typeof ad.enabled === 'boolean') cfg.extraConfig.ad.enabled = ad.enabled;
+    if (ad.reward != null && !Number.isNaN(Number(ad.reward))) cfg.extraConfig.ad.reward = Number(ad.reward);
+    if (ad.dailyLimit != null && !Number.isNaN(Number(ad.dailyLimit))) cfg.extraConfig.ad.dailyLimit = Number(ad.dailyLimit);
+  }
+
+  if (!cfg.rewardedVideoAdUnitId) {
+    const id = adUnitIdOrEmpty(ad.rewardedVideoAdUnitId);
+    if (id) {
+      cfg.rewardedVideoAdUnitId = id;
+      if (cfg.extraConfig?.ads) cfg.extraConfig.ads.rewardedVideoAdUnitId = id;
+    }
+  }
+  if (!cfg.miniBannerAdUnitId) {
+    const id = adUnitIdOrEmpty(ad.miniBannerAdUnitId);
+    if (id) {
+      cfg.miniBannerAdUnitId = id;
+      if (cfg.extraConfig?.ads) cfg.extraConfig.ads.miniBannerAdUnitId = id;
+    }
+  }
+  if (!cfg.miniBannerMineAdUnitId) {
+    const id = adUnitIdOrEmpty(ad.miniBannerMineAdUnitId);
+    if (id) {
+      cfg.miniBannerMineAdUnitId = id;
+      if (cfg.extraConfig?.ads) cfg.extraConfig.ads.miniBannerMineAdUnitId = id;
+    }
+  }
+  if (cfg.extraConfig?.ads && !cfg.extraConfig.ads.interstitialAdUnitId) {
+    const id = adUnitIdOrEmpty(ad.interstitialAdUnitId);
+    if (id) cfg.extraConfig.ads.interstitialAdUnitId = id;
+  }
+  return cfg;
+}
+
 function turboModels(env) {
   const hasKey = !!(env.DEEPSEEK_API_KEY && String(env.DEEPSEEK_API_KEY).length > 0);
   const models = [];
@@ -314,7 +373,7 @@ export default {
       }
 
       if (path === '/api/site-config' && request.method === 'GET') {
-        return json(request, env, siteConfig(env));
+        return json(request, env, await siteConfigWithKvMerge(env));
       }
 
       if (path === '/api/turbo-models' && request.method === 'GET') {

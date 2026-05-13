@@ -100,14 +100,13 @@ App({
           this.globalData.config.wxSubscribeTmplId = result.wxSubscribeTmplId;
         }
         
-        // 激励视频广告单元ID
-        if (result.rewardedVideoAdUnitId) {
-          this.globalData.config.rewardedVideoAdUnitId = result.rewardedVideoAdUnitId;
-        }
-        // 也支持从 extraConfig 中读取
-        if (result.extraConfig?.ads?.rewardedVideoAdUnitId) {
-          this.globalData.config.rewardedVideoAdUnitId = result.extraConfig.ads.rewardedVideoAdUnitId;
-        }
+        // 激励视频广告单元 ID：顶层与 extraConfig.ads 合并；服务端为空时清空本地，避免沿用过期 ID
+        const rv = String(
+          result.rewardedVideoAdUnitId ||
+            result.extraConfig?.ads?.rewardedVideoAdUnitId ||
+            ''
+        ).trim();
+        this.globalData.config.rewardedVideoAdUnitId = rv;
         if (result.miniBannerAdUnitId) {
           this.globalData.config.miniBannerAdUnitId = result.miniBannerAdUnitId;
         }

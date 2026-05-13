@@ -343,8 +343,12 @@ Page({
       content: '观看完整视频后可领取高级兑换码；中途关闭不会发放，也不会影响您使用基础免费领取。',
       confirmText: '继续',
       cancelText: '取消',
-      success: (r) => {
+      success: async (r) => {
         if (!r.confirm) return;
+        try {
+          await app.loadSiteConfig();
+        } catch (_) {}
+        this.refreshAdsFromConfig();
         this.initRewarded();
         if (!this.rewardedVideoAd) {
           wx.showModal({
