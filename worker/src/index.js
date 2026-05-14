@@ -349,6 +349,13 @@ function shouldForwardToPages(path, method) {
   if (path === '/api/hub/link-token/create' && method === 'POST') return true;
   if (path === '/api/hub/cross-entitlements' && method === 'GET') return true;
   if (path === '/api/hub/redeem-proxy' && method === 'POST') return true;
+  // 游戏详情页留言 / 我的评论：D1 在 Pages（handlers.ts、routes-remaining.ts）；勿走 Worker 空桩否则 POST 为 501
+  if (/^\/api\/games\/[^/]+\/comments/.test(path)) {
+    if (method === 'GET' || method === 'POST' || method === 'DELETE') return true;
+  }
+  if (path.startsWith('/api/my-comments')) {
+    if (method === 'GET' || method === 'POST' || method === 'DELETE') return true;
+  }
   return false;
 }
 
