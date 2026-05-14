@@ -384,6 +384,7 @@ export async function dispatchApi(
         .prepare(
           `SELECT id, title, prompt, author_name, play_count, like_count, is_featured, created_at FROM games
            WHERE COALESCE(is_hidden,0)=0 AND (COALESCE(is_public,1)=1 OR is_public IS NULL)
+           AND COALESCE(status,'published')='published'
            ORDER BY created_at DESC LIMIT ? OFFSET ?`,
         )
         .bind(limit, offset)
@@ -400,8 +401,8 @@ export async function dispatchApi(
             (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) AS comment_count
            FROM games g
            WHERE COALESCE(g.is_hidden,0)=0 AND (COALESCE(g.is_public,1)=1 OR g.is_public IS NULL)
-           AND (g.is_featured = 1 OR g.like_count >= 5)
-           ORDER BY g.is_featured DESC, g.like_count DESC, g.play_count DESC
+           AND COALESCE(g.status,'published')='published'
+           ORDER BY g.is_featured DESC, g.like_count DESC, g.play_count DESC, g.created_at DESC
            LIMIT ? OFFSET ?`,
         )
         .bind(limit, offset)

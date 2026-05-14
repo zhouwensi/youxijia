@@ -27,12 +27,16 @@ export async function isUserAdmin(db: Db, userToken: string | null): Promise<boo
 }
 
 /**
- * 读取本站 user_token：小程序发 X-User-Token；部分网关会剥自定义头，可改用 Authorization: Bearer <token>
+ * 读取本站 user_token：主站发 X-User-Token；部分页面（如「我的作品」）只带 X-Author-Token（本站与 user_token 同源）
+ * 部分网关会剥自定义头，可改用 Authorization: Bearer <token>
  */
 export function getUserTokenFromRequest(request: Request): string {
   const x =
     request.headers.get("X-User-Token")?.trim() || request.headers.get("x-user-token")?.trim();
   if (x) return x;
+  const author =
+    request.headers.get("X-Author-Token")?.trim() || request.headers.get("x-author-token")?.trim();
+  if (author) return author;
   const auth = request.headers.get("Authorization")?.trim();
   if (auth?.toLowerCase().startsWith("bearer ")) {
     return auth.slice(7).trim();
