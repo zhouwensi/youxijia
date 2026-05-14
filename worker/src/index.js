@@ -349,13 +349,12 @@ function shouldForwardToPages(path, method) {
   if (path === '/api/hub/link-token/create' && method === 'POST') return true;
   if (path === '/api/hub/cross-entitlements' && method === 'GET') return true;
   if (path === '/api/hub/redeem-proxy' && method === 'POST') return true;
-  // 游戏详情页留言 / 我的评论：D1 在 Pages（handlers.ts、routes-remaining.ts）；勿走 Worker 空桩否则 POST 为 501
-  if (/^\/api\/games\/[^/]+\/comments/.test(path)) {
-    if (method === 'GET' || method === 'POST' || method === 'DELETE') return true;
-  }
-  if (path.startsWith('/api/my-comments')) {
-    if (method === 'GET' || method === 'POST' || method === 'DELETE') return true;
-  }
+  // 主站游戏、榜单、我的互动、用户主页：均在 Pages+D1（handlers.ts、routes-remaining.ts）；勿走 Worker KV 桩（否则详情 404、列表与 D1 不一致）
+  if (path.startsWith('/api/games')) return true;
+  if (path.startsWith('/api/leaderboard')) return true;
+  if (path.startsWith('/api/author-leaderboard')) return true;
+  if (path.startsWith('/api/my-')) return true;
+  if (path.startsWith('/api/users/')) return true;
   return false;
 }
 
