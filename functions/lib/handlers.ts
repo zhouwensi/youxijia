@@ -1,7 +1,7 @@
 import type { Env } from "../types";
 import { clientIp, json, getDb, type Db } from "./http";
 import { getUserTokenFromRequest } from "./cf-helpers";
-import { getConfig } from "./db";
+import { getConfig, getConfigMany } from "./db";
 import { getTurboModelsPayload } from "./llm-models";
 import { handleGenerate } from "./generate-handler";
 import { tryRoutesRemaining } from "./routes-remaining";
@@ -248,39 +248,47 @@ export async function dispatchApi(
           .run();
         u.ad_count_today = 0;
       }
-      const getDailyCount = async (type: string) => {
-        const r = await db
+      const cfgKeys = [
+        "credits_share_game",
+        "credits_share_game_daily_limit",
+        "credits_invite_friend",
+        "credits_invite_friend_daily_limit",
+        "credits_article",
+        "credits_article_daily_limit",
+      ];
+      const [dailyRows, cfgMap] = await Promise.all([
+        db
           .prepare(
-            "SELECT count FROM daily_action_credits WHERE user_token = ? AND action_type = ? AND action_date = ?",
+            `SELECT action_type, count FROM daily_action_credits
+             WHERE user_token = ? AND action_date = ?
+               AND action_type IN ('share_game', 'invite_friend', 'article_read')`,
           )
-          .bind(userToken, type, today)
-          .first<{ count: number }>();
-        return r?.count ?? 0;
-      };
+          .bind(userToken, today)
+          .all<{ action_type: string; count: number }>(),
+        getConfigMany(db, cfgKeys),
+      ]);
+      const dcMap = new Map<string, number>();
+      for (const row of dailyRows.results || []) {
+        if (row?.action_type != null) dcMap.set(row.action_type, row.count ?? 0);
+      }
       const dailyCounts = {
-        share: await getDailyCount("share_game"),
-        invite: await getDailyCount("invite_friend"),
-        article: await getDailyCount("article_read"),
+        share: dcMap.get("share_game") ?? 0,
+        invite: dcMap.get("invite_friend") ?? 0,
+        article: dcMap.get("article_read") ?? 0,
       };
+      const g = (k: string, d: string) => String(cfgMap[k] ?? d);
       const extraConfig = {
         shareGame: {
-          credits: parseFloat((await getConfig(db, "credits_share_game", "1")) || "1") || 1,
-          dailyLimit:
-            parseInt((await getConfig(db, "credits_share_game_daily_limit", "5")) || "5", 10) ||
-            5,
+          credits: parseFloat(g("credits_share_game", "1")) || 1,
+          dailyLimit: parseInt(g("credits_share_game_daily_limit", "5"), 10) || 5,
         },
         inviteFriend: {
-          credits: parseFloat((await getConfig(db, "credits_invite_friend", "3")) || "3") || 3,
-          dailyLimit:
-            parseInt(
-              (await getConfig(db, "credits_invite_friend_daily_limit", "5")) || "5",
-              10,
-            ) || 5,
+          credits: parseFloat(g("credits_invite_friend", "3")) || 3,
+          dailyLimit: parseInt(g("credits_invite_friend_daily_limit", "5"), 10) || 5,
         },
         article: {
-          credits: parseFloat((await getConfig(db, "credits_article", "1")) || "1") || 1,
-          dailyLimit:
-            parseInt((await getConfig(db, "credits_article_daily_limit", "3")) || "3", 10) || 3,
+          credits: parseFloat(g("credits_article", "1")) || 1,
+          dailyLimit: parseInt(g("credits_article_daily_limit", "3"), 10) || 3,
         },
       };
       return json({

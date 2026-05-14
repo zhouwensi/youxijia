@@ -764,7 +764,7 @@ async function restoreSessionFromStorage() {
         hasPassword: !!a.hasPassword,
         loaded: true,
       };
-      await loadCredits();
+      // 积分由 DOMContentLoaded 中统一 loadCredits，避免与 restore 后第二次请求重复（各 ~2s）
       if (typeof loadTrialInfo === 'function') await loadTrialInfo();
     } else {
       clearStoredAuth();
