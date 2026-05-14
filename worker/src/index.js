@@ -339,6 +339,8 @@ function shouldForwardToPages(path, method) {
   if (path === '/api/account/init' && method === 'POST') return true;
   // 积分与签到以 Pages+D1 为准（避免本 Worker 桩数据与真实账户不一致）
   if (path === '/api/credits' && method === 'GET') return true;
+  // 主站 POST /api/credits/*（每日登录、关注、看广告等）必须在 Pages 处理；留在 Worker 会被「非小程序」逻辑 403
+  if (path.startsWith('/api/credits/') && method === 'POST') return true;
   if (path === '/api/user/checkin' && method === 'POST') return true;
   if (path === '/api/user/checkin-status' && method === 'GET') return true;
   // 小程序兑换码/配额/插屏计数仅在 Pages Functions + D1 实现
@@ -425,24 +427,6 @@ export default {
           return json(request, env, { success: true, credits: 0 });
         }
         return json(request, env, { success: true, credits: user.credits ?? 0 });
-      }
-
-      if (path.startsWith('/api/credits/') && request.method === 'POST' && path !== '/api/credits') {
-        if (!isMiniprogramClient(request)) {
-          return creditsMutationBlockedResponse(request, env);
-        }
-      }
-
-      if (path === '/api/credits/daily-login' && request.method === 'POST') {
-        const token = request.headers.get('x-user-token') || request.headers.get('X-User-Token');
-        if (!token || !String(token).trim()) {
-          return json(request, env, { success: false, error: '缺少用户标识' }, 400);
-        }
-        return json(request, env, {
-          success: false,
-          error: '今日已领取',
-          alreadyClaimed: true,
-        });
       }
 
       const authorLbMatch = path.match(/^\/api\/author-leaderboard\/([^/]+)$/);

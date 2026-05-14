@@ -763,6 +763,7 @@ async function restoreSessionFromStorage() {
         nickname: a.nickname || '',
         hasPassword: !!a.hasPassword,
         loaded: true,
+        loggedIn: true,
       };
       // 积分由 DOMContentLoaded 中统一 loadCredits，避免与 restore 后第二次请求重复（各 ~2s）
       if (typeof loadTrialInfo === 'function') await loadTrialInfo();
@@ -1405,6 +1406,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (state.account.loaded) {
     await loadCredits();
   }
+  await loadTrialInfo();
 
   // 处理邀请链接和分享链接参数
   await handleReferralParams();
@@ -8745,35 +8747,49 @@ function generateUUID() {
 // @param {object} options - 可选配置
 // @param {boolean} options.showChange - 是否显示积分变化提示
 // @param {string} options.reason - 变化原因描述
+let loadCreditsInFlight = null;
 async function loadCredits(options = {}) {
-  try {
-    if (!getUserToken() || !state.account.loaded) return;
-    const oldCredits = state.credits;
+  if (!getUserToken() || !state.account.loaded) return;
+  if (loadCreditsInFlight) {
+    await loadCreditsInFlight;
+    return;
+  }
+  const opts = options;
+  loadCreditsInFlight = (async () => {
+    try {
+      const oldCredits = state.credits;
 
-    const response = await fetch(buildApiUrl('/api/credits'), {
-      headers: { 'X-User-Token': getUserToken() },
-    });
-    const data = await response.json();
-    
-    if (data.success) {
-      state.credits = data.credits;
-      state.creditsConfig = data.config;
-      updateCreditsDisplay();
-      
-      // 更新积分获取方式的已完成状态
-      updateCreditWaysStatus(data);
-      
-      // 如果启用了变化提示且积分有变化
-      if (options.showChange && oldCredits !== undefined && oldCredits !== null) {
-        const delta = data.credits - oldCredits;
-        if (delta !== 0) {
-          showCreditsChangeToast(delta, options.reason);
+      const response = await fetch(buildApiUrl('/api/credits'), {
+        headers: { 'X-User-Token': getUserToken() },
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        state.credits = data.credits;
+        state.creditsConfig = data.config;
+        updateCreditsDisplay();
+
+        updateCreditWaysStatus(data);
+
+        if (opts.showChange && oldCredits !== undefined && oldCredits !== null) {
+          const delta = data.credits - oldCredits;
+          if (delta !== 0) {
+            showCreditsChangeToast(delta, opts.reason);
+          }
         }
       }
+    } catch (error) {
+      console.error('加载积分失败:', error);
+    } finally {
+      loadCreditsInFlight = null;
     }
-  } catch (error) {
-    console.error('加载积分失败:', error);
-  }
+  })();
+  await loadCreditsInFlight;
+}
+
+/** 与历史代码兼容：每日登录奖励等处调用 */
+async function refreshCredits() {
+  await loadCredits();
 }
 
 // 更新积分获取方式的已完成状态
@@ -12062,10 +12078,8 @@ function renderHotGamesList(games) {
 
 // ==================== 初始化 ====================
 
-// 初始化时加载所有数据
+// 初始化时加载所有数据（积分与游客态已在上方主 DOMContentLoaded 中拉取，避免重复请求 /api/credits）
 document.addEventListener('DOMContentLoaded', () => {
-  loadCredits();
-  loadTrialInfo();
   // loadWeeklyChallenge(); // 已移除本周挑战功能
   
   // 设置公众号点击事件
