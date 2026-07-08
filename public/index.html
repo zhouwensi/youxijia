@@ -1219,8 +1219,8 @@
         <div class="home-sections">
           <section class="home-section" id="section-home-discover">
             <div class="home-discover-tabs" role="tablist" aria-label="首页内容分类">
-              <button type="button" class="home-disc-tab active" data-tab="featured" role="tab" aria-selected="true">推荐</button>
-              <button type="button" class="home-disc-tab" data-tab="recent" role="tab" aria-selected="false">最新</button>
+              <button type="button" class="home-disc-tab" data-tab="featured" role="tab" aria-selected="false">推荐</button>
+              <button type="button" class="home-disc-tab active" data-tab="recent" role="tab" aria-selected="true">最新</button>
               <button type="button" class="home-disc-tab" data-tab="hot" role="tab" aria-selected="false">热门</button>
             </div>
             <div class="home-discover-secondary">
@@ -1427,7 +1427,7 @@
             <div class="profile-mini-stats">
               <span class="stat-clickable" onclick="showMoreGames('my-games')">🎮 <strong id="profile-page-games">0</strong> 作品</span>
               <span class="stat-clickable" onclick="showMoreGames('my-likes')">❤️ <strong id="profile-page-likes">0</strong> 点赞</span>
-              <span class="stat-clickable" onclick="openCreditsModal()">💎 <strong id="profile-page-credits">0</strong> 积分</span>
+              <span class="stat-clickable" onclick="openCreditsHubPage()">💎 <strong id="profile-page-credits">0</strong> 积分</span>
             </div>
             <div class="profile-follow-stats">
               <span class="follow-stat-item" onclick="openFollowModal('following')">
@@ -1591,8 +1591,8 @@
       
       <!-- 榜单类型选择 -->
       <div class="leaderboard-tabs">
-        <button class="lb-tab active" data-type="fans" onclick="switchLeaderboardType('fans')">👥 粉丝</button>
-        <button class="lb-tab" data-type="works" onclick="switchLeaderboardType('works')">📚 作品</button>
+        <button class="lb-tab" data-type="fans" onclick="switchLeaderboardType('fans')">👥 粉丝</button>
+        <button class="lb-tab active" data-type="works" onclick="switchLeaderboardType('works')">📚 作品</button>
         <button class="lb-tab" data-type="popularity" onclick="switchLeaderboardType('popularity')">🔥 人气</button>
         <button class="lb-tab" data-type="credits" onclick="switchLeaderboardType('credits')">💎 积分</button>
         <button class="lb-tab newstar" data-type="newstar" onclick="switchLeaderboardType('newstar')">⭐ 新星</button>
@@ -1600,8 +1600,8 @@
       
       <!-- 周期选择 -->
       <div class="leaderboard-period-tabs" id="leaderboard-period-tabs">
-        <button class="period-tab active" data-period="all" onclick="switchLeaderboardPeriod('all')">总榜</button>
-        <button class="period-tab" data-period="week" onclick="switchLeaderboardPeriod('week')">周榜</button>
+        <button class="period-tab" data-period="all" onclick="switchLeaderboardPeriod('all')">总榜</button>
+        <button class="period-tab active" data-period="week" onclick="switchLeaderboardPeriod('week')">周榜</button>
         <button class="period-tab" data-period="month" onclick="switchLeaderboardPeriod('month')">月榜</button>
       </div>
       
@@ -2386,8 +2386,8 @@
                   <div class="credits-label">剩余生成次数</div>
                 </div>
                 <div class="credits-actions">
-                  <button class="btn btn-secondary btn-small" onclick="closeProfileModal();openCreditsModal();">
-                    获取更多积分
+                  <button class="btn btn-secondary btn-small" onclick="closeProfileModal();openCreditsHubPage();">
+                    查看更多积分
                   </button>
                 </div>
               </div>
@@ -3055,8 +3055,8 @@
   
   // ==================== 作者榜单功能 ====================
   
-  let currentLbType = 'fans';
-  let currentLbPeriod = 'all';
+  let currentLbType = 'works';
+  let currentLbPeriod = 'week';
   let lbOffset = 0;
   let lbLoading = false;
   let lbHasMore = true;
@@ -3103,9 +3103,9 @@
   }
   
   // 打开榜单页面
-  function openLeaderboardPage(type = 'fans') {
+  function openLeaderboardPage(type = 'works') {
     currentLbType = type;
-    currentLbPeriod = 'all';
+    currentLbPeriod = 'week';
     lbOffset = 0;
     lbHasMore = true;
     
@@ -3118,7 +3118,7 @@
       tab.classList.toggle('active', tab.dataset.type === type);
     });
     document.querySelectorAll('.period-tab').forEach(tab => {
-      tab.classList.toggle('active', tab.dataset.period === 'all');
+      tab.classList.toggle('active', tab.dataset.period === 'week');
     });
     
     // 新星榜隐藏周期选择
@@ -3138,7 +3138,7 @@
   // 切换榜单类型
   function switchLeaderboardType(type) {
     currentLbType = type;
-    currentLbPeriod = 'all';
+    currentLbPeriod = 'week';
     lbOffset = 0;
     lbHasMore = true;
     
@@ -3146,7 +3146,7 @@
       tab.classList.toggle('active', tab.dataset.type === type);
     });
     document.querySelectorAll('.period-tab').forEach(tab => {
-      tab.classList.toggle('active', tab.dataset.period === 'all');
+      tab.classList.toggle('active', tab.dataset.period === 'week');
     });
     
     // 新星榜隐藏周期选择
@@ -3404,6 +3404,9 @@
     closeHomeTopMoreMenu();
     const p = document.getElementById('credits-hub-page');
     if (!p) return;
+    const active = document.querySelector('.page.active');
+    window.__creditsHubReturnPageId =
+      active && active.id && active.id !== 'credits-hub-page' ? active.id : 'profile-page';
     document.querySelectorAll('.page.active').forEach(function (el) { el.classList.remove('active'); });
     p.classList.add('active');
     const nav = document.getElementById('bottom-nav');
@@ -3413,10 +3416,14 @@
   function closeCreditsHubPage() {
     const p = document.getElementById('credits-hub-page');
     if (p) p.classList.remove('active');
-    const home = document.getElementById('home-page');
-    if (home) home.classList.add('active');
+    const returnId = window.__creditsHubReturnPageId || 'home-page';
+    const target = document.getElementById(returnId) || document.getElementById('home-page');
+    if (target) target.classList.add('active');
     const nav = document.getElementById('bottom-nav');
-    if (nav) nav.style.display = '';
+    if (nav && (returnId === 'home-page' || returnId === 'create-page' || returnId === 'profile-page')) {
+      nav.style.display = '';
+    }
+    window.__creditsHubReturnPageId = null;
   }
   async function loadCreditsHubData() {
     const balEl = document.getElementById('hub-credits-balance');

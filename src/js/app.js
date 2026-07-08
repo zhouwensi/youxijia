@@ -3446,7 +3446,7 @@ function showHome() {
 const HOME_SECTION_LIMIT = 6;
 
 /** 首页「发现」主 Tab：推荐 / 最新 / 热门（单列表容器 #list-home-discover） */
-let homeDiscoverActiveTab = 'featured';
+let homeDiscoverActiveTab = 'recent';
 if (typeof window !== 'undefined') window.__homeDiscoverTab = homeDiscoverActiveTab;
 
 // 加载首页：优先单流发现区；若无 DOM 则回退旧版六段并行（兼容）
