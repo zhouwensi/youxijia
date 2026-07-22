@@ -40,6 +40,8 @@ export async function handleWechatMiniProgramLogin(
 
   const appid = (env.WX_MINI_APPID || "").trim();
   const secret = (env.WX_MINI_SECRET || "").trim();
+  const appidSuffix = appid ? appid.slice(-6) : "";
+  const secretLength = secret.length;
   if (!appid || !secret) {
     return json(
       {
@@ -67,11 +69,22 @@ export async function handleWechatMiniProgramLogin(
   }
 
   if (wxData.errcode) {
+    const isInvalidSecret = wxData.errcode === 40125;
     return json(
       {
         success: false,
         error: wxData.errmsg || `微信错误 (${wxData.errcode})`,
         errcode: wxData.errcode,
+        ...(isInvalidSecret
+          ? {
+              // 仅返回脱敏诊断，便于定位线上是否读到了预期环境变量
+              debug: {
+                envKeys: ["WX_MINI_APPID", "WX_MINI_SECRET"],
+                appidSuffix,
+                secretLength,
+              },
+            }
+          : {}),
       },
       400,
     );

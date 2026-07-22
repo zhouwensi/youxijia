@@ -51,6 +51,24 @@ function getQualityLabelText(quality) {
   return QUALITY_LABELS[quality] || QUALITY_LABELS['medium'];
 }
 
+/** 前端展示用：去掉易误导的版本号（如 DeepSeek V3 → DeepSeek） */
+function formatModelDisplayName(name, modelId) {
+  const id = String(modelId || '');
+  const n = String(name || '').trim();
+
+  if (id.startsWith('deepseek') || /^deepseek/i.test(n)) {
+    if (id === 'deepseek-r1' || /\br1\b/i.test(n)) return 'DeepSeek R1';
+    return 'DeepSeek';
+  }
+
+  if (n) {
+    return n.replace(/\s+V\d+(?:\.\d+)?(?=\s|$)/gi, '').replace(/\s+/g, ' ').trim() || n;
+  }
+
+  if (!id) return '未知模型';
+  return formatModelDisplayName(id.replace(/-/g, ' '), id);
+}
+
 // ==================== 模型注册表（从后端动态加载） ====================
 // 模型列表缓存，从后端 /api/turbo-models 获取
 let MODEL_REGISTRY = {};
@@ -72,7 +90,7 @@ async function loadModelRegistry() {
       data.models.forEach(model => {
         MODEL_REGISTRY[model.id] = {
           id: model.id,
-          name: model.name,
+          name: formatModelDisplayName(model.name, model.id),
           creditCost: model.creditCost,
           speedLevel: model.speedLevel,  // 速度等级（ultra/fast/normal/slow/very-slow）
           quality: model.quality,
@@ -108,7 +126,7 @@ async function loadModelRegistry() {
     console.error('加载模型列表失败:', error);
     // 回退到基础配置
     MODEL_REGISTRY = {
-      'deepseek-v3': { id: 'deepseek-v3', name: 'DeepSeek V3', creditCost: 0 },
+      'deepseek-v3': { id: 'deepseek-v3', name: 'DeepSeek', creditCost: 0 },
       'custom': { id: 'custom', name: '自定义接口', creditCost: 0, needsUserKey: true }
     };
   }
@@ -3923,10 +3941,12 @@ function initCreateTips() {
 
 // 获取模型显示名称
 function getModelDisplayName(modelId) {
-  const modelNames = {
-    'deepseek-v3': 'DeepSeek V3',
+  const info = MODEL_REGISTRY[modelId];
+  if (info?.name) return info.name;
+  const legacyNames = {
+    'deepseek-v3': 'DeepSeek',
     'deepseek-r1': 'DeepSeek R1',
-    'deepseek-chat': 'DeepSeek Chat',
+    'deepseek-chat': 'DeepSeek',
     'gpt-4o': 'GPT-4o',
     'gpt-4o-mini': 'GPT-4o Mini',
     'gpt-5': 'GPT-5',
@@ -3941,9 +3961,9 @@ function getModelDisplayName(modelId) {
     'qwen-max': '通义千问 Max',
     'qwen-plus': '通义千问 Plus',
     'glm-4-plus': 'GLM-4 Plus',
-    'glm-4': 'GLM-4'
+    'glm-4': 'GLM-4',
   };
-  return modelNames[modelId] || modelId || '未知模型';
+  return formatModelDisplayName(legacyNames[modelId] || modelId, modelId);
 }
 
 // 更新创作页面的模型显示
@@ -5973,7 +5993,10 @@ async function fetchTurboModels() {
     const response = await fetch(buildApiUrl('/api/turbo-models'));
     const data = await response.json();
     if (data.success) {
-      turboModelsCache = data.models;
+      turboModelsCache = data.models.map((model) => ({
+        ...model,
+        name: formatModelDisplayName(model.name, model.id),
+      }));
       
       // 同时更新默认模型设置
       if (data.defaultModel) {
@@ -8660,7 +8683,7 @@ function goToSettingsForModel(modelId, modelName) {
 // 切换到免费模型
 function switchToFreeModel() {
   closeNeedApiKeyModal();
-  // 设置为 DeepSeek V3（免费模型）
+  // 设置为 DeepSeek（免费模型）
   setUserDefaultModel('deepseek-v3');
   localStorage.setItem('aigame-settings', JSON.stringify(state.settings));
   
@@ -8670,7 +8693,7 @@ function switchToFreeModel() {
     advModelSelect.value = 'deepseek-v3';
   }
   
-  showToast('已切换到 DeepSeek V3（免费模型）', 'success');
+  showToast('已切换到 DeepSeek（免费模型）', 'success');
 }
 
 // 关闭 API Key 错误弹窗
@@ -12691,11 +12714,16 @@ async function openUserProfile(userToken) {
       ? profileData.profile.nickname
       : (games.length > 0 ? (games[0].author_name || '游戏家用户') : '游戏家用户');
     // 获取账号ID
-    const accountId = profileData.success && profileData.profile?.accountId
-      ? profileData.profile.accountId
+    const accountId = profileData.success && (profileData.profile?.accountId || profileData.profile?.account_id)
+      ? (profileData.profile.accountId || profileData.profile.account_id)
       : `player_${userToken.substring(0, 6)}`;
-    const gamesCount = profileData.success ? profileData.profile?.gamesCount : games.length;
-    const likesCount = profileData.success ? profileData.profile?.likesCount : 0;
+    const totalLikesFromGames = games.reduce((sum, g) => sum + (g.like_count || 0), 0);
+    const gamesCount = profileData.success
+      ? (profileData.profile?.gamesCount ?? games.length)
+      : games.length;
+    const likesCount = profileData.success
+      ? (profileData.profile?.likesCount ?? totalLikesFromGames)
+      : totalLikesFromGames;
 
     const modalBody = modal.querySelector('.user-profile-body');
     modalBody.innerHTML = `

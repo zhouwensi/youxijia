@@ -874,9 +874,30 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
     const acc = await db
       .prepare("SELECT account_id, nickname, created_at FROM user_accounts WHERE user_token = ?")
       .bind(token)
-      .first();
+      .first<{ account_id: string; nickname: string; created_at: string }>();
     if (!acc) return json({ success: false, error: "用户不存在" }, 404);
-    return json({ success: true, profile: acc });
+    const gamesCountRow = await db
+      .prepare(
+        "SELECT COUNT(*) AS c FROM games WHERE author_token = ? AND COALESCE(is_hidden, 0) = 0 AND (COALESCE(is_public, 1) = 1 OR is_public IS NULL)",
+      )
+      .bind(token)
+      .first<{ c: number }>();
+    const likesCountRow = await db
+      .prepare(
+        "SELECT COALESCE(SUM(like_count), 0) AS total FROM games WHERE author_token = ? AND COALESCE(is_hidden, 0) = 0",
+      )
+      .bind(token)
+      .first<{ total: number }>();
+    return json({
+      success: true,
+      profile: {
+        accountId: acc.account_id,
+        nickname: acc.nickname,
+        createdAt: acc.created_at,
+        gamesCount: gamesCountRow?.c ?? 0,
+        likesCount: likesCountRow?.total ?? 0,
+      },
+    });
   }
 
   if (method === "GET" && segs[0] === "users" && segs[2] === "games" && segs.length === 3) {
