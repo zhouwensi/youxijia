@@ -396,59 +396,136 @@ export async function tryAdminRemaining(ctx: RouteCtx): Promise<Response | null>
   }
 
   if (method === "GET" && rest[0] === "ban") {
-    const type = url.searchParams.get("type") || "account";
-    if (type === "ip") {
-      const rows = await db.prepare("SELECT * FROM banned_ips_v2 ORDER BY id DESC LIMIT 200").all();
-      return json({ success: true, bans: rows.results });
+    const type = url.searchParams.get("type") || "all";
+    const parseBanTypes = (raw: unknown) => {
+      if (!raw) return null;
+      try {
+        const v = typeof raw === "string" ? JSON.parse(raw) : raw;
+        return Array.isArray(v) ? v : null;
+      } catch {
+        return null;
+      }
+    };
+    const out: Record<string, unknown> = { success: true };
+    if (type === "all" || type === "accounts" || type === "account") {
+      const rows = await db
+        .prepare(
+          `SELECT account_id AS accountId, reason, duration, expire_at AS expireAt,
+                  hide_works AS hideWorks, hide_messages AS hideMessages,
+                  ban_types AS banTypesJson, operator, created_at AS createdAt
+           FROM banned_accounts_v2
+           WHERE expire_at IS NULL OR expire_at > datetime('now')
+           ORDER BY id DESC LIMIT 500`,
+        )
+        .all();
+      out.bannedAccounts = (rows.results || []).map((a: Record<string, unknown>) => {
+        const banTypes = parseBanTypes(a.banTypesJson);
+        const { banTypesJson: _, ...rest } = a;
+        return { ...rest, banTypes };
+      });
     }
-    const rows = await db.prepare("SELECT * FROM banned_accounts_v2 ORDER BY id DESC LIMIT 200").all();
-    return json({ success: true, bans: rows.results });
+    if (type === "all" || type === "ips" || type === "ip") {
+      const rows = await db
+        .prepare(
+          `SELECT ip, reason, duration, expire_at AS expireAt,
+                  ban_types AS banTypesJson, operator, created_at AS createdAt
+           FROM banned_ips_v2
+           WHERE expire_at IS NULL OR expire_at > datetime('now')
+           ORDER BY id DESC LIMIT 500`,
+        )
+        .all();
+      out.bannedIPs = (rows.results || []).map((b: Record<string, unknown>) => {
+        const banTypes = parseBanTypes(b.banTypesJson);
+        const { banTypesJson: _, ...rest } = b;
+        return { ...rest, banTypes };
+      });
+    }
+    return json(out);
   }
 
   if (method === "POST" && rest[0] === "ban") {
     const body = await readJson(request);
     const banType = String(body.type || "account");
+    const target = String(body.target || body.accountId || body.ip || "").trim();
+    if (!target) return json({ success: false, error: "缺少必要参数" }, 400);
+    const reason = String(body.reason || "违规");
+    const duration =
+      body.duration != null && body.duration !== "" ? parseInt(String(body.duration), 10) : null;
+    const expireAt =
+      duration && !Number.isNaN(duration)
+        ? new Date(Date.now() + duration * 60 * 1000).toISOString()
+        : body.expireAt
+          ? String(body.expireAt)
+          : null;
+    const banTypesArr = Array.isArray(body.banTypes) ? (body.banTypes as string[]) : null;
+    const banTypesJson = banTypesArr && banTypesArr.length > 0 ? JSON.stringify(banTypesArr) : null;
+    const hideWorks = body.hideWorks ? 1 : 0;
+    const hideMessages = body.hideMessages ? 1 : 0;
+    const banTypeLabels: Record<string, string> = {
+      access: "禁止访问",
+      comment: "禁止发言",
+      create: "禁止创作",
+    };
+    const banTypeDesc =
+      banTypesArr && banTypesArr.length > 0
+        ? banTypesArr.map((t) => banTypeLabels[t] || t).join("、")
+        : "全部禁止";
+
     if (banType === "ip") {
       await db
         .prepare(
-          `INSERT INTO banned_ips_v2 (ip, reason, expire_at, ban_types) VALUES (?, ?, ?, ?)
-           ON CONFLICT(ip) DO UPDATE SET reason = excluded.reason, expire_at = excluded.expire_at, ban_types = excluded.ban_types`,
+          `INSERT INTO banned_ips_v2 (ip, reason, duration, expire_at, ban_types, operator)
+           VALUES (?, ?, ?, ?, ?, 'admin')
+           ON CONFLICT(ip) DO UPDATE SET
+             reason = excluded.reason,
+             duration = excluded.duration,
+             expire_at = excluded.expire_at,
+             ban_types = excluded.ban_types,
+             operator = excluded.operator`,
         )
-        .bind(
-          String(body.ip || ""),
-          String(body.reason || "违规"),
-          body.expireAt ? String(body.expireAt) : null,
-          body.banTypes ? String(body.banTypes) : null,
-        )
+        .bind(target, reason, duration && !Number.isNaN(duration) ? duration : null, expireAt, banTypesJson)
         .run();
-    } else {
-      await db
-        .prepare(
-          `INSERT INTO banned_accounts_v2 (account_id, reason, expire_at, ban_types) VALUES (?, ?, ?, ?)
-           ON CONFLICT(account_id) DO UPDATE SET reason = excluded.reason, expire_at = excluded.expire_at, ban_types = excluded.ban_types`,
-        )
-        .bind(
-          String(body.accountId || ""),
-          String(body.reason || "违规"),
-          body.expireAt ? String(body.expireAt) : null,
-          body.banTypes ? String(body.banTypes) : null,
-        )
-        .run();
+      return json({ success: true, message: `IP ${target} 已被封禁（${banTypeDesc}）` });
     }
-    return json({ success: true });
+
+    await db
+      .prepare(
+        `INSERT INTO banned_accounts_v2
+           (account_id, reason, duration, expire_at, hide_works, hide_messages, ban_types, operator)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'admin')
+         ON CONFLICT(account_id) DO UPDATE SET
+           reason = excluded.reason,
+           duration = excluded.duration,
+           expire_at = excluded.expire_at,
+           hide_works = excluded.hide_works,
+           hide_messages = excluded.hide_messages,
+           ban_types = excluded.ban_types,
+           operator = excluded.operator`,
+      )
+      .bind(
+        target,
+        reason,
+        duration && !Number.isNaN(duration) ? duration : null,
+        expireAt,
+        hideWorks,
+        hideMessages,
+        banTypesJson,
+      )
+      .run();
+    return json({ success: true, message: `账号 ${target} 已被封禁（${banTypeDesc}）` });
   }
 
   if (method === "DELETE" && rest[0] === "ban") {
     const body = await readJson(request);
-    if (body.type === "ip") {
-      await db.prepare("DELETE FROM banned_ips_v2 WHERE ip = ?").bind(String(body.ip || "")).run();
-    } else {
-      await db
-        .prepare("DELETE FROM banned_accounts_v2 WHERE account_id = ?")
-        .bind(String(body.accountId || ""))
-        .run();
+    const banType = String(body.type || "account");
+    const target = String(body.target || body.accountId || body.ip || "").trim();
+    if (!target) return json({ success: false, error: "缺少必要参数" }, 400);
+    if (banType === "ip") {
+      await db.prepare("DELETE FROM banned_ips_v2 WHERE ip = ?").bind(target).run();
+      return json({ success: true, message: `IP ${target} 已解封` });
     }
-    return json({ success: true });
+    await db.prepare("DELETE FROM banned_accounts_v2 WHERE account_id = ?").bind(target).run();
+    return json({ success: true, message: `账号 ${target} 已解封` });
   }
 
   if (method === "GET" && rest[0] === "comments") {

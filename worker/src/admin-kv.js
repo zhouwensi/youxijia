@@ -1479,6 +1479,192 @@ export async function handleAdminRequest(request, env, url, json) {
       return json(request, env, { success: true, workerAdmin: true, source: 'd1' });
     }
 
+    if (path === '/api/admin/ban' && method === 'GET') {
+      const db = env.YOUXIJIA_DB;
+      if (!db) {
+        return json(request, env, {
+          success: true,
+          bannedAccounts: [],
+          bannedIPs: [],
+          workerAdmin: true,
+        });
+      }
+      const type = url.searchParams.get('type') || 'all';
+      const result = { success: true, workerAdmin: true, source: 'd1' };
+
+      const parseBanTypes = (raw) => {
+        if (!raw) return null;
+        try {
+          const v = typeof raw === 'string' ? JSON.parse(raw) : raw;
+          return Array.isArray(v) ? v : null;
+        } catch {
+          return null;
+        }
+      };
+
+      if (type === 'all' || type === 'accounts' || type === 'account') {
+        const rows = await db
+          .prepare(
+            `SELECT account_id AS accountId, reason, duration, expire_at AS expireAt,
+                    hide_works AS hideWorks, hide_messages AS hideMessages,
+                    ban_types AS banTypesJson, operator, created_at AS createdAt
+             FROM banned_accounts_v2
+             WHERE expire_at IS NULL OR expire_at > datetime('now')
+             ORDER BY id DESC LIMIT 500`,
+          )
+          .all();
+        result.bannedAccounts = (rows.results || []).map((a) => {
+          const banTypes = parseBanTypes(a.banTypesJson);
+          const { banTypesJson, ...rest } = a;
+          return { ...rest, banTypes };
+        });
+      }
+
+      if (type === 'all' || type === 'ips' || type === 'ip') {
+        const rows = await db
+          .prepare(
+            `SELECT ip, reason, duration, expire_at AS expireAt,
+                    ban_types AS banTypesJson, operator, created_at AS createdAt
+             FROM banned_ips_v2
+             WHERE expire_at IS NULL OR expire_at > datetime('now')
+             ORDER BY id DESC LIMIT 500`,
+          )
+          .all();
+        result.bannedIPs = (rows.results || []).map((b) => {
+          const banTypes = parseBanTypes(b.banTypesJson);
+          const { banTypesJson, ...rest } = b;
+          return { ...rest, banTypes };
+        });
+      }
+
+      return json(request, env, result);
+    }
+
+    if (path === '/api/admin/ban' && method === 'POST') {
+      const db = env.YOUXIJIA_DB;
+      if (!db) return json(request, env, { success: false, error: '未绑定 D1' }, 503);
+      let body = {};
+      try {
+        body = await request.json();
+      } catch {
+        return json(request, env, { success: false, error: '无效 JSON' }, 400);
+      }
+      const banType = String(body.type || 'account');
+      const target = String(body.target || body.accountId || body.ip || '').trim();
+      if (!target) {
+        return json(request, env, { success: false, error: '缺少必要参数' }, 400);
+      }
+      const reason = String(body.reason || '违规');
+      const duration = body.duration != null && body.duration !== '' ? parseInt(body.duration, 10) : null;
+      const expireAt =
+        duration && !Number.isNaN(duration)
+          ? new Date(Date.now() + duration * 60 * 1000).toISOString()
+          : body.expireAt
+            ? String(body.expireAt)
+            : null;
+      const banTypesArr = Array.isArray(body.banTypes) ? body.banTypes : null;
+      const banTypesJson = banTypesArr && banTypesArr.length > 0 ? JSON.stringify(banTypesArr) : null;
+      const hideWorks = body.hideWorks ? 1 : 0;
+      const hideMessages = body.hideMessages ? 1 : 0;
+      const banTypeLabels = { access: '禁止访问', comment: '禁止发言', create: '禁止创作' };
+      const banTypeDesc =
+        banTypesArr && banTypesArr.length > 0
+          ? banTypesArr.map((t) => banTypeLabels[t] || t).join('、')
+          : '全部禁止';
+
+      if (banType === 'ip') {
+        await db
+          .prepare(
+            `INSERT INTO banned_ips_v2 (ip, reason, duration, expire_at, ban_types, operator)
+             VALUES (?, ?, ?, ?, ?, 'admin')
+             ON CONFLICT(ip) DO UPDATE SET
+               reason = excluded.reason,
+               duration = excluded.duration,
+               expire_at = excluded.expire_at,
+               ban_types = excluded.ban_types,
+               operator = excluded.operator`,
+          )
+          .bind(target, reason, duration && !Number.isNaN(duration) ? duration : null, expireAt, banTypesJson)
+          .run();
+        return json(request, env, {
+          success: true,
+          message: `IP ${target} 已被封禁（${banTypeDesc}）`,
+          workerAdmin: true,
+          source: 'd1',
+        });
+      }
+
+      if (banType === 'account') {
+        await db
+          .prepare(
+            `INSERT INTO banned_accounts_v2
+               (account_id, reason, duration, expire_at, hide_works, hide_messages, ban_types, operator)
+             VALUES (?, ?, ?, ?, ?, ?, ?, 'admin')
+             ON CONFLICT(account_id) DO UPDATE SET
+               reason = excluded.reason,
+               duration = excluded.duration,
+               expire_at = excluded.expire_at,
+               hide_works = excluded.hide_works,
+               hide_messages = excluded.hide_messages,
+               ban_types = excluded.ban_types,
+               operator = excluded.operator`,
+          )
+          .bind(
+            target,
+            reason,
+            duration && !Number.isNaN(duration) ? duration : null,
+            expireAt,
+            hideWorks,
+            hideMessages,
+            banTypesJson,
+          )
+          .run();
+        return json(request, env, {
+          success: true,
+          message: `账号 ${target} 已被封禁（${banTypeDesc}）`,
+          workerAdmin: true,
+          source: 'd1',
+        });
+      }
+
+      return json(request, env, { success: false, error: '无效的封禁类型' }, 400);
+    }
+
+    if (path === '/api/admin/ban' && method === 'DELETE') {
+      const db = env.YOUXIJIA_DB;
+      if (!db) return json(request, env, { success: false, error: '未绑定 D1' }, 503);
+      let body = {};
+      try {
+        body = await request.json();
+      } catch {
+        return json(request, env, { success: false, error: '无效 JSON' }, 400);
+      }
+      const banType = String(body.type || 'account');
+      const target = String(body.target || body.accountId || body.ip || '').trim();
+      if (!target) {
+        return json(request, env, { success: false, error: '缺少必要参数' }, 400);
+      }
+      if (banType === 'ip') {
+        await db.prepare('DELETE FROM banned_ips_v2 WHERE ip = ?').bind(target).run();
+        return json(request, env, {
+          success: true,
+          message: `IP ${target} 已解封`,
+          workerAdmin: true,
+          source: 'd1',
+        });
+      }
+      if (banType === 'account') {
+        await db.prepare('DELETE FROM banned_accounts_v2 WHERE account_id = ?').bind(target).run();
+        return json(request, env, {
+          success: true,
+          message: `账号 ${target} 已解封`,
+          workerAdmin: true,
+          source: 'd1',
+        });
+      }
+      return json(request, env, { success: false, error: '无效的类型' }, 400);
+    }
+
     return json(request, env, {
       success: false,
       error: '此管理接口仅在 Node + SQLite 版实现，Worker 版未迁移。',
