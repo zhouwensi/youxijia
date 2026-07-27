@@ -450,6 +450,77 @@ async function hashPasswordLegacy(password) {
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+/** 把封禁目标（账号 ID 或 user_token）解析成规范账号与 token */
+async function resolveBanAccount(db, target) {
+  const t = String(target || '').trim();
+  if (!t) return { accountId: '', userToken: '' };
+  const byAccount = await db
+    .prepare('SELECT account_id, user_token FROM user_accounts WHERE account_id = ?')
+    .bind(t)
+    .first();
+  if (byAccount) {
+    return { accountId: byAccount.account_id, userToken: byAccount.user_token };
+  }
+  const byToken = await db
+    .prepare('SELECT account_id, user_token FROM user_accounts WHERE user_token = ?')
+    .bind(t)
+    .first();
+  if (byToken) {
+    return { accountId: byToken.account_id, userToken: byToken.user_token };
+  }
+  // 未找到账号时：若像 UUID 则当 token，否则当 account_id
+  const looksToken = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t);
+  return looksToken ? { accountId: t, userToken: t } : { accountId: t, userToken: t };
+}
+
+async function hideAuthorWorks(db, userToken) {
+  if (!userToken) return 0;
+  const r = await db
+    .prepare(
+      `UPDATE games SET is_hidden = 1, updated_at = datetime('now')
+       WHERE author_token = ? AND COALESCE(is_hidden, 0) = 0`,
+    )
+    .bind(userToken)
+    .run();
+  return r?.meta?.changes ?? 0;
+}
+
+async function restoreAuthorWorks(db, userToken) {
+  if (!userToken) return 0;
+  const r = await db
+    .prepare(
+      `UPDATE games SET is_hidden = 0, updated_at = datetime('now')
+       WHERE author_token = ? AND COALESCE(is_hidden, 0) = 1`,
+    )
+    .bind(userToken)
+    .run();
+  return r?.meta?.changes ?? 0;
+}
+
+async function hideAuthorMessages(db, userToken) {
+  if (!userToken) return 0;
+  const r = await db
+    .prepare(
+      `UPDATE game_comments SET is_hidden = 1
+       WHERE user_token = ? AND COALESCE(is_hidden, 0) = 0 AND COALESCE(is_deleted, 0) = 0`,
+    )
+    .bind(userToken)
+    .run();
+  return r?.meta?.changes ?? 0;
+}
+
+async function restoreAuthorMessages(db, userToken) {
+  if (!userToken) return 0;
+  const r = await db
+    .prepare(
+      `UPDATE game_comments SET is_hidden = 0
+       WHERE user_token = ? AND COALESCE(is_hidden, 0) = 1`,
+    )
+    .bind(userToken)
+    .run();
+  return r?.meta?.changes ?? 0;
+}
+
 /**
  * 从 D1 分页列出前台用户（以账号表为主，对齐前台注册用户）
  */
@@ -1595,6 +1666,9 @@ export async function handleAdminRequest(request, env, url, json) {
       }
 
       if (banType === 'account') {
+        const resolved = await resolveBanAccount(db, target);
+        const storeId = resolved.accountId || target;
+        const userToken = resolved.userToken || target;
         await db
           .prepare(
             `INSERT INTO banned_accounts_v2
@@ -1610,7 +1684,7 @@ export async function handleAdminRequest(request, env, url, json) {
                operator = excluded.operator`,
           )
           .bind(
-            target,
+            storeId,
             reason,
             duration && !Number.isNaN(duration) ? duration : null,
             expireAt,
@@ -1619,9 +1693,20 @@ export async function handleAdminRequest(request, env, url, json) {
             banTypesJson,
           )
           .run();
+        // 若曾用 token 误当 account_id 封禁，清掉重复记录
+        if (userToken && userToken !== storeId) {
+          await db.prepare('DELETE FROM banned_accounts_v2 WHERE account_id = ?').bind(userToken).run();
+        }
+        let hiddenGames = 0;
+        let hiddenComments = 0;
+        if (hideWorks) hiddenGames = await hideAuthorWorks(db, userToken);
+        if (hideMessages) hiddenComments = await hideAuthorMessages(db, userToken);
+        const extra = [];
+        if (hideWorks) extra.push(`已隐藏作品 ${hiddenGames} 个`);
+        if (hideMessages) extra.push(`已隐藏留言 ${hiddenComments} 条`);
         return json(request, env, {
           success: true,
-          message: `账号 ${target} 已被封禁（${banTypeDesc}）`,
+          message: `账号 ${storeId} 已被封禁（${banTypeDesc}）${extra.length ? '；' + extra.join('，') : ''}`,
           workerAdmin: true,
           source: 'd1',
         });
@@ -1654,10 +1739,36 @@ export async function handleAdminRequest(request, env, url, json) {
         });
       }
       if (banType === 'account') {
-        await db.prepare('DELETE FROM banned_accounts_v2 WHERE account_id = ?').bind(target).run();
+        const resolved = await resolveBanAccount(db, target);
+        const storeId = resolved.accountId || target;
+        const userToken = resolved.userToken || target;
+        const prev =
+          (await db
+            .prepare('SELECT hide_works, hide_messages FROM banned_accounts_v2 WHERE account_id = ?')
+            .bind(storeId)
+            .first()) ||
+          (await db
+            .prepare('SELECT hide_works, hide_messages FROM banned_accounts_v2 WHERE account_id = ?')
+            .bind(target)
+            .first()) ||
+          (userToken
+            ? await db
+                .prepare('SELECT hide_works, hide_messages FROM banned_accounts_v2 WHERE account_id = ?')
+                .bind(userToken)
+                .first()
+            : null);
+        await db.prepare('DELETE FROM banned_accounts_v2 WHERE account_id = ?').bind(storeId).run();
+        if (target !== storeId) {
+          await db.prepare('DELETE FROM banned_accounts_v2 WHERE account_id = ?').bind(target).run();
+        }
+        if (userToken && userToken !== storeId) {
+          await db.prepare('DELETE FROM banned_accounts_v2 WHERE account_id = ?').bind(userToken).run();
+        }
+        if (prev?.hide_works) await restoreAuthorWorks(db, userToken);
+        if (prev?.hide_messages) await restoreAuthorMessages(db, userToken);
         return json(request, env, {
           success: true,
-          message: `账号 ${target} 已解封`,
+          message: `账号 ${storeId} 已解封`,
           workerAdmin: true,
           source: 'd1',
         });

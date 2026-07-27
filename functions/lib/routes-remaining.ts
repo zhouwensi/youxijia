@@ -942,6 +942,13 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
         `SELECT g.id, g.title, g.prompt, g.author_name, g.play_count, g.like_count, g.favorite_count, g.created_at,
           (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) AS comment_count
          FROM games g WHERE g.is_featured = 1 AND COALESCE(g.is_hidden,0)=0
+         AND NOT EXISTS (
+           SELECT 1 FROM banned_accounts_v2 b
+           LEFT JOIN user_accounts ua ON ua.account_id = b.account_id OR ua.user_token = b.account_id
+           WHERE COALESCE(b.hide_works, 0) = 1
+             AND (b.expire_at IS NULL OR b.expire_at > datetime('now'))
+             AND (g.author_token = ua.user_token OR g.author_token = b.account_id)
+         )
          ORDER BY g.updated_at DESC, g.like_count DESC LIMIT ?`,
       )
       .bind(limit)
@@ -957,6 +964,13 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
         `SELECT g.id, g.title, g.prompt, g.author_name, g.play_count, g.like_count, g.favorite_count, g.created_at,
           (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) AS comment_count
          FROM games g WHERE COALESCE(g.is_hidden,0)=0 AND (COALESCE(g.is_public,1)=1 OR g.is_public IS NULL)
+         AND NOT EXISTS (
+           SELECT 1 FROM banned_accounts_v2 b
+           LEFT JOIN user_accounts ua ON ua.account_id = b.account_id OR ua.user_token = b.account_id
+           WHERE COALESCE(b.hide_works, 0) = 1
+             AND (b.expire_at IS NULL OR b.expire_at > datetime('now'))
+             AND (g.author_token = ua.user_token OR g.author_token = b.account_id)
+         )
          ORDER BY g.favorite_count DESC LIMIT ? OFFSET ?`,
       )
       .bind(limit, offset)
@@ -972,6 +986,13 @@ export async function tryRoutesRemaining(ctx: RouteCtx): Promise<Response | null
         `SELECT g.id, g.title, g.prompt, g.author_name, g.play_count, g.like_count, g.favorite_count, g.created_at,
           (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) AS comment_count
          FROM games g WHERE COALESCE(g.is_hidden,0)=0 AND (COALESCE(g.is_public,1)=1 OR g.is_public IS NULL)
+         AND NOT EXISTS (
+           SELECT 1 FROM banned_accounts_v2 b
+           LEFT JOIN user_accounts ua ON ua.account_id = b.account_id OR ua.user_token = b.account_id
+           WHERE COALESCE(b.hide_works, 0) = 1
+             AND (b.expire_at IS NULL OR b.expire_at > datetime('now'))
+             AND (g.author_token = ua.user_token OR g.author_token = b.account_id)
+         )
          ORDER BY comment_count DESC, g.created_at DESC LIMIT ? OFFSET ?`,
       )
       .bind(limit, offset)

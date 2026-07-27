@@ -3,7 +3,15 @@
  */
 import { json, type Db } from "./http";
 import { getConfig } from "./db";
-import { requireAdmin, hashPasswordLegacy } from "./cf-helpers";
+import {
+  requireAdmin,
+  hashPasswordLegacy,
+  resolveBanTarget,
+  hideAuthorWorks,
+  restoreAuthorWorks,
+  hideAuthorMessages,
+  restoreAuthorMessages,
+} from "./cf-helpers";
 import { getTurboModelsPayload } from "./llm-models";
 import type { RouteCtx } from "./routes-remaining";
 
@@ -488,6 +496,9 @@ export async function tryAdminRemaining(ctx: RouteCtx): Promise<Response | null>
       return json({ success: true, message: `IP ${target} 已被封禁（${banTypeDesc}）` });
     }
 
+    const resolved = await resolveBanTarget(db, target);
+    const storeId = resolved.accountId || target;
+    const userToken = resolved.userToken || target;
     await db
       .prepare(
         `INSERT INTO banned_accounts_v2
@@ -503,7 +514,7 @@ export async function tryAdminRemaining(ctx: RouteCtx): Promise<Response | null>
            operator = excluded.operator`,
       )
       .bind(
-        target,
+        storeId,
         reason,
         duration && !Number.isNaN(duration) ? duration : null,
         expireAt,
@@ -512,7 +523,20 @@ export async function tryAdminRemaining(ctx: RouteCtx): Promise<Response | null>
         banTypesJson,
       )
       .run();
-    return json({ success: true, message: `账号 ${target} 已被封禁（${banTypeDesc}）` });
+    if (userToken && userToken !== storeId) {
+      await db.prepare("DELETE FROM banned_accounts_v2 WHERE account_id = ?").bind(userToken).run();
+    }
+    let hiddenGames = 0;
+    let hiddenComments = 0;
+    if (hideWorks) hiddenGames = await hideAuthorWorks(db, userToken);
+    if (hideMessages) hiddenComments = await hideAuthorMessages(db, userToken);
+    const extra: string[] = [];
+    if (hideWorks) extra.push(`已隐藏作品 ${hiddenGames} 个`);
+    if (hideMessages) extra.push(`已隐藏留言 ${hiddenComments} 条`);
+    return json({
+      success: true,
+      message: `账号 ${storeId} 已被封禁（${banTypeDesc}）${extra.length ? "；" + extra.join("，") : ""}`,
+    });
   }
 
   if (method === "DELETE" && rest[0] === "ban") {
@@ -524,8 +548,28 @@ export async function tryAdminRemaining(ctx: RouteCtx): Promise<Response | null>
       await db.prepare("DELETE FROM banned_ips_v2 WHERE ip = ?").bind(target).run();
       return json({ success: true, message: `IP ${target} 已解封` });
     }
-    await db.prepare("DELETE FROM banned_accounts_v2 WHERE account_id = ?").bind(target).run();
-    return json({ success: true, message: `账号 ${target} 已解封` });
+    const resolved = await resolveBanTarget(db, target);
+    const storeId = resolved.accountId || target;
+    const userToken = resolved.userToken || target;
+    const prev =
+      (await db
+        .prepare("SELECT hide_works, hide_messages FROM banned_accounts_v2 WHERE account_id = ?")
+        .bind(storeId)
+        .first<{ hide_works: number; hide_messages: number }>()) ||
+      (await db
+        .prepare("SELECT hide_works, hide_messages FROM banned_accounts_v2 WHERE account_id = ?")
+        .bind(target)
+        .first<{ hide_works: number; hide_messages: number }>());
+    await db.prepare("DELETE FROM banned_accounts_v2 WHERE account_id = ?").bind(storeId).run();
+    if (target !== storeId) {
+      await db.prepare("DELETE FROM banned_accounts_v2 WHERE account_id = ?").bind(target).run();
+    }
+    if (userToken && userToken !== storeId) {
+      await db.prepare("DELETE FROM banned_accounts_v2 WHERE account_id = ?").bind(userToken).run();
+    }
+    if (prev?.hide_works) await restoreAuthorWorks(db, userToken);
+    if (prev?.hide_messages) await restoreAuthorMessages(db, userToken);
+    return json({ success: true, message: `账号 ${storeId} 已解封` });
   }
 
   if (method === "GET" && rest[0] === "comments") {

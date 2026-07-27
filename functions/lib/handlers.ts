@@ -1,6 +1,6 @@
 import type { Env } from "../types";
 import { clientIp, json, getDb, type Db } from "./http";
-import { getUserTokenFromRequest } from "./cf-helpers";
+import { getUserTokenFromRequest, SQL_EXCLUDE_BANNED_HIDE_WORKS } from "./cf-helpers";
 import { getConfig, getConfigMany } from "./db";
 import { getTurboModelsPayload } from "./llm-models";
 import { handleGenerate } from "./generate-handler";
@@ -352,7 +352,7 @@ export async function dispatchApi(
         .prepare(
           `SELECT COUNT(*) AS total FROM games g
            WHERE COALESCE(g.is_hidden,0)=0 AND (COALESCE(g.is_public,1)=1 OR g.is_public IS NULL)
-           AND COALESCE(g.status,'published')='published' ${searchWhere} ${categoryWhere} ${orientationWhere}`,
+           AND COALESCE(g.status,'published')='published' ${SQL_EXCLUDE_BANNED_HIDE_WORKS} ${searchWhere} ${categoryWhere} ${orientationWhere}`,
         )
         .bind(...params)
         .first<{ total: number }>();
@@ -364,7 +364,7 @@ export async function dispatchApi(
             (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) AS comment_count
            FROM games g
            WHERE COALESCE(g.is_hidden,0)=0 AND (COALESCE(g.is_public,1)=1 OR g.is_public IS NULL)
-           AND COALESCE(g.status,'published')='published' ${searchWhere} ${categoryWhere} ${orientationWhere}
+           AND COALESCE(g.status,'published')='published' ${SQL_EXCLUDE_BANNED_HIDE_WORKS} ${searchWhere} ${categoryWhere} ${orientationWhere}
            ORDER BY ${orderBy}
            LIMIT ? OFFSET ?`,
         )
@@ -382,9 +382,9 @@ export async function dispatchApi(
       const offset = parseInt(url.searchParams.get("offset") || "0", 10) || 0;
       const games = await db
         .prepare(
-          `SELECT id, title, prompt, author_name, play_count, like_count, is_featured, created_at FROM games
+          `SELECT id, title, prompt, author_name, play_count, like_count, is_featured, created_at FROM games g
            WHERE COALESCE(is_hidden,0)=0 AND (COALESCE(is_public,1)=1 OR is_public IS NULL)
-           AND COALESCE(status,'published')='published'
+           AND COALESCE(status,'published')='published' ${SQL_EXCLUDE_BANNED_HIDE_WORKS}
            ORDER BY created_at DESC LIMIT ? OFFSET ?`,
         )
         .bind(limit, offset)
@@ -401,7 +401,7 @@ export async function dispatchApi(
             (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) AS comment_count
            FROM games g
            WHERE COALESCE(g.is_hidden,0)=0 AND (COALESCE(g.is_public,1)=1 OR g.is_public IS NULL)
-           AND COALESCE(g.status,'published')='published'
+           AND COALESCE(g.status,'published')='published' ${SQL_EXCLUDE_BANNED_HIDE_WORKS}
            ORDER BY g.is_featured DESC, g.like_count DESC, g.play_count DESC, g.created_at DESC
            LIMIT ? OFFSET ?`,
         )
@@ -425,7 +425,7 @@ export async function dispatchApi(
             (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) AS comment_count
            FROM games g
            LEFT JOIN game_stats s ON g.id = s.game_id
-           WHERE COALESCE(g.is_hidden,0)=0 AND (COALESCE(g.is_public,1)=1 OR g.is_public IS NULL) ${dateFilter}
+           WHERE COALESCE(g.is_hidden,0)=0 AND (COALESCE(g.is_public,1)=1 OR g.is_public IS NULL) ${SQL_EXCLUDE_BANNED_HIDE_WORKS} ${dateFilter}
            ORDER BY hot_score DESC, g.created_at DESC LIMIT ?`,
         )
         .bind(limit)
@@ -438,8 +438,9 @@ export async function dispatchApi(
       const offset = parseInt(url.searchParams.get("offset") || "0", 10) || 0;
       const games = await db
         .prepare(
-          `SELECT id, title, prompt, author_name, play_count, like_count, favorite_count, created_at FROM games
+          `SELECT id, title, prompt, author_name, play_count, like_count, favorite_count, created_at FROM games g
            WHERE COALESCE(is_hidden,0)=0 AND (COALESCE(is_public,1)=1 OR is_public IS NULL)
+           ${SQL_EXCLUDE_BANNED_HIDE_WORKS}
            ORDER BY like_count DESC, play_count DESC LIMIT ? OFFSET ?`,
         )
         .bind(limit, offset)
@@ -457,6 +458,7 @@ export async function dispatchApi(
             (SELECT COUNT(*) FROM game_comments WHERE game_id = g.id AND is_deleted = 0) AS comment_count
            FROM games g
            WHERE COALESCE(g.is_hidden,0)=0 AND (COALESCE(g.is_public,1)=1 OR g.is_public IS NULL)
+           ${SQL_EXCLUDE_BANNED_HIDE_WORKS}
            ORDER BY score DESC LIMIT ? OFFSET ?`,
         )
         .bind(limit, offset)

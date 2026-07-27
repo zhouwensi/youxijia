@@ -65,14 +65,106 @@ export async function checkIpBannedV2(db: Db, ip: string): Promise<Record<string
 }
 
 export async function checkAccountBannedV2(db: Db, accountId: string): Promise<Record<string, unknown> | null> {
+  if (!accountId) return null;
   const row = await db
     .prepare(
-      `SELECT account_id, reason, expire_at, ban_types FROM banned_accounts_v2
+      `SELECT account_id, reason, expire_at, ban_types, hide_works, hide_messages FROM banned_accounts_v2
        WHERE account_id = ? AND (expire_at IS NULL OR expire_at > datetime('now'))`,
     )
     .bind(accountId)
     .first();
-  return row as Record<string, unknown> | null;
+  if (row) return row as Record<string, unknown>;
+  // 兼容误用 user_token 作为 account_id 封禁的记录
+  const byToken = await db
+    .prepare(
+      `SELECT b.account_id, b.reason, b.expire_at, b.ban_types, b.hide_works, b.hide_messages
+       FROM banned_accounts_v2 b
+       INNER JOIN user_accounts ua ON ua.user_token = b.account_id
+       WHERE ua.account_id = ? AND (b.expire_at IS NULL OR b.expire_at > datetime('now'))`,
+    )
+    .bind(accountId)
+    .first();
+  return (byToken as Record<string, unknown> | null) ?? null;
+}
+
+/** 公开列表排除「封禁且勾选隐藏作品」的作者 */
+export const SQL_EXCLUDE_BANNED_HIDE_WORKS = `
+  AND NOT EXISTS (
+    SELECT 1 FROM banned_accounts_v2 b
+    LEFT JOIN user_accounts ua
+      ON ua.account_id = b.account_id OR ua.user_token = b.account_id
+    WHERE COALESCE(b.hide_works, 0) = 1
+      AND (b.expire_at IS NULL OR b.expire_at > datetime('now'))
+      AND (g.author_token = ua.user_token OR g.author_token = b.account_id)
+  )
+`;
+
+export async function resolveBanTarget(
+  db: Db,
+  target: string,
+): Promise<{ accountId: string; userToken: string }> {
+  const t = String(target || "").trim();
+  if (!t) return { accountId: "", userToken: "" };
+  const byAccount = await db
+    .prepare("SELECT account_id, user_token FROM user_accounts WHERE account_id = ?")
+    .bind(t)
+    .first<{ account_id: string; user_token: string }>();
+  if (byAccount) return { accountId: byAccount.account_id, userToken: byAccount.user_token };
+  const byToken = await db
+    .prepare("SELECT account_id, user_token FROM user_accounts WHERE user_token = ?")
+    .bind(t)
+    .first<{ account_id: string; user_token: string }>();
+  if (byToken) return { accountId: byToken.account_id, userToken: byToken.user_token };
+  const looksToken = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t);
+  return looksToken ? { accountId: t, userToken: t } : { accountId: t, userToken: t };
+}
+
+export async function hideAuthorWorks(db: Db, userToken: string): Promise<number> {
+  if (!userToken) return 0;
+  const r = await db
+    .prepare(
+      `UPDATE games SET is_hidden = 1, updated_at = datetime('now')
+       WHERE author_token = ? AND COALESCE(is_hidden, 0) = 0`,
+    )
+    .bind(userToken)
+    .run();
+  return r.meta?.changes ?? 0;
+}
+
+export async function restoreAuthorWorks(db: Db, userToken: string): Promise<number> {
+  if (!userToken) return 0;
+  const r = await db
+    .prepare(
+      `UPDATE games SET is_hidden = 0, updated_at = datetime('now')
+       WHERE author_token = ? AND COALESCE(is_hidden, 0) = 1`,
+    )
+    .bind(userToken)
+    .run();
+  return r.meta?.changes ?? 0;
+}
+
+export async function hideAuthorMessages(db: Db, userToken: string): Promise<number> {
+  if (!userToken) return 0;
+  const r = await db
+    .prepare(
+      `UPDATE game_comments SET is_hidden = 1
+       WHERE user_token = ? AND COALESCE(is_hidden, 0) = 0 AND COALESCE(is_deleted, 0) = 0`,
+    )
+    .bind(userToken)
+    .run();
+  return r.meta?.changes ?? 0;
+}
+
+export async function restoreAuthorMessages(db: Db, userToken: string): Promise<number> {
+  if (!userToken) return 0;
+  const r = await db
+    .prepare(
+      `UPDATE game_comments SET is_hidden = 0
+       WHERE user_token = ? AND COALESCE(is_hidden, 0) = 1`,
+    )
+    .bind(userToken)
+    .run();
+  return r.meta?.changes ?? 0;
 }
 
 export function ipForRequest(request: Request): string {
