@@ -82,16 +82,18 @@ export async function tryAdminRemaining(ctx: RouteCtx): Promise<Response | null>
   }
 
   if (method === "GET" && rest[0] === "stats") {
-    const games = await db.prepare("SELECT COUNT(*) AS c FROM games").first<{ c: number }>();
+    const games = await db.prepare("SELECT COUNT(*) AS c FROM games WHERE COALESCE(is_deleted,0)=0").first<{ c: number }>();
     const users = await db.prepare("SELECT COUNT(*) AS c FROM user_accounts").first<{ c: number }>();
     const plays = await db.prepare("SELECT COUNT(*) AS c FROM game_plays").first<{ c: number }>();
+    const likes = await db.prepare("SELECT COALESCE(SUM(like_count), 0) AS c FROM games WHERE COALESCE(is_deleted,0)=0").first<{ c: number }>();
+    const totalGames = games?.c ?? 0;
+    const totalUsers = users?.c ?? 0;
+    const totalPlays = plays?.c ?? 0;
+    const totalLikes = likes?.c ?? 0;
     return json({
       success: true,
-      stats: {
-        totalGames: games?.c ?? 0,
-        totalUsers: users?.c ?? 0,
-        totalPlays: plays?.c ?? 0,
-      },
+      overview: { totalGames, totalUsers, totalPlays, totalLikes },
+      stats: { totalGames, totalUsers, totalPlays, totalLikes },
     });
   }
 
@@ -101,12 +103,33 @@ export async function tryAdminRemaining(ctx: RouteCtx): Promise<Response | null>
   }
 
   if (method === "GET" && rest[0] === "config") {
-    const rows = await db.prepare("SELECT key, value, description FROM system_config").all();
-    return json({ success: true, config: rows.results || [] });
+    const rows = await db.prepare("SELECT key, value, description FROM system_config ORDER BY key").all();
+    const configs = rows.results || [];
+    return json({ success: true, configs, config: configs });
   }
 
   if (method === "PUT" && rest[0] === "config") {
     const body = await readJson(request);
+    const configs = body.configs as Array<{ key?: string; value?: unknown }> | undefined;
+    if (configs && Array.isArray(configs)) {
+      for (const row of configs) {
+        const key = String(row.key || "");
+        if (!key) continue;
+        const value = row.value;
+        if (value === "" || value === null || value === undefined) {
+          await db.prepare("DELETE FROM system_config WHERE key = ?").bind(key).run();
+        } else {
+          await db
+            .prepare(
+              `INSERT INTO system_config (key, value, description) VALUES (?, ?, '')
+               ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`,
+            )
+            .bind(key, String(value))
+            .run();
+        }
+      }
+      return json({ success: true, message: "配置已更新" });
+    }
     const key = String(body.key || "");
     const value = String(body.value ?? "");
     if (!key) return json({ success: false, error: "缺少 key" }, 400);
@@ -220,46 +243,41 @@ export async function tryAdminRemaining(ctx: RouteCtx): Promise<Response | null>
     const limit = parseInt(url.searchParams.get("limit") || "20", 10) || 20;
     const offset = (page - 1) * limit;
     const search = (url.searchParams.get("search") || "").trim();
+    const selectSql = `SELECT ua.user_token, ua.account_id, ua.nickname, ua.is_admin, ua.email, ua.created_at, ua.updated_at,
+            COALESCE(uc.credits, 0) AS credits,
+            COALESCE(uc.total_earned, 0) AS total_earned,
+            COALESCE(uc.total_used, 0) AS total_used,
+            COALESCE(uc.followed_wechat, 0) AS followed_wechat,
+            COALESCE(uc.ad_count_today, 0) AS ad_count_today,
+            CASE WHEN ua.email IS NOT NULL AND trim(ua.email) != '' THEN 1 ELSE 0 END AS email_verified
+     FROM user_accounts ua
+     LEFT JOIN user_credits uc ON ua.user_token = uc.user_token`;
     let total = 0;
     let users: unknown[] = [];
     if (search) {
       const p = `%${search}%`;
       const t = await db
         .prepare(
-          `SELECT COUNT(*) AS c FROM user_credits uc
-           LEFT JOIN user_accounts ua ON uc.user_token = ua.user_token
-           WHERE uc.user_token LIKE ? OR ua.account_id LIKE ? OR ua.nickname LIKE ? OR ua.email LIKE ?`,
+          `SELECT COUNT(*) AS c FROM user_accounts ua
+           WHERE ua.user_token LIKE ? OR ua.account_id LIKE ? OR ua.nickname LIKE ? OR ua.email LIKE ?`,
         )
         .bind(p, p, p, p)
         .first<{ c: number }>();
       total = t?.c ?? 0;
       const r = await db
         .prepare(
-          `SELECT uc.user_token, uc.credits, uc.total_earned, uc.total_used, uc.followed_wechat,
-                  uc.ad_count_today, uc.created_at, uc.updated_at,
-                  ua.account_id, ua.nickname, ua.is_admin, ua.email,
-                  CASE WHEN ua.email IS NOT NULL AND trim(ua.email) != '' THEN 1 ELSE 0 END AS email_verified
-           FROM user_credits uc
-           LEFT JOIN user_accounts ua ON uc.user_token = ua.user_token
-           WHERE uc.user_token LIKE ? OR ua.account_id LIKE ? OR ua.nickname LIKE ? OR ua.email LIKE ?
-           ORDER BY uc.created_at DESC LIMIT ? OFFSET ?`,
+          `${selectSql}
+           WHERE ua.user_token LIKE ? OR ua.account_id LIKE ? OR ua.nickname LIKE ? OR ua.email LIKE ?
+           ORDER BY ua.created_at DESC LIMIT ? OFFSET ?`,
         )
         .bind(p, p, p, p, limit, offset)
         .all();
       users = r.results || [];
     } else {
-      const t = await db.prepare("SELECT COUNT(*) AS c FROM user_credits").first<{ c: number }>();
+      const t = await db.prepare("SELECT COUNT(*) AS c FROM user_accounts").first<{ c: number }>();
       total = t?.c ?? 0;
       const r = await db
-        .prepare(
-          `SELECT uc.user_token, uc.credits, uc.total_earned, uc.total_used, uc.followed_wechat,
-                  uc.ad_count_today, uc.created_at, uc.updated_at,
-                  ua.account_id, ua.nickname, ua.is_admin, ua.email,
-                  CASE WHEN ua.email IS NOT NULL AND trim(ua.email) != '' THEN 1 ELSE 0 END AS email_verified
-           FROM user_credits uc
-           LEFT JOIN user_accounts ua ON uc.user_token = ua.user_token
-           ORDER BY uc.created_at DESC LIMIT ? OFFSET ?`,
-        )
+        .prepare(`${selectSql} ORDER BY ua.created_at DESC LIMIT ? OFFSET ?`)
         .bind(limit, offset)
         .all();
       users = r.results || [];
@@ -301,15 +319,57 @@ export async function tryAdminRemaining(ctx: RouteCtx): Promise<Response | null>
   }
 
   if (method === "GET" && rest[0] === "games") {
+    const page = parseInt(url.searchParams.get("page") || "1", 10) || 1;
     const limit = Math.min(parseInt(url.searchParams.get("limit") || "50", 10) || 50, 200);
-    const offset = parseInt(url.searchParams.get("offset") || "0", 10) || 0;
+    const offset =
+      url.searchParams.has("offset")
+        ? parseInt(url.searchParams.get("offset") || "0", 10) || 0
+        : (page - 1) * limit;
+    const search = (url.searchParams.get("search") || "").trim();
+    const filter = url.searchParams.get("filter") || "all";
+    const where: string[] = [];
+    const binds: unknown[] = [];
+    if (search) {
+      where.push("(title LIKE ? OR prompt LIKE ? OR author_name LIKE ?)");
+      const p = `%${search}%`;
+      binds.push(p, p, p);
+    }
+    if (filter === "featured") {
+      where.push("COALESCE(is_featured, 0) = 1");
+      where.push("COALESCE(is_deleted, 0) = 0");
+    } else if (filter === "hidden") {
+      where.push("COALESCE(is_hidden, 0) = 1");
+      where.push("COALESCE(is_deleted, 0) = 0");
+    } else if (filter === "private") {
+      where.push("visibility = 'private'");
+      where.push("COALESCE(is_deleted, 0) = 0");
+    } else if (filter === "deleted") {
+      where.push("COALESCE(is_deleted, 0) = 1");
+    } else {
+      where.push("COALESCE(is_deleted, 0) = 0");
+    }
+    const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+    const t = await db
+      .prepare(`SELECT COUNT(*) AS c FROM games ${whereSql}`)
+      .bind(...binds)
+      .first<{ c: number }>();
+    const total = t?.c ?? 0;
     const games = await db
       .prepare(
-        "SELECT id, title, author_name, play_count, like_count, is_hidden, created_at FROM games ORDER BY created_at DESC LIMIT ? OFFSET ?",
+        `SELECT id, title, prompt, author_name, play_count, like_count, favorite_count,
+                is_featured, is_hidden, category, visibility, status, is_public, created_at,
+                COALESCE(is_deleted, 0) AS is_deleted
+         FROM games ${whereSql}
+         ORDER BY created_at DESC LIMIT ? OFFSET ?`,
       )
-      .bind(limit, offset)
+      .bind(...binds, limit, offset)
       .all();
-    return json({ success: true, games: games.results });
+    const totalPages = Math.ceil(total / limit) || 0;
+    return json({
+      success: true,
+      games: games.results,
+      pagination: { page, limit, total, totalPages, pages: totalPages },
+    });
   }
 
   if (method === "PUT" && rest[0] === "games" && rest.length === 2) {

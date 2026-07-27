@@ -451,56 +451,105 @@ async function hashPasswordLegacy(password) {
 }
 
 /**
- * 从 D1 分页列出前台用户（user_credits + user_accounts）
+ * 从 D1 分页列出前台用户（以账号表为主，对齐前台注册用户）
  */
 async function listUsersFromD1(db, { page, limit, search }) {
   const offset = (page - 1) * limit;
+  const selectSql = `SELECT ua.user_token, ua.account_id, ua.nickname, ua.is_admin, ua.email, ua.created_at, ua.updated_at,
+            COALESCE(uc.credits, 0) AS credits,
+            COALESCE(uc.total_earned, 0) AS total_earned,
+            COALESCE(uc.total_used, 0) AS total_used,
+            COALESCE(uc.followed_wechat, 0) AS followed_wechat,
+            COALESCE(uc.ad_count_today, 0) AS ad_count_today,
+            CASE WHEN ua.email IS NOT NULL AND trim(ua.email) != '' THEN 1 ELSE 0 END AS email_verified
+     FROM user_accounts ua
+     LEFT JOIN user_credits uc ON ua.user_token = uc.user_token`;
   let total = 0;
   let users = [];
   if (search) {
     const p = `%${search}%`;
     const t = await db
       .prepare(
-        `SELECT COUNT(*) AS c FROM user_credits uc
-         LEFT JOIN user_accounts ua ON uc.user_token = ua.user_token
-         WHERE uc.user_token LIKE ? OR ua.account_id LIKE ? OR ua.nickname LIKE ? OR ua.email LIKE ?`,
+        `SELECT COUNT(*) AS c FROM user_accounts ua
+         WHERE ua.user_token LIKE ? OR ua.account_id LIKE ? OR ua.nickname LIKE ? OR ua.email LIKE ?`,
       )
       .bind(p, p, p, p)
       .first();
     total = t?.c ?? 0;
     const r = await db
       .prepare(
-        `SELECT uc.user_token, uc.credits, uc.total_earned, uc.total_used, uc.followed_wechat,
-                uc.ad_count_today, uc.created_at, uc.updated_at,
-                ua.account_id, ua.nickname, ua.is_admin, ua.email,
-                CASE WHEN ua.email IS NOT NULL AND trim(ua.email) != '' THEN 1 ELSE 0 END AS email_verified
-         FROM user_credits uc
-         LEFT JOIN user_accounts ua ON uc.user_token = ua.user_token
-         WHERE uc.user_token LIKE ? OR ua.account_id LIKE ? OR ua.nickname LIKE ? OR ua.email LIKE ?
-         ORDER BY uc.created_at DESC LIMIT ? OFFSET ?`,
+        `${selectSql}
+         WHERE ua.user_token LIKE ? OR ua.account_id LIKE ? OR ua.nickname LIKE ? OR ua.email LIKE ?
+         ORDER BY ua.created_at DESC LIMIT ? OFFSET ?`,
       )
       .bind(p, p, p, p, limit, offset)
       .all();
     users = r.results || [];
   } else {
-    const t = await db.prepare('SELECT COUNT(*) AS c FROM user_credits').first();
+    const t = await db.prepare('SELECT COUNT(*) AS c FROM user_accounts').first();
     total = t?.c ?? 0;
     const r = await db
-      .prepare(
-        `SELECT uc.user_token, uc.credits, uc.total_earned, uc.total_used, uc.followed_wechat,
-                uc.ad_count_today, uc.created_at, uc.updated_at,
-                ua.account_id, ua.nickname, ua.is_admin, ua.email,
-                CASE WHEN ua.email IS NOT NULL AND trim(ua.email) != '' THEN 1 ELSE 0 END AS email_verified
-         FROM user_credits uc
-         LEFT JOIN user_accounts ua ON uc.user_token = ua.user_token
-         ORDER BY uc.created_at DESC LIMIT ? OFFSET ?`,
-      )
+      .prepare(`${selectSql} ORDER BY ua.created_at DESC LIMIT ? OFFSET ?`)
       .bind(limit, offset)
       .all();
     users = r.results || [];
   }
   return {
     users,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit) || 0,
+    },
+  };
+}
+
+/**
+ * 从 D1 分页列出前台游戏（与 /api/games 同源）
+ */
+async function listGamesFromD1(db, { page, limit, search, filter }) {
+  const offset = (page - 1) * limit;
+  const where = [];
+  const binds = [];
+  if (search) {
+    where.push('(title LIKE ? OR prompt LIKE ? OR author_name LIKE ?)');
+    const p = `%${search}%`;
+    binds.push(p, p, p);
+  }
+  if (filter === 'featured') {
+    where.push('COALESCE(is_featured, 0) = 1');
+    where.push('COALESCE(is_deleted, 0) = 0');
+  } else if (filter === 'hidden') {
+    where.push('COALESCE(is_hidden, 0) = 1');
+    where.push('COALESCE(is_deleted, 0) = 0');
+  } else if (filter === 'private') {
+    where.push("visibility = 'private'");
+    where.push('COALESCE(is_deleted, 0) = 0');
+  } else if (filter === 'deleted') {
+    where.push('COALESCE(is_deleted, 0) = 1');
+  } else {
+    // all：默认不展示回收站，与后台筛选项「已删除」区分
+    where.push('COALESCE(is_deleted, 0) = 0');
+  }
+  const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const t = await db
+    .prepare(`SELECT COUNT(*) AS c FROM games ${whereSql}`)
+    .bind(...binds)
+    .first();
+  const total = t?.c ?? 0;
+  const r = await db
+    .prepare(
+      `SELECT id, title, prompt, author_name, author_token, play_count, like_count, favorite_count,
+              is_featured, is_hidden, category, visibility, status, is_public, created_at, updated_at,
+              COALESCE(is_deleted, 0) AS is_deleted
+       FROM games ${whereSql}
+       ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    )
+    .bind(...binds, limit, offset)
+    .all();
+  return {
+    games: r.results || [],
     pagination: {
       page,
       limit,
@@ -536,10 +585,14 @@ export async function handleAdminRequest(request, env, url, json) {
     if (path === '/api/admin/stats' && method === 'GET') {
       const db = env.YOUXIJIA_DB;
       if (db) {
-        const games = await db.prepare('SELECT COUNT(*) AS c FROM games').first();
+        const games = await db
+          .prepare('SELECT COUNT(*) AS c FROM games WHERE COALESCE(is_deleted, 0) = 0')
+          .first();
         const users = await db.prepare('SELECT COUNT(*) AS c FROM user_accounts').first();
         const plays = await db.prepare('SELECT COUNT(*) AS c FROM game_plays').first();
-        const likes = await db.prepare('SELECT COALESCE(SUM(like_count), 0) AS c FROM games').first();
+        const likes = await db
+          .prepare('SELECT COALESCE(SUM(like_count), 0) AS c FROM games WHERE COALESCE(is_deleted, 0) = 0')
+          .first();
         return json(request, env, {
           success: true,
           overview: {
@@ -607,6 +660,12 @@ export async function handleAdminRequest(request, env, url, json) {
     }
 
     if (path === '/api/admin/config' && method === 'GET') {
+      const db = env.YOUXIJIA_DB;
+      if (db) {
+        const rows = await db.prepare('SELECT key, value, description FROM system_config ORDER BY key').all();
+        const configs = rows.results || [];
+        return json(request, env, { success: true, configs, config: configs, workerAdmin: true, source: 'd1' });
+      }
       if (!kv) return json(request, env, { success: true, configs: [], workerAdmin: true });
       const map = await loadConfigMap(kv);
       const configs = Object.keys(map).map((key) => ({ key, value: map[key] }));
@@ -623,6 +682,24 @@ export async function handleAdminRequest(request, env, url, json) {
       const { configs } = body;
       if (!configs || !Array.isArray(configs)) {
         return json(request, env, { success: false, error: '无效的配置数据' }, 400);
+      }
+      const db = env.YOUXIJIA_DB;
+      if (db) {
+        for (const { key, value } of configs) {
+          if (!key) continue;
+          if (value === '' || value === null || value === undefined) {
+            await db.prepare('DELETE FROM system_config WHERE key = ?').bind(key).run();
+          } else {
+            await db
+              .prepare(
+                `INSERT INTO system_config (key, value, description) VALUES (?, ?, '')
+                 ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`,
+              )
+              .bind(key, String(value))
+              .run();
+          }
+        }
+        return json(request, env, { success: true, message: '配置已更新', workerAdmin: true, source: 'd1' });
       }
       if (!kv) {
         return json(request, env, { success: false, error: '未配置 KV' }, 503);
@@ -698,6 +775,21 @@ export async function handleAdminRequest(request, env, url, json) {
     }
 
     if (path === '/api/admin/games' && method === 'GET') {
+      const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '20', 10) || 20));
+      const search = (url.searchParams.get('search') || '').trim();
+      const filter = url.searchParams.get('filter') || 'all';
+      const db = env.YOUXIJIA_DB;
+      if (db) {
+        const result = await listGamesFromD1(db, { page, limit, search, filter });
+        return json(request, env, {
+          success: true,
+          games: result.games,
+          pagination: result.pagination,
+          workerAdmin: true,
+          source: 'd1',
+        });
+      }
       if (!kv) {
         return json(request, env, {
           success: true,
@@ -707,35 +799,179 @@ export async function handleAdminRequest(request, env, url, json) {
         });
       }
       const data = await adminListGames(kv, url);
-      return json(request, env, { ...data, workerAdmin: true });
+      return json(request, env, { ...data, workerAdmin: true, source: 'kv' });
+    }
+
+    if (path === '/api/admin/games/batch' && method === 'POST') {
+      const db = env.YOUXIJIA_DB;
+      let body = {};
+      try {
+        body = await request.json();
+      } catch {
+        return json(request, env, { success: false, error: '无效 JSON' }, 400);
+      }
+      const action = body.action;
+      const gameIds = Array.isArray(body.gameIds) ? body.gameIds.map(String) : [];
+      if (!action || gameIds.length === 0) {
+        return json(request, env, { success: false, error: '请选择游戏' }, 400);
+      }
+      if (!db) {
+        return json(request, env, { success: false, error: '未绑定 D1，无法批量操作前台游戏' }, 503);
+      }
+      const placeholders = gameIds.map(() => '?').join(',');
+      if (action === 'feature') {
+        await db
+          .prepare(`UPDATE games SET is_featured = 1, updated_at = datetime('now') WHERE id IN (${placeholders})`)
+          .bind(...gameIds)
+          .run();
+      } else if (action === 'unfeature') {
+        await db
+          .prepare(`UPDATE games SET is_featured = 0, updated_at = datetime('now') WHERE id IN (${placeholders})`)
+          .bind(...gameIds)
+          .run();
+      } else if (action === 'hide') {
+        await db
+          .prepare(`UPDATE games SET is_hidden = 1, updated_at = datetime('now') WHERE id IN (${placeholders})`)
+          .bind(...gameIds)
+          .run();
+      } else if (action === 'show') {
+        await db
+          .prepare(`UPDATE games SET is_hidden = 0, updated_at = datetime('now') WHERE id IN (${placeholders})`)
+          .bind(...gameIds)
+          .run();
+      } else if (action === 'delete') {
+        await db
+          .prepare(
+            `UPDATE games SET is_deleted = 1, is_hidden = 1, is_public = 0, updated_at = datetime('now') WHERE id IN (${placeholders})`,
+          )
+          .bind(...gameIds)
+          .run();
+      } else if (action === 'restore') {
+        await db
+          .prepare(
+            `UPDATE games SET is_deleted = 0, is_hidden = 0, is_public = 1, status = 'published', updated_at = datetime('now') WHERE id IN (${placeholders})`,
+          )
+          .bind(...gameIds)
+          .run();
+      } else if (action === 'permanent_delete') {
+        await db.prepare(`DELETE FROM user_likes WHERE game_id IN (${placeholders})`).bind(...gameIds).run();
+        await db.prepare(`DELETE FROM user_favorites WHERE game_id IN (${placeholders})`).bind(...gameIds).run();
+        await db.prepare(`DELETE FROM game_comments WHERE game_id IN (${placeholders})`).bind(...gameIds).run();
+        await db.prepare(`DELETE FROM games WHERE id IN (${placeholders})`).bind(...gameIds).run();
+      } else {
+        return json(request, env, { success: false, error: '未知操作' }, 400);
+      }
+      return json(request, env, {
+        success: true,
+        message: `已处理 ${gameIds.length} 个游戏`,
+        workerAdmin: true,
+        source: 'd1',
+      });
     }
 
     const gameIdPut = path.match(/^\/api\/admin\/games\/([^/]+)$/);
     if (gameIdPut && method === 'PUT') {
-      if (!kv) return json(request, env, { success: false, error: '未配置 KV' }, 503);
       let body = {};
       try {
         body = await request.json();
       } catch {
         body = {};
       }
-      const id = gameIdPut[1];
+      const id = decodeURIComponent(gameIdPut[1]);
+      const db = env.YOUXIJIA_DB;
+      if (db) {
+        const exists = await db.prepare('SELECT id FROM games WHERE id = ?').bind(id).first();
+        if (!exists) return json(request, env, { success: false, error: '游戏不存在' }, 404);
+        const sets = [];
+        const vals = [];
+        for (const k of ['title', 'prompt', 'code', 'category', 'visibility', 'status']) {
+          if (body[k] !== undefined) {
+            sets.push(`${k} = ?`);
+            vals.push(body[k]);
+          }
+        }
+        if (body.is_featured !== undefined) {
+          sets.push('is_featured = ?');
+          vals.push(body.is_featured ? 1 : 0);
+        }
+        if (body.is_hidden !== undefined) {
+          sets.push('is_hidden = ?');
+          vals.push(body.is_hidden ? 1 : 0);
+        }
+        if (body.is_public !== undefined) {
+          sets.push('is_public = ?');
+          vals.push(body.is_public ? 1 : 0);
+        }
+        if (sets.length === 0) return json(request, env, { success: false, error: '无字段' }, 400);
+        sets.push("updated_at = datetime('now')");
+        vals.push(id);
+        await db.prepare(`UPDATE games SET ${sets.join(', ')} WHERE id = ?`).bind(...vals).run();
+        return json(request, env, { success: true, message: '游戏已更新', workerAdmin: true, source: 'd1' });
+      }
+      if (!kv) return json(request, env, { success: false, error: '未配置 KV' }, 503);
       const r = await adminUpdateGameFlags(kv, id, body);
       return json(request, env, r.body, r.ok ? 200 : r.status);
     }
 
     if (gameIdPut && method === 'DELETE') {
+      const id = decodeURIComponent(gameIdPut[1]);
+      let body = {};
+      try {
+        body = await request.json();
+      } catch {
+        body = {};
+      }
+      const permanent = body.permanent === true;
+      const db = env.YOUXIJIA_DB;
+      if (db) {
+        const exists = await db.prepare('SELECT id FROM games WHERE id = ?').bind(id).first();
+        if (!exists) return json(request, env, { success: false, error: '游戏不存在' }, 404);
+        if (permanent) {
+          await db.prepare('DELETE FROM user_likes WHERE game_id = ?').bind(id).run();
+          await db.prepare('DELETE FROM user_favorites WHERE game_id = ?').bind(id).run();
+          await db.prepare('DELETE FROM game_comments WHERE game_id = ?').bind(id).run();
+          await db.prepare('DELETE FROM games WHERE id = ?').bind(id).run();
+          return json(request, env, { success: true, message: '已永久删除', workerAdmin: true, source: 'd1' });
+        }
+        await db
+          .prepare(
+            `UPDATE games SET is_deleted = 1, is_hidden = 1, is_public = 0, updated_at = datetime('now') WHERE id = ?`,
+          )
+          .bind(id)
+          .run();
+        return json(request, env, { success: true, message: '游戏已移至回收站', workerAdmin: true, source: 'd1' });
+      }
       if (!kv) return json(request, env, { success: false, error: '未配置 KV' }, 503);
-      const id = gameIdPut[1];
       const r = await adminDeleteGame(kv, id);
       return json(request, env, r.body, r.ok ? 200 : r.status);
     }
 
+    const gameRestore = path.match(/^\/api\/admin\/games\/([^/]+)\/restore$/);
+    if (gameRestore && method === 'POST') {
+      const id = decodeURIComponent(gameRestore[1]);
+      const db = env.YOUXIJIA_DB;
+      if (!db) return json(request, env, { success: false, error: '未绑定 D1' }, 503);
+      const exists = await db.prepare('SELECT id FROM games WHERE id = ?').bind(id).first();
+      if (!exists) return json(request, env, { success: false, error: '游戏不存在' }, 404);
+      await db
+        .prepare(
+          `UPDATE games SET is_deleted = 0, is_hidden = 0, is_public = 1, status = 'published', updated_at = datetime('now') WHERE id = ?`,
+        )
+        .bind(id)
+        .run();
+      return json(request, env, { success: true, message: '游戏已恢复', workerAdmin: true, source: 'd1' });
+    }
+
     const gameSource = path.match(/^\/api\/admin\/games\/([^/]+)\/source$/);
     if (gameSource && method === 'GET') {
-      if (!kv) return json(request, env, { success: false, error: '未配置 KV' }, 503);
-      const id = gameSource[1];
-      const game = await getGame(kv, id);
+      const id = decodeURIComponent(gameSource[1]);
+      const db = env.YOUXIJIA_DB;
+      let game = null;
+      if (db) {
+        game = await db.prepare('SELECT id, title, code FROM games WHERE id = ?').bind(id).first();
+      } else if (kv) {
+        game = await getGame(kv, id);
+      }
       if (!game) {
         return json(request, env, { success: false, error: '游戏不存在' }, 404);
       }
@@ -1141,6 +1377,106 @@ export async function handleAdminRequest(request, env, url, json) {
       }
       await saveUser(kv, user);
       return json(request, env, { success: true, workerAdmin: true });
+    }
+
+    if (path === '/api/admin/comments' && method === 'GET') {
+      const db = env.YOUXIJIA_DB;
+      if (!db) {
+        return json(request, env, {
+          success: true,
+          comments: [],
+          stats: { total: 0, active: 0, deleted: 0, today: 0 },
+          pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
+          workerAdmin: true,
+        });
+      }
+      const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '20', 10) || 20));
+      const offset = (page - 1) * limit;
+      const keyword = (url.searchParams.get('keyword') || '').trim();
+      const status = url.searchParams.get('status') || 'all';
+      const where = ['1=1'];
+      const binds = [];
+      if (status === 'active') where.push('c.is_deleted = 0');
+      else if (status === 'deleted') where.push('c.is_deleted = 1');
+      if (keyword) {
+        where.push('(c.content LIKE ? OR c.author_name LIKE ?)');
+        const p = `%${keyword}%`;
+        binds.push(p, p);
+      }
+      const whereSql = where.join(' AND ');
+      const totalRow = await db
+        .prepare(`SELECT COUNT(*) AS c FROM game_comments c WHERE ${whereSql}`)
+        .bind(...binds)
+        .first();
+      const total = totalRow?.c ?? 0;
+      const list = await db
+        .prepare(
+          `SELECT c.*, g.title AS game_title
+           FROM game_comments c
+           LEFT JOIN games g ON c.game_id = g.id
+           WHERE ${whereSql}
+           ORDER BY c.id DESC LIMIT ? OFFSET ?`,
+        )
+        .bind(...binds, limit, offset)
+        .all();
+      const statsRow = await db
+        .prepare(
+          `SELECT COUNT(*) AS total,
+                  SUM(CASE WHEN is_deleted = 0 THEN 1 ELSE 0 END) AS active,
+                  SUM(CASE WHEN is_deleted = 1 THEN 1 ELSE 0 END) AS deleted,
+                  SUM(CASE WHEN date(created_at) = date('now') AND is_deleted = 0 THEN 1 ELSE 0 END) AS today
+           FROM game_comments`,
+        )
+        .first();
+      return json(request, env, {
+        success: true,
+        comments: list.results || [],
+        stats: {
+          total: statsRow?.total ?? 0,
+          active: statsRow?.active ?? 0,
+          deleted: statsRow?.deleted ?? 0,
+          today: statsRow?.today ?? 0,
+        },
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit) || 0,
+        },
+        workerAdmin: true,
+        source: 'd1',
+      });
+    }
+
+    const commentIdMatch = path.match(/^\/api\/admin\/comments\/([^/]+)$/);
+    if (commentIdMatch && method === 'DELETE') {
+      const db = env.YOUXIJIA_DB;
+      if (!db) return json(request, env, { success: false, error: '未绑定 D1' }, 503);
+      await db
+        .prepare('UPDATE game_comments SET is_deleted = 1 WHERE id = ?')
+        .bind(commentIdMatch[1])
+        .run();
+      return json(request, env, { success: true, workerAdmin: true, source: 'd1' });
+    }
+
+    const commentRestore = path.match(/^\/api\/admin\/comments\/([^/]+)\/restore$/);
+    if (commentRestore && method === 'POST') {
+      const db = env.YOUXIJIA_DB;
+      if (!db) return json(request, env, { success: false, error: '未绑定 D1' }, 503);
+      await db
+        .prepare('UPDATE game_comments SET is_deleted = 0 WHERE id = ?')
+        .bind(commentRestore[1])
+        .run();
+      return json(request, env, { success: true, workerAdmin: true, source: 'd1' });
+    }
+
+    const commentPermanent = path.match(/^\/api\/admin\/comments\/([^/]+)\/permanent$/);
+    if (commentPermanent && method === 'DELETE') {
+      const db = env.YOUXIJIA_DB;
+      if (!db) return json(request, env, { success: false, error: '未绑定 D1' }, 503);
+      await db.prepare('DELETE FROM game_comments WHERE id = ?').bind(commentPermanent[1]).run();
+      return json(request, env, { success: true, workerAdmin: true, source: 'd1' });
     }
 
     return json(request, env, {
