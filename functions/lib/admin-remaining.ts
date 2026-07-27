@@ -228,19 +228,23 @@ export async function tryAdminRemaining(ctx: RouteCtx): Promise<Response | null>
         .prepare(
           `SELECT COUNT(*) AS c FROM user_credits uc
            LEFT JOIN user_accounts ua ON uc.user_token = ua.user_token
-           WHERE uc.user_token LIKE ? OR ua.account_id LIKE ? OR ua.nickname LIKE ?`,
+           WHERE uc.user_token LIKE ? OR ua.account_id LIKE ? OR ua.nickname LIKE ? OR ua.email LIKE ?`,
         )
-        .bind(p, p, p)
+        .bind(p, p, p, p)
         .first<{ c: number }>();
       total = t?.c ?? 0;
       const r = await db
         .prepare(
-          `SELECT uc.*, ua.account_id, ua.nickname, ua.is_admin FROM user_credits uc
+          `SELECT uc.user_token, uc.credits, uc.total_earned, uc.total_used, uc.followed_wechat,
+                  uc.ad_count_today, uc.created_at, uc.updated_at,
+                  ua.account_id, ua.nickname, ua.is_admin, ua.email,
+                  CASE WHEN ua.email IS NOT NULL AND trim(ua.email) != '' THEN 1 ELSE 0 END AS email_verified
+           FROM user_credits uc
            LEFT JOIN user_accounts ua ON uc.user_token = ua.user_token
-           WHERE uc.user_token LIKE ? OR ua.account_id LIKE ? OR ua.nickname LIKE ?
+           WHERE uc.user_token LIKE ? OR ua.account_id LIKE ? OR ua.nickname LIKE ? OR ua.email LIKE ?
            ORDER BY uc.created_at DESC LIMIT ? OFFSET ?`,
         )
-        .bind(p, p, p, limit, offset)
+        .bind(p, p, p, p, limit, offset)
         .all();
       users = r.results || [];
     } else {
@@ -248,7 +252,11 @@ export async function tryAdminRemaining(ctx: RouteCtx): Promise<Response | null>
       total = t?.c ?? 0;
       const r = await db
         .prepare(
-          `SELECT uc.*, ua.account_id, ua.nickname, ua.is_admin FROM user_credits uc
+          `SELECT uc.user_token, uc.credits, uc.total_earned, uc.total_used, uc.followed_wechat,
+                  uc.ad_count_today, uc.created_at, uc.updated_at,
+                  ua.account_id, ua.nickname, ua.is_admin, ua.email,
+                  CASE WHEN ua.email IS NOT NULL AND trim(ua.email) != '' THEN 1 ELSE 0 END AS email_verified
+           FROM user_credits uc
            LEFT JOIN user_accounts ua ON uc.user_token = ua.user_token
            ORDER BY uc.created_at DESC LIMIT ? OFFSET ?`,
         )
@@ -256,7 +264,12 @@ export async function tryAdminRemaining(ctx: RouteCtx): Promise<Response | null>
         .all();
       users = r.results || [];
     }
-    return json({ success: true, users, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
+    const totalPages = Math.ceil(total / limit) || 0;
+    return json({
+      success: true,
+      users,
+      pagination: { page, limit, total, totalPages, pages: totalPages },
+    });
   }
 
   if (method === "POST" && rest[0] === "users" && rest[2] === "set-admin" && rest.length === 3) {

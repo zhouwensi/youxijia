@@ -441,6 +441,75 @@ async function loadAllUsersForAdmin(kv) {
   return rows;
 }
 
+/** 与 Pages / server.js hashPassword 一致（前台登录走 D1，勿用 bcrypt） */
+async function hashPasswordLegacy(password) {
+  const buf = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(String(password) + 'aigame_salt_2025'),
+  );
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * 从 D1 分页列出前台用户（user_credits + user_accounts）
+ */
+async function listUsersFromD1(db, { page, limit, search }) {
+  const offset = (page - 1) * limit;
+  let total = 0;
+  let users = [];
+  if (search) {
+    const p = `%${search}%`;
+    const t = await db
+      .prepare(
+        `SELECT COUNT(*) AS c FROM user_credits uc
+         LEFT JOIN user_accounts ua ON uc.user_token = ua.user_token
+         WHERE uc.user_token LIKE ? OR ua.account_id LIKE ? OR ua.nickname LIKE ? OR ua.email LIKE ?`,
+      )
+      .bind(p, p, p, p)
+      .first();
+    total = t?.c ?? 0;
+    const r = await db
+      .prepare(
+        `SELECT uc.user_token, uc.credits, uc.total_earned, uc.total_used, uc.followed_wechat,
+                uc.ad_count_today, uc.created_at, uc.updated_at,
+                ua.account_id, ua.nickname, ua.is_admin, ua.email,
+                CASE WHEN ua.email IS NOT NULL AND trim(ua.email) != '' THEN 1 ELSE 0 END AS email_verified
+         FROM user_credits uc
+         LEFT JOIN user_accounts ua ON uc.user_token = ua.user_token
+         WHERE uc.user_token LIKE ? OR ua.account_id LIKE ? OR ua.nickname LIKE ? OR ua.email LIKE ?
+         ORDER BY uc.created_at DESC LIMIT ? OFFSET ?`,
+      )
+      .bind(p, p, p, p, limit, offset)
+      .all();
+    users = r.results || [];
+  } else {
+    const t = await db.prepare('SELECT COUNT(*) AS c FROM user_credits').first();
+    total = t?.c ?? 0;
+    const r = await db
+      .prepare(
+        `SELECT uc.user_token, uc.credits, uc.total_earned, uc.total_used, uc.followed_wechat,
+                uc.ad_count_today, uc.created_at, uc.updated_at,
+                ua.account_id, ua.nickname, ua.is_admin, ua.email,
+                CASE WHEN ua.email IS NOT NULL AND trim(ua.email) != '' THEN 1 ELSE 0 END AS email_verified
+         FROM user_credits uc
+         LEFT JOIN user_accounts ua ON uc.user_token = ua.user_token
+         ORDER BY uc.created_at DESC LIMIT ? OFFSET ?`,
+      )
+      .bind(limit, offset)
+      .all();
+    users = r.results || [];
+  }
+  return {
+    users,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit) || 0,
+    },
+  };
+}
+
 export async function handleAdminRequest(request, env, url, json) {
   const auth = assertAdmin(request, env, url);
   if (auth.status === 'no_key') {
@@ -465,6 +534,30 @@ export async function handleAdminRequest(request, env, url, json) {
 
   try {
     if (path === '/api/admin/stats' && method === 'GET') {
+      const db = env.YOUXIJIA_DB;
+      if (db) {
+        const games = await db.prepare('SELECT COUNT(*) AS c FROM games').first();
+        const users = await db.prepare('SELECT COUNT(*) AS c FROM user_accounts').first();
+        const plays = await db.prepare('SELECT COUNT(*) AS c FROM game_plays').first();
+        const likes = await db.prepare('SELECT COALESCE(SUM(like_count), 0) AS c FROM games').first();
+        return json(request, env, {
+          success: true,
+          overview: {
+            totalGames: games?.c ?? 0,
+            totalPlays: plays?.c ?? 0,
+            totalLikes: likes?.c ?? 0,
+            totalUsers: users?.c ?? 0,
+          },
+          stats: {
+            totalGames: games?.c ?? 0,
+            totalUsers: users?.c ?? 0,
+            totalPlays: plays?.c ?? 0,
+          },
+          today: {},
+          last7Days: [],
+          workerAdmin: true,
+        });
+      }
       if (!kv) {
         return json(request, env, {
           success: true,
@@ -864,6 +957,20 @@ export async function handleAdminRequest(request, env, url, json) {
     }
 
     if (path === '/api/admin/users' && method === 'GET') {
+      const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '15', 10) || 15));
+      const search = (url.searchParams.get('search') || '').trim();
+      const db = env.YOUXIJIA_DB;
+      if (db) {
+        const result = await listUsersFromD1(db, { page, limit, search });
+        return json(request, env, {
+          success: true,
+          users: result.users,
+          pagination: result.pagination,
+          workerAdmin: true,
+          source: 'd1',
+        });
+      }
       if (!kv) {
         return json(request, env, {
           success: true,
@@ -872,21 +979,12 @@ export async function handleAdminRequest(request, env, url, json) {
           workerAdmin: true,
         });
       }
-      const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10) || 1);
-      const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '15', 10) || 15));
-      const search = (url.searchParams.get('search') || '').trim().toLowerCase();
+      const searchLower = search.toLowerCase();
       let rows = await loadAllUsersForAdmin(kv);
-      if (search) {
+      if (searchLower) {
         rows = rows.filter((u) => {
-          const hay = [
-            u.user_token,
-            u.account_id,
-            u.nickname,
-            u.email || '',
-          ]
-            .join(' ')
-            .toLowerCase();
-          return hay.includes(search);
+          const hay = [u.user_token, u.account_id, u.nickname, u.email || ''].join(' ').toLowerCase();
+          return hay.includes(searchLower);
         });
       }
       const total = rows.length;
@@ -897,12 +995,12 @@ export async function handleAdminRequest(request, env, url, json) {
         users: slice,
         pagination: { page, limit, total, totalPages },
         workerAdmin: true,
+        source: 'kv',
       });
     }
 
     const setAdminMatch = path.match(/^\/api\/admin\/users\/([^/]+)\/set-admin$/);
     if (setAdminMatch && method === 'POST') {
-      if (!kv) return json(request, env, { success: false, error: '未配置 KV' }, 503);
       const userToken = decodeURIComponent(setAdminMatch[1]);
       let body = {};
       try {
@@ -911,6 +1009,27 @@ export async function handleAdminRequest(request, env, url, json) {
         body = {};
       }
       const isAdmin = !!body.isAdmin;
+      const db = env.YOUXIJIA_DB;
+      if (db) {
+        const row = await db
+          .prepare('SELECT user_token FROM user_accounts WHERE user_token = ?')
+          .bind(userToken)
+          .first();
+        if (!row) return json(request, env, { success: false, error: '用户不存在' }, 404);
+        await db
+          .prepare('UPDATE user_accounts SET is_admin = ?, updated_at = datetime(\'now\') WHERE user_token = ?')
+          .bind(isAdmin ? 1 : 0, userToken)
+          .run();
+        return json(request, env, {
+          success: true,
+          message: isAdmin ? '已设置为管理员' : '已取消管理员权限',
+          user_token: userToken,
+          is_admin: isAdmin ? 1 : 0,
+          workerAdmin: true,
+          source: 'd1',
+        });
+      }
+      if (!kv) return json(request, env, { success: false, error: '未配置 KV' }, 503);
       const user = await getUserByToken(kv, userToken);
       if (!user) return json(request, env, { success: false, error: '用户不存在' }, 404);
       user.is_admin = isAdmin ? 1 : 0;
@@ -926,7 +1045,6 @@ export async function handleAdminRequest(request, env, url, json) {
 
     const resetPwdMatch = path.match(/^\/api\/admin\/users\/([^/]+)\/reset-password$/);
     if (resetPwdMatch && method === 'POST') {
-      if (!kv) return json(request, env, { success: false, error: '未配置 KV' }, 503);
       const userToken = decodeURIComponent(resetPwdMatch[1]);
       let body = {};
       try {
@@ -938,6 +1056,30 @@ export async function handleAdminRequest(request, env, url, json) {
       if (!newPassword || String(newPassword).length < 6) {
         return json(request, env, { success: false, error: '新密码至少需要6位' }, 400);
       }
+      const db = env.YOUXIJIA_DB;
+      if (db) {
+        const row = await db
+          .prepare('SELECT account_id FROM user_accounts WHERE user_token = ?')
+          .bind(userToken)
+          .first();
+        if (!row) return json(request, env, { success: false, error: '用户不存在' }, 404);
+        const h = await hashPasswordLegacy(String(newPassword));
+        await db
+          .prepare(
+            'UPDATE user_accounts SET password_hash = ?, has_password = 1, updated_at = datetime(\'now\') WHERE user_token = ?',
+          )
+          .bind(h, userToken)
+          .run();
+        return json(request, env, {
+          success: true,
+          message: '密码重置成功',
+          user_token: userToken,
+          account_id: row.account_id,
+          workerAdmin: true,
+          source: 'd1',
+        });
+      }
+      if (!kv) return json(request, env, { success: false, error: '未配置 KV' }, 503);
       const user = await getUserByToken(kv, userToken);
       if (!user) return json(request, env, { success: false, error: '用户不存在' }, 404);
       user.password_hash = bcrypt.hashSync(String(newPassword), 10);
@@ -953,7 +1095,6 @@ export async function handleAdminRequest(request, env, url, json) {
     }
 
     if (path === '/api/admin/add-credits' && method === 'POST') {
-      if (!kv) return json(request, env, { success: false, error: '未配置 KV' }, 503);
       let body = {};
       try {
         body = await request.json();
@@ -965,6 +1106,32 @@ export async function handleAdminRequest(request, env, url, json) {
       if (!userToken || Number.isNaN(amount)) {
         return json(request, env, { success: false, error: '缺少参数' }, 400);
       }
+      const db = env.YOUXIJIA_DB;
+      if (db) {
+        const existing = await db
+          .prepare('SELECT credits FROM user_credits WHERE user_token = ?')
+          .bind(userToken)
+          .first();
+        if (!existing) {
+          return json(request, env, { success: false, error: '用户不存在' }, 404);
+        }
+        const earned = amount > 0 ? amount : 0;
+        await db
+          .prepare(
+            `UPDATE user_credits SET credits = credits + ?, total_earned = total_earned + ?,
+             updated_at = datetime('now') WHERE user_token = ?`,
+          )
+          .bind(amount, earned, userToken)
+          .run();
+        await db
+          .prepare(
+            "INSERT INTO credit_logs (user_token, amount, type, description) VALUES (?, ?, 'admin_add', ?)",
+          )
+          .bind(userToken, amount, '管理员增加积分')
+          .run();
+        return json(request, env, { success: true, workerAdmin: true, source: 'd1' });
+      }
+      if (!kv) return json(request, env, { success: false, error: '未配置 KV' }, 503);
       const user = await getUserByToken(kv, userToken);
       if (!user) return json(request, env, { success: false, error: '用户不存在' }, 404);
       const prev = user.credits ?? 0;

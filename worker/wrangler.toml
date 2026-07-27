@@ -11,6 +11,12 @@ compatibility_date = "2024-12-01"
 binding = "USER_KV"
 id = "1118560a049f4acd85b33ef1e3dd4b69"
 
+# 前台真实用户/积分在 Pages+D1；后台用户管理需直连同一库（与根目录 wrangler.toml 一致）
+[[d1_databases]]
+binding = "YOUXIJIA_DB"
+database_name = "youxijia-db"
+database_id = "2fcbd735-8a23-4550-a98c-22adbdd55b21"
+
 # 绑定自定义域时在 Cloudflare 控制台 Workers → 该 Worker → Triggers → Custom Domains
 # 或使用 routes（需 zone 已在 Cloudflare）：
 # routes = [
